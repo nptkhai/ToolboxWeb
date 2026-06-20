@@ -1,0 +1,50 @@
+@model FocusSessionFormViewModel
+@{
+    ViewData["Title"] = T["FocusTimer.Title"];
+    var sessions = ViewBag.RecentSessions as IReadOnlyList<FocusSession> ?? [];
+}
+
+<div class="tool-grid">
+    <section class="panel span-6">
+        <div class="panel-header"><h2>@T["FocusTimer.Timer"]</h2></div>
+        <form asp-action="Complete" method="post" class="form-grid">
+            <div data-focus-timer data-minutes="@Model.DurationMinutes">
+                <div class="timer-display" data-timer-display>25:00</div>
+                <div class="inline-actions justify-content-center mt-3">
+                    <button class="btn btn-primary" type="button" data-timer-start>@T["Action.Start"]</button>
+                    <button class="btn btn-outline-secondary" type="button" data-timer-pause>@T["Action.Pause"]</button>
+                    <button class="btn btn-outline-secondary" type="button" data-timer-reset>@T["Action.Reset"]</button>
+                </div>
+            </div>
+            <label>
+                @T["FocusTimer.DurationMinutes"]
+                <input asp-for="DurationMinutes" class="form-control" />
+            </label>
+            <label>
+                @T["FocusTimer.SessionNote"]
+                <textarea asp-for="Note" class="form-control" rows="3"></textarea>
+            </label>
+            <button class="btn btn-primary" type="submit">@T["FocusTimer.SaveCompletedSession"]</button>
+        </form>
+    </section>
+
+    <section class="panel span-6">
+        <div class="panel-header"><h2>@T["FocusTimer.RecentSessions"]</h2></div>
+        <div class="stack">
+            @foreach (var session in sessions)
+            {
+                <div class="item-row">
+                    <div>
+                        <div class="item-title">@T["Common.Minutes", session.DurationMinutes]</div>
+                        <div class="item-meta">@session.CompletedAt.FormatVietnamDateTime()</div>
+                        <div>@session.Note</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

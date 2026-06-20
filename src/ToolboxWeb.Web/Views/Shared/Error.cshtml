@@ -1,0 +1,23 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = T["Error.Title"];
+}
+
+<h1 class="text-danger">@T["Error.Headline"]</h1>
+<h2 class="text-danger">@T["Error.Subheadline"]</h2>
+
+@if (Model.ShowRequestId)
+{
+    <p>
+        <strong>@T["Error.RequestId"]</strong> <code>@Model.RequestId</code>
+    </p>
+}
+
+<h3>@T["Error.DevelopmentMode"]</h3>
+<p>
+    @T["Error.DevelopmentModeDescription"]
+</p>
+<p>
+    <strong>@T["Error.DevelopmentModeWarning"]</strong>
+    @T["Error.DevelopmentModeInstructions"]
+</p>

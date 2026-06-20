@@ -1,0 +1,53 @@
+@model PromptTemplatesIndexViewModel
+@{
+    ViewData["Title"] = T["PromptTemplates.Title"];
+    var categories = Enum.GetValues<PromptCategory>()
+        .Select(category => new SelectListItem(T[$"PromptCategory.{category}"].Value, category.ToString(), category == Model.Form.Category))
+        .ToList();
+}
+
+<div class="tool-grid">
+    <section class="panel span-4">
+        <div class="panel-header"><h2>@T["PromptTemplates.CreatePrompt"]</h2></div>
+        <form asp-action="Create" method="post" class="form-grid">
+            <input asp-for="Form.Name" name="Name" class="form-control" placeholder="@T["PromptTemplates.NamePlaceholder"]" />
+            <select asp-for="Form.Category" name="Category" asp-items="categories" class="form-select"></select>
+            <input asp-for="Form.Description" name="Description" class="form-control" placeholder="@T["PromptTemplates.DescriptionPlaceholder"]" />
+            <textarea asp-for="Form.Content" name="Content" class="form-control" rows="8" placeholder="@T["PromptTemplates.ContentPlaceholder"]"></textarea>
+            <button class="btn btn-primary" type="submit">@T["Action.Create"]</button>
+        </form>
+    </section>
+
+    <section class="panel span-8">
+        <div class="panel-header"><h2>@T["PromptTemplates.Templates"]</h2></div>
+        <div class="stack">
+            @for (var index = 0; index < Model.Templates.Count; index++)
+            {
+                var template = Model.Templates[index];
+                var contentId = $"prompt-{template.Id}";
+                <div class="item-row">
+                    <div>
+                        <div class="item-title">@template.Name</div>
+                        <div class="item-meta">@template.Category.Localize(T) &middot; @T["PromptTemplates.UsedCount", template.UseCount]</div>
+                        <div class="prompt-content" id="@contentId">@template.Content</div>
+                    </div>
+                    <div class="inline-actions">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-copy-target="#@contentId" data-default-text="@T["Action.Copy"]" data-copied-text="@T["Action.Copied"]">@T["Action.Copy"]</button>
+                        <form asp-action="MarkUsed" method="post">
+                            <input type="hidden" name="id" value="@template.Id" />
+                            <button class="btn btn-sm btn-outline-secondary" type="submit">@T["Action.MarkUsed"]</button>
+                        </form>
+                        <form asp-action="Delete" method="post">
+                            <input type="hidden" name="id" value="@template.Id" />
+                            <button class="btn btn-sm btn-outline-danger" type="submit">@T["Action.Delete"]</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

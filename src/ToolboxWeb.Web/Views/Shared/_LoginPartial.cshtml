@@ -1,0 +1,21 @@
+@using Microsoft.AspNetCore.Identity
+@using ToolboxWeb.Web.Domain
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <div class="account-menu">
+        <a asp-area="Identity" asp-page="/Account/Manage/Index">@User.Identity?.Name</a>
+        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            <button type="submit">@T["Auth.Logout"]</button>
+        </form>
+    </div>
+}
+else
+{
+    <div class="account-menu">
+        <a asp-area="Identity" asp-page="/Account/Register">@T["Auth.Register"]</a>
+        <a asp-area="Identity" asp-page="/Account/Login">@T["Auth.Login"]</a>
+    </div>
+}

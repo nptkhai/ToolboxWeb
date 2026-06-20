@@ -1,0 +1,137 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = T["Dashboard.Title"];
+}
+
+<div class="tool-grid">
+    <section class="panel span-8">
+        <div class="panel-header">
+            <h2>@T["Dashboard.RecentNotes"]</h2>
+            <a asp-controller="Notes" asp-action="Index">@T["Dashboard.OpenNotes"]</a>
+        </div>
+        <div class="stack">
+            @foreach (var note in Model.RecentNotes)
+            {
+                <div class="item-row">
+                    <div>
+                        <div class="item-title">@note.Title</div>
+                        <div class="item-meta">@note.Tags</div>
+                    </div>
+                    @if (note.IsPinned)
+                    {
+                        <span class="chip">@T["Common.Pinned"]</span>
+                    }
+                </div>
+            }
+            @if (!Model.RecentNotes.Any())
+            {
+                <div class="muted">@T["Dashboard.NoNotesYet"]</div>
+            }
+        </div>
+    </section>
+
+    <section class="panel span-4">
+        <div class="panel-header">
+            <h2>@T["Dashboard.TodayChecklist"]</h2>
+            <a asp-controller="Checklist" asp-action="Index">@T["Action.Open"]</a>
+        </div>
+        <div class="stack">
+            @foreach (var item in Model.TodayChecklist)
+            {
+                <div class="item-row @(item.Status == ChecklistStatus.Done ? "done" : "")">
+                    <div>
+                        <div class="item-title">@item.Title</div>
+                        <div class="item-meta">@(item.DueDate?.FormatLocalDate() ?? T["Common.NoDueDate"].Value)</div>
+                    </div>
+                </div>
+            }
+            @if (!Model.TodayChecklist.Any())
+            {
+                <div class="muted">@T["Dashboard.NoOpenTasks"]</div>
+            }
+        </div>
+    </section>
+
+    <section class="panel span-4">
+        <div class="panel-header">
+            <h2>@T["Dashboard.QuickLinks"]</h2>
+            <a asp-controller="QuickLinks" asp-action="Index">@T["Action.Manage"]</a>
+        </div>
+        <div class="stack">
+            @foreach (var link in Model.QuickLinks)
+            {
+                <a class="item-row" href="@link.Url" target="_blank" rel="noopener">
+                    <span>
+                        <span class="item-title">@link.Title</span>
+                        <span class="item-meta d-block">@link.GroupName</span>
+                    </span>
+                </a>
+            }
+            @if (!Model.QuickLinks.Any())
+            {
+                <div class="muted">@T["Dashboard.AddLinksYouOpenOften"]</div>
+            }
+        </div>
+    </section>
+
+    <section class="panel span-4">
+        <div class="panel-header">
+            <h2>@T["PromptTemplates.Title"]</h2>
+            <a asp-controller="PromptTemplates" asp-action="Index">@T["Action.Open"]</a>
+        </div>
+        <div class="stack">
+            @foreach (var prompt in Model.PromptTemplates)
+            {
+                <div class="item-row">
+                    <div>
+                        <div class="item-title">@prompt.Name</div>
+                        <div class="item-meta">@prompt.Category.Localize(T)</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="panel span-4">
+        <div class="panel-header">
+            <h2>@T["Dashboard.FocusSessions"]</h2>
+            <a asp-controller="FocusTimer" asp-action="Index">@T["Action.StartTimer"]</a>
+        </div>
+        <div class="stack">
+            @foreach (var session in Model.RecentFocusSessions)
+            {
+                <div class="item-row">
+                    <div>
+                        <div class="item-title">@T["Common.Minutes", session.DurationMinutes]</div>
+                        <div class="item-meta">@session.CompletedAt.FormatVietnamDateTime()</div>
+                    </div>
+                </div>
+            }
+            @if (!Model.RecentFocusSessions.Any())
+            {
+                <div class="muted">@T["Dashboard.NoCompletedFocusSession"]</div>
+            }
+        </div>
+    </section>
+
+    <section class="panel span-12">
+        <div class="panel-header">
+            <h2>@T["Dashboard.ActivityHistory"]</h2>
+        </div>
+        <div class="stack">
+            @foreach (var activity in Model.RecentActivity)
+            {
+                <div class="item-row">
+                    <div>
+                        <div class="item-title">@activity.Summary</div>
+                        <div class="item-meta">@activity.ActionType.Localize(T) &middot; @activity.EntityType.Localize(T) &middot; @activity.CreatedAt.FormatVietnamDateTime()</div>
+                    </div>
+                </div>
+            }
+            @if (!Model.RecentActivity.Any())
+            {
+                <div class="muted">@T["Dashboard.ActivityWillAppear"]</div>
+            }
+        </div>
+    </section>
+</div>

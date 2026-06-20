@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.Name">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - @T["App.Name"]</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+    <script>
+        (function () {
+            const theme = localStorage.getItem('toolbox.theme') || 'light';
+            document.documentElement.dataset.theme = theme;
+        })();
+    </script>
+</head>
+<body>
+    @{
+        var currentCulture = CultureInfo.CurrentUICulture.Name;
+        var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    }
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <a class="brand" asp-controller="Dashboard" asp-action="Index">@T["App.Name"]</a>
+            <nav class="side-nav">
+                <a asp-controller="Dashboard" asp-action="Index">@T["Nav.Dashboard"]</a>
+                <a asp-controller="Notes" asp-action="Index">@T["Nav.Notes"]</a>
+                <a asp-controller="Checklist" asp-action="Index">@T["Nav.Checklist"]</a>
+                <a asp-controller="FocusTimer" asp-action="Index">@T["Nav.FocusTimer"]</a>
+                <a asp-controller="QuickLinks" asp-action="Index">@T["Nav.QuickLinks"]</a>
+                <a asp-controller="PromptTemplates" asp-action="Index">@T["Nav.PromptTemplates"]</a>
+                <a asp-controller="DemoKendo" asp-action="Index">@T["Nav.KendoDemo"]</a>
+            </nav>
+        </aside>
+        <div class="app-main">
+            <header class="topbar">
+                <button class="icon-button" type="button" data-sidebar-toggle aria-label="@T["Action.ToggleSidebar"]">&#9776;</button>
+                <div>
+                    <div class="page-kicker">@T["App.Tagline"]</div>
+                    <h1>@(ViewData["Title"] ?? T["Dashboard.Title"].Value)</h1>
+                </div>
+                <div class="topbar-actions">
+                    <button class="icon-button" type="button" data-theme-toggle aria-label="@T["Action.ToggleTheme"]">&#9681;</button>
+                    <form asp-controller="Culture" asp-action="Set" method="post" class="language-switcher">
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        <button class="language-button @(currentCulture == "vi-VN" ? "active" : null)" type="submit" name="culture" value="vi-VN">@T["Language.VietnameseShort"]</button>
+                        <button class="language-button @(currentCulture == "en-US" ? "active" : null)" type="submit" name="culture" value="en-US">@T["Language.EnglishShort"]</button>
+                    </form>
+                    <partial name="_LoginPartial" />
+                </div>
+            </header>
+            <main class="content-area" role="main">
+                @if (TempData["SuccessMessage"] is string successMessage)
+                {
+                    <div class="alert alert-success">@successMessage</div>
+                }
+                @if (TempData["ErrorMessage"] is string errorMessage)
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

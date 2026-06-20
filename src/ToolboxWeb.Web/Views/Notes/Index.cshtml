@@ -1,0 +1,58 @@
+@model NotesIndexViewModel
+@{
+    ViewData["Title"] = T["Notes.Title"];
+}
+
+<div class="tool-grid">
+    <section class="panel span-4">
+        <div class="panel-header"><h2>@T["Notes.CreateNote"]</h2></div>
+        <form asp-action="Create" method="post" class="form-grid">
+            <input asp-for="Form.Title" name="Title" class="form-control" placeholder="@T["Notes.NoteTitlePlaceholder"]" />
+            <span asp-validation-for="Form.Title" class="text-danger"></span>
+            <textarea asp-for="Form.Content" name="Content" class="form-control" rows="7" placeholder="@T["Notes.NoteContentPlaceholder"]"></textarea>
+            <span asp-validation-for="Form.Content" class="text-danger"></span>
+            <input asp-for="Form.Tags" name="Tags" class="form-control" placeholder="@T["Notes.NoteTagsPlaceholder"]" />
+            <label class="form-check">
+                <input asp-for="Form.IsPinned" name="IsPinned" class="form-check-input" />
+                <span class="form-check-label">@T["Common.Pinned"]</span>
+            </label>
+            <button class="btn btn-primary" type="submit">@T["Action.Create"]</button>
+        </form>
+    </section>
+
+    <section class="panel span-8">
+        <div class="panel-header">
+            <h2>@T["Notes.AllNotes"]</h2>
+            <form asp-action="Index" method="get" class="inline-actions">
+                <input name="search" value="@Model.Search" class="form-control" placeholder="@T["Notes.SearchNotesPlaceholder"]" />
+                <button class="btn btn-outline-secondary" type="submit">@T["Action.Search"]</button>
+            </form>
+        </div>
+        <div class="stack">
+            @foreach (var note in Model.Notes)
+            {
+                <div class="item-row">
+                    <div>
+                        <div class="item-title">@note.Title</div>
+                        <div class="item-meta">
+                            @if (!string.IsNullOrWhiteSpace(note.Tags))
+                            {
+                                @note.Tags <text>&middot; </text>
+                            }
+                            @((note.UpdatedAt ?? note.CreatedAt).FormatVietnamDateTime())
+                        </div>
+                        <div class="item-content">@note.Content</div>
+                    </div>
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" name="id" value="@note.Id" />
+                        <button class="btn btn-sm btn-outline-danger" type="submit">@T["Action.Delete"]</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

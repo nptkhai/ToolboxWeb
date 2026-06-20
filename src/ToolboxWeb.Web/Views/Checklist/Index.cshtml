@@ -1,0 +1,47 @@
+@model ChecklistIndexViewModel
+@{
+    ViewData["Title"] = T["Checklist.Title"];
+}
+
+<div class="tool-grid">
+    <section class="panel span-4">
+        <div class="panel-header"><h2>@T["Checklist.CreateTask"]</h2></div>
+        <form asp-action="Create" method="post" class="form-grid">
+            <input asp-for="Form.Title" name="Title" class="form-control" placeholder="@T["Checklist.TaskTitlePlaceholder"]" />
+            <span asp-validation-for="Form.Title" class="text-danger"></span>
+            <textarea asp-for="Form.Description" name="Description" class="form-control" rows="4" placeholder="@T["Checklist.TaskDescriptionPlaceholder"]"></textarea>
+            <input asp-for="Form.DueDate" name="DueDate" class="form-control" />
+            <button class="btn btn-primary" type="submit">@T["Action.Create"]</button>
+        </form>
+    </section>
+
+    <section class="panel span-8">
+        <div class="panel-header"><h2>@T["Checklist.Tasks"]</h2></div>
+        <div class="stack">
+            @foreach (var item in Model.Items)
+            {
+                <div class="item-row @(item.Status == ChecklistStatus.Done ? "done" : "")">
+                    <div>
+                        <div class="item-title">@item.Title</div>
+                        <div class="item-meta">@item.Status.Localize(T) &middot; @(item.DueDate?.FormatLocalDate() ?? T["Common.NoDueDate"].Value)</div>
+                        <div>@item.Description</div>
+                    </div>
+                    <div class="inline-actions">
+                        <form asp-action="Toggle" method="post">
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button class="btn btn-sm btn-outline-secondary" type="submit">@T["Action.Toggle"]</button>
+                        </form>
+                        <form asp-action="Delete" method="post">
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button class="btn btn-sm btn-outline-danger" type="submit">@T["Action.Delete"]</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
