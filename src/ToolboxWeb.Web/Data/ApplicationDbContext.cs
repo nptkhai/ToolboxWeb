@@ -17,6 +17,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<QuickLink> QuickLinks => Set<QuickLink>();
     public DbSet<PromptTemplate> PromptTemplates => Set<PromptTemplate>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+    public DbSet<TabulatorTask> TabulatorTasks => Set<TabulatorTask>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -64,6 +65,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(x => x.EntityId).HasMaxLength(80);
             entity.Property(x => x.Summary).HasMaxLength(300).IsRequired();
             entity.HasIndex(x => new { x.UserId, x.CreatedAt });
+        });
+
+        builder.Entity<TabulatorTask>(entity =>
+        {
+            entity.Property(x => x.Title).HasMaxLength(180).IsRequired();
+            entity.Property(x => x.Note).HasMaxLength(1000);
+            entity.Property(x => x.Budget).HasColumnType("decimal(18,2)");
+            entity.HasIndex(x => new { x.UserId, x.Status, x.DueDate });
         });
     }
 }

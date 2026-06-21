@@ -25,4 +25,19 @@ public static class EnumLocalizationExtensions
     {
         return localizer[$"PromptCategory.{value}"].Value;
     }
+
+    public static string Localize(this TabulatorTaskCategory value, IStringLocalizer localizer)
+    {
+        return localizer[$"TabulatorTaskCategory.{value}"].Value;
+    }
+
+    public static string Localize(this TabulatorTaskPriority value, IStringLocalizer localizer)
+    {
+        return localizer[$"TabulatorTaskPriority.{value}"].Value;
+    }
+
+    public static string Localize(this TabulatorTaskStatus value, IStringLocalizer localizer)
+    {
+        return localizer[$"TabulatorTaskStatus.{value}"].Value;
+    }
 }

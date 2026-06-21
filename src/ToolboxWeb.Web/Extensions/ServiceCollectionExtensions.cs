@@ -16,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPromptTemplateService, PromptTemplateService>();
         services.AddScoped<IFocusSessionService, FocusSessionService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<ITabulatorTaskService, TabulatorTaskService>();
         services.AddScoped<IExcelReportService, AsposeExcelReportService>();
         return services;
     }

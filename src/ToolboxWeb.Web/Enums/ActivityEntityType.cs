@@ -6,5 +6,6 @@ public enum ActivityEntityType
     ChecklistItem = 2,
     FocusSession = 3,
     QuickLink = 4,
-    PromptTemplate = 5
+    PromptTemplate = 5,
+    TabulatorTask = 6
 }

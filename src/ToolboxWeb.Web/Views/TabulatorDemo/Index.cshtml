@@ -1,0 +1,662 @@
+@using System.Text.Json
+@{
+    ViewData["Title"] = T["Nav.TabulatorDemo"];
+
+    var categoryOptions = new[]
+    {
+        new { value = "Ui", label = T["TabulatorTaskCategory.Ui"].Value },
+        new { value = "Localization", label = T["TabulatorTaskCategory.Localization"].Value },
+        new { value = "Culture", label = T["TabulatorTaskCategory.Culture"].Value },
+        new { value = "Testing", label = T["TabulatorTaskCategory.Testing"].Value },
+        new { value = "Operations", label = T["TabulatorTaskCategory.Operations"].Value }
+    };
+
+    var statusOptions = new[]
+    {
+        new { value = "Todo", label = T["TabulatorTaskStatus.Todo"].Value },
+        new { value = "InProgress", label = T["TabulatorTaskStatus.InProgress"].Value },
+        new { value = "Review", label = T["TabulatorTaskStatus.Review"].Value },
+        new { value = "Done", label = T["TabulatorTaskStatus.Done"].Value }
+    };
+
+    var priorityOptions = new[]
+    {
+        new { value = "Low", label = T["TabulatorTaskPriority.Low"].Value },
+        new { value = "Medium", label = T["TabulatorTaskPriority.Medium"].Value },
+        new { value = "High", label = T["TabulatorTaskPriority.High"].Value }
+    };
+
+    var uiText = new
+    {
+        LoginPath = Url.Page("/Account/Login", new { area = "Identity" }),
+        ReturnUrl = Url.Action("Index", "TabulatorDemo"),
+        DataUrl = Url.Action("Data", "TabulatorDemo"),
+        SaveUrl = Url.Action("Save", "TabulatorDemo"),
+        CultureName = System.Globalization.CultureInfo.CurrentUICulture.Name,
+        DirtyState = T["TabulatorDemo.DirtyState"].Value,
+        CleanState = T["TabulatorDemo.CleanState"].Value,
+        Ready = T["TabulatorDemo.Ready"].Value,
+        PendingChangesNotice = T["TabulatorDemo.PendingChangesNotice"].Value,
+        Reloaded = T["TabulatorDemo.Reloaded"].Value,
+        RowAdded = T["TabulatorDemo.RowAdded"].Value,
+        RowsDeleted = T["TabulatorDemo.RowsDeleted"].Value,
+        NoSelection = T["TabulatorDemo.NoSelection"].Value,
+        NoChanges = T["TabulatorDemo.NoChanges"].Value,
+        Saving = T["TabulatorDemo.Saving"].Value,
+        SaveSuccess = T["TabulatorDemo.SaveSuccess"].Value,
+        GenericError = T["TabulatorDemo.GenericError"].Value,
+        EmptyState = T["TabulatorDemo.EmptyState"].Value,
+        Columns = new
+        {
+            Title = T["TabulatorDemo.Columns.Title"].Value,
+            Category = T["TabulatorDemo.Columns.Category"].Value,
+            Status = T["TabulatorDemo.Columns.Status"].Value,
+            Priority = T["TabulatorDemo.Columns.Priority"].Value,
+            Progress = T["TabulatorDemo.Columns.Progress"].Value,
+            Budget = T["TabulatorDemo.Columns.Budget"].Value,
+            DueDate = T["TabulatorDemo.Columns.DueDate"].Value,
+            Note = T["TabulatorDemo.Columns.Note"].Value,
+            UpdatedAt = T["TabulatorDemo.Columns.UpdatedAt"].Value
+        }
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/tabulator/css/tabulator.min.css" asp-append-version="true" />
+    <style>
+        .tabulator-page {
+            display: grid;
+            gap: 18px;
+        }
+
+        .tabulator-hero {
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, .12), transparent 28%),
+                radial-gradient(circle at top right, rgba(15, 118, 110, .10), transparent 24%),
+                var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 22px 24px;
+        }
+
+        .tabulator-hero h2 {
+            font-size: 1.6rem;
+            margin: 0 0 8px;
+        }
+
+        .tabulator-hero p {
+            color: var(--muted);
+            margin: 0;
+            max-width: 860px;
+        }
+
+        .tabulator-shell {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .tabulator-toolbar {
+            align-items: center;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            padding: 14px 16px;
+        }
+
+        .tabulator-toolbar .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tabulator-toolbar button {
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--text);
+            font-weight: 700;
+            padding: 8px 14px;
+        }
+
+        .tabulator-toolbar button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .tabulator-toolbar button.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .tabulator-state {
+            align-items: center;
+            display: inline-flex;
+            gap: 8px;
+        }
+
+        .tabulator-chip {
+            background: var(--surface-2);
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: .82rem;
+            font-weight: 700;
+            padding: 5px 10px;
+        }
+
+        .tabulator-chip.dirty {
+            background: color-mix(in srgb, var(--accent) 14%, transparent);
+            color: var(--accent);
+        }
+
+        .tabulator-shell .tabulator {
+            border: 0;
+            font-size: .94rem;
+        }
+
+        .tabulator-shell .tabulator .tabulator-header {
+            border-bottom: 1px solid var(--line);
+        }
+
+        .tabulator-shell .tabulator-cell,
+        .tabulator-shell .tabulator-col {
+            border-color: var(--line);
+        }
+
+        .tabulator-shell .tabulator-row.tabulator-selected {
+            background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+        }
+
+        .tabulator-feedback {
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            min-height: 48px;
+            padding: 12px 16px;
+        }
+
+        .tabulator-feedback.success {
+            color: #15803d;
+        }
+
+        .tabulator-feedback.error {
+            color: var(--danger);
+        }
+
+        @@media (max-width: 900px) {
+            .tabulator-toolbar {
+                align-items: stretch;
+            }
+
+            .tabulator-toolbar,
+            .tabulator-toolbar .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+}
+
+<div class="tabulator-page">
+    <section class="tabulator-hero">
+        <h2>@T["TabulatorDemo.Title"]</h2>
+        <p>@T["TabulatorDemo.Description"]</p>
+    </section>
+
+    <section class="tabulator-shell">
+        @Html.AntiForgeryToken()
+        <div class="tabulator-toolbar">
+            <div class="actions">
+                <button id="tabulator-add" type="button">@T["TabulatorDemo.AddRow"]</button>
+                <button id="tabulator-delete" class="danger" type="button">@T["TabulatorDemo.DeleteSelected"]</button>
+                <button id="tabulator-save" class="primary" type="button">@T["TabulatorDemo.SaveChanges"]</button>
+                <button id="tabulator-reload" type="button">@T["TabulatorDemo.Reload"]</button>
+            </div>
+            <div class="tabulator-state">
+                <span id="tabulator-dirty-chip" class="tabulator-chip">@T["TabulatorDemo.CleanState"]</span>
+                <span id="tabulator-row-count" class="tabulator-chip">0</span>
+            </div>
+        </div>
+
+        <div id="tabulator-grid"></div>
+        <div id="tabulator-feedback" class="tabulator-feedback">@T["TabulatorDemo.Ready"]</div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            const categoryOptions = @Html.Raw(JsonSerializer.Serialize(categoryOptions));
+            const statusOptions = @Html.Raw(JsonSerializer.Serialize(statusOptions));
+            const priorityOptions = @Html.Raw(JsonSerializer.Serialize(priorityOptions));
+            const text = @Html.Raw(JsonSerializer.Serialize(uiText));
+            const antiForgeryToken = document.querySelector("input[name='__RequestVerificationToken']")?.value || "";
+            const loginUrl = text.LoginPath + "?ReturnUrl=" + encodeURIComponent(text.ReturnUrl);
+            const dataUrl = text.DataUrl;
+            const saveUrl = text.SaveUrl;
+
+            const feedbackEl = document.getElementById("tabulator-feedback");
+            const dirtyChipEl = document.getElementById("tabulator-dirty-chip");
+            const rowCountEl = document.getElementById("tabulator-row-count");
+            const dirtyText = text.DirtyState;
+            const cleanText = text.CleanState;
+
+            const pending = {
+                created: new Map(),
+                updated: new Map(),
+                deletedIds: new Set()
+            };
+
+            let table = null;
+            let tempRowCounter = 0;
+
+            function setFeedback(message, type) {
+                feedbackEl.textContent = message;
+                feedbackEl.classList.remove("success", "error");
+                if (type) {
+                    feedbackEl.classList.add(type);
+                }
+            }
+
+            function updateRowCount() {
+                if (!table) {
+                    rowCountEl.textContent = "0";
+                    return;
+                }
+
+                rowCountEl.textContent = String(table.getDataCount("active"));
+            }
+
+            function hasPendingChanges() {
+                return pending.created.size > 0 || pending.updated.size > 0 || pending.deletedIds.size > 0;
+            }
+
+            function updateDirtyState() {
+                const dirty = hasPendingChanges();
+                dirtyChipEl.textContent = dirty ? dirtyText : cleanText;
+                dirtyChipEl.classList.toggle("dirty", dirty);
+                updateRowCount();
+            }
+
+            function toLookup(options) {
+                return options.reduce(function (acc, item) {
+                    acc[item.value] = item.label;
+                    return acc;
+                }, {});
+            }
+
+            const categoryLookup = toLookup(categoryOptions);
+            const statusLookup = toLookup(statusOptions);
+            const priorityLookup = toLookup(priorityOptions);
+
+            function createEmptyRow() {
+                tempRowCounter += 1;
+                return {
+                    id: null,
+                    rowKey: "tmp-" + tempRowCounter,
+                    title: "",
+                    category: "Ui",
+                    categoryLabel: categoryLookup.Ui,
+                    status: "Todo",
+                    statusLabel: statusLookup.Todo,
+                    priority: "Medium",
+                    priorityLabel: priorityLookup.Medium,
+                    progress: 0,
+                    budget: 0,
+                    dueDate: "",
+                    note: "",
+                    updatedAt: ""
+                };
+            }
+
+            function normalizeNumber(value, fallbackValue) {
+                const parsed = Number(value);
+                return Number.isFinite(parsed) ? parsed : fallbackValue;
+            }
+
+            function snapshotRow(data) {
+                return {
+                    id: data.id,
+                    title: (data.title || "").trim(),
+                    category: data.category || "Ui",
+                    status: data.status || "Todo",
+                    priority: data.priority || "Medium",
+                    progress: normalizeNumber(data.progress, 0),
+                    budget: normalizeNumber(data.budget, 0),
+                    dueDate: data.dueDate || null,
+                    note: (data.note || "").trim()
+                };
+            }
+
+            function syncDerivedLabels(row) {
+                row.categoryLabel = categoryLookup[row.category] || row.category;
+                row.statusLabel = statusLookup[row.status] || row.status;
+                row.priorityLabel = priorityLookup[row.priority] || row.priority;
+                return row;
+            }
+
+            function markRowDirty(rowData) {
+                const snapshot = snapshotRow(syncDerivedLabels(rowData));
+                if (snapshot.id == null) {
+                    pending.created.set(rowData.rowKey, snapshot);
+                } else {
+                    pending.updated.set(rowData.rowKey, snapshot);
+                }
+
+                updateDirtyState();
+            }
+
+            function clearPending() {
+                pending.created.clear();
+                pending.updated.clear();
+                pending.deletedIds.clear();
+                updateDirtyState();
+            }
+
+            function flushActiveEditor() {
+                if (document.activeElement && typeof document.activeElement.blur === "function") {
+                    document.activeElement.blur();
+                }
+            }
+
+            function waitForUiCommit() {
+                return new Promise(function (resolve) {
+                    window.setTimeout(resolve, 0);
+                });
+            }
+
+            function refreshPendingSnapshots() {
+                pending.created.forEach(function (_, rowKey) {
+                    const row = table.getRow(rowKey);
+                    if (!row) {
+                        return;
+                    }
+
+                    pending.created.set(rowKey, snapshotRow(syncDerivedLabels(row.getData())));
+                });
+
+                pending.updated.forEach(function (_, rowKey) {
+                    const row = table.getRow(rowKey);
+                    if (!row) {
+                        return;
+                    }
+
+                    pending.updated.set(rowKey, snapshotRow(syncDerivedLabels(row.getData())));
+                });
+            }
+
+            function collectEditedRows() {
+                if (!table || typeof table.getEditedCells !== "function") {
+                    return;
+                }
+
+                const touchedRows = new Set();
+
+                table.getEditedCells().forEach(function (cell) {
+                    const rowData = cell.getRow().getData();
+                    if (!rowData || touchedRows.has(rowData.rowKey)) {
+                        return;
+                    }
+
+                    touchedRows.add(rowData.rowKey);
+
+                    const snapshot = snapshotRow(syncDerivedLabels(rowData));
+                    if (snapshot.id == null) {
+                        pending.created.set(rowData.rowKey, snapshot);
+                        return;
+                    }
+
+                    if (!pending.deletedIds.has(snapshot.id)) {
+                        pending.updated.set(rowData.rowKey, snapshot);
+                    }
+                });
+            }
+
+            async function requestJson(url, options) {
+                const response = await fetch(url, options);
+
+                if (response.status === 401 || response.status === 403) {
+                    window.location.href = loginUrl;
+                    return null;
+                }
+
+                const contentType = response.headers.get("content-type") || "";
+                const payload = contentType.includes("application/json")
+                    ? await response.json()
+                    : await response.text();
+
+                if (!response.ok) {
+                    const message = typeof payload === "string"
+                        ? payload
+                        : (payload.message || text.GenericError);
+                    const errors = typeof payload === "object" && payload.errors
+                        ? payload.errors.join(" ")
+                        : "";
+
+                    throw new Error((message + " " + errors).trim());
+                }
+
+                return payload;
+            }
+
+            async function loadGridData(showMessage) {
+                const payload = await requestJson(dataUrl, {
+                    credentials: "same-origin",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                });
+
+                if (!payload) {
+                    return;
+                }
+
+                table.setData(payload);
+                clearPending();
+                if (showMessage) {
+                    setFeedback(text.Ready);
+                }
+            }
+
+            table = new Tabulator("#tabulator-grid", {
+                index: "rowKey",
+                layout: "fitColumns",
+                height: "580px",
+                selectableRows: true,
+                placeholder: text.EmptyState,
+                columnDefaults: {
+                    headerSort: true,
+                    vertAlign: "middle"
+                },
+                columns: [
+                    {
+                        formatter: "rowSelection",
+                        titleFormatter: "rowSelection",
+                        hozAlign: "center",
+                        headerSort: false,
+                        width: 52
+                    },
+                    {
+                        title: text.Columns.Title,
+                        field: "title",
+                        editor: "input",
+                        minWidth: 220
+                    },
+                    {
+                        title: text.Columns.Category,
+                        field: "category",
+                        editor: "list",
+                        editorParams: {
+                            values: categoryLookup
+                        },
+                        formatter: function (cell) {
+                            return categoryLookup[cell.getValue()] || "";
+                        },
+                        minWidth: 140
+                    },
+                    {
+                        title: text.Columns.Status,
+                        field: "status",
+                        editor: "list",
+                        editorParams: {
+                            values: statusLookup
+                        },
+                        formatter: function (cell) {
+                            return statusLookup[cell.getValue()] || "";
+                        },
+                        minWidth: 140
+                    },
+                    {
+                        title: text.Columns.Priority,
+                        field: "priority",
+                        editor: "list",
+                        editorParams: {
+                            values: priorityLookup
+                        },
+                        formatter: function (cell) {
+                            return priorityLookup[cell.getValue()] || "";
+                        },
+                        minWidth: 140
+                    },
+                    {
+                        title: text.Columns.Progress,
+                        field: "progress",
+                        editor: "number",
+                        sorter: "number",
+                        hozAlign: "center",
+                        minWidth: 120
+                    },
+                    {
+                        title: text.Columns.Budget,
+                        field: "budget",
+                        editor: "number",
+                        sorter: "number",
+                        hozAlign: "right",
+                        formatter: function (cell) {
+                            return new Intl.NumberFormat(text.CultureName).format(normalizeNumber(cell.getValue(), 0));
+                        },
+                        minWidth: 140
+                    },
+                    {
+                        title: text.Columns.DueDate,
+                        field: "dueDate",
+                        editor: "date",
+                        minWidth: 135
+                    },
+                    {
+                        title: text.Columns.Note,
+                        field: "note",
+                        editor: "textarea",
+                        minWidth: 220
+                    },
+                    {
+                        title: text.Columns.UpdatedAt,
+                        field: "updatedAt",
+                        headerSort: false,
+                        minWidth: 140
+                    }
+                ],
+                cellEdited: function (cell) {
+                    const rowData = cell.getRow().getData();
+                    syncDerivedLabels(rowData);
+                    markRowDirty(rowData);
+                    setFeedback(text.PendingChangesNotice);
+                    updateRowCount();
+                },
+                dataLoaded: function () {
+                    updateRowCount();
+                }
+            });
+
+            document.getElementById("tabulator-add").addEventListener("click", function () {
+                const newRow = createEmptyRow();
+                table.addRow(newRow, true);
+                pending.created.set(newRow.rowKey, snapshotRow(newRow));
+                updateDirtyState();
+                setFeedback(text.PendingChangesNotice);
+            });
+
+            document.getElementById("tabulator-delete").addEventListener("click", function () {
+                const selected = table.getSelectedRows();
+                if (!selected.length) {
+                    setFeedback(text.NoSelection, "error");
+                    return;
+                }
+
+                selected.forEach(function (row) {
+                    const data = row.getData();
+                    if (data.id == null) {
+                        pending.created.delete(data.rowKey);
+                    } else {
+                        pending.updated.delete(data.rowKey);
+                        pending.deletedIds.add(data.id);
+                    }
+
+                    row.delete();
+                });
+
+                updateDirtyState();
+                setFeedback(text.PendingChangesNotice);
+            });
+
+            document.getElementById("tabulator-reload").addEventListener("click", async function () {
+                try {
+                    await loadGridData(true);
+                } catch (error) {
+                    setFeedback(error.message || text.GenericError, "error");
+                }
+            });
+
+            document.getElementById("tabulator-save").addEventListener("click", async function () {
+                try {
+                    flushActiveEditor();
+                    await waitForUiCommit();
+                    collectEditedRows();
+                    refreshPendingSnapshots();
+                    updateDirtyState();
+
+                    if (!hasPendingChanges()) {
+                        setFeedback(text.NoChanges);
+                        return;
+                    }
+
+                    setFeedback(text.Saving);
+
+                    const payload = {
+                        created: Array.from(pending.created.values()),
+                        updated: Array.from(pending.updated.values()).filter(function (item) { return item.id != null; }),
+                        deletedIds: Array.from(pending.deletedIds.values())
+                    };
+
+                    const response = await requestJson(saveUrl, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "RequestVerificationToken": antiForgeryToken,
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response) {
+                        return;
+                    }
+
+                    table.setData(response.items || []);
+                    clearPending();
+                    setFeedback(response.message || text.SaveSuccess, "success");
+                } catch (error) {
+                    setFeedback(error.message || text.GenericError, "error");
+                }
+            });
+
+            loadGridData(false).catch(function (error) {
+                setFeedback(error.message || text.GenericError, "error");
+            });
+        })();
+    </script>
+}

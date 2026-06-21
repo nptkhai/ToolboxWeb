@@ -22,16 +22,24 @@
     }
     <div class="app-shell">
         <aside class="app-sidebar">
-            <a class="brand" asp-controller="Dashboard" asp-action="Index">@T["App.Name"]</a>
-            <nav class="side-nav">
-                <a asp-controller="Dashboard" asp-action="Index">@T["Nav.Dashboard"]</a>
-                <a asp-controller="Notes" asp-action="Index">@T["Nav.Notes"]</a>
-                <a asp-controller="Checklist" asp-action="Index">@T["Nav.Checklist"]</a>
-                <a asp-controller="FocusTimer" asp-action="Index">@T["Nav.FocusTimer"]</a>
-                <a asp-controller="QuickLinks" asp-action="Index">@T["Nav.QuickLinks"]</a>
-                <a asp-controller="PromptTemplates" asp-action="Index">@T["Nav.PromptTemplates"]</a>
-                <a asp-controller="DemoKendo" asp-action="Index">@T["Nav.KendoDemo"]</a>
-            </nav>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a class="brand" asp-controller="Dashboard" asp-action="Index">@T["App.Name"]</a>
+                <nav class="side-nav">
+                    <a asp-controller="Dashboard" asp-action="Index">@T["Nav.Dashboard"]</a>
+                    <a asp-controller="Notes" asp-action="Index">@T["Nav.Notes"]</a>
+                    <a asp-controller="Checklist" asp-action="Index">@T["Nav.Checklist"]</a>
+                    <a asp-controller="FocusTimer" asp-action="Index">@T["Nav.FocusTimer"]</a>
+                    <a asp-controller="QuickLinks" asp-action="Index">@T["Nav.QuickLinks"]</a>
+                    <a asp-controller="PromptTemplates" asp-action="Index">@T["Nav.PromptTemplates"]</a>
+                    <a asp-controller="DemoKendo" asp-action="Index">@T["Nav.KendoDemo"]</a>
+                    <a asp-controller="TabulatorDemo" asp-action="Index">@T["Nav.TabulatorDemo"]</a>
+                </nav>
+            }
+            else
+            {
+                <a class="brand" asp-controller="Home" asp-action="Index">@T["App.Name"]</a>
+            }
         </aside>
         <div class="app-main">
             <header class="topbar">
