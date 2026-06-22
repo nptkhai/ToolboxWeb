@@ -9,6 +9,8 @@ public class PromptTemplate
     public string Name { get; set; } = string.Empty;
     public PromptCategory Category { get; set; } = PromptCategory.General;
     public string? Description { get; set; }
+    public string? InputVariables { get; set; }
+    public string? OutputFormat { get; set; }
     public string Content { get; set; } = string.Empty;
     public int UseCount { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

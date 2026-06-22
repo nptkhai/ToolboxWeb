@@ -160,6 +160,14 @@ a:hover { text-decoration: underline; }
   padding: 10px;
   white-space: pre-wrap;
 }
+.prompt-section-label {
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  margin: 10px 0 6px;
+  text-transform: uppercase;
+}
 
 @media (max-width: 900px) {
   .app-shell { display: block; }

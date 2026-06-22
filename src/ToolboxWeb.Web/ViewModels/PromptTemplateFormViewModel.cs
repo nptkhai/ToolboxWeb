@@ -15,6 +15,12 @@ public class PromptTemplateFormViewModel
     [StringLength(500)]
     public string? Description { get; set; }
 
+    [StringLength(1000)]
+    public string? InputVariables { get; set; }
+
+    [StringLength(1000)]
+    public string? OutputFormat { get; set; }
+
     [Required]
     public string Content { get; set; } = string.Empty;
 }

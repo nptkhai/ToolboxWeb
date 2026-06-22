@@ -56,6 +56,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.Property(x => x.Name).HasMaxLength(140).IsRequired();
             entity.Property(x => x.Description).HasMaxLength(500);
+            entity.Property(x => x.InputVariables).HasMaxLength(1000);
+            entity.Property(x => x.OutputFormat).HasMaxLength(1000);
             entity.Property(x => x.Content).IsRequired();
             entity.HasIndex(x => new { x.UserId, x.Category, x.UpdatedAt });
         });

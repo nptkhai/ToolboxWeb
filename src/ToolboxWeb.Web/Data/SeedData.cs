@@ -10,45 +10,50 @@ public static class SeedData
 {
     public static async Task EnsureUserDefaultsAsync(ApplicationDbContext db, string userId, IStringLocalizer<SharedResource> localizer)
     {
-        if (await db.PromptTemplates.AnyAsync(x => x.UserId == userId))
+        var existingCategories = await db.PromptTemplates
+            .Where(x => x.UserId == userId)
+            .Select(x => x.Category)
+            .ToListAsync();
+
+        var promptsToAdd = new List<PromptTemplate>();
+        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.FeatureRequest, "SeedPrompt.FeatureRequest");
+        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.BugReport, "SeedPrompt.BugReport");
+        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.Maintenance, "SeedPrompt.MaintenanceHandoff");
+        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.CodeReview, "SeedPrompt.CodeReview");
+        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.UiChange, "SeedPrompt.UiChange");
+        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.DatabaseChange, "SeedPrompt.DatabaseChange");
+
+        if (promptsToAdd.Count == 0)
         {
             return;
         }
 
-        db.PromptTemplates.AddRange(
-            new PromptTemplate
-            {
-                UserId = userId,
-                Name = localizer["SeedPrompt.FeatureRequest.Name"].Value,
-                Category = PromptCategory.FeatureRequest,
-                Description = localizer["SeedPrompt.FeatureRequest.Description"].Value,
-                Content = localizer["SeedPrompt.FeatureRequest.Content"].Value
-            },
-            new PromptTemplate
-            {
-                UserId = userId,
-                Name = localizer["SeedPrompt.BugReport.Name"].Value,
-                Category = PromptCategory.BugReport,
-                Description = localizer["SeedPrompt.BugReport.Description"].Value,
-                Content = localizer["SeedPrompt.BugReport.Content"].Value
-            },
-            new PromptTemplate
-            {
-                UserId = userId,
-                Name = localizer["SeedPrompt.MaintenanceHandoff.Name"].Value,
-                Category = PromptCategory.Maintenance,
-                Description = localizer["SeedPrompt.MaintenanceHandoff.Description"].Value,
-                Content = localizer["SeedPrompt.MaintenanceHandoff.Content"].Value
-            },
-            new PromptTemplate
-            {
-                UserId = userId,
-                Name = localizer["SeedPrompt.CodeReview.Name"].Value,
-                Category = PromptCategory.CodeReview,
-                Description = localizer["SeedPrompt.CodeReview.Description"].Value,
-                Content = localizer["SeedPrompt.CodeReview.Content"].Value
-            });
+        db.PromptTemplates.AddRange(promptsToAdd);
 
         await db.SaveChangesAsync();
+    }
+
+    private static void AddIfMissing(List<PromptTemplate> promptsToAdd, IReadOnlyCollection<PromptCategory> existingCategories, string userId, IStringLocalizer<SharedResource> localizer, PromptCategory category, string keyPrefix)
+    {
+        if (existingCategories.Contains(category))
+        {
+            return;
+        }
+
+        promptsToAdd.Add(CreatePrompt(userId, localizer, category, keyPrefix));
+    }
+
+    private static PromptTemplate CreatePrompt(string userId, IStringLocalizer<SharedResource> localizer, PromptCategory category, string keyPrefix)
+    {
+        return new PromptTemplate
+        {
+            UserId = userId,
+            Name = localizer[$"{keyPrefix}.Name"].Value,
+            Category = category,
+            Description = localizer[$"{keyPrefix}.Description"].Value,
+            InputVariables = localizer[$"{keyPrefix}.InputVariables"].Value,
+            OutputFormat = localizer[$"{keyPrefix}.OutputFormat"].Value,
+            Content = localizer[$"{keyPrefix}.Content"].Value
+        };
     }
 }

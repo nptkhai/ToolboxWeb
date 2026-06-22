@@ -4,17 +4,34 @@
     var categories = Enum.GetValues<PromptCategory>()
         .Select(category => new SelectListItem(T[$"PromptCategory.{category}"].Value, category.ToString(), category == Model.Form.Category))
         .ToList();
+    var formAction = Model.IsEditing ? "Update" : "Create";
+    var submitLabel = Model.IsEditing ? T["Action.Update"] : T["Action.Create"];
+    var formTitle = Model.IsEditing ? T["PromptTemplates.EditPrompt"] : T["PromptTemplates.CreatePrompt"];
 }
 
 <div class="tool-grid">
     <section class="panel span-4">
-        <div class="panel-header"><h2>@T["PromptTemplates.CreatePrompt"]</h2></div>
-        <form asp-action="Create" method="post" class="form-grid">
+        <div class="panel-header">
+            <h2>@formTitle</h2>
+            @if (Model.IsEditing)
+            {
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">@T["Action.Cancel"]</a>
+            }
+        </div>
+        <form asp-action="@formAction" method="post" class="form-grid">
+            <input asp-for="Form.Id" name="Id" type="hidden" />
             <input asp-for="Form.Name" name="Name" class="form-control" placeholder="@T["PromptTemplates.NamePlaceholder"]" />
+            <span asp-validation-for="Form.Name" class="text-danger"></span>
             <select asp-for="Form.Category" name="Category" asp-items="categories" class="form-select"></select>
             <input asp-for="Form.Description" name="Description" class="form-control" placeholder="@T["PromptTemplates.DescriptionPlaceholder"]" />
-            <textarea asp-for="Form.Content" name="Content" class="form-control" rows="8" placeholder="@T["PromptTemplates.ContentPlaceholder"]"></textarea>
-            <button class="btn btn-primary" type="submit">@T["Action.Create"]</button>
+            <span asp-validation-for="Form.Description" class="text-danger"></span>
+            <textarea asp-for="Form.InputVariables" name="InputVariables" class="form-control" rows="4" placeholder="@T["PromptTemplates.InputVariablesPlaceholder"]"></textarea>
+            <span asp-validation-for="Form.InputVariables" class="text-danger"></span>
+            <textarea asp-for="Form.OutputFormat" name="OutputFormat" class="form-control" rows="4" placeholder="@T["PromptTemplates.OutputFormatPlaceholder"]"></textarea>
+            <span asp-validation-for="Form.OutputFormat" class="text-danger"></span>
+            <textarea asp-for="Form.Content" name="Content" class="form-control" rows="10" placeholder="@T["PromptTemplates.ContentPlaceholder"]"></textarea>
+            <span asp-validation-for="Form.Content" class="text-danger"></span>
+            <button class="btn btn-primary" type="submit">@submitLabel</button>
         </form>
     </section>
 
@@ -29,10 +46,26 @@
                     <div>
                         <div class="item-title">@template.Name</div>
                         <div class="item-meta">@template.Category.Localize(T) &middot; @T["PromptTemplates.UsedCount", template.UseCount]</div>
+                        @if (!string.IsNullOrWhiteSpace(template.Description))
+                        {
+                            <div class="item-content muted">@template.Description</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(template.InputVariables))
+                        {
+                            <div class="prompt-section-label">@T["PromptTemplates.InputVariablesLabel"]</div>
+                            <div class="prompt-content">@template.InputVariables</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(template.OutputFormat))
+                        {
+                            <div class="prompt-section-label">@T["PromptTemplates.OutputFormatLabel"]</div>
+                            <div class="prompt-content">@template.OutputFormat</div>
+                        }
+                        <div class="prompt-section-label">@T["PromptTemplates.ContentLabel"]</div>
                         <div class="prompt-content" id="@contentId">@template.Content</div>
                     </div>
                     <div class="inline-actions">
                         <button class="btn btn-sm btn-outline-secondary" type="button" data-copy-target="#@contentId" data-default-text="@T["Action.Copy"]" data-copied-text="@T["Action.Copied"]">@T["Action.Copy"]</button>
+                        <a asp-action="Index" asp-route-editId="@template.Id" class="btn btn-sm btn-outline-secondary">@T["Action.Edit"]</a>
                         <form asp-action="MarkUsed" method="post">
                             <input type="hidden" name="id" value="@template.Id" />
                             <button class="btn btn-sm btn-outline-secondary" type="submit">@T["Action.MarkUsed"]</button>

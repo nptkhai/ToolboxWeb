@@ -154,12 +154,27 @@
         }
 
         .tabulator-shell .tabulator {
+            background: var(--surface);
             border: 0;
+            color: var(--text);
+            font-family: inherit;
             font-size: .94rem;
         }
 
         .tabulator-shell .tabulator .tabulator-header {
+            background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
             border-bottom: 1px solid var(--line);
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .tabulator-shell .tabulator .tabulator-header .tabulator-col {
+            background: transparent;
+            border-color: var(--line);
+        }
+
+        .tabulator-shell .tabulator .tabulator-header .tabulator-col:hover {
+            background: color-mix(in srgb, var(--accent) 4%, var(--surface));
         }
 
         .tabulator-shell .tabulator-cell,
@@ -167,8 +182,157 @@
             border-color: var(--line);
         }
 
+        .tabulator-shell .tabulator .tabulator-col .tabulator-col-content {
+            justify-content: center;
+            padding: 10px 10px;
+            text-align: center;
+        }
+
+        .tabulator-shell .tabulator .tabulator-tableholder {
+            background: var(--surface);
+        }
+
+        .tabulator-shell .tabulator .tabulator-row {
+            background: var(--surface);
+            border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+            transition: background-color .14s ease;
+        }
+
+        .tabulator-shell .tabulator .tabulator-row:nth-child(even) {
+            background: color-mix(in srgb, var(--surface-2) 20%, var(--surface));
+        }
+
+        .tabulator-shell .tabulator .tabulator-row:hover {
+            background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+        }
+
+        .tabulator-shell .tabulator .tabulator-row .tabulator-cell {
+            background: transparent;
+            padding: 10px 8px;
+            vertical-align: middle;
+        }
+
         .tabulator-shell .tabulator-row.tabulator-selected {
+            background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+        }
+
+        .tabulator-shell .tabulator-row.tabulator-selected:hover {
             background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+        }
+
+        .tabulator-shell .tabulator .tabulator-cell.tabulator-editing {
+            background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent);
+            padding: 6px 8px;
+        }
+
+        .tabulator-shell .tabulator .tabulator-cell:focus,
+        .tabulator-shell .tabulator .tabulator-col:focus {
+            outline: none;
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+        }
+
+        .tabulator-shell .tabulator .tabulator-cell input:not([type="checkbox"]),
+        .tabulator-shell .tabulator .tabulator-cell textarea,
+        .tabulator-shell .tabulator .tabulator-cell select {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: .375rem;
+            box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+            color: var(--text);
+            font: inherit;
+            line-height: 1.35;
+            min-height: 34px;
+            padding: .38rem .7rem;
+            width: 100%;
+        }
+
+        .tabulator-shell .tabulator .tabulator-cell textarea {
+            min-height: 72px;
+            resize: vertical;
+        }
+
+        .tabulator-shell .tabulator .tabulator-cell input:not([type="checkbox"]):focus,
+        .tabulator-shell .tabulator .tabulator-cell textarea:focus,
+        .tabulator-shell .tabulator .tabulator-cell select:focus {
+            border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+            box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--accent) 16%, transparent);
+            outline: 0;
+        }
+
+        .tabulator-edit-list,
+        .tabulator-menu {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: .625rem;
+            box-shadow: 0 .75rem 1.5rem rgba(23, 32, 51, .12);
+            color: var(--text);
+            padding: 4px;
+        }
+
+        .tabulator-edit-list .tabulator-edit-list-item,
+        .tabulator-menu .tabulator-menu-item {
+            border-radius: .45rem;
+            padding: .45rem .65rem;
+            transition: background-color .14s ease, color .14s ease;
+        }
+
+        .tabulator-edit-list .tabulator-edit-list-item:hover,
+        .tabulator-menu .tabulator-menu-item:hover {
+            background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+            color: var(--text);
+        }
+
+        .tabulator-edit-list .tabulator-edit-list-item.active,
+        .tabulator-menu .tabulator-menu-item.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .tabulator-shell .tabulator .tabulator-footer {
+            background: color-mix(in srgb, var(--surface-2) 65%, var(--surface));
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            padding: 10px 14px;
+        }
+
+        .tabulator-shell .tabulator .tabulator-page {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: .375rem;
+            color: var(--text);
+            font-weight: 600;
+            margin: 0 4px;
+            min-width: 36px;
+            padding: .35rem .65rem;
+        }
+
+        .tabulator-shell .tabulator .tabulator-page.active,
+        .tabulator-shell .tabulator .tabulator-page:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .tabulator-shell .tabulator .tabulator-row .tabulator-cell:first-child,
+        .tabulator-shell .tabulator .tabulator-header .tabulator-col:first-child {
+            border-left: 0;
+        }
+
+        .tabulator-shell .tabulator ::-webkit-scrollbar {
+            height: 10px;
+            width: 10px;
+        }
+
+        .tabulator-shell .tabulator ::-webkit-scrollbar-thumb {
+            background: color-mix(in srgb, var(--line) 78%, var(--surface-2));
+            border: 2px solid transparent;
+            border-radius: 999px;
+            background-clip: padding-box;
+        }
+
+        .tabulator-shell .tabulator ::-webkit-scrollbar-track {
+            background: color-mix(in srgb, var(--surface-2) 56%, transparent);
         }
 
         .tabulator-feedback {
@@ -468,6 +632,7 @@
                 selectableRows: true,
                 placeholder: text.EmptyState,
                 columnDefaults: {
+                    headerHozAlign: "center",
                     headerSort: true,
                     vertAlign: "middle"
                 },
@@ -483,11 +648,13 @@
                         title: text.Columns.Title,
                         field: "title",
                         editor: "input",
+                        hozAlign: "left",
                         minWidth: 220
                     },
                     {
                         title: text.Columns.Category,
                         field: "category",
+                        hozAlign: "left",
                         editor: "list",
                         editorParams: {
                             values: categoryLookup
@@ -500,6 +667,7 @@
                     {
                         title: text.Columns.Status,
                         field: "status",
+                        hozAlign: "left",
                         editor: "list",
                         editorParams: {
                             values: statusLookup
@@ -512,6 +680,7 @@
                     {
                         title: text.Columns.Priority,
                         field: "priority",
+                        hozAlign: "left",
                         editor: "list",
                         editorParams: {
                             values: priorityLookup
@@ -544,18 +713,21 @@
                         title: text.Columns.DueDate,
                         field: "dueDate",
                         editor: "date",
+                        hozAlign: "center",
                         minWidth: 135
                     },
                     {
                         title: text.Columns.Note,
                         field: "note",
                         editor: "textarea",
+                        hozAlign: "left",
                         minWidth: 220
                     },
                     {
                         title: text.Columns.UpdatedAt,
                         field: "updatedAt",
                         headerSort: false,
+                        hozAlign: "center",
                         minWidth: 140
                     }
                 ],

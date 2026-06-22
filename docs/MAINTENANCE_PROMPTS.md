@@ -8,7 +8,12 @@ Use these prompts when asking an AI assistant or onboarding a new maintainer.
 You are maintaining an ASP.NET Core MVC app. Read docs/ARCHITECTURE.md first.
 Implement this feature: [feature].
 Keep controllers thin, put business logic in Services, persist data through ApplicationDbContext, and keep user data filtered by UserId.
-List files changed and tests or build commands to run.
+Constraints or non-goals: [list].
+Respond with:
+1. Short implementation plan
+2. Files changed
+3. Migration or data impact
+4. Tests or build commands to run
 ```
 
 ## Bug Fix
@@ -18,6 +23,8 @@ Read docs/ARCHITECTURE.md and inspect the module: [module].
 Bug: [bug].
 Steps to reproduce: [steps].
 Expected result: [expected].
+Actual result: [actual].
+Current user/data context: [context].
 Find the smallest correct fix, avoid unrelated refactors, and mention any migration or user isolation impact.
 ```
 
