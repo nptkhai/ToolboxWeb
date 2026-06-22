@@ -1,0 +1,2291 @@
+@using System.Globalization
+@using System.Text.Json
+@{
+    ViewData["Title"] = T["Components.Title"];
+
+    var currentCulture = CultureInfo.CurrentUICulture.Name;
+
+    string LocalText(string vi, string en) => currentCulture == "vi-VN" ? vi : en;
+
+    var tabulatorCategoryOptions = new[]
+    {
+        new { value = "Ui", label = T["TabulatorTaskCategory.Ui"].Value },
+        new { value = "Localization", label = T["TabulatorTaskCategory.Localization"].Value },
+        new { value = "Culture", label = T["TabulatorTaskCategory.Culture"].Value },
+        new { value = "Testing", label = T["TabulatorTaskCategory.Testing"].Value },
+        new { value = "Operations", label = T["TabulatorTaskCategory.Operations"].Value }
+    };
+
+    var tabulatorStatusOptions = new[]
+    {
+        new { value = "Todo", label = T["TabulatorTaskStatus.Todo"].Value },
+        new { value = "InProgress", label = T["TabulatorTaskStatus.InProgress"].Value },
+        new { value = "Review", label = T["TabulatorTaskStatus.Review"].Value },
+        new { value = "Done", label = T["TabulatorTaskStatus.Done"].Value }
+    };
+
+    var tabulatorPriorityOptions = new[]
+    {
+        new { value = "Low", label = T["TabulatorTaskPriority.Low"].Value },
+        new { value = "Medium", label = T["TabulatorTaskPriority.Medium"].Value },
+        new { value = "High", label = T["TabulatorTaskPriority.High"].Value }
+    };
+
+    var kendoPriorityOptions = new[]
+    {
+        new { text = T["TabulatorTaskPriority.High"].Value, value = "high" },
+        new { text = T["TabulatorTaskPriority.Medium"].Value, value = "medium" },
+        new { text = T["TabulatorTaskPriority.Low"].Value, value = "low" }
+    };
+
+    var kendoListBoxItems = new[]
+    {
+        new { text = LocalText("Chuẩn hóa form", "Normalize forms"), value = "forms" },
+        new { text = LocalText("Rà popup", "Review popups"), value = "popups" },
+        new { text = LocalText("Test responsive", "Test responsive"), value = "responsive" },
+        new { text = LocalText("Chuẩn hóa locale", "Normalize locale"), value = "locale" }
+    };
+
+    var kendoListViewItems = new[]
+    {
+        new { id = 1, title = LocalText("Chuẩn hóa demo component", "Normalize component demos"), owner = "Khai", dueDate = new DateTime(2026, 6, 22), status = T["TabulatorTaskStatus.InProgress"].Value, statusCode = "doing", priority = T["TabulatorTaskPriority.High"].Value, priorityCode = "high", progress = 72 },
+        new { id = 2, title = LocalText("Bổ sung localization", "Add localization"), owner = "ToolboxWeb", dueDate = new DateTime(2026, 6, 23), status = T["TabulatorTaskStatus.Review"].Value, statusCode = "review", priority = T["TabulatorTaskPriority.Medium"].Value, priorityCode = "medium", progress = 84 },
+        new { id = 3, title = LocalText("Giữ menu demo cũ", "Keep legacy demo menus"), owner = "Codex", dueDate = new DateTime(2026, 6, 24), status = T["TabulatorTaskStatus.Done"].Value, statusCode = "done", priority = T["TabulatorTaskPriority.Medium"].Value, priorityCode = "medium", progress = 100 },
+        new { id = 4, title = LocalText("Catalog asset ngoài bundle", "Catalog asset-only libraries"), owner = "Khai", dueDate = new DateTime(2026, 6, 25), status = T["TabulatorTaskStatus.Todo"].Value, statusCode = "todo", priority = T["TabulatorTaskPriority.Low"].Value, priorityCode = "low", progress = 22 }
+    };
+
+    var bundleOnlyCatalog = new[]
+    {
+        new { Name = "ActionSheet", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Có thể dùng cho action menu mobile hoặc thao tác nhanh theo ngữ cảnh, nhưng trang hub hiện chưa demo để giữ bố cục gọn.", "Useful for mobile action menus or quick context actions; not live-demoed here to keep the hub compact.") },
+        new { Name = "ButtonGroup", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Phù hợp khi cần chọn một trong nhiều trạng thái hiển thị hoặc mode thao tác.", "A good fit for choosing one of several view states or interaction modes.") },
+        new { Name = "Calendar", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Dùng khi cần lịch hiển thị trực tiếp thay vì picker dạng popup.", "Use this when you need an always-visible calendar instead of a popup picker.") },
+        new { Name = "CheckBox", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Có trong bundle, nhưng ở hub này checkbox native Bootstrap đã đủ để minh họa nhóm chọn lựa cơ bản.", "Present in the bundle, but the native Bootstrap checkbox already covers the basic selection use case on this hub.") },
+        new { Name = "DateInput", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Hợp với case cần kiểm soát nhập ngày theo mask mà không mở popup lịch.", "Useful when date input masking matters more than showing a popup calendar.") },
+        new { Name = "DropDownButton", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Phù hợp cho nút thao tác chính có thêm các hành động phụ đi kèm.", "Handy for a primary action button with a few secondary actions attached.") },
+        new { Name = "Editor", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Dùng cho rich text nhập nội dung dài, ghi chú nâng cao hoặc email template.", "Use this for rich text authoring, advanced notes, or email templates.") },
+        new { Name = "FloatingLabel", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Có thể bọc quanh input hiện có nếu muốn form hiện đại hơn nhưng vẫn đồng bộ Kendo theme.", "Can wrap existing inputs if you want a more modern form style while keeping the Kendo theme.") },
+        new { Name = "Popup", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Phù hợp cho overlay nhẹ hoặc menu custom khi Window là quá nặng.", "Great for light overlays or custom menus when a full Window would be too heavy.") },
+        new { Name = "ResponsivePanel", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Hữu ích cho side tools hoặc bộ lọc có thể thu gọn trên mobile.", "Useful for side tools or filters that should collapse cleanly on mobile.") },
+        new { Name = "SplitButton", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Thích hợp cho nút Lưu chính và các biến thể như Lưu nháp hoặc Lưu & đóng.", "A good fit for primary Save actions with variants like Save draft or Save and close.") },
+        new { Name = "TabStrip", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Có thể dùng thay Bootstrap tabs nếu muốn đồng bộ toàn bộ navigation nhỏ theo Kendo.", "You can use it instead of Bootstrap tabs when you want all small-scale navigation to follow Kendo styling.") },
+        new { Name = "TextArea", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Phù hợp để đồng bộ visual với TextBox Kendo cho các trường nhập nhiều dòng.", "Useful when you want multiline input to visually match Kendo TextBox fields.") },
+        new { Name = "ToggleButton", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Dùng cho bật/tắt state kiểu filter, highlight hoặc view mode.", "Works well for state toggles such as filters, highlight modes, or view modes.") },
+        new { Name = "ToolBar", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Thích hợp cho cụm hành động dạng editor hoặc header thao tác dày nút.", "A strong fit for editor-like action groups or dense action headers.") },
+        new { Name = "Alert / Confirm / Prompt helpers", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Các helper popup có sẵn cho confirm ngắn, hỏi giá trị nhanh hoặc cảnh báo đơn giản.", "Built-in popup helpers for short confirmations, quick prompts, or simple alerts.") }
+    };
+
+    var assetOnlyCatalog = new[]
+    {
+        new { Name = "ECharts", Library = "Asset package", Status = T["Components.StatusAssetOnly"].Value, Note = LocalText("Đã có file JS trong source, phù hợp cho dashboard chart, KPI và visual analytics.", "JS assets are already in source; ideal for dashboard charts, KPI cards, and visual analytics.") },
+        new { Name = "FullCalendar", Library = "Asset package", Status = T["Components.StatusAssetOnly"].Value, Note = LocalText("Phù hợp cho lịch công việc, booking hoặc timeline cần tương tác kéo thả.", "A good fit for task calendars, booking screens, or drag-and-drop timeline views.") },
+        new { Name = "Quill", Library = "Asset package", Status = T["Components.StatusAssetOnly"].Value, Note = LocalText("Có thể dùng cho editor ghi chú giàu định dạng thay vì textarea thuần.", "Can power rich note editing instead of a plain textarea.") },
+        new { Name = "SheetJS", Library = "Asset package", Status = T["Components.StatusAssetOnly"].Value, Note = LocalText("Phù hợp cho import/export Excel, đọc dữ liệu hàng loạt hoặc tải template.", "Useful for Excel import/export, bulk data ingestion, or downloadable templates.") }
+    };
+
+    var missingBundleCatalog = new[]
+    {
+        new { Name = "Grid", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Không có trong Kendo UI Core bundle hiện tại, nên grid editable của hub dùng Tabulator.", "Not present in the current Kendo UI Core bundle, so the editable grid demo uses Tabulator instead.") },
+        new { Name = "Dialog", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Thay thế tạm thời bằng Window hoặc Bootstrap modal nếu cần luồng xác nhận riêng.", "Use Window or a Bootstrap modal as the current fallback for custom confirmation flows.") },
+        new { Name = "ProgressBar", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Có thể thay bằng thanh progress Bootstrap hoặc mini progress custom.", "Use a Bootstrap progress bar or a small custom progress strip instead.") },
+        new { Name = "ColorPicker", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Trang hub đang dùng native input type color để giữ flow nhập màu đơn giản.", "The hub uses a native color input as the simple fallback for color selection.") },
+        new { Name = "Scheduler", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Nếu cần scheduling nâng cao, nên tách riêng một màn demo hoặc dùng FullCalendar.", "For advanced scheduling, consider a dedicated screen or use FullCalendar instead.") },
+        new { Name = "Chart", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Nên ưu tiên ECharts vì asset đã có sẵn trong source và linh hoạt hơn với dashboard.", "Prefer ECharts here because the assets are already present and it is flexible for dashboards.") }
+    };
+
+    var componentText = new
+    {
+        CultureName = currentCulture,
+        WidgetUnavailable = T["Components.WidgetUnavailable"].Value,
+        BundleCheck = T["Components.StatusBundleCheck"].Value,
+        UsableNow = T["Components.StatusUsableNow"].Value,
+        BundleOnly = T["Components.StatusBundleOnly"].Value,
+        AssetOnly = T["Components.StatusAssetOnly"].Value,
+        MissingBundle = T["Components.StatusMissingBundle"].Value,
+        NativeReady = LocalText("Dùng ngay", "Ready now"),
+        ListViewEmpty = LocalText("Chưa có dữ liệu mini demo.", "No mini demo data yet."),
+        ValidatorSuccess = LocalText("Form hợp lệ, có thể tiếp tục lưu.", "The form is valid and ready to save."),
+        ValidatorError = LocalText("Form chưa hợp lệ, vui lòng kiểm tra lại email và tiêu đề.", "The form is not valid yet. Please review the email and title fields."),
+        ValidatorSummary = LocalText("Mẹo: demo này dùng Kendo Validator nhưng vẫn phối hợp được với input native hoặc Kendo TextBox.", "Tip: this demo uses Kendo Validator and still works alongside native inputs or Kendo TextBox."),
+        NotificationInfo = LocalText("Notification đang hoạt động bình thường trong bundle hiện tại.", "Notification is working correctly in the current bundle."),
+        TooltipContent = LocalText("Tooltip này dùng bundle self-host hiện tại và có thể gắn trên target bất kỳ trong page.", "This tooltip uses the current self-host bundle and can attach to arbitrary targets on the page."),
+        WindowTitle = LocalText("Kendo Window", "Kendo Window"),
+        WindowBody = LocalText("Window phù hợp cho popup làm việc ngắn, xem chi tiết hoặc chỉnh sửa nhẹ mà chưa cần Dialog thương mại.", "Window works well for quick popups, detail previews, or lightweight editing without needing the commercial Dialog widget."),
+        ListViewNote = LocalText("Phần này minh họa cách dùng DataSource + ListView + Pager thay cho Grid thương mại.", "This shows how DataSource + ListView + Pager can cover lightweight data listing instead of the commercial Grid."),
+        TabulatorInfo = LocalText("Grid ở hub này dùng lại endpoint Data/Save hiện có của TabulatorDemoController để bạn test đúng luồng editable hiện tại.", "This grid reuses the existing TabulatorDemoController Data/Save endpoints so you can test the real editable flow already in the app."),
+        Tabulator = new
+        {
+            LoginPath = Url.Page("/Account/Login", new { area = "Identity" }),
+            ReturnUrl = Url.Action("Index", "Components"),
+            DataUrl = Url.Action("Data", "TabulatorDemo"),
+            SaveUrl = Url.Action("Save", "TabulatorDemo"),
+            DirtyState = T["TabulatorDemo.DirtyState"].Value,
+            CleanState = T["TabulatorDemo.CleanState"].Value,
+            Ready = T["TabulatorDemo.Ready"].Value,
+            PendingChangesNotice = T["TabulatorDemo.PendingChangesNotice"].Value,
+            Reloaded = T["TabulatorDemo.Reloaded"].Value,
+            NoSelection = T["TabulatorDemo.NoSelection"].Value,
+            NoChanges = T["TabulatorDemo.NoChanges"].Value,
+            Saving = T["TabulatorDemo.Saving"].Value,
+            SaveSuccess = T["TabulatorDemo.SaveSuccess"].Value,
+            GenericError = T["TabulatorDemo.GenericError"].Value,
+            EmptyState = T["TabulatorDemo.EmptyState"].Value,
+            AddRow = T["TabulatorDemo.AddRow"].Value,
+            DeleteSelected = T["TabulatorDemo.DeleteSelected"].Value,
+            SaveChanges = T["TabulatorDemo.SaveChanges"].Value,
+            Reload = T["TabulatorDemo.Reload"].Value,
+            Columns = new
+            {
+                Title = T["TabulatorDemo.Columns.Title"].Value,
+                Category = T["TabulatorDemo.Columns.Category"].Value,
+                Status = T["TabulatorDemo.Columns.Status"].Value,
+                Priority = T["TabulatorDemo.Columns.Priority"].Value,
+                Progress = T["TabulatorDemo.Columns.Progress"].Value,
+                Budget = T["TabulatorDemo.Columns.Budget"].Value,
+                DueDate = T["TabulatorDemo.Columns.DueDate"].Value,
+                Note = T["TabulatorDemo.Columns.Note"].Value,
+                UpdatedAt = T["TabulatorDemo.Columns.UpdatedAt"].Value
+            }
+        }
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/kendo/icons/index.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/tabulator/css/tabulator.min.css" asp-append-version="true" />
+    <style>
+        .component-hub {
+            display: grid;
+            gap: 18px;
+        }
+
+        .component-hero,
+        .component-tabs-shell,
+        .component-card,
+        .catalog-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+        }
+
+        .component-hero {
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, .12), transparent 26%),
+                radial-gradient(circle at top right, rgba(15, 118, 110, .10), transparent 22%),
+                var(--surface);
+            overflow: hidden;
+            padding: clamp(20px, 3vw, 30px);
+        }
+
+        .component-hero h2 {
+            font-size: clamp(1.45rem, 2.8vw, 2.1rem);
+            margin: 0 0 10px;
+        }
+
+        .component-hero p {
+            color: var(--muted);
+            margin: 0;
+            max-width: 980px;
+        }
+
+        .component-hero-meta,
+        .component-hero-links,
+        .component-card-grid,
+        .catalog-grid,
+        .tabulator-mini-toolbar {
+            display: grid;
+            gap: 12px;
+        }
+
+        .component-hero-meta {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-top: 18px;
+        }
+
+        .component-hero-pill {
+            background: color-mix(in srgb, var(--surface-2) 72%, var(--surface));
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+
+        .component-hero-pill span,
+        .component-meta-line,
+        .component-note-label,
+        .catalog-head {
+            color: var(--muted);
+            font-size: .8rem;
+            font-weight: 750;
+            text-transform: uppercase;
+        }
+
+        .component-hero-pill strong {
+            display: block;
+            margin-top: 4px;
+        }
+
+        .component-hero-links {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin-top: 18px;
+        }
+
+        .component-link-card {
+            background: color-mix(in srgb, var(--surface-2) 62%, var(--surface));
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            padding: 14px;
+        }
+
+        .component-link-card a {
+            align-self: center;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--text);
+            font-weight: 700;
+            padding: 8px 14px;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .component-tabs-shell {
+            overflow: hidden;
+        }
+
+        .component-tab-nav {
+            border-bottom: 1px solid var(--line);
+            gap: 8px;
+            padding: 14px 14px 0;
+        }
+
+        .component-tab-nav .nav-link {
+            border: 1px solid transparent;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .component-tab-nav .nav-link.active {
+            background: var(--surface);
+            border-color: var(--line) var(--line) var(--surface);
+            color: var(--text);
+        }
+
+        .component-tab-content {
+            padding: 18px;
+        }
+
+        .component-family-head {
+            margin-bottom: 16px;
+        }
+
+        .component-family-head h3 {
+            margin: 0 0 6px;
+        }
+
+        .component-family-head p {
+            color: var(--muted);
+            margin: 0;
+            max-width: 980px;
+        }
+
+        .component-card-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .component-card,
+        .catalog-card {
+            padding: 16px;
+        }
+
+        .component-card.component-card-wide,
+        .catalog-card {
+            grid-column: 1 / -1;
+        }
+
+        .component-card-head {
+            align-items: start;
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .component-card h4 {
+            font-size: 1.02rem;
+            margin: 0 0 4px;
+        }
+
+        .component-note {
+            color: var(--muted);
+            font-size: .9rem;
+            margin: 0 0 14px;
+        }
+
+        .component-status-badge {
+            border-radius: 999px;
+            font-size: .78rem;
+            font-weight: 800;
+            padding: 6px 10px;
+            white-space: nowrap;
+        }
+
+        .status-usable {
+            background: rgba(22, 163, 74, .14);
+            color: #15803d;
+        }
+
+        .status-check {
+            background: rgba(37, 99, 235, .12);
+            color: #2563eb;
+        }
+
+        .status-bundle {
+            background: rgba(217, 119, 6, .15);
+            color: #b45309;
+        }
+
+        .status-asset {
+            background: rgba(15, 118, 110, .14);
+            color: #0f766e;
+        }
+
+        .status-missing {
+            background: rgba(180, 35, 24, .12);
+            color: var(--danger);
+        }
+
+        .component-status-note {
+            border: 1px dashed rgba(180, 35, 24, .35);
+            border-radius: 12px;
+            color: var(--danger);
+            font-size: .85rem;
+            margin-top: 12px;
+            padding: 9px 10px;
+        }
+
+        .component-sample {
+            background: color-mix(in srgb, var(--surface-2) 46%, var(--surface));
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .component-sample .form-label {
+            color: var(--muted);
+            display: block;
+            font-size: .8rem;
+            font-weight: 750;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .component-sample .helper {
+            color: var(--muted);
+            font-size: .85rem;
+            margin-top: 8px;
+        }
+
+        .component-sample .form-check {
+            min-height: auto;
+        }
+
+        .component-sample .native-color-input {
+            background: transparent;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            height: 42px;
+            padding: 4px;
+            width: 100%;
+        }
+
+        .component-sample .bootstrap-alerts {
+            display: grid;
+            gap: 10px;
+        }
+
+        .component-sample .k-widget,
+        .component-sample .k-input,
+        .component-sample .k-picker,
+        .component-sample .k-dropdownlist,
+        .component-sample .k-multiselect,
+        .component-sample .k-combobox {
+            width: 100%;
+        }
+
+        .component-sample .k-listview {
+            border: 0;
+        }
+
+        .component-sample .k-pager {
+            border: 0;
+            border-top: 1px solid var(--line);
+            margin-top: 10px;
+            padding-top: 8px;
+        }
+
+        .component-list-item {
+            align-items: center;
+            border-bottom: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+            display: grid;
+            gap: 12px;
+            grid-template-columns: minmax(0, 1.3fr) minmax(120px, .7fr) minmax(120px, .65fr) 98px;
+            padding: 12px 4px;
+        }
+
+        .component-list-item:last-child {
+            border-bottom: 0;
+        }
+
+        .component-list-item strong {
+            display: block;
+        }
+
+        .component-list-item small {
+            color: var(--muted);
+            display: block;
+            margin-top: 3px;
+        }
+
+        .priority-pill,
+        .status-pill {
+            border-radius: 999px;
+            display: inline-flex;
+            font-size: .78rem;
+            font-weight: 800;
+            justify-content: center;
+            padding: 5px 9px;
+        }
+
+        .priority-high {
+            background: rgba(180, 35, 24, .13);
+            color: var(--danger);
+        }
+
+        .priority-medium {
+            background: rgba(37, 99, 235, .13);
+            color: var(--accent);
+        }
+
+        .priority-low {
+            background: rgba(15, 118, 110, .13);
+            color: var(--accent-2);
+        }
+
+        .status-done {
+            background: rgba(22, 163, 74, .14);
+            color: #15803d;
+        }
+
+        .status-doing {
+            background: rgba(37, 99, 235, .14);
+            color: #2563eb;
+        }
+
+        .status-review {
+            background: rgba(217, 119, 6, .16);
+            color: #b45309;
+        }
+
+        .status-todo {
+            background: rgba(100, 116, 139, .16);
+            color: #475569;
+        }
+
+        .mini-progress {
+            background: var(--surface-2);
+            border-radius: 999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .mini-progress span {
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            display: block;
+            height: 100%;
+        }
+
+        .tabulator-mini-shell {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .tabulator-mini-toolbar {
+            background: color-mix(in srgb, var(--surface-2) 55%, var(--surface));
+            border-bottom: 1px solid var(--line);
+            grid-template-columns: 1fr auto;
+            padding: 12px 14px;
+        }
+
+        .tabulator-mini-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tabulator-mini-actions button {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--text);
+            font-weight: 700;
+            padding: 8px 14px;
+        }
+
+        .tabulator-mini-actions button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .tabulator-mini-actions button.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .tabulator-mini-state {
+            align-items: center;
+            display: inline-flex;
+            gap: 8px;
+            justify-content: end;
+        }
+
+        .tabulator-mini-chip {
+            background: var(--surface);
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: .82rem;
+            font-weight: 700;
+            padding: 5px 10px;
+        }
+
+        .tabulator-mini-chip.dirty {
+            background: color-mix(in srgb, var(--accent) 14%, transparent);
+            color: var(--accent);
+        }
+
+        #component-tabulator-grid {
+            min-height: 430px;
+        }
+
+        .tabulator-mini-shell .tabulator {
+            background: var(--surface);
+            border: 0;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .94rem;
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-header {
+            background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+            border-bottom: 1px solid var(--line);
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-col,
+        .tabulator-mini-shell .tabulator .tabulator-cell {
+            border-color: var(--line);
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-col .tabulator-col-content {
+            justify-content: center;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-row {
+            background: var(--surface);
+            border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-row:nth-child(even) {
+            background: color-mix(in srgb, var(--surface-2) 20%, var(--surface));
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-row:hover,
+        .tabulator-mini-shell .tabulator-row.tabulator-selected {
+            background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-row .tabulator-cell {
+            background: transparent;
+            padding: 10px 8px;
+            vertical-align: middle;
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-cell.tabulator-editing {
+            background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent);
+            padding: 6px 8px;
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-cell input:not([type="checkbox"]),
+        .tabulator-mini-shell .tabulator .tabulator-cell textarea,
+        .tabulator-mini-shell .tabulator .tabulator-cell select {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: .5rem;
+            color: var(--text);
+            font: inherit;
+            min-height: 36px;
+            padding: .42rem .72rem;
+            width: 100%;
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-cell textarea {
+            min-height: 76px;
+            resize: vertical;
+        }
+
+        .tabulator-mini-shell .tabulator .tabulator-cell input:not([type="checkbox"]):focus,
+        .tabulator-mini-shell .tabulator .tabulator-cell textarea:focus,
+        .tabulator-mini-shell .tabulator .tabulator-cell select:focus {
+            border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+            box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--accent) 16%, transparent);
+            outline: 0;
+        }
+
+        .tabulator-edit-list,
+        .tabulator-menu {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: .75rem;
+            box-shadow: 0 .75rem 1.5rem rgba(23, 32, 51, .12);
+            color: var(--text);
+            padding: 4px;
+        }
+
+        .tabulator-edit-list .tabulator-edit-list-item,
+        .tabulator-menu .tabulator-menu-item {
+            border-radius: .45rem;
+            padding: .45rem .65rem;
+        }
+
+        .tabulator-edit-list .tabulator-edit-list-item.active,
+        .tabulator-menu .tabulator-menu-item.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .tabulator-mini-feedback {
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            min-height: 48px;
+            padding: 12px 14px;
+        }
+
+        .tabulator-mini-feedback.success {
+            color: #15803d;
+        }
+
+        .tabulator-mini-feedback.error {
+            color: var(--danger);
+        }
+
+        .catalog-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .catalog-table {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .catalog-row,
+        .catalog-header {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: minmax(180px, 1.1fr) minmax(120px, .75fr) minmax(160px, .8fr) minmax(280px, 1.7fr);
+            padding: 12px 14px;
+        }
+
+        .catalog-header {
+            background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+            font-size: .8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .catalog-row {
+            align-items: center;
+            border-top: 1px solid var(--line);
+        }
+
+        .catalog-row strong {
+            display: block;
+        }
+
+        .catalog-row small {
+            color: var(--muted);
+            display: block;
+        }
+
+        #component-splitter {
+            height: 260px;
+        }
+
+        #component-splitter .split-pane {
+            color: var(--text);
+            padding: 16px;
+        }
+
+        .component-hub .k-window,
+        .k-popup,
+        .k-list-container,
+        .k-calendar-container,
+        .k-notification-container,
+        .k-animation-container,
+        body > .k-animation-container {
+            z-index: 3000 !important;
+        }
+
+        @@media (max-width: 1100px) {
+            .component-hero-meta,
+            .component-hero-links,
+            .component-card-grid,
+            .tabulator-mini-toolbar,
+            .catalog-row,
+            .catalog-header {
+                grid-template-columns: 1fr;
+            }
+
+            .component-link-card,
+            .component-card-head,
+            .tabulator-mini-state {
+                align-items: start;
+                flex-direction: column;
+            }
+        }
+
+        @@media (max-width: 860px) {
+            .component-tab-nav {
+                display: flex;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+            }
+
+            .component-tab-nav .nav-link {
+                white-space: nowrap;
+            }
+
+            .component-list-item {
+                grid-template-columns: 1fr;
+            }
+
+            .tabulator-mini-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+}
+
+<div class="component-hub">
+    <section class="component-hero">
+        <h2>@T["Components.Title"]</h2>
+        <p>@T["Components.Description"]</p>
+
+        <div class="component-hero-meta">
+            <div class="component-hero-pill">
+                <span>@T["Components.Hero.DemoMode"]</span>
+                <strong>@T["Components.Hero.DemoModeValue"]</strong>
+            </div>
+            <div class="component-hero-pill">
+                <span>@T["Components.Hero.Grouping"]</span>
+                <strong>@T["Components.Hero.GroupingValue"]</strong>
+            </div>
+            <div class="component-hero-pill">
+                <span>@T["Components.Hero.GridMapping"]</span>
+                <strong>@T["Components.Hero.GridMappingValue"]</strong>
+            </div>
+            <div class="component-hero-pill">
+                <span>@T["Components.Hero.Legacy"]</span>
+                <strong>@T["Components.Hero.LegacyValue"]</strong>
+            </div>
+        </div>
+
+        <div class="component-hero-links">
+            <div class="component-link-card">
+                <div>
+                    <div class="component-note-label">@T["Components.LegacyKendoTitle"]</div>
+                    <strong>@T["Nav.KendoDemo"]</strong>
+                    <div class="component-note">@T["Components.LegacyKendoNote"]</div>
+                </div>
+                <a asp-controller="DemoKendo" asp-action="Index">@T["Components.GoToKendoDemo"]</a>
+            </div>
+            <div class="component-link-card">
+                <div>
+                    <div class="component-note-label">@T["Components.LegacyTabulatorTitle"]</div>
+                    <strong>@T["Nav.TabulatorDemo"]</strong>
+                    <div class="component-note">@T["Components.LegacyTabulatorNote"]</div>
+                </div>
+                <a asp-controller="TabulatorDemo" asp-action="Index">@T["Components.GoToTabulatorDemo"]</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="component-tabs-shell">
+        <ul class="nav nav-tabs component-tab-nav" id="component-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="component-text-tab" data-bs-toggle="tab" data-bs-target="#component-text-pane" type="button" role="tab" aria-controls="component-text-pane" aria-selected="true">@T["Components.Sections.TextInput"]</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="component-selection-tab" data-bs-toggle="tab" data-bs-target="#component-selection-pane" type="button" role="tab" aria-controls="component-selection-pane" aria-selected="false">@T["Components.Sections.Selection"]</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="component-datetime-tab" data-bs-toggle="tab" data-bs-target="#component-datetime-pane" type="button" role="tab" aria-controls="component-datetime-pane" aria-selected="false">@T["Components.Sections.DateTimeNumeric"]</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="component-grid-tab" data-bs-toggle="tab" data-bs-target="#component-grid-pane" type="button" role="tab" aria-controls="component-grid-pane" aria-selected="false">@T["Components.Sections.GridData"]</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="component-feedback-tab" data-bs-toggle="tab" data-bs-target="#component-feedback-pane" type="button" role="tab" aria-controls="component-feedback-pane" aria-selected="false">@T["Components.Sections.FeedbackPopup"]</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="component-layout-tab" data-bs-toggle="tab" data-bs-target="#component-layout-pane" type="button" role="tab" aria-controls="component-layout-pane" aria-selected="false">@T["Components.Sections.NavigationLayout"]</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="component-catalog-tab" data-bs-toggle="tab" data-bs-target="#component-catalog-pane" type="button" role="tab" aria-controls="component-catalog-pane" aria-selected="false">@T["Components.Sections.Catalog"]</button>
+            </li>
+        </ul>
+
+        <div class="tab-content component-tab-content">
+            <div class="tab-pane fade show active" id="component-text-pane" role="tabpanel" aria-labelledby="component-text-tab" tabindex="0">
+                <div class="component-family-head">
+                    <h3>@T["Components.Sections.TextInput"]</h3>
+                    <p>@T["Components.TextInputIntro"]</p>
+                </div>
+
+                <div class="component-card-grid">
+                    <article class="component-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Native Bootstrap Text Input</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap + HTML</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Dùng cho các ô nhập văn bản ngắn, tìm kiếm hoặc form nội bộ cần nhẹ và ổn định.", "Use this for short text fields, search boxes, or lightweight internal forms.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="native-textbox-demo">Project code</label>
+                            <input id="native-textbox-demo" class="form-control" type="text" placeholder="TBX-2026-UI" />
+                            <div class="helper">@LocalText("Form-control Bootstrap hiện tại đã đủ đồng bộ với layout chung của app.", "The current Bootstrap form-control already blends well with the app layout.")</div>
+                        </div>
+                    </article>
+
+                    <article class="component-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Native Textarea</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap + HTML</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Phù hợp cho ghi chú, mô tả ngắn hoặc comment chưa cần rich text.", "A good fit for notes, short descriptions, or comments that do not need rich text.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="native-textarea-demo">Internal note</label>
+                            <textarea id="native-textarea-demo" class="form-control" rows="4" placeholder="Mô tả ngắn, acceptance note, handoff..."></textarea>
+                        </div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-textbox">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo TextBox</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Phù hợp khi muốn input text đồng bộ hoàn toàn với hệ widget Kendo trong cùng form.", "Useful when you want text input to fully match the rest of the Kendo widget set in a form.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-textbox-demo">Reference id</label>
+                            <input id="kendo-textbox-demo" placeholder="REQ-2048" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-autocomplete">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo AutoComplete</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Hợp cho tìm nhanh từ khóa, tag kỹ thuật hoặc gợi ý nhập mềm trong dashboard tool.", "A good fit for quick keyword lookup, technical tags, or soft input suggestions inside dashboards.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-autocomplete-demo">Keyword</label>
+                            <input id="kendo-autocomplete-demo" placeholder="UI, API, SQL..." />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-combobox">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo ComboBox</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Dùng khi user có thể nhập tự do nhưng vẫn nên được gợi ý từ danh sách chuẩn.", "Use this when users may type freely but should still be guided by a standard option list.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-combobox-demo">Province</label>
+                            <input id="kendo-combobox-demo" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="component-selection-pane" role="tabpanel" aria-labelledby="component-selection-tab" tabindex="0">
+                <div class="component-family-head">
+                    <h3>@T["Components.Sections.Selection"]</h3>
+                    <p>@T["Components.SelectionIntro"]</p>
+                </div>
+
+                <div class="component-card-grid">
+                    <article class="component-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Native Checkbox</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap + HTML</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Giữ checkbox native giúp kích thước gọn, quen mắt và dễ kiểm soát khi nằm trong grid.", "Keeping the native checkbox makes it compact, familiar, and easier to control inside grids.")</p>
+                        <div class="component-sample">
+                            <div class="form-check">
+                                <input id="native-checkbox-demo" class="form-check-input" type="checkbox" checked />
+                                <label class="form-check-label" for="native-checkbox-demo">@LocalText("Cho phép nhắc việc qua email", "Enable reminder emails")</label>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="component-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Native Select</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap + HTML</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Phù hợp cho danh sách ngắn, không cần filter và muốn đơn giản hóa DOM.", "A solid choice for short lists when filtering is unnecessary and the DOM should stay simple.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="native-select-demo">Category</label>
+                            <select id="native-select-demo" class="form-select">
+                                <option>@LocalText("Tất cả", "All")</option>
+                                <option>@T["TabulatorTaskCategory.Ui"]</option>
+                                <option>@T["TabulatorTaskCategory.Localization"]</option>
+                                <option>@T["TabulatorTaskCategory.Culture"]</option>
+                            </select>
+                        </div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-dropdownlist">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo DropDownList</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Dùng tốt cho lookup chuẩn hóa như trạng thái, ưu tiên hoặc loại yêu cầu.", "Great for standardized lookups such as status, priority, or request type.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-dropdownlist-demo">Priority</label>
+                            <input id="kendo-dropdownlist-demo" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-multiselect">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo MultiSelect</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Hợp với chọn nhiều tag hoặc module liên quan, nhất là khi cần filter tại chỗ.", "A strong fit for multi-tag or related-module selection, especially when inline filtering helps.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-multiselect-demo">Modules</label>
+                            <input id="kendo-multiselect-demo" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-listbox">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo ListBox</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Phù hợp cho danh sách chọn nhiều hàng, nhóm thao tác hoặc pick list dạng đứng.", "Useful for multi-row selection, grouped actions, or vertically stacked pick lists.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-listbox-demo">Sprint tasks</label>
+                            <select id="kendo-listbox-demo"></select>
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="component-datetime-pane" role="tabpanel" aria-labelledby="component-datetime-tab" tabindex="0">
+                <div class="component-family-head">
+                    <h3>@T["Components.Sections.DateTimeNumeric"]</h3>
+                    <p>@T["Components.DateTimeNumericIntro"]</p>
+                </div>
+
+                <div class="component-card-grid">
+                    <article class="component-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Native Date Input</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap + HTML</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Nhanh, gọn và ổn cho form hệ thống nội bộ khi không cần nhiều behavior Kendo.", "Fast, compact, and perfectly fine for internal forms that do not need extra Kendo behavior.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="native-date-demo">Due date</label>
+                            <input id="native-date-demo" class="form-control" type="date" value="2026-06-22" />
+                        </div>
+                    </article>
+
+                    <article class="component-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Native Number Input</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap + HTML</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Phù hợp cho số lượng đơn giản, step nhỏ và validation cơ bản từ HTML.", "A solid choice for simple quantities, small steps, and baseline HTML validation.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="native-number-demo">Story points</label>
+                            <input id="native-number-demo" class="form-control" type="number" min="0" step="1" value="5" />
+                        </div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-datepicker">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo DatePicker</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Dùng khi cần format ngày đồng bộ culture và popup chọn lịch thân thiện hơn input native.", "Use this when culture-aware date formatting and a friendlier popup calendar matter.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-datepicker-demo">Release date</label>
+                            <input id="kendo-datepicker-demo" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-datetimepicker">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo DateTimePicker</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Hợp cho thời điểm bàn giao, lịch chạy job hoặc timestamp cần nhập đủ ngày giờ.", "A good fit for handoff timestamps, scheduled jobs, or any full date-time entry.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-datetimepicker-demo">Publish at</label>
+                            <input id="kendo-datetimepicker-demo" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-timepicker">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo TimePicker</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Dùng cho khung giờ nhắc việc, ca trực hoặc hẹn chạy tác vụ định kỳ.", "Use this for reminder times, support shifts, or scheduled recurring tasks.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-timepicker-demo">Reminder time</label>
+                            <input id="kendo-timepicker-demo" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-numeric">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo NumericTextBox</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Rất hợp cho tiền, ngân sách hoặc số cần format và tăng giảm bằng step rõ ràng.", "Excellent for currency, budgets, or numbers that benefit from formatting and clear stepping.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-numeric-demo">Budget</label>
+                            <input id="kendo-numeric-demo" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-slider">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo Slider</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Phù hợp để chỉnh mức độ, progress hoặc scoring khi người dùng cần thao tác nhanh bằng chuột.", "Useful for progress, scoring, or level-based controls when users want quick pointer interaction.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-slider-demo">Completion level</label>
+                            <input id="kendo-slider-demo" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-masked">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo MaskedTextBox</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Hữu ích khi cần ép format nhập như số điện thoại, mã nội bộ hoặc định danh ngắn.", "Helpful when the user input should follow a strict pattern such as phone numbers or short internal codes.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-masked-demo">Phone</label>
+                            <input id="kendo-masked-demo" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="component-grid-pane" role="tabpanel" aria-labelledby="component-grid-tab" tabindex="0">
+                <div class="component-family-head">
+                    <h3>@T["Components.Sections.GridData"]</h3>
+                    <p>@T["Components.GridDataIntro"]</p>
+                </div>
+
+                <div class="component-card-grid">
+                    <article class="component-card component-card-wide">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Tabulator Grid Demo</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Tabulator</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@componentText.TabulatorInfo</p>
+                        <div class="component-sample">
+                            @Html.AntiForgeryToken()
+                            <div class="tabulator-mini-shell">
+                                <div class="tabulator-mini-toolbar">
+                                    <div class="tabulator-mini-actions">
+                                        <button id="component-tabulator-add" type="button">@T["TabulatorDemo.AddRow"]</button>
+                                        <button id="component-tabulator-delete" class="danger" type="button">@T["TabulatorDemo.DeleteSelected"]</button>
+                                        <button id="component-tabulator-save" class="primary" type="button">@T["TabulatorDemo.SaveChanges"]</button>
+                                        <button id="component-tabulator-reload" type="button">@T["TabulatorDemo.Reload"]</button>
+                                    </div>
+                                    <div class="tabulator-mini-state">
+                                        <span id="component-tabulator-dirty" class="tabulator-mini-chip">@T["TabulatorDemo.CleanState"]</span>
+                                        <span id="component-tabulator-count" class="tabulator-mini-chip">0</span>
+                                    </div>
+                                </div>
+                                <div id="component-tabulator-grid"></div>
+                                <div id="component-tabulator-feedback" class="tabulator-mini-feedback">@T["TabulatorDemo.Ready"]</div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="component-card component-card-wide" id="card-kendo-listview">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo DataSource + ListView + Pager</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@componentText.ListViewNote</p>
+                        <div class="component-sample">
+                            <div id="component-listview"></div>
+                            <div id="component-pager"></div>
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="component-feedback-pane" role="tabpanel" aria-labelledby="component-feedback-tab" tabindex="0">
+                <div class="component-family-head">
+                    <h3>@T["Components.Sections.FeedbackPopup"]</h3>
+                    <p>@T["Components.FeedbackPopupIntro"]</p>
+                </div>
+
+                <div class="component-card-grid">
+                    <article class="component-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Bootstrap Alerts</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Alert native của Bootstrap đủ hợp cho flash message, cảnh báo ngắn hoặc trạng thái save.", "Bootstrap alerts are enough for flash messages, short warnings, and save-state feedback.")</p>
+                        <div class="component-sample">
+                            <div class="bootstrap-alerts">
+                                <div class="alert alert-success mb-0">@LocalText("Đã lưu cấu hình giao diện.", "Layout settings saved.")</div>
+                                <div class="alert alert-warning mb-0">@LocalText("Có một vài thay đổi chưa publish.", "A few changes are not published yet.")</div>
+                                <div class="alert alert-info mb-0">@LocalText("Bạn có thể dùng song song với Notification khi cần feedback mềm hơn.", "You can pair this with Notification when you want softer feedback.")</div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="component-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Bootstrap Tabs</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Phù hợp để chia nội dung nhẹ theo nhóm mà không cần phụ thuộc toàn bộ vào Kendo navigation.", "A great choice for splitting lighter content by group without depending entirely on Kendo navigation widgets.")</p>
+                        <div class="component-sample">
+                            <ul class="nav nav-pills mb-3" id="bootstrap-mini-tabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="mini-overview-tab" data-bs-toggle="pill" data-bs-target="#mini-overview-pane" type="button" role="tab">@LocalText("Tổng quan", "Overview")</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="mini-notes-tab" data-bs-toggle="pill" data-bs-target="#mini-notes-pane" type="button" role="tab">@LocalText("Ghi chú", "Notes")</button>
+                                </li>
+                            </ul>
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="mini-overview-pane" role="tabpanel">
+                                    <div class="helper">@LocalText("Tab Bootstrap chạy nhanh và hợp với phần nội dung tài liệu nội bộ hoặc showcase.", "Bootstrap tabs are quick and work well for internal docs or showcase content.")</div>
+                                </div>
+                                <div class="tab-pane fade" id="mini-notes-pane" role="tabpanel">
+                                    <div class="helper">@LocalText("Dễ phối cùng card, form và alert sẵn có của source.", "They mix easily with the cards, forms, and alerts already in the source.")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-validator">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo Validator</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Dùng cho kiểm tra form nhẹ phía client mà vẫn giữ trải nghiệm đồng bộ với bộ Kendo hiện tại.", "Useful for lightweight client-side form validation while staying aligned with the current Kendo experience.")</p>
+                        <div class="component-sample">
+                            <form id="component-validator-form">
+                                <div class="mb-3">
+                                    <label class="form-label" for="component-validator-title">Title</label>
+                                    <input id="component-validator-title" class="form-control" type="text" required validationMessage="@LocalText("Vui lòng nhập tiêu đề.", "Please enter a title.")" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="component-validator-email">Email</label>
+                                    <input id="component-validator-email" type="email" required validationMessage="@LocalText("Hãy nhập email hợp lệ.", "Please provide a valid email.")" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="component-validator-color">Accent color</label>
+                                    <input id="component-validator-color" class="native-color-input" type="color" value="#2563eb" />
+                                </div>
+                                <button id="component-validator-submit" class="btn btn-primary" type="button">@T["Components.ValidateButton"]</button>
+                                <div class="helper">@componentText.ValidatorSummary</div>
+                            </form>
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-window">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo Window</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Window là lựa chọn popup mạnh nhất đang dùng được ngay trong bundle hiện tại.", "Window is the strongest popup option currently available in the active bundle.")</p>
+                        <div class="component-sample">
+                            <button id="component-window-open" class="btn btn-primary" type="button">@T["Components.OpenWindowButton"]</button>
+                            <div class="helper">@componentText.WindowBody</div>
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-notification">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo Notification</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Rất hợp cho feedback mềm, không chặn luồng thao tác như save, publish hoặc sync.", "Great for softer, non-blocking feedback during save, publish, or sync flows.")</p>
+                        <div class="component-sample">
+                            <button id="component-notification-open" class="btn btn-outline-secondary" type="button">@T["Components.ShowNotificationButton"]</button>
+                            <div class="helper">@LocalText("Dùng khi muốn báo trạng thái mà không nhảy layout như alert tĩnh.", "Use this when you want status feedback without shifting layout like static alerts do.")</div>
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-tooltip">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo Tooltip</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Tooltip phù hợp để giải thích icon, trạng thái hoặc hint thao tác mà không làm page nặng thêm.", "Tooltip is ideal for explaining icons, statuses, or usage hints without adding visual weight.")</p>
+                        <div class="component-sample">
+                            <div id="component-tooltip-target" class="rounded border p-3" style="cursor: help;">
+                                @LocalText("Rê chuột vào đây để xem tooltip.", "Hover here to see the tooltip.")
+                            </div>
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="component-layout-pane" role="tabpanel" aria-labelledby="component-layout-tab" tabindex="0">
+                <div class="component-family-head">
+                    <h3>@T["Components.Sections.NavigationLayout"]</h3>
+                    <p>@T["Components.NavigationLayoutIntro"]</p>
+                </div>
+
+                <div class="component-card-grid">
+                    <article class="component-card" id="card-kendo-menu">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo Menu</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Hợp cho menu ngang hoặc thao tác theo nhóm trong một vùng làm việc nhỏ.", "A good fit for horizontal menus or grouped actions inside a focused workspace area.")</p>
+                        <div class="component-sample">
+                            <ul id="component-menu">
+                                <li>@LocalText("Công cụ", "Tools")
+                                    <ul>
+                                        <li>@LocalText("Bộ lọc", "Filters")</li>
+                                        <li>@LocalText("Xuất dữ liệu", "Export data")</li>
+                                    </ul>
+                                </li>
+                                <li>@LocalText("Dữ liệu", "Data")
+                                    <ul>
+                                        <li>@LocalText("Đồng bộ", "Sync")</li>
+                                        <li>@LocalText("Kho lưu", "Archive")</li>
+                                    </ul>
+                                </li>
+                                <li>@LocalText("Thiết lập", "Settings")</li>
+                            </ul>
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card" id="card-kendo-panelbar">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo PanelBar</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Phù hợp để nhóm guideline, checklist hoặc help content theo cụm có thể expand/collapse.", "Useful for grouped guidelines, checklists, or help content that should expand and collapse.")</p>
+                        <div class="component-sample">
+                            <ul id="component-panelbar">
+                                <li class="k-active">@LocalText("Form usage", "Form usage")
+                                    <div class="pt-2">
+                                        @LocalText("Giữ form ngắn, ưu tiên bootstrap input cho field đơn giản và chỉ dùng Kendo khi cần behavior rõ ràng.", "Keep forms short, prefer Bootstrap inputs for simple fields, and use Kendo only when it adds clear behavior.")
+                                    </div>
+                                </li>
+                                <li>@LocalText("Grid alignment", "Grid alignment")
+                                    <div class="pt-2">
+                                        @LocalText("Header canh giữa, cột text trái, số hoặc tiền phải, các cột còn lại canh giữa.", "Center headers, left-align text columns, right-align decimal or money columns, and center the remaining body columns.")
+                                    </div>
+                                </li>
+                                <li>@LocalText("Catalog notes", "Catalog notes")
+                                    <div class="pt-2">
+                                        @LocalText("Bundle only là có thể dùng nhưng chưa demo ở hub; asset only là có file source nhưng chưa wired UI.", "Bundle only means available to use but not live-demoed here; asset only means the files exist but the UI is not wired yet.")
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
+                    <article class="component-card component-card-wide" id="card-kendo-splitter">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo Splitter</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Phù hợp cho màn hình cấu hình có pane trái là navigation và pane phải là nội dung chi tiết.", "Great for configuration screens with navigation on the left and details on the right.")</p>
+                        <div class="component-sample">
+                            <div id="component-splitter">
+                                <div class="split-pane">
+                                    <strong>@LocalText("Left pane", "Left pane")</strong>
+                                    <div class="helper">@LocalText("Menu dự án, bộ lọc hoặc danh sách section.", "Project menu, filters, or a section list.")</div>
+                                </div>
+                                <div class="split-pane">
+                                    <strong>@LocalText("Right pane", "Right pane")</strong>
+                                    <div class="helper">@LocalText("Chi tiết form, preview hoặc hướng dẫn thao tác.", "Form details, previews, or usage guidance.")</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="component-catalog-pane" role="tabpanel" aria-labelledby="component-catalog-tab" tabindex="0">
+                <div class="component-family-head">
+                    <h3>@T["Components.Sections.Catalog"]</h3>
+                    <p>@T["Components.CatalogIntro"]</p>
+                </div>
+
+                <div class="catalog-grid">
+                    <article class="catalog-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>@T["Components.Catalog.BundleOnlyTitle"]</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-bundle">@T["Components.StatusBundleOnly"]</span>
+                        </div>
+                        <div class="catalog-table">
+                            <div class="catalog-header">
+                                <div>@T["Components.ComponentColumn"]</div>
+                                <div>@T["Components.LibraryColumn"]</div>
+                                <div>@T["Components.StatusColumn"]</div>
+                                <div>@T["Components.NotesColumn"]</div>
+                            </div>
+                            @foreach (var item in bundleOnlyCatalog)
+                            {
+                                <div class="catalog-row">
+                                    <div><strong>@item.Name</strong></div>
+                                    <div>@item.Library</div>
+                                    <div><span class="component-status-badge status-bundle">@item.Status</span></div>
+                                    <div>@item.Note</div>
+                                </div>
+                            }
+                        </div>
+                    </article>
+
+                    <article class="catalog-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>@T["Components.Catalog.AssetOnlyTitle"]</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Source assets</div>
+                            </div>
+                            <span class="component-status-badge status-asset">@T["Components.StatusAssetOnly"]</span>
+                        </div>
+                        <div class="catalog-table">
+                            <div class="catalog-header">
+                                <div>@T["Components.ComponentColumn"]</div>
+                                <div>@T["Components.LibraryColumn"]</div>
+                                <div>@T["Components.StatusColumn"]</div>
+                                <div>@T["Components.NotesColumn"]</div>
+                            </div>
+                            @foreach (var item in assetOnlyCatalog)
+                            {
+                                <div class="catalog-row">
+                                    <div><strong>@item.Name</strong></div>
+                                    <div>@item.Library</div>
+                                    <div><span class="component-status-badge status-asset">@item.Status</span></div>
+                                    <div>@item.Note</div>
+                                </div>
+                            }
+                        </div>
+                    </article>
+
+                    <article class="catalog-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>@T["Components.Catalog.MissingBundleTitle"]</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI</div>
+                            </div>
+                            <span class="component-status-badge status-missing">@T["Components.StatusMissingBundle"]</span>
+                        </div>
+                        <div class="catalog-table">
+                            <div class="catalog-header">
+                                <div>@T["Components.ComponentColumn"]</div>
+                                <div>@T["Components.LibraryColumn"]</div>
+                                <div>@T["Components.StatusColumn"]</div>
+                                <div>@T["Components.NotesColumn"]</div>
+                            </div>
+                            @foreach (var item in missingBundleCatalog)
+                            {
+                                <div class="catalog-row">
+                                    <div><strong>@item.Name</strong></div>
+                                    <div>@item.Library</div>
+                                    <div><span class="component-status-badge status-missing">@item.Status</span></div>
+                                    <div>@item.Note</div>
+                                </div>
+                            }
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div id="component-window" style="display:none;">
+    <div class="p-3">
+        <h5 class="mb-2">@LocalText("Popup detail với Kendo Window", "Popup detail with Kendo Window")</h5>
+        <p class="mb-0">@componentText.WindowBody</p>
+    </div>
+</div>
+<div id="component-notification"></div>
+
+<script id="component-listview-template" type="text/x-kendo-template">
+    <div class="component-list-item">
+        <div>
+            <strong>#: title #</strong>
+            <small>#: owner # · #= kendo.toString(dueDate, "dd/MM/yyyy") #</small>
+        </div>
+        <div><span class="status-pill status-#: statusCode #">#: status #</span></div>
+        <div><span class="priority-pill priority-#: priorityCode #">#: priority #</span></div>
+        <div>
+            <div class="mini-progress"><span style="width: #: progress #%"></span></div>
+            <small>#: progress #%</small>
+        </div>
+    </div>
+</script>
+
+@section Scripts {
+    <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
+    @if (currentCulture == "vi-VN")
+    {
+        <script src="~/vendor/kendo/cultures/kendo.culture.vi-VN.min.js" asp-append-version="true"></script>
+        <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
+    }
+    <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script>
+        (function ($) {
+            const text = @Html.Raw(JsonSerializer.Serialize(componentText));
+            const categoryOptions = @Html.Raw(JsonSerializer.Serialize(tabulatorCategoryOptions));
+            const statusOptions = @Html.Raw(JsonSerializer.Serialize(tabulatorStatusOptions));
+            const priorityOptions = @Html.Raw(JsonSerializer.Serialize(tabulatorPriorityOptions));
+            const kendoPriorityOptions = @Html.Raw(JsonSerializer.Serialize(kendoPriorityOptions));
+            const kendoListBoxItems = @Html.Raw(JsonSerializer.Serialize(kendoListBoxItems));
+            const kendoListViewItems = @Html.Raw(JsonSerializer.Serialize(kendoListViewItems));
+            const antiForgeryToken = document.querySelector("#component-grid-pane input[name='__RequestVerificationToken']")?.value || "";
+
+            function setCardStatus(cardId, kind, note) {
+                const card = document.getElementById(cardId);
+                if (!card) {
+                    return;
+                }
+
+                const badge = card.querySelector("[data-status-badge]");
+                const noteEl = card.querySelector("[data-status-note]");
+                if (!badge) {
+                    return;
+                }
+
+                badge.classList.remove("status-check", "status-usable", "status-bundle", "status-asset", "status-missing");
+
+                if (kind === "usable") {
+                    badge.classList.add("status-usable");
+                    badge.textContent = text.UsableNow;
+                } else if (kind === "missing") {
+                    badge.classList.add("status-missing");
+                    badge.textContent = text.MissingBundle;
+                } else if (kind === "bundle") {
+                    badge.classList.add("status-bundle");
+                    badge.textContent = text.BundleOnly;
+                } else if (kind === "asset") {
+                    badge.classList.add("status-asset");
+                    badge.textContent = text.AssetOnly;
+                } else {
+                    badge.classList.add("status-check");
+                    badge.textContent = text.BundleCheck;
+                }
+
+                if (noteEl) {
+                    if (note) {
+                        noteEl.textContent = note;
+                        noteEl.classList.remove("d-none");
+                    } else {
+                        noteEl.textContent = "";
+                        noteEl.classList.add("d-none");
+                    }
+                }
+            }
+
+            function hasPlugin(pluginName) {
+                return !!($ && $.fn && typeof $.fn[pluginName] === "function");
+            }
+
+            function initWidget(selector, pluginName, options, cardId) {
+                const element = $(selector);
+                if (!element.length) {
+                    return null;
+                }
+
+                if (!hasPlugin(pluginName)) {
+                    if (cardId) {
+                        setCardStatus(cardId, "missing", pluginName + ": " + text.WidgetUnavailable);
+                    }
+                    return null;
+                }
+
+                element[pluginName](options || {});
+                if (cardId) {
+                    setCardStatus(cardId, "usable");
+                }
+
+                return element.data(pluginName);
+            }
+
+            function initKendoDemos() {
+                if (!window.kendo) {
+                    [
+                        "card-kendo-textbox",
+                        "card-kendo-autocomplete",
+                        "card-kendo-combobox",
+                        "card-kendo-dropdownlist",
+                        "card-kendo-multiselect",
+                        "card-kendo-listbox",
+                        "card-kendo-datepicker",
+                        "card-kendo-datetimepicker",
+                        "card-kendo-timepicker",
+                        "card-kendo-numeric",
+                        "card-kendo-slider",
+                        "card-kendo-masked",
+                        "card-kendo-listview",
+                        "card-kendo-validator",
+                        "card-kendo-window",
+                        "card-kendo-notification",
+                        "card-kendo-tooltip",
+                        "card-kendo-menu",
+                        "card-kendo-panelbar",
+                        "card-kendo-splitter"
+                    ].forEach(function (cardId) {
+                        setCardStatus(cardId, "missing", text.WidgetUnavailable);
+                    });
+                    return;
+                }
+
+                if (text.CultureName === "vi-VN") {
+                    kendo.culture("vi-VN");
+                }
+
+                const popupOptions = {
+                    appendTo: $(document.body),
+                    collision: "fit flip"
+                };
+
+                const keywordData = ["UI", "API", "SQL", "Localization", "Kendo Core", "Tabulator", "Bootstrap", "Popup", "Culture"];
+                const provinceData = [
+                    { text: "Hà Nội", value: "HN" },
+                    { text: "TP. Hồ Chí Minh", value: "HCM" },
+                    { text: "Đà Nẵng", value: "DN" },
+                    { text: "Hải Phòng", value: "HP" },
+                    { text: "Cần Thơ", value: "CT" }
+                ];
+                const moduleData = [
+                    { text: "UI", value: "ui" },
+                    { text: "Localization", value: "localization" },
+                    { text: "Culture", value: "culture" },
+                    { text: "Testing", value: "testing" },
+                    { text: "Operations", value: "operations" }
+                ];
+
+                initWidget("#kendo-textbox-demo", "kendoTextBox", { placeholder: "REQ-2048" }, "card-kendo-textbox");
+                initWidget("#kendo-autocomplete-demo", "kendoAutoComplete", {
+                    dataSource: keywordData,
+                    filter: "contains",
+                    minLength: 1,
+                    suggest: true,
+                    popup: popupOptions
+                }, "card-kendo-autocomplete");
+                initWidget("#kendo-combobox-demo", "kendoComboBox", {
+                    dataTextField: "text",
+                    dataValueField: "value",
+                    dataSource: provinceData,
+                    placeholder: "Choose or type...",
+                    filter: "contains",
+                    suggest: true,
+                    popup: popupOptions
+                }, "card-kendo-combobox");
+                initWidget("#kendo-dropdownlist-demo", "kendoDropDownList", {
+                    dataTextField: "text",
+                    dataValueField: "value",
+                    dataSource: kendoPriorityOptions,
+                    popup: popupOptions
+                }, "card-kendo-dropdownlist");
+                initWidget("#kendo-multiselect-demo", "kendoMultiSelect", {
+                    dataTextField: "text",
+                    dataValueField: "value",
+                    dataSource: moduleData,
+                    value: ["ui", "localization"],
+                    autoClose: false,
+                    filter: "contains",
+                    popup: popupOptions
+                }, "card-kendo-multiselect");
+                initWidget("#kendo-listbox-demo", "kendoListBox", {
+                    dataTextField: "text",
+                    dataValueField: "value",
+                    dataSource: kendoListBoxItems,
+                    selectable: "multiple"
+                }, "card-kendo-listbox");
+                initWidget("#kendo-datepicker-demo", "kendoDatePicker", {
+                    value: new Date(2026, 5, 22),
+                    format: "dd/MM/yyyy",
+                    popup: popupOptions
+                }, "card-kendo-datepicker");
+                initWidget("#kendo-datetimepicker-demo", "kendoDateTimePicker", {
+                    value: new Date(2026, 5, 22, 9, 30),
+                    format: "dd/MM/yyyy HH:mm",
+                    timeFormat: "HH:mm",
+                    popup: popupOptions
+                }, "card-kendo-datetimepicker");
+                initWidget("#kendo-timepicker-demo", "kendoTimePicker", {
+                    value: new Date(2026, 5, 22, 14, 15),
+                    format: "HH:mm",
+                    interval: 15,
+                    popup: popupOptions
+                }, "card-kendo-timepicker");
+                initWidget("#kendo-numeric-demo", "kendoNumericTextBox", {
+                    format: "c0",
+                    value: 5000000,
+                    min: 0,
+                    step: 100000
+                }, "card-kendo-numeric");
+                initWidget("#kendo-slider-demo", "kendoSlider", {
+                    min: 0,
+                    max: 100,
+                    smallStep: 5,
+                    largeStep: 20,
+                    value: 65,
+                    showButtons: true
+                }, "card-kendo-slider");
+                initWidget("#kendo-masked-demo", "kendoMaskedTextBox", {
+                    mask: "0000 000 000",
+                    value: "0900000000"
+                }, "card-kendo-masked");
+
+                if (hasPlugin("kendoListView") && hasPlugin("kendoPager")) {
+                    const listViewDataSource = new kendo.data.DataSource({
+                        data: kendoListViewItems,
+                        pageSize: 3,
+                        schema: {
+                            model: {
+                                id: "id",
+                                fields: {
+                                    dueDate: { type: "date" },
+                                    progress: { type: "number" }
+                                }
+                            }
+                        }
+                    });
+
+                    $("#component-listview").kendoListView({
+                        dataSource: listViewDataSource,
+                        template: kendo.template($("#component-listview-template").html())
+                    });
+
+                    $("#component-pager").kendoPager({
+                        dataSource: listViewDataSource,
+                        buttonCount: 5,
+                        pageSizes: [3, 6],
+                        refresh: true,
+                        messages: {
+                            empty: text.ListViewEmpty
+                        }
+                    });
+
+                    setCardStatus("card-kendo-listview", "usable");
+                    listViewDataSource.read();
+                } else {
+                    setCardStatus("card-kendo-listview", "missing", "kendoListView / kendoPager: " + text.WidgetUnavailable);
+                }
+
+                initWidget("#component-validator-email", "kendoTextBox", {
+                    placeholder: "team@toolbox.local"
+                }, null);
+
+                const validator = initWidget("#component-validator-form", "kendoValidator", null, "card-kendo-validator");
+                let notification = null;
+                const demoWindow = initWidget("#component-window", "kendoWindow", {
+                    width: "460px",
+                    title: text.WindowTitle,
+                    visible: false,
+                    modal: true,
+                    actions: ["Pin", "Minimize", "Maximize", "Close"]
+                }, "card-kendo-window");
+
+                notification = initWidget("#component-notification", "kendoNotification", {
+                    position: { pinned: true, top: 88, right: 28 },
+                    stacking: "down",
+                    autoHideAfter: 2600
+                }, "card-kendo-notification");
+
+                initWidget("#component-tooltip-target", "kendoTooltip", {
+                    content: text.TooltipContent,
+                    position: "bottom",
+                    width: 300
+                }, "card-kendo-tooltip");
+
+                initWidget("#component-menu", "kendoMenu", {
+                    animation: { open: { effects: "fadeIn" } },
+                    popupCollision: "fit flip"
+                }, "card-kendo-menu");
+                initWidget("#component-panelbar", "kendoPanelBar", {
+                    expandMode: "multiple"
+                }, "card-kendo-panelbar");
+                initWidget("#component-splitter", "kendoSplitter", {
+                    panes: [
+                        { size: "40%", collapsible: true },
+                        { collapsible: true }
+                    ]
+                }, "card-kendo-splitter");
+
+                document.getElementById("component-validator-submit")?.addEventListener("click", function () {
+                    const valid = validator ? validator.validate() : false;
+                    if (notification) {
+                        notification.show(valid ? text.ValidatorSuccess : text.ValidatorError, valid ? "success" : "error");
+                    }
+                });
+
+                document.getElementById("component-window-open")?.addEventListener("click", function () {
+                    demoWindow?.center().open();
+                });
+
+                document.getElementById("component-notification-open")?.addEventListener("click", function () {
+                    notification?.show(text.NotificationInfo, "info");
+                });
+            }
+
+            function initTabulatorDemo() {
+                if (!window.Tabulator) {
+                    const feedbackEl = document.getElementById("component-tabulator-feedback");
+                    if (feedbackEl) {
+                        feedbackEl.textContent = "Tabulator assets are not available.";
+                        feedbackEl.classList.add("error");
+                    }
+                    return;
+                }
+
+                const loginUrl = text.Tabulator.LoginPath + "?ReturnUrl=" + encodeURIComponent(text.Tabulator.ReturnUrl);
+                const feedbackEl = document.getElementById("component-tabulator-feedback");
+                const dirtyChipEl = document.getElementById("component-tabulator-dirty");
+                const rowCountEl = document.getElementById("component-tabulator-count");
+                const pending = {
+                    created: new Map(),
+                    updated: new Map(),
+                    deletedIds: new Set()
+                };
+
+                const categoryLookup = toLookup(categoryOptions);
+                const statusLookup = toLookup(statusOptions);
+                const priorityLookup = toLookup(priorityOptions);
+                let table = null;
+                let tempRowCounter = 0;
+
+                function setFeedback(message, type) {
+                    feedbackEl.textContent = message;
+                    feedbackEl.classList.remove("success", "error");
+                    if (type) {
+                        feedbackEl.classList.add(type);
+                    }
+                }
+
+                function updateRowCount() {
+                    rowCountEl.textContent = table ? String(table.getDataCount("active")) : "0";
+                }
+
+                function hasPendingChanges() {
+                    return pending.created.size > 0 || pending.updated.size > 0 || pending.deletedIds.size > 0;
+                }
+
+                function updateDirtyState() {
+                    const dirty = hasPendingChanges();
+                    dirtyChipEl.textContent = dirty ? text.Tabulator.DirtyState : text.Tabulator.CleanState;
+                    dirtyChipEl.classList.toggle("dirty", dirty);
+                    updateRowCount();
+                }
+
+                function toSnapshot(data) {
+                    return {
+                        id: data.id,
+                        title: (data.title || "").trim(),
+                        category: data.category || "Ui",
+                        status: data.status || "Todo",
+                        priority: data.priority || "Medium",
+                        progress: normalizeNumber(data.progress, 0),
+                        budget: normalizeNumber(data.budget, 0),
+                        dueDate: data.dueDate || null,
+                        note: (data.note || "").trim()
+                    };
+                }
+
+                function clearPending() {
+                    pending.created.clear();
+                    pending.updated.clear();
+                    pending.deletedIds.clear();
+                    updateDirtyState();
+                }
+
+                function normalizeNumber(value, fallbackValue) {
+                    const parsed = Number(value);
+                    return Number.isFinite(parsed) ? parsed : fallbackValue;
+                }
+
+                function syncDerived(row) {
+                    row.categoryLabel = categoryLookup[row.category] || row.category;
+                    row.statusLabel = statusLookup[row.status] || row.status;
+                    row.priorityLabel = priorityLookup[row.priority] || row.priority;
+                    return row;
+                }
+
+                function markRowDirty(rowData) {
+                    const snapshot = toSnapshot(syncDerived(rowData));
+                    if (snapshot.id == null) {
+                        pending.created.set(rowData.rowKey, snapshot);
+                    } else {
+                        pending.updated.set(rowData.rowKey, snapshot);
+                    }
+                    updateDirtyState();
+                }
+
+                function createEmptyRow() {
+                    tempRowCounter += 1;
+                    return {
+                        id: null,
+                        rowKey: "tmp-" + tempRowCounter,
+                        title: "",
+                        category: "Ui",
+                        categoryLabel: categoryLookup.Ui,
+                        status: "Todo",
+                        statusLabel: statusLookup.Todo,
+                        priority: "Medium",
+                        priorityLabel: priorityLookup.Medium,
+                        progress: 0,
+                        budget: 0,
+                        dueDate: "",
+                        note: "",
+                        updatedAt: ""
+                    };
+                }
+
+                function flushActiveEditor() {
+                    if (document.activeElement && typeof document.activeElement.blur === "function") {
+                        document.activeElement.blur();
+                    }
+                }
+
+                function waitForUiCommit() {
+                    return new Promise(function (resolve) {
+                        window.setTimeout(resolve, 0);
+                    });
+                }
+
+                function collectEditedRows() {
+                    if (!table || typeof table.getEditedCells !== "function") {
+                        return;
+                    }
+
+                    const touchedRows = new Set();
+                    table.getEditedCells().forEach(function (cell) {
+                        const rowData = cell.getRow().getData();
+                        if (!rowData || touchedRows.has(rowData.rowKey)) {
+                            return;
+                        }
+
+                        touchedRows.add(rowData.rowKey);
+                        const snapshot = toSnapshot(syncDerived(rowData));
+                        if (snapshot.id == null) {
+                            pending.created.set(rowData.rowKey, snapshot);
+                        } else if (!pending.deletedIds.has(snapshot.id)) {
+                            pending.updated.set(rowData.rowKey, snapshot);
+                        }
+                    });
+                }
+
+                function refreshPendingSnapshots() {
+                    pending.created.forEach(function (_, rowKey) {
+                        const row = table.getRow(rowKey);
+                        if (row) {
+                            pending.created.set(rowKey, toSnapshot(syncDerived(row.getData())));
+                        }
+                    });
+
+                    pending.updated.forEach(function (_, rowKey) {
+                        const row = table.getRow(rowKey);
+                        if (row) {
+                            pending.updated.set(rowKey, toSnapshot(syncDerived(row.getData())));
+                        }
+                    });
+                }
+
+                async function requestJson(url, options) {
+                    const response = await fetch(url, options);
+
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = loginUrl;
+                        return null;
+                    }
+
+                    const contentType = response.headers.get("content-type") || "";
+                    const payload = contentType.includes("application/json")
+                        ? await response.json()
+                        : await response.text();
+
+                    if (!response.ok) {
+                        const message = typeof payload === "string"
+                            ? payload
+                            : (payload.message || text.Tabulator.GenericError);
+                        const errors = typeof payload === "object" && payload.errors
+                            ? payload.errors.join(" ")
+                            : "";
+                        throw new Error((message + " " + errors).trim());
+                    }
+
+                    return payload;
+                }
+
+                async function loadGridData(showMessage) {
+                    const payload = await requestJson(text.Tabulator.DataUrl, {
+                        credentials: "same-origin",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    });
+
+                    if (!payload) {
+                        return;
+                    }
+
+                    table.setData(payload);
+                    clearPending();
+                    if (showMessage) {
+                        setFeedback(text.Tabulator.Reloaded, "success");
+                    }
+                }
+
+                table = new Tabulator("#component-tabulator-grid", {
+                    index: "rowKey",
+                    layout: "fitColumns",
+                    height: "430px",
+                    selectableRows: true,
+                    placeholder: text.Tabulator.EmptyState,
+                    columnDefaults: {
+                        headerHozAlign: "center",
+                        headerSort: true,
+                        vertAlign: "middle"
+                    },
+                    columns: [
+                        {
+                            formatter: "rowSelection",
+                            titleFormatter: "rowSelection",
+                            hozAlign: "center",
+                            headerSort: false,
+                            width: 52
+                        },
+                        {
+                            title: text.Tabulator.Columns.Title,
+                            field: "title",
+                            editor: "input",
+                            hozAlign: "left",
+                            minWidth: 220
+                        },
+                        {
+                            title: text.Tabulator.Columns.Category,
+                            field: "category",
+                            editor: "list",
+                            editorParams: { values: categoryLookup },
+                            formatter: function (cell) { return categoryLookup[cell.getValue()] || ""; },
+                            hozAlign: "left",
+                            minWidth: 150
+                        },
+                        {
+                            title: text.Tabulator.Columns.Status,
+                            field: "status",
+                            editor: "list",
+                            editorParams: { values: statusLookup },
+                            formatter: function (cell) { return statusLookup[cell.getValue()] || ""; },
+                            hozAlign: "center",
+                            minWidth: 140
+                        },
+                        {
+                            title: text.Tabulator.Columns.Priority,
+                            field: "priority",
+                            editor: "list",
+                            editorParams: { values: priorityLookup },
+                            formatter: function (cell) { return priorityLookup[cell.getValue()] || ""; },
+                            hozAlign: "center",
+                            minWidth: 140
+                        },
+                        {
+                            title: text.Tabulator.Columns.Progress,
+                            field: "progress",
+                            editor: "number",
+                            sorter: "number",
+                            hozAlign: "center",
+                            minWidth: 120
+                        },
+                        {
+                            title: text.Tabulator.Columns.Budget,
+                            field: "budget",
+                            editor: "number",
+                            sorter: "number",
+                            hozAlign: "right",
+                            formatter: function (cell) {
+                                return new Intl.NumberFormat(text.CultureName).format(normalizeNumber(cell.getValue(), 0));
+                            },
+                            minWidth: 140
+                        },
+                        {
+                            title: text.Tabulator.Columns.DueDate,
+                            field: "dueDate",
+                            editor: "date",
+                            hozAlign: "center",
+                            minWidth: 135
+                        },
+                        {
+                            title: text.Tabulator.Columns.Note,
+                            field: "note",
+                            editor: "textarea",
+                            hozAlign: "left",
+                            minWidth: 220
+                        },
+                        {
+                            title: text.Tabulator.Columns.UpdatedAt,
+                            field: "updatedAt",
+                            headerSort: false,
+                            hozAlign: "center",
+                            minWidth: 140
+                        }
+                    ],
+                    cellEdited: function (cell) {
+                        const rowData = cell.getRow().getData();
+                        syncDerived(rowData);
+                        markRowDirty(rowData);
+                        setFeedback(text.Tabulator.PendingChangesNotice);
+                        updateRowCount();
+                    },
+                    dataLoaded: function () {
+                        updateRowCount();
+                    }
+                });
+
+                document.getElementById("component-tabulator-add")?.addEventListener("click", function () {
+                    const newRow = createEmptyRow();
+                    table.addRow(newRow, true);
+                    pending.created.set(newRow.rowKey, toSnapshot(newRow));
+                    updateDirtyState();
+                    setFeedback(text.Tabulator.PendingChangesNotice);
+                });
+
+                document.getElementById("component-tabulator-delete")?.addEventListener("click", function () {
+                    const selected = table.getSelectedRows();
+                    if (!selected.length) {
+                        setFeedback(text.Tabulator.NoSelection, "error");
+                        return;
+                    }
+
+                    selected.forEach(function (row) {
+                        const data = row.getData();
+                        if (data.id == null) {
+                            pending.created.delete(data.rowKey);
+                        } else {
+                            pending.updated.delete(data.rowKey);
+                            pending.deletedIds.add(data.id);
+                        }
+                        row.delete();
+                    });
+
+                    updateDirtyState();
+                    setFeedback(text.Tabulator.PendingChangesNotice);
+                });
+
+                document.getElementById("component-tabulator-reload")?.addEventListener("click", async function () {
+                    try {
+                        await loadGridData(true);
+                    } catch (error) {
+                        setFeedback(error.message || text.Tabulator.GenericError, "error");
+                    }
+                });
+
+                document.getElementById("component-tabulator-save")?.addEventListener("click", async function () {
+                    try {
+                        flushActiveEditor();
+                        await waitForUiCommit();
+                        collectEditedRows();
+                        refreshPendingSnapshots();
+                        updateDirtyState();
+
+                        if (!hasPendingChanges()) {
+                            setFeedback(text.Tabulator.NoChanges);
+                            return;
+                        }
+
+                        setFeedback(text.Tabulator.Saving);
+
+                        const payload = {
+                            created: Array.from(pending.created.values()),
+                            updated: Array.from(pending.updated.values()).filter(function (item) { return item.id != null; }),
+                            deletedIds: Array.from(pending.deletedIds.values())
+                        };
+
+                        const response = await requestJson(text.Tabulator.SaveUrl, {
+                            method: "POST",
+                            credentials: "same-origin",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "RequestVerificationToken": antiForgeryToken,
+                                "X-Requested-With": "XMLHttpRequest"
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response) {
+                            return;
+                        }
+
+                        table.setData(response.items || []);
+                        clearPending();
+                        setFeedback(response.message || text.Tabulator.SaveSuccess, "success");
+                    } catch (error) {
+                        setFeedback(error.message || text.Tabulator.GenericError, "error");
+                    }
+                });
+
+                loadGridData(false).catch(function (error) {
+                    setFeedback(error.message || text.Tabulator.GenericError, "error");
+                });
+            }
+
+            function toLookup(options) {
+                return options.reduce(function (acc, item) {
+                    acc[item.value] = item.label;
+                    return acc;
+                }, {});
+            }
+
+            initKendoDemos();
+            initTabulatorDemo();
+        })(jQuery);
+    </script>
+}
