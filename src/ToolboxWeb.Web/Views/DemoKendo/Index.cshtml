@@ -1,5 +1,12 @@
+@using ToolboxWeb.Web.Constants
 @{
     ViewData["Title"] = T["Nav.KendoDemo"];
+    var activeTab = ViewData["ActiveTab"] as string ?? ToolboxRouteSlugs.KendoDemoTabs.Default;
+
+    bool IsActiveTab(string tab) => string.Equals(activeTab, tab, StringComparison.OrdinalIgnoreCase);
+    string TabButtonClass(string tab) => IsActiveTab(tab) ? "nav-link active" : "nav-link";
+    string TabPaneClass(string tab) => IsActiveTab(tab) ? "tab-pane fade show active" : "tab-pane fade";
+    string TabRoute(string tab) => Url.RouteUrl(ToolboxRouteSlugs.RouteNames.KendoDemoTabHtml, new { tab }) ?? $"/demo-kendo/{tab}.html";
 }
 
 @section Styles {
@@ -120,12 +127,16 @@
             border-top-right-radius: 12px;
             color: var(--muted);
             font-weight: 800;
+            transform: translateY(0);
+            transition: color .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+            will-change: transform;
         }
 
         .demo-tab-nav .nav-link:hover,
         .demo-tab-nav .nav-link:focus {
             border-color: transparent transparent var(--line);
             color: var(--text);
+            transform: translateY(-1px);
         }
 
         .demo-tab-nav .nav-link.active {
@@ -136,6 +147,15 @@
 
         .demo-tab-content-shell {
             padding: 18px;
+        }
+
+        .demo-tab-content-shell > .tab-pane.fade {
+            transform: translateY(8px);
+            transition: opacity .2s ease, transform .22s ease;
+        }
+
+        .demo-tab-content-shell > .tab-pane.fade.show {
+            transform: translateY(0);
         }
 
         .kendo-toolbar-row {
@@ -353,6 +373,14 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .demo-tab-nav .nav-link,
+            .demo-tab-content-shell > .tab-pane.fade {
+                transition: none;
+                transform: none;
+            }
+        }
     </style>
 }
 
@@ -395,29 +423,29 @@
         <div class="demo-tab-shell">
             <ul class="nav nav-tabs demo-tab-nav" id="kendo-demo-tabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="tab-core-table" data-bs-toggle="tab" data-bs-target="#pane-core-table" type="button" role="tab" aria-controls="pane-core-table" aria-selected="true">
+                    <button class="@TabButtonClass(ToolboxRouteSlugs.KendoDemoTabs.DataSourceListView)" id="tab-core-table" data-bs-toggle="tab" data-bs-target="#pane-core-table" data-route-url="@TabRoute(ToolboxRouteSlugs.KendoDemoTabs.DataSourceListView)" type="button" role="tab" aria-controls="pane-core-table" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.KendoDemoTabs.DataSourceListView).ToString().ToLowerInvariant())">
                         DataSource & ListView
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-selection" data-bs-toggle="tab" data-bs-target="#pane-selection" type="button" role="tab" aria-controls="pane-selection" aria-selected="false">
+                    <button class="@TabButtonClass(ToolboxRouteSlugs.KendoDemoTabs.Selection)" id="tab-selection" data-bs-toggle="tab" data-bs-target="#pane-selection" data-route-url="@TabRoute(ToolboxRouteSlugs.KendoDemoTabs.Selection)" type="button" role="tab" aria-controls="pane-selection" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.KendoDemoTabs.Selection).ToString().ToLowerInvariant())">
                         Chọn dữ liệu
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-inputs" data-bs-toggle="tab" data-bs-target="#pane-inputs" type="button" role="tab" aria-controls="pane-inputs" aria-selected="false">
+                    <button class="@TabButtonClass(ToolboxRouteSlugs.KendoDemoTabs.FormCulture)" id="tab-inputs" data-bs-toggle="tab" data-bs-target="#pane-inputs" data-route-url="@TabRoute(ToolboxRouteSlugs.KendoDemoTabs.FormCulture)" type="button" role="tab" aria-controls="pane-inputs" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.KendoDemoTabs.FormCulture).ToString().ToLowerInvariant())">
                         Form & Culture
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-layout" data-bs-toggle="tab" data-bs-target="#pane-layout" type="button" role="tab" aria-controls="pane-layout" aria-selected="false">
+                    <button class="@TabButtonClass(ToolboxRouteSlugs.KendoDemoTabs.LayoutPopup)" id="tab-layout" data-bs-toggle="tab" data-bs-target="#pane-layout" data-route-url="@TabRoute(ToolboxRouteSlugs.KendoDemoTabs.LayoutPopup)" type="button" role="tab" aria-controls="pane-layout" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.KendoDemoTabs.LayoutPopup).ToString().ToLowerInvariant())">
                         Layout & Popup
                     </button>
                 </li>
             </ul>
 
             <div class="tab-content demo-tab-content-shell">
-                <div class="tab-pane fade show active" id="pane-core-table" role="tabpanel" aria-labelledby="tab-core-table" tabindex="0">
+                <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.DataSourceListView)" id="pane-core-table" role="tabpanel" aria-labelledby="tab-core-table" tabindex="0">
                     <div class="kendo-toolbar-row">
                         <div>
                             <label for="table-search">Tìm nhanh</label>
@@ -467,7 +495,7 @@
                     </div>
                 </div>
 
-                <div class="tab-pane fade" id="pane-selection" role="tabpanel" aria-labelledby="tab-selection" tabindex="0">
+                <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.Selection)" id="pane-selection" role="tabpanel" aria-labelledby="tab-selection" tabindex="0">
                     <div class="demo-card-grid">
                         <div class="demo-card">
                             <h3>AutoComplete</h3>
@@ -501,7 +529,7 @@
                     </div>
                 </div>
 
-                <div class="tab-pane fade" id="pane-inputs" role="tabpanel" aria-labelledby="tab-inputs" tabindex="0">
+                <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.FormCulture)" id="pane-inputs" role="tabpanel" aria-labelledby="tab-inputs" tabindex="0">
                     <div class="demo-card-grid">
                         <div class="demo-card">
                             <h3>DatePicker & DateTimePicker</h3>
@@ -547,7 +575,7 @@
                     </div>
                 </div>
 
-                <div class="tab-pane fade" id="pane-layout" role="tabpanel" aria-labelledby="tab-layout" tabindex="0">
+                <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.LayoutPopup)" id="pane-layout" role="tabpanel" aria-labelledby="tab-layout" tabindex="0">
                     <div class="layout-playground">
                         <div class="demo-card">
                             <h3>Splitter, Menu, PanelBar</h3>
@@ -652,6 +680,27 @@
     <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
     <script>
         (function ($) {
+            function bindTabRoutes(containerSelector) {
+                document.querySelectorAll(containerSelector + " [data-route-url]").forEach(function (trigger) {
+                    trigger.addEventListener("shown.bs.tab", function (event) {
+                        const routeUrl = event.target.getAttribute("data-route-url");
+                        if (!routeUrl || !window.history || typeof window.history.replaceState !== "function") {
+                            return;
+                        }
+
+                        const nextUrl = new URL(routeUrl, window.location.origin);
+                        const currentUrl = new URL(window.location.href);
+                        if (nextUrl.pathname === currentUrl.pathname && nextUrl.search === currentUrl.search) {
+                            return;
+                        }
+
+                        window.history.replaceState(window.history.state, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
+                    });
+                });
+            }
+
+            bindTabRoutes("#kendo-demo-tabs");
+
             if (!window.kendo) {
                 $(".kendo-demo-hero").append("<div class='widget-missing'>Không tải được Kendo UI Core self-host. Hãy kiểm tra lại static file hoặc CSP.</div>");
                 return;

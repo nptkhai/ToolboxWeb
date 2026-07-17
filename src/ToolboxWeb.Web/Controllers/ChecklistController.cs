@@ -22,6 +22,8 @@ public class ChecklistController : Controller
         _localizer = localizer;
     }
 
+    [HttpGet("/" + ToolboxRouteSlugs.Pages.Checklist)]
+    [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.Checklist, Name = ToolboxRouteSlugs.RouteNames.ChecklistHtml)]
     public async Task<IActionResult> Index()
     {
         return View(new ChecklistIndexViewModel { Items = await _checklist.GetAsync(_currentUser.UserId) });
@@ -38,7 +40,7 @@ public class ChecklistController : Controller
 
         await _checklist.CreateAsync(_currentUser.UserId, form);
         TempData[TempDataKeys.SuccessMessage] = _localizer["Flash.TaskCreated"].Value;
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html");
     }
 
     [HttpPost]
@@ -46,7 +48,7 @@ public class ChecklistController : Controller
     public async Task<IActionResult> Toggle(int id)
     {
         await _checklist.ToggleAsync(_currentUser.UserId, id);
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html");
     }
 
     [HttpPost]
@@ -54,6 +56,6 @@ public class ChecklistController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         await _checklist.DeleteAsync(_currentUser.UserId, id);
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html");
     }
 }

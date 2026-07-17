@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Services;
 
 namespace ToolboxWeb.Web.Controllers;
@@ -16,6 +17,8 @@ public class DashboardController : Controller
         _currentUser = currentUser;
     }
 
+    [HttpGet("/" + ToolboxRouteSlugs.Pages.Dashboard)]
+    [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.Dashboard, Name = ToolboxRouteSlugs.RouteNames.DashboardHtml)]
     public async Task<IActionResult> Index()
     {
         return View(await _dashboard.BuildAsync(_currentUser.UserId));

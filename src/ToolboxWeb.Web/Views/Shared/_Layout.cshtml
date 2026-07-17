@@ -1,3 +1,4 @@
+@using ToolboxWeb.Web.Constants
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentUICulture.Name">
 <head>
@@ -8,6 +9,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
+    <link rel="stylesheet" href="~/css/vendor-sync.css" asp-append-version="true" />
     <script>
         (function () {
             const theme = localStorage.getItem('toolbox.theme') || 'light';
@@ -24,17 +26,17 @@
         <aside class="app-sidebar">
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <a class="brand" asp-controller="Dashboard" asp-action="Index">@T["App.Name"]</a>
+                <a class="brand" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html")">@T["App.Name"]</a>
                 <nav class="side-nav">
-                    <a asp-controller="Dashboard" asp-action="Index">@T["Nav.Dashboard"]</a>
-                    <a asp-controller="Notes" asp-action="Index">@T["Nav.Notes"]</a>
-                    <a asp-controller="Checklist" asp-action="Index">@T["Nav.Checklist"]</a>
-                    <a asp-controller="FocusTimer" asp-action="Index">@T["Nav.FocusTimer"]</a>
-                    <a asp-controller="QuickLinks" asp-action="Index">@T["Nav.QuickLinks"]</a>
-                    <a asp-controller="PromptTemplates" asp-action="Index">@T["Nav.PromptTemplates"]</a>
-                    <a asp-controller="Components" asp-action="Index">@T["Nav.Components"]</a>
-                    <a asp-controller="DemoKendo" asp-action="Index">@T["Nav.KendoDemo"]</a>
-                    <a asp-controller="TabulatorDemo" asp-action="Index">@T["Nav.TabulatorDemo"]</a>
+                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html")">@T["Nav.Dashboard"]</a>
+                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.NotesHtml) ?? "/notes.html")">@T["Nav.Notes"]</a>
+                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html")">@T["Nav.Checklist"]</a>
+                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html")">@T["Nav.FocusTimer"]</a>
+                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.QuickLinksHtml) ?? "/quick-links.html")">@T["Nav.QuickLinks"]</a>
+                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml) ?? "/prompt-templates.html")">@T["Nav.PromptTemplates"]</a>
+                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ComponentsHtml) ?? "/component.html")">@T["Nav.Components"]</a>
+                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.KendoDemoHtml) ?? "/demo-kendo.html")">@T["Nav.KendoDemo"]</a>
+                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.TabulatorDemoHtml) ?? "/tabulator-demo.html")">@T["Nav.TabulatorDemo"]</a>
                 </nav>
             }
             else

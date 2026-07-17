@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels;
 
@@ -17,6 +18,8 @@ public class TabulatorDemoController : Controller
         _currentUser = currentUser;
     }
 
+    [HttpGet("/" + ToolboxRouteSlugs.Pages.TabulatorDemo)]
+    [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.TabulatorDemo, Name = ToolboxRouteSlugs.RouteNames.TabulatorDemoHtml)]
     public IActionResult Index()
     {
         return View();

@@ -1,0 +1,435 @@
+:root {
+  --ui-radius-sm: .5rem;
+  --ui-radius-md: .625rem;
+  --ui-radius-lg: .875rem;
+  --ui-focus-ring: 0 0 0 .2rem color-mix(in srgb, var(--accent) 16%, transparent);
+  --ui-popup-shadow: 0 .9rem 2rem rgba(23, 32, 51, .14);
+  --ui-soft-fill: color-mix(in srgb, var(--surface-2) 72%, var(--surface));
+  --ui-soft-fill-hover: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  --ui-soft-border: color-mix(in srgb, var(--line) 88%, transparent);
+}
+
+:root[data-theme="dark"] {
+  --ui-popup-shadow: 0 1rem 2.2rem rgba(2, 6, 23, .45);
+  --ui-soft-fill: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+  --ui-soft-fill-hover: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.btn,
+.form-control,
+.form-select,
+.form-check-input {
+  border-radius: var(--ui-radius-md);
+  font-family: inherit;
+}
+
+.btn {
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.btn:focus,
+.btn:focus-visible,
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  box-shadow: var(--ui-focus-ring);
+}
+
+.k-widget,
+.k-button,
+.k-input,
+.k-picker,
+.k-dropdownlist,
+.k-multiselect,
+.k-combobox,
+.k-listview,
+.k-pager,
+.k-menu,
+.k-panelbar,
+.k-tooltip,
+.k-window,
+.k-notification,
+.k-dialog,
+.k-animation-container,
+.k-popup,
+.k-list-container {
+  color: var(--text);
+  font-family: inherit;
+}
+
+.k-button {
+  border-radius: var(--ui-radius-md);
+  box-shadow: none;
+  font-weight: 600;
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease;
+}
+
+.k-button-solid-base,
+.k-button-solid,
+.k-button-solid-secondary,
+.k-button-flat-base {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.k-button-solid-base:hover,
+.k-button-solid:hover,
+.k-button-solid-secondary:hover,
+.k-button-flat-base:hover {
+  background: var(--ui-soft-fill-hover);
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+  color: var(--text);
+}
+
+.k-button-solid-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.k-button-solid-primary:hover,
+.k-button-solid-primary:focus,
+.k-button-solid-primary.k-focus {
+  background: color-mix(in srgb, var(--accent) 90%, #ffffff 10%);
+  border-color: color-mix(in srgb, var(--accent) 90%, #ffffff 10%);
+  color: #fff;
+}
+
+.k-button-solid-base:focus,
+.k-button-solid-secondary:focus,
+.k-button-solid-primary:focus,
+.k-button-solid-base.k-focus,
+.k-button-solid-secondary.k-focus,
+.k-button-solid-primary.k-focus {
+  box-shadow: var(--ui-focus-ring);
+}
+
+.k-input-solid,
+.k-picker-solid,
+.k-dropdownlist,
+.k-multiselect,
+.k-combobox,
+.k-textbox,
+.k-numerictextbox,
+.k-datepicker,
+.k-timepicker,
+.k-datetimepicker,
+.k-picker {
+  background: var(--surface);
+  border-color: var(--line);
+  border-radius: var(--ui-radius-md);
+  box-shadow: none;
+  color: var(--text);
+  transition: border-color .14s ease, box-shadow .14s ease, background-color .14s ease;
+}
+
+.k-input-solid:hover,
+.k-picker-solid:hover,
+.k-dropdownlist:hover,
+.k-multiselect:hover,
+.k-combobox:hover,
+.k-textbox:hover,
+.k-numerictextbox:hover,
+.k-datepicker:hover,
+.k-timepicker:hover,
+.k-datetimepicker:hover,
+.k-picker:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+}
+
+.k-input-solid.k-focus,
+.k-picker-solid.k-focus,
+.k-dropdownlist.k-focus,
+.k-multiselect.k-focus,
+.k-combobox.k-focus,
+.k-textbox.k-focus,
+.k-numerictextbox.k-focus,
+.k-datepicker.k-focus,
+.k-timepicker.k-focus,
+.k-datetimepicker.k-focus,
+.k-picker.k-focus,
+.k-focus > .k-input-inner,
+.k-focus > .k-input-button {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
+  box-shadow: var(--ui-focus-ring);
+}
+
+.k-input-inner,
+.k-input-button,
+.k-select,
+.k-input-spinner,
+.k-clear-value {
+  color: var(--text);
+}
+
+.k-input-inner,
+.k-input-value-text {
+  font-size: .95rem;
+}
+
+.k-input-inner::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.k-invalid,
+.k-input.k-invalid,
+.k-picker.k-invalid,
+.k-dropdownlist.k-invalid,
+.k-multiselect.k-invalid,
+.k-combobox.k-invalid {
+  border-color: color-mix(in srgb, var(--danger) 60%, var(--line));
+}
+
+.k-form-error,
+.k-invalid-msg,
+.field-validation-error {
+  color: var(--danger);
+  font-size: .84rem;
+}
+
+.k-chip,
+.k-chip-solid-base {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 999px;
+  color: var(--text);
+}
+
+.k-chip .k-chip-label {
+  color: inherit;
+}
+
+.k-popup,
+.k-animation-container,
+.k-list-container,
+.k-calendar-container,
+.k-window,
+.k-notification,
+.k-tooltip {
+  color: var(--text);
+}
+
+.k-animation-container .k-list-container,
+.k-list-container,
+.k-popup,
+.k-tooltip,
+.k-window-content,
+.k-notification-group .k-notification {
+  background: var(--surface);
+}
+
+.k-list-container,
+.k-popup,
+.k-window,
+.k-tooltip,
+.k-notification-group .k-notification,
+.k-calendar-container {
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-lg);
+  box-shadow: var(--ui-popup-shadow);
+}
+
+.k-list {
+  background: transparent;
+}
+
+.k-list-ul {
+  padding: 4px;
+}
+
+.k-list-item,
+.k-list-optionlabel,
+.k-menu-group .k-item > .k-link,
+.k-menu .k-item > .k-link,
+.k-panelbar > .k-item > .k-link {
+  border-radius: var(--ui-radius-sm);
+  transition: background-color .14s ease, color .14s ease;
+}
+
+.k-list-item:hover,
+.k-list-optionlabel:hover,
+.k-menu-group .k-item > .k-link:hover,
+.k-menu .k-item > .k-link:hover,
+.k-panelbar > .k-item > .k-link:hover {
+  background: var(--ui-soft-fill-hover);
+  color: var(--text);
+}
+
+.k-list-item.k-selected,
+.k-selected.k-list-optionlabel,
+.k-menu .k-item.k-selected > .k-link,
+.k-panelbar > .k-item.k-selected > .k-link {
+  background: var(--accent);
+  color: #fff;
+}
+
+.k-list-item.k-focus,
+.k-list-optionlabel.k-focus {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent);
+}
+
+.k-window {
+  overflow: hidden;
+}
+
+.k-window-titlebar,
+.k-dialog-titlebar {
+  background: color-mix(in srgb, var(--surface-2) 64%, var(--surface));
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+}
+
+.k-window-title,
+.k-dialog-title {
+  font-weight: 700;
+}
+
+.k-window-actions .k-button {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.k-window-actions .k-button:hover {
+  background: var(--ui-soft-fill-hover);
+  color: var(--text);
+}
+
+.k-notification-group .k-notification {
+  color: var(--text);
+}
+
+.k-notification-info {
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
+}
+
+.k-notification-success {
+  background: rgba(22, 163, 74, .10);
+  border-color: rgba(22, 163, 74, .22);
+}
+
+.k-notification-error {
+  background: rgba(180, 35, 24, .10);
+  border-color: rgba(180, 35, 24, .22);
+}
+
+.k-tooltip {
+  padding: 10px 12px;
+}
+
+.k-menu,
+.k-panelbar {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.k-menu .k-item > .k-link,
+.k-panelbar > .k-item > .k-link {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.k-menu-group,
+.k-panelbar-content {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.k-panelbar > .k-item {
+  border-color: var(--line);
+}
+
+.k-panelbar > .k-item > .k-link.k-selected,
+.k-panelbar > .k-item.k-active > .k-link {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  color: var(--text);
+}
+
+.k-pager {
+  background: transparent;
+  color: var(--muted);
+}
+
+.k-pager .k-pager-numbers-wrap .k-button,
+.k-pager .k-button,
+.k-pager .k-picker {
+  border-radius: var(--ui-radius-sm);
+}
+
+.k-pager .k-button:hover,
+.k-pager .k-button.k-selected {
+  background: var(--ui-soft-fill-hover);
+  color: var(--text);
+}
+
+.k-pager .k-button.k-selected {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.k-listview {
+  background: transparent;
+}
+
+.k-splitter {
+  border-color: var(--line);
+  border-radius: var(--ui-radius-md);
+}
+
+.k-splitbar {
+  background: color-mix(in srgb, var(--surface-2) 60%, var(--surface));
+}
+
+.k-calendar,
+.k-calendar .k-content,
+.k-calendar .k-calendar-view {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.k-calendar .k-button-flat-primary,
+.k-calendar .k-link {
+  border-radius: .45rem;
+}
+
+.k-calendar .k-link:hover,
+.k-calendar .k-button-flat-primary:hover {
+  background: var(--ui-soft-fill-hover);
+}
+
+.k-calendar .k-selected .k-link,
+.k-calendar .k-focus .k-link {
+  background: var(--accent);
+  color: #fff;
+}
+
+.tabulator-edit-list,
+.tabulator-menu {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+  box-shadow: var(--ui-popup-shadow);
+  color: var(--text);
+}
+
+.tabulator-edit-list .tabulator-edit-list-item,
+.tabulator-menu .tabulator-menu-item {
+  border-radius: .45rem;
+  transition: background-color .14s ease, color .14s ease;
+}
+
+.tabulator-edit-list .tabulator-edit-list-item:hover,
+.tabulator-menu .tabulator-menu-item:hover {
+  background: var(--ui-soft-fill-hover);
+}
+
+.tabulator-edit-list .tabulator-edit-list-item.active,
+.tabulator-menu .tabulator-menu-item.active {
+  background: var(--accent);
+  color: #fff;
+}

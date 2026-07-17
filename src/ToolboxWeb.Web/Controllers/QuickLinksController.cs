@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels;
 
@@ -17,6 +18,8 @@ public class QuickLinksController : Controller
         _currentUser = currentUser;
     }
 
+    [HttpGet("/" + ToolboxRouteSlugs.Pages.QuickLinks)]
+    [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.QuickLinks, Name = ToolboxRouteSlugs.RouteNames.QuickLinksHtml)]
     public async Task<IActionResult> Index()
     {
         return View(new QuickLinksIndexViewModel { Links = await _quickLinks.GetAsync(_currentUser.UserId) });
@@ -32,7 +35,7 @@ public class QuickLinksController : Controller
         }
 
         await _quickLinks.CreateAsync(_currentUser.UserId, form);
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.QuickLinksHtml) ?? "/quick-links.html");
     }
 
     [HttpPost]
@@ -40,6 +43,6 @@ public class QuickLinksController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         await _quickLinks.DeleteAsync(_currentUser.UserId, id);
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.QuickLinksHtml) ?? "/quick-links.html");
     }
 }

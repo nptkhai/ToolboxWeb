@@ -22,6 +22,8 @@ public class PromptTemplatesController : Controller
         _localizer = localizer;
     }
 
+    [HttpGet("/" + ToolboxRouteSlugs.Pages.PromptTemplates)]
+    [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.PromptTemplates, Name = ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml)]
     public async Task<IActionResult> Index(int? editId = null)
     {
         var form = new PromptTemplateFormViewModel();
@@ -61,7 +63,7 @@ public class PromptTemplatesController : Controller
 
         await _prompts.CreateAsync(_currentUser.UserId, form);
         TempData[TempDataKeys.SuccessMessage] = _localizer["Flash.PromptCreated"].Value;
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml) ?? "/prompt-templates.html");
     }
 
     [HttpPost]
@@ -77,7 +79,7 @@ public class PromptTemplatesController : Controller
         TempData[updated ? TempDataKeys.SuccessMessage : TempDataKeys.ErrorMessage] = updated
             ? _localizer["Flash.PromptUpdated"].Value
             : _localizer["Flash.PromptNotFound"].Value;
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml) ?? "/prompt-templates.html");
     }
 
     [HttpPost]
@@ -85,7 +87,7 @@ public class PromptTemplatesController : Controller
     public async Task<IActionResult> MarkUsed(int id)
     {
         await _prompts.MarkUsedAsync(_currentUser.UserId, id);
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml) ?? "/prompt-templates.html");
     }
 
     [HttpPost]
@@ -93,6 +95,6 @@ public class PromptTemplatesController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         await _prompts.DeleteAsync(_currentUser.UserId, id);
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml) ?? "/prompt-templates.html");
     }
 }

@@ -1,11 +1,17 @@
-@using System.Globalization
+﻿@using System.Globalization
 @using System.Text.Json
+@using ToolboxWeb.Web.Constants
 @{
     ViewData["Title"] = T["Components.Title"];
 
     var currentCulture = CultureInfo.CurrentUICulture.Name;
+    var activeTab = ViewData["ActiveTab"] as string ?? ToolboxRouteSlugs.ComponentsTabs.Default;
 
     string LocalText(string vi, string en) => currentCulture == "vi-VN" ? vi : en;
+    bool IsActiveTab(string tab) => string.Equals(activeTab, tab, StringComparison.OrdinalIgnoreCase);
+    string TabButtonClass(string tab) => IsActiveTab(tab) ? "nav-link active" : "nav-link";
+    string TabPaneClass(string tab) => IsActiveTab(tab) ? "tab-pane fade show active" : "tab-pane fade";
+    string TabRoute(string tab) => Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ComponentsTabHtml, new { tab }) ?? $"/component/{tab}.html";
 
     var tabulatorCategoryOptions = new[]
     {
@@ -107,6 +113,10 @@
         ValidatorError = LocalText("Form chưa hợp lệ, vui lòng kiểm tra lại email và tiêu đề.", "The form is not valid yet. Please review the email and title fields."),
         ValidatorSummary = LocalText("Mẹo: demo này dùng Kendo Validator nhưng vẫn phối hợp được với input native hoặc Kendo TextBox.", "Tip: this demo uses Kendo Validator and still works alongside native inputs or Kendo TextBox."),
         NotificationInfo = LocalText("Notification đang hoạt động bình thường trong bundle hiện tại.", "Notification is working correctly in the current bundle."),
+        PopupCreateSuccess = T["Components.Popup.Success"].Value,
+        PopupCreateError = T["Components.Popup.Error"].Value,
+        PopupValidationError = T["Components.Popup.ValidationError"].Value,
+        PopupGridUnavailable = T["Components.Popup.GridUnavailable"].Value,
         TooltipContent = LocalText("Tooltip này dùng bundle self-host hiện tại và có thể gắn trên target bất kỳ trong page.", "This tooltip uses the current self-host bundle and can attach to arbitrary targets on the page."),
         WindowTitle = LocalText("Kendo Window", "Kendo Window"),
         WindowBody = LocalText("Window phù hợp cho popup làm việc ngắn, xem chi tiết hoặc chỉnh sửa nhẹ mà chưa cần Dialog thương mại.", "Window works well for quick popups, detail previews, or lightweight editing without needing the commercial Dialog widget."),
@@ -266,6 +276,15 @@
             border-top-right-radius: 12px;
             color: var(--muted);
             font-weight: 800;
+            transform: translateY(0);
+            transition: color .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+            will-change: transform;
+        }
+
+        .component-tab-nav .nav-link:hover,
+        .component-tab-nav .nav-link:focus {
+            color: var(--text);
+            transform: translateY(-1px);
         }
 
         .component-tab-nav .nav-link.active {
@@ -276,6 +295,17 @@
 
         .component-tab-content {
             padding: 18px;
+        }
+
+        .component-tab-content > .tab-pane.fade,
+        .component-sample .tab-content > .tab-pane.fade {
+            transform: translateY(8px);
+            transition: opacity .2s ease, transform .22s ease;
+        }
+
+        .component-tab-content > .tab-pane.fade.show,
+        .component-sample .tab-content > .tab-pane.fade.show {
+            transform: translateY(0);
         }
 
         .component-family-head {
@@ -407,6 +437,43 @@
             gap: 10px;
         }
 
+        .component-popup-demo,
+        .component-popup-demo-points {
+            display: grid;
+            gap: 12px;
+        }
+
+        .component-popup-demo-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .component-popup-demo-points {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin: 0;
+            padding: 0;
+        }
+
+        .component-popup-demo-points li {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            list-style: none;
+            padding: 12px;
+        }
+
+        .component-popup-demo-points strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .component-popup-demo-points span {
+            color: var(--muted);
+            display: block;
+            font-size: .85rem;
+        }
+
         .component-sample .k-widget,
         .component-sample .k-input,
         .component-sample .k-picker,
@@ -418,6 +485,67 @@
 
         .component-sample .k-listview {
             border: 0;
+        }
+
+        .component-modal .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            box-shadow: 0 1.2rem 2.4rem rgba(23, 32, 51, .18);
+            color: var(--text);
+        }
+
+        .component-modal .modal-header,
+        .component-modal .modal-footer {
+            border-color: var(--line);
+            padding: 16px 20px;
+        }
+
+        .component-modal .modal-body {
+            padding: 18px 20px 20px;
+        }
+
+        .component-modal-grid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .component-modal-field-wide {
+            grid-column: 1 / -1;
+        }
+
+        .component-modal .form-control,
+        .component-modal .form-select {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: .85rem;
+            color: var(--text);
+            min-height: 44px;
+            padding: .58rem .82rem;
+        }
+
+        .component-modal textarea.form-control {
+            min-height: 108px;
+            resize: vertical;
+        }
+
+        .component-modal .form-control:focus,
+        .component-modal .form-select:focus {
+            border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
+            box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--accent) 16%, transparent);
+        }
+
+        .component-modal .modal-footer {
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .component-modal-footer-note {
+            color: var(--muted);
+            font-size: .85rem;
+            margin: 0;
         }
 
         .component-sample .k-pager {
@@ -750,6 +878,7 @@
             .component-hero-links,
             .component-card-grid,
             .tabulator-mini-toolbar,
+            .component-popup-demo-points,
             .catalog-row,
             .catalog-header {
                 grid-template-columns: 1fr;
@@ -780,6 +909,33 @@
 
             .tabulator-mini-actions {
                 flex-direction: column;
+            }
+
+            .component-modal-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .component-modal .modal-header,
+            .component-modal .modal-body,
+            .component-modal .modal-footer {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .component-modal .modal-footer {
+                align-items: stretch;
+                flex-direction: column;
+            }
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .component-tab-nav .nav-link,
+            .component-tab-content > .tab-pane.fade,
+            .component-sample .tab-content > .tab-pane.fade {
+                transition: none;
+                transform: none;
             }
         }
     </style>
@@ -832,36 +988,70 @@
     <section class="component-tabs-shell">
         <ul class="nav nav-tabs component-tab-nav" id="component-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="component-text-tab" data-bs-toggle="tab" data-bs-target="#component-text-pane" type="button" role="tab" aria-controls="component-text-pane" aria-selected="true">@T["Components.Sections.TextInput"]</button>
+                <button class="@TabButtonClass(ToolboxRouteSlugs.ComponentsTabs.TextInput)" id="component-text-tab" data-bs-toggle="tab" data-bs-target="#component-text-pane" data-route-url="@TabRoute(ToolboxRouteSlugs.ComponentsTabs.TextInput)" type="button" role="tab" aria-controls="component-text-pane" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.ComponentsTabs.TextInput).ToString().ToLowerInvariant())">@T["Components.Sections.TextInput"]</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="component-selection-tab" data-bs-toggle="tab" data-bs-target="#component-selection-pane" type="button" role="tab" aria-controls="component-selection-pane" aria-selected="false">@T["Components.Sections.Selection"]</button>
+                <button class="@TabButtonClass(ToolboxRouteSlugs.ComponentsTabs.Selection)" id="component-selection-tab" data-bs-toggle="tab" data-bs-target="#component-selection-pane" data-route-url="@TabRoute(ToolboxRouteSlugs.ComponentsTabs.Selection)" type="button" role="tab" aria-controls="component-selection-pane" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.ComponentsTabs.Selection).ToString().ToLowerInvariant())">@T["Components.Sections.Selection"]</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="component-datetime-tab" data-bs-toggle="tab" data-bs-target="#component-datetime-pane" type="button" role="tab" aria-controls="component-datetime-pane" aria-selected="false">@T["Components.Sections.DateTimeNumeric"]</button>
+                <button class="@TabButtonClass(ToolboxRouteSlugs.ComponentsTabs.DateTimeNumeric)" id="component-datetime-tab" data-bs-toggle="tab" data-bs-target="#component-datetime-pane" data-route-url="@TabRoute(ToolboxRouteSlugs.ComponentsTabs.DateTimeNumeric)" type="button" role="tab" aria-controls="component-datetime-pane" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.ComponentsTabs.DateTimeNumeric).ToString().ToLowerInvariant())">@T["Components.Sections.DateTimeNumeric"]</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="component-grid-tab" data-bs-toggle="tab" data-bs-target="#component-grid-pane" type="button" role="tab" aria-controls="component-grid-pane" aria-selected="false">@T["Components.Sections.GridData"]</button>
+                <button class="@TabButtonClass(ToolboxRouteSlugs.ComponentsTabs.GridData)" id="component-grid-tab" data-bs-toggle="tab" data-bs-target="#component-grid-pane" data-route-url="@TabRoute(ToolboxRouteSlugs.ComponentsTabs.GridData)" type="button" role="tab" aria-controls="component-grid-pane" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.ComponentsTabs.GridData).ToString().ToLowerInvariant())">@T["Components.Sections.GridData"]</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="component-feedback-tab" data-bs-toggle="tab" data-bs-target="#component-feedback-pane" type="button" role="tab" aria-controls="component-feedback-pane" aria-selected="false">@T["Components.Sections.FeedbackPopup"]</button>
+                <button class="@TabButtonClass(ToolboxRouteSlugs.ComponentsTabs.FeedbackPopup)" id="component-feedback-tab" data-bs-toggle="tab" data-bs-target="#component-feedback-pane" data-route-url="@TabRoute(ToolboxRouteSlugs.ComponentsTabs.FeedbackPopup)" type="button" role="tab" aria-controls="component-feedback-pane" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.ComponentsTabs.FeedbackPopup).ToString().ToLowerInvariant())">@T["Components.Sections.FeedbackPopup"]</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="component-layout-tab" data-bs-toggle="tab" data-bs-target="#component-layout-pane" type="button" role="tab" aria-controls="component-layout-pane" aria-selected="false">@T["Components.Sections.NavigationLayout"]</button>
+                <button class="@TabButtonClass(ToolboxRouteSlugs.ComponentsTabs.NavigationLayout)" id="component-layout-tab" data-bs-toggle="tab" data-bs-target="#component-layout-pane" data-route-url="@TabRoute(ToolboxRouteSlugs.ComponentsTabs.NavigationLayout)" type="button" role="tab" aria-controls="component-layout-pane" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.ComponentsTabs.NavigationLayout).ToString().ToLowerInvariant())">@T["Components.Sections.NavigationLayout"]</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="component-catalog-tab" data-bs-toggle="tab" data-bs-target="#component-catalog-pane" type="button" role="tab" aria-controls="component-catalog-pane" aria-selected="false">@T["Components.Sections.Catalog"]</button>
+                <button class="@TabButtonClass(ToolboxRouteSlugs.ComponentsTabs.Catalog)" id="component-catalog-tab" data-bs-toggle="tab" data-bs-target="#component-catalog-pane" data-route-url="@TabRoute(ToolboxRouteSlugs.ComponentsTabs.Catalog)" type="button" role="tab" aria-controls="component-catalog-pane" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.ComponentsTabs.Catalog).ToString().ToLowerInvariant())">@T["Components.Sections.Catalog"]</button>
             </li>
         </ul>
 
         <div class="tab-content component-tab-content">
-            <div class="tab-pane fade show active" id="component-text-pane" role="tabpanel" aria-labelledby="component-text-tab" tabindex="0">
+            <div class="@TabPaneClass(ToolboxRouteSlugs.ComponentsTabs.TextInput)" id="component-text-pane" role="tabpanel" aria-labelledby="component-text-tab" tabindex="0">
                 <div class="component-family-head">
                     <h3>@T["Components.Sections.TextInput"]</h3>
                     <p>@T["Components.TextInputIntro"]</p>
                 </div>
 
                 <div class="component-card-grid">
+                    <article class="component-card component-card-wide d-none" aria-hidden="true">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Bootstrap CRUD Popup</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap Modal + Kendo Notification + Tabulator</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Demo nÃ y dÃ¹ng popup thÃªm cÃ´ng viá»‡c, lÆ°u form vÃ  Ä‘Æ°a dÃ²ng má»›i lÃªn Tabulator Grid Demo ngay trong page hiá»‡n táº¡i.", "This demo uses a popup to create a task, save the form, and push the new row straight into the Tabulator grid demo on the current page.")</p>
+                        <div class="component-sample">
+                            <div class="component-popup-demo">
+                                <div class="component-popup-demo-actions">
+                                    <button id="component-popup-create-open-hidden" class="btn btn-primary" type="button">@LocalText("ThÃªm cÃ´ng viá»‡c báº±ng popup", "Add task with popup")</button>
+                                    <button id="component-popup-grid-open-hidden" class="btn btn-outline-secondary" type="button">@LocalText("Má»Ÿ tab Grid & Data List", "Open Grid & Data List tab")</button>
+                                </div>
+                                <ol class="component-popup-demo-points">
+                                    <li>
+                                        <strong>@LocalText("1. Má»Ÿ popup", "1. Open popup")</strong>
+                                        <span>@LocalText("Báº¥m nÃºt thÃªm Ä‘á»ƒ má»Ÿ form popup bootstrap.", "Click the add button to open the Bootstrap popup form.")</span>
+                                    </li>
+                                    <li>
+                                        <strong>@LocalText("2. LÆ°u thÃ´ng tin", "2. Save details")</strong>
+                                        <span>@LocalText("Nháº­p thÃ´ng tin cÃ´ng viá»‡c, báº¥m lÆ°u vÃ  nháº­n thÃ´ng bÃ¡o thÃ nh cÃ´ng/tháº¥t báº¡i.", "Enter task details, save, and receive success or failure feedback.")</span>
+                                    </li>
+                                    <li>
+                                        <strong>@LocalText("3. Xem trÃªn grid", "3. Show on grid")</strong>
+                                        <span>@LocalText("Sau khi lÆ°u, hÃª̣ thá»‘ng sáº½ chuyá»ƒn qua tab grid vÃ  hiá»ƒn thá»‹ dÃ²ng má»›i ngay.", "After saving, the page switches to the grid tab and shows the new row immediately.")</span>
+                                    </li>
+                                </ol>
+                                <div class="helper">@LocalText("Popup cÃ³ nÃºt ÄÃ³ng Ä‘á»ƒ thoÃ¡t mÃ  khÃ´ng thay Ä‘á»•i dá»¯ liá»‡u, cÃ²n nÃºt LÆ°u sáº½ thÃªm dÃ²ng á»Ÿ tráº¡ng thÃ¡i chÆ°a commit server cho Ä‘áº¿n khi báº¡n báº¥m LÆ°u thay Ä‘á»•i trong grid.", "The popup includes a Close button to exit without changes, while Save adds a client-side row that stays pending until you click Save changes in the grid.")</div>
+                            </div>
+                        </div>
+                    </article>
+
                     <article class="component-card">
                         <div class="component-card-head">
                             <div>
@@ -925,31 +1115,50 @@
                         <div class="component-status-note d-none" data-status-note></div>
                     </article>
 
-                    <article class="component-card" id="card-kendo-combobox">
-                        <div class="component-card-head">
-                            <div>
-                                <h4>Kendo ComboBox</h4>
-                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
-                            </div>
-                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
-                        </div>
-                        <p class="component-note">@LocalText("Dùng khi user có thể nhập tự do nhưng vẫn nên được gợi ý từ danh sách chuẩn.", "Use this when users may type freely but should still be guided by a standard option list.")</p>
-                        <div class="component-sample">
-                            <label class="form-label" for="kendo-combobox-demo">Province</label>
-                            <input id="kendo-combobox-demo" />
-                        </div>
-                        <div class="component-status-note d-none" data-status-note></div>
-                    </article>
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="component-selection-pane" role="tabpanel" aria-labelledby="component-selection-tab" tabindex="0">
+            <div class="@TabPaneClass(ToolboxRouteSlugs.ComponentsTabs.Selection)" id="component-selection-pane" role="tabpanel" aria-labelledby="component-selection-tab" tabindex="0">
                 <div class="component-family-head">
                     <h3>@T["Components.Sections.Selection"]</h3>
                     <p>@T["Components.SelectionIntro"]</p>
                 </div>
 
                 <div class="component-card-grid">
+                    <article class="component-card component-card-wide d-none" aria-hidden="true">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>@T["Components.Popup.CardTitle"]</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap Modal + Kendo Notification + Tabulator</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@T["Components.Popup.CardNote"]</p>
+                        <div class="component-sample">
+                            <div class="component-popup-demo">
+                                <div class="component-popup-demo-actions">
+                                    <button id="component-popup-create-open-legacy" class="btn btn-primary" type="button">@T["Components.Popup.OpenButton"]</button>
+                                    <button id="component-popup-grid-open-legacy" class="btn btn-outline-secondary" type="button">@T["Components.Popup.OpenGridButton"]</button>
+                                </div>
+                                <ol class="component-popup-demo-points">
+                                    <li>
+                                        <strong>@T["Components.Popup.Step1Title"]</strong>
+                                        <span>@T["Components.Popup.Step1Note"]</span>
+                                    </li>
+                                    <li>
+                                        <strong>@T["Components.Popup.Step2Title"]</strong>
+                                        <span>@T["Components.Popup.Step2Note"]</span>
+                                    </li>
+                                    <li>
+                                        <strong>@T["Components.Popup.Step3Title"]</strong>
+                                        <span>@T["Components.Popup.Step3Note"]</span>
+                                    </li>
+                                </ol>
+                                <div class="helper">@T["Components.Popup.Helper"]</div>
+                            </div>
+                        </div>
+                    </article>
+
                     <article class="component-card">
                         <div class="component-card-head">
                             <div>
@@ -1003,6 +1212,22 @@
                         <div class="component-status-note d-none" data-status-note></div>
                     </article>
 
+                    <article class="component-card" id="card-kendo-combobox">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>Kendo ComboBox</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Kendo UI Core</div>
+                            </div>
+                            <span class="component-status-badge status-check" data-status-badge>@T["Components.StatusBundleCheck"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Phù hợp khi user vừa có thể chọn từ danh sách chuẩn, vừa có thể gõ để tìm nhanh hoặc nhập gần đúng.", "A good fit when users should be able to select from a standard list while still typing to search or narrow choices.")</p>
+                        <div class="component-sample">
+                            <label class="form-label" for="kendo-combobox-demo">Province</label>
+                            <input id="kendo-combobox-demo" />
+                        </div>
+                        <div class="component-status-note d-none" data-status-note></div>
+                    </article>
+
                     <article class="component-card" id="card-kendo-multiselect">
                         <div class="component-card-head">
                             <div>
@@ -1037,7 +1262,7 @@
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="component-datetime-pane" role="tabpanel" aria-labelledby="component-datetime-tab" tabindex="0">
+            <div class="@TabPaneClass(ToolboxRouteSlugs.ComponentsTabs.DateTimeNumeric)" id="component-datetime-pane" role="tabpanel" aria-labelledby="component-datetime-tab" tabindex="0">
                 <div class="component-family-head">
                     <h3>@T["Components.Sections.DateTimeNumeric"]</h3>
                     <p>@T["Components.DateTimeNumericIntro"]</p>
@@ -1172,7 +1397,7 @@
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="component-grid-pane" role="tabpanel" aria-labelledby="component-grid-tab" tabindex="0">
+            <div class="@TabPaneClass(ToolboxRouteSlugs.ComponentsTabs.GridData)" id="component-grid-pane" role="tabpanel" aria-labelledby="component-grid-tab" tabindex="0">
                 <div class="component-family-head">
                     <h3>@T["Components.Sections.GridData"]</h3>
                     <p>@T["Components.GridDataIntro"]</p>
@@ -1227,13 +1452,47 @@
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="component-feedback-pane" role="tabpanel" aria-labelledby="component-feedback-tab" tabindex="0">
+            <div class="@TabPaneClass(ToolboxRouteSlugs.ComponentsTabs.FeedbackPopup)" id="component-feedback-pane" role="tabpanel" aria-labelledby="component-feedback-tab" tabindex="0">
                 <div class="component-family-head">
                     <h3>@T["Components.Sections.FeedbackPopup"]</h3>
                     <p>@T["Components.FeedbackPopupIntro"]</p>
                 </div>
 
                 <div class="component-card-grid">
+                    <article class="component-card component-card-wide">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>@T["Components.Popup.CardTitle"]</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap Modal + Kendo Notification + Tabulator</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@T["Components.Popup.CardNote"]</p>
+                        <div class="component-sample">
+                            <div class="component-popup-demo">
+                                <div class="component-popup-demo-actions">
+                                    <button id="component-popup-create-open" class="btn btn-primary" type="button">@T["Components.Popup.OpenButton"]</button>
+                                    <button id="component-popup-grid-open" class="btn btn-outline-secondary" type="button">@T["Components.Popup.OpenGridButton"]</button>
+                                </div>
+                                <ol class="component-popup-demo-points">
+                                    <li>
+                                        <strong>@T["Components.Popup.Step1Title"]</strong>
+                                        <span>@T["Components.Popup.Step1Note"]</span>
+                                    </li>
+                                    <li>
+                                        <strong>@T["Components.Popup.Step2Title"]</strong>
+                                        <span>@T["Components.Popup.Step2Note"]</span>
+                                    </li>
+                                    <li>
+                                        <strong>@T["Components.Popup.Step3Title"]</strong>
+                                        <span>@T["Components.Popup.Step3Note"]</span>
+                                    </li>
+                                </ol>
+                                <div class="helper">@T["Components.Popup.Helper"]</div>
+                            </div>
+                        </div>
+                    </article>
+
                     <article class="component-card">
                         <div class="component-card-head">
                             <div>
@@ -1362,7 +1621,7 @@
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="component-layout-pane" role="tabpanel" aria-labelledby="component-layout-tab" tabindex="0">
+            <div class="@TabPaneClass(ToolboxRouteSlugs.ComponentsTabs.NavigationLayout)" id="component-layout-pane" role="tabpanel" aria-labelledby="component-layout-tab" tabindex="0">
                 <div class="component-family-head">
                     <h3>@T["Components.Sections.NavigationLayout"]</h3>
                     <p>@T["Components.NavigationLayoutIntro"]</p>
@@ -1455,7 +1714,7 @@
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="component-catalog-pane" role="tabpanel" aria-labelledby="component-catalog-tab" tabindex="0">
+            <div class="@TabPaneClass(ToolboxRouteSlugs.ComponentsTabs.Catalog)" id="component-catalog-pane" role="tabpanel" aria-labelledby="component-catalog-tab" tabindex="0">
                 <div class="component-family-head">
                     <h3>@T["Components.Sections.Catalog"]</h3>
                     <p>@T["Components.CatalogIntro"]</p>
@@ -1548,6 +1807,80 @@
     </section>
 </div>
 
+<div class="modal fade component-modal" id="component-create-task-modal" tabindex="-1" aria-labelledby="component-create-task-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="component-create-task-modal-label">@T["Components.Popup.ModalTitle"]</h5>
+                    <div class="component-meta-line">@T["Components.Popup.ModalMeta"]</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Components.Popup.CloseButton"]"></button>
+            </div>
+            <form id="component-create-task-form" novalidate>
+                <div class="modal-body">
+                    <div class="component-modal-grid">                        <div class="component-modal-field component-modal-field-wide">
+                            <label class="form-label" for="component-popup-title">@T["TabulatorDemo.Columns.Title"]</label>
+                            <input id="component-popup-title" name="title" class="form-control" type="text" required maxlength="160" placeholder="@T["Components.Popup.TitlePlaceholder"]" />
+                            <div class="invalid-feedback">@T["Components.Popup.TitleRequired"]</div>
+                        </div>
+                        <div class="component-modal-field">
+                            <label class="form-label" for="component-popup-category">@T["TabulatorDemo.Columns.Category"]</label>
+                            <select id="component-popup-category" name="category" class="form-select">
+                                @foreach (var option in tabulatorCategoryOptions)
+                                {
+                                    <option value="@option.value">@option.label</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="component-modal-field">
+                            <label class="form-label" for="component-popup-status">@T["TabulatorDemo.Columns.Status"]</label>
+                            <select id="component-popup-status" name="status" class="form-select">
+                                @foreach (var option in tabulatorStatusOptions)
+                                {
+                                    <option value="@option.value">@option.label</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="component-modal-field">
+                            <label class="form-label" for="component-popup-priority">@T["TabulatorDemo.Columns.Priority"]</label>
+                            <select id="component-popup-priority" name="priority" class="form-select">
+                                @foreach (var option in tabulatorPriorityOptions)
+                                {
+                                    <option value="@option.value">@option.label</option>
+                                }
+                            </select>
+                        </div>                        <div class="component-modal-field">
+                            <label class="form-label" for="component-popup-progress">@T["TabulatorDemo.Columns.Progress"]</label>
+                            <input id="component-popup-progress" name="progress" class="form-control" type="number" min="0" max="100" step="1" value="0" />
+                            <div class="invalid-feedback">@T["Components.Popup.ProgressInvalid"]</div>
+                        </div>                        <div class="component-modal-field">
+                            <label class="form-label" for="component-popup-budget">@T["TabulatorDemo.Columns.Budget"]</label>
+                            <input id="component-popup-budget" name="budget" class="form-control" type="number" min="0" step="1000" value="0" />
+                            <div class="invalid-feedback">@T["Components.Popup.BudgetInvalid"]</div>
+                        </div>
+                        <div class="component-modal-field">
+                            <label class="form-label" for="component-popup-due-date">@T["TabulatorDemo.Columns.DueDate"]</label>
+                            <input id="component-popup-due-date" name="dueDate" class="form-control" type="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        </div>                        <div class="component-modal-field component-modal-field-wide">
+                            <label class="form-label" for="component-popup-note">@T["TabulatorDemo.Columns.Note"]</label>
+                            <textarea id="component-popup-note" name="note" class="form-control" rows="4" placeholder="@T["Components.Popup.NotePlaceholder"]"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <p class="component-modal-footer-note">@T["Components.Popup.FooterNote"]</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Components.Popup.CloseButton"]</button>
+                        <button id="component-popup-save" type="button" class="btn btn-primary">@T["Components.Popup.SaveButton"]</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div id="component-window" style="display:none;">
     <div class="p-3">
         <h5 class="mb-2">@LocalText("Popup detail với Kendo Window", "Popup detail with Kendo Window")</h5>
@@ -1589,6 +1922,60 @@
             const kendoListBoxItems = @Html.Raw(JsonSerializer.Serialize(kendoListBoxItems));
             const kendoListViewItems = @Html.Raw(JsonSerializer.Serialize(kendoListViewItems));
             const antiForgeryToken = document.querySelector("#component-grid-pane input[name='__RequestVerificationToken']")?.value || "";
+            let componentNotification = null;
+            let componentTabulatorApi = null;
+
+            function bindTabRoutes(containerSelector) {
+                document.querySelectorAll(containerSelector + " [data-route-url]").forEach(function (trigger) {
+                    trigger.addEventListener("shown.bs.tab", function (event) {
+                        const routeUrl = event.target.getAttribute("data-route-url");
+                        if (!routeUrl || !window.history || typeof window.history.replaceState !== "function") {
+                            return;
+                        }
+
+                        const nextUrl = new URL(routeUrl, window.location.origin);
+                        const currentUrl = new URL(window.location.href);
+                        if (nextUrl.pathname === currentUrl.pathname && nextUrl.search === currentUrl.search) {
+                            return;
+                        }
+
+                        window.history.replaceState(window.history.state, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
+                    });
+                });
+            }
+
+            function showComponentTab(tabButtonId) {
+                const trigger = document.getElementById(tabButtonId);
+                if (!trigger) {
+                    return;
+                }
+
+                if (window.bootstrap && window.bootstrap.Tab) {
+                    window.bootstrap.Tab.getOrCreateInstance(trigger).show();
+                    return;
+                }
+
+                trigger.click();
+            }
+
+            function showComponentMessage(message, type) {
+                if (componentNotification) {
+                    componentNotification.show(message, type || "info");
+                    return;
+                }
+
+                const fallback = document.getElementById("component-tabulator-feedback");
+                if (!fallback) {
+                    return;
+                }
+
+                fallback.textContent = message;
+                fallback.classList.remove("success", "error");
+
+                if (type === "success" || type === "error") {
+                    fallback.classList.add(type);
+                }
+            }
 
             function setCardStatus(cardId, kind, note) {
                 const card = document.getElementById(cardId);
@@ -1826,7 +2213,6 @@
                 }, null);
 
                 const validator = initWidget("#component-validator-form", "kendoValidator", null, "card-kendo-validator");
-                let notification = null;
                 const demoWindow = initWidget("#component-window", "kendoWindow", {
                     width: "460px",
                     title: text.WindowTitle,
@@ -1835,7 +2221,7 @@
                     actions: ["Pin", "Minimize", "Maximize", "Close"]
                 }, "card-kendo-window");
 
-                notification = initWidget("#component-notification", "kendoNotification", {
+                componentNotification = initWidget("#component-notification", "kendoNotification", {
                     position: { pinned: true, top: 88, right: 28 },
                     stacking: "down",
                     autoHideAfter: 2600
@@ -1863,8 +2249,8 @@
 
                 document.getElementById("component-validator-submit")?.addEventListener("click", function () {
                     const valid = validator ? validator.validate() : false;
-                    if (notification) {
-                        notification.show(valid ? text.ValidatorSuccess : text.ValidatorError, valid ? "success" : "error");
+                    if (componentNotification) {
+                        componentNotification.show(valid ? text.ValidatorSuccess : text.ValidatorError, valid ? "success" : "error");
                     }
                 });
 
@@ -1873,7 +2259,7 @@
                 });
 
                 document.getElementById("component-notification-open")?.addEventListener("click", function () {
-                    notification?.show(text.NotificationInfo, "info");
+                    componentNotification?.show(text.NotificationInfo, "info");
                 });
             }
 
@@ -1900,6 +2286,14 @@
                 const categoryLookup = toLookup(categoryOptions);
                 const statusLookup = toLookup(statusOptions);
                 const priorityLookup = toLookup(priorityOptions);
+                const updatedAtFormatter = new Intl.DateTimeFormat(text.CultureName, {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false
+                });
                 let table = null;
                 let tempRowCounter = 0;
 
@@ -1952,6 +2346,10 @@
                     return Number.isFinite(parsed) ? parsed : fallbackValue;
                 }
 
+                function formatUpdatedAt(date) {
+                    return updatedAtFormatter.format(date).replace(",", "");
+                }
+
                 function syncDerived(row) {
                     row.categoryLabel = categoryLookup[row.category] || row.category;
                     row.statusLabel = statusLookup[row.status] || row.status;
@@ -1987,6 +2385,16 @@
                         note: "",
                         updatedAt: ""
                     };
+                }
+
+                function appendCreatedRow(rowData) {
+                    return table.addRow(rowData, true).then(function (row) {
+                        pending.created.set(rowData.rowKey, toSnapshot(rowData));
+                        updateDirtyState();
+                        setFeedback(text.Tabulator.PendingChangesNotice);
+                        updateRowCount();
+                        return row;
+                    });
                 }
 
                 function flushActiveEditor() {
@@ -2190,12 +2598,49 @@
                     }
                 });
 
+                async function addRowFromPopup(formData) {
+                    if (!table) {
+                        throw new Error(text.PopupGridUnavailable);
+                    }
+
+                    const newRow = createEmptyRow();
+                    newRow.title = (formData.title || "").trim();
+                    newRow.category = formData.category || "Ui";
+                    newRow.status = formData.status || "Todo";
+                    newRow.priority = formData.priority || "Medium";
+                    newRow.progress = Math.min(100, Math.max(0, normalizeNumber(formData.progress, 0)));
+                    newRow.budget = Math.max(0, normalizeNumber(formData.budget, 0));
+                    newRow.dueDate = formData.dueDate || "";
+                    newRow.note = (formData.note || "").trim();
+                    newRow.updatedAt = formatUpdatedAt(new Date());
+                    syncDerived(newRow);
+
+                    await appendCreatedRow(newRow);
+
+                    const row = table.getRow(newRow.rowKey);
+                    if (row && typeof row.scrollTo === "function") {
+                        try {
+                            await row.scrollTo("center", false);
+                        } catch {
+                            // Ignore scroll issues from hidden tabs; the new row still exists in the data set.
+                        }
+                    }
+
+                    return newRow;
+                }
+
+                componentTabulatorApi = {
+                    addRowFromPopup: addRowFromPopup,
+                    focusGrid: function () {
+                        showComponentTab("component-grid-tab");
+                    }
+                };
+
                 document.getElementById("component-tabulator-add")?.addEventListener("click", function () {
                     const newRow = createEmptyRow();
-                    table.addRow(newRow, true);
-                    pending.created.set(newRow.rowKey, toSnapshot(newRow));
-                    updateDirtyState();
-                    setFeedback(text.Tabulator.PendingChangesNotice);
+                    appendCreatedRow(newRow).catch(function (error) {
+                        setFeedback(error.message || text.Tabulator.GenericError, "error");
+                    });
                 });
 
                 document.getElementById("component-tabulator-delete")?.addEventListener("click", function () {
@@ -2277,6 +2722,79 @@
                 });
             }
 
+            function initFeedbackPopupDemo() {
+                const modalEl = document.getElementById("component-create-task-modal");
+                const formEl = document.getElementById("component-create-task-form");
+                const saveBtn = document.getElementById("component-popup-save");
+                const openBtn = document.getElementById("component-popup-create-open");
+                const openGridBtn = document.getElementById("component-popup-grid-open");
+                const titleInput = document.getElementById("component-popup-title");
+
+                if (!modalEl || !formEl || !saveBtn || !openBtn) {
+                    return;
+                }
+
+                const modal = window.bootstrap && window.bootstrap.Modal
+                    ? new window.bootstrap.Modal(modalEl)
+                    : null;
+
+                function resetPopupForm() {
+                    formEl.reset();
+                    formEl.classList.remove("was-validated");
+                }
+
+                openBtn.addEventListener("click", function () {
+                    resetPopupForm();
+                    modal?.show();
+                    window.setTimeout(function () {
+                        titleInput?.focus();
+                    }, 180);
+                });
+
+                openGridBtn?.addEventListener("click", function () {
+                    showComponentTab("component-grid-tab");
+                });
+
+                modalEl.addEventListener("hidden.bs.modal", resetPopupForm);
+
+                saveBtn.addEventListener("click", async function () {
+                    formEl.classList.add("was-validated");
+
+                    if (!formEl.checkValidity()) {
+                        showComponentMessage(text.PopupValidationError, "error");
+                        return;
+                    }
+
+                    if (!componentTabulatorApi || typeof componentTabulatorApi.addRowFromPopup !== "function") {
+                        showComponentMessage(text.PopupGridUnavailable, "error");
+                        return;
+                    }
+
+                    saveBtn.setAttribute("disabled", "disabled");
+
+                    try {
+                        await componentTabulatorApi.addRowFromPopup({
+                            title: document.getElementById("component-popup-title")?.value || "",
+                            category: document.getElementById("component-popup-category")?.value || "Ui",
+                            status: document.getElementById("component-popup-status")?.value || "Todo",
+                            priority: document.getElementById("component-popup-priority")?.value || "Medium",
+                            progress: document.getElementById("component-popup-progress")?.value || "0",
+                            budget: document.getElementById("component-popup-budget")?.value || "0",
+                            dueDate: document.getElementById("component-popup-due-date")?.value || "",
+                            note: document.getElementById("component-popup-note")?.value || ""
+                        });
+
+                        modal?.hide();
+                        showComponentTab("component-grid-tab");
+                        showComponentMessage(text.PopupCreateSuccess, "success");
+                    } catch (error) {
+                        showComponentMessage(error.message || text.PopupCreateError, "error");
+                    } finally {
+                        saveBtn.removeAttribute("disabled");
+                    }
+                });
+            }
+
             function toLookup(options) {
                 return options.reduce(function (acc, item) {
                     acc[item.value] = item.label;
@@ -2284,8 +2802,11 @@
                 }, {});
             }
 
+            bindTabRoutes("#component-tabs");
             initKendoDemos();
             initTabulatorDemo();
+            initFeedbackPopupDemo();
         })(jQuery);
     </script>
 }
+

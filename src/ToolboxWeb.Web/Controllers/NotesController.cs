@@ -22,6 +22,8 @@ public class NotesController : Controller
         _localizer = localizer;
     }
 
+    [HttpGet("/" + ToolboxRouteSlugs.Pages.Notes)]
+    [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.Notes, Name = ToolboxRouteSlugs.RouteNames.NotesHtml)]
     public async Task<IActionResult> Index(string? search = null)
     {
         return View(new NotesIndexViewModel
@@ -42,7 +44,7 @@ public class NotesController : Controller
 
         await _notes.CreateAsync(_currentUser.UserId, form);
         TempData[TempDataKeys.SuccessMessage] = _localizer["Flash.NoteCreated"].Value;
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.NotesHtml) ?? "/notes.html");
     }
 
     [HttpPost]
@@ -50,6 +52,6 @@ public class NotesController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         await _notes.DeleteAsync(_currentUser.UserId, id);
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.NotesHtml) ?? "/notes.html");
     }
 }

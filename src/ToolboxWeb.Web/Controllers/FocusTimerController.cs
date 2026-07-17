@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels;
 
@@ -17,6 +18,8 @@ public class FocusTimerController : Controller
         _currentUser = currentUser;
     }
 
+    [HttpGet("/" + ToolboxRouteSlugs.Pages.FocusTimer)]
+    [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.FocusTimer, Name = ToolboxRouteSlugs.RouteNames.FocusTimerHtml)]
     public async Task<IActionResult> Index()
     {
         ViewBag.RecentSessions = await _focusSessions.GetRecentAsync(_currentUser.UserId, 20);
@@ -34,6 +37,6 @@ public class FocusTimerController : Controller
         }
 
         await _focusSessions.CompleteAsync(_currentUser.UserId, form);
-        return RedirectToAction(nameof(Index));
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html");
     }
 }
