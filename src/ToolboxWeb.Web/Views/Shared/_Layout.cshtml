@@ -23,27 +23,32 @@
     @{
         var currentCulture = CultureInfo.CurrentUICulture.Name;
         var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+        var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html";
+        var jiraDashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html";
+        var jiraWorklistHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraWorklistHtml) ?? "/jira-worklist.html";
+        var notesHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.NotesHtml) ?? "/notes.html";
+        var checklistHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html";
+        var focusTimerHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html";
+        var quickLinksHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.QuickLinksHtml) ?? "/quick-links.html";
+        var brandHref = CurrentUser.IsJiraUser ? jiraDashboardHref : dashboardHref;
     }
     <div class="app-shell">
         <aside class="app-sidebar">
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <a class="brand" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html")">@T["App.Name"]</a>
+                <a class="brand" href="@brandHref">@T["App.Name"]</a>
                 <nav class="side-nav">
-                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html")">@T["Nav.Dashboard"]</a>
-                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.NotesHtml) ?? "/notes.html")">@T["Nav.Notes"]</a>
-                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html")">@T["Nav.Checklist"]</a>
-                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html")">@T["Nav.FocusTimer"]</a>
-                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.QuickLinksHtml) ?? "/quick-links.html")">@T["Nav.QuickLinks"]</a>
-                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml) ?? "/prompt-templates.html")">@T["Nav.PromptTemplates"]</a>
-                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ComponentsHtml) ?? "/component.html")">@T["Nav.Components"]</a>
-                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.KendoDemoHtml) ?? "/demo-kendo.html")">@T["Nav.KendoDemo"]</a>
-                    <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.TabulatorDemoHtml) ?? "/tabulator-demo.html")">@T["Nav.TabulatorDemo"]</a>
                     @if (CurrentUser.IsJiraUser)
                     {
-                        <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html")">@T["Nav.JiraDashboard"]</a>
-                        <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraWorklistHtml) ?? "/jira-worklist.html")">@T["Nav.JiraWorklist"]</a>
+                        <a href="@jiraDashboardHref">@T["Nav.JiraDashboard"]</a>
+                        <a href="@jiraWorklistHref">@T["Nav.JiraWorklist"]</a>
                     }
+
+                    <a href="@dashboardHref">@T["Nav.Dashboard"]</a>
+                    <a href="@notesHref">@T["Nav.Notes"]</a>
+                    <a href="@checklistHref">@T["Nav.Checklist"]</a>
+                    <a href="@focusTimerHref">@T["Nav.FocusTimer"]</a>
+                    <a href="@quickLinksHref">@T["Nav.QuickLinks"]</a>
                 </nav>
             }
             else

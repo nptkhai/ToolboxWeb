@@ -141,10 +141,15 @@ public sealed class JiraClient : IJiraClient
 
         foreach (var item in worklogs.EnumerateArray())
         {
+            var author = item.TryGetProperty("author", out var authorValue) ? authorValue : default;
             result.Add(new WorklogEntry
             {
                 Started = ParseJiraDate(ReadString(item, "started")) ?? DateTime.MinValue,
-                TimeSpent = ReadString(item, "timeSpent") ?? string.Empty
+                TimeSpent = ReadString(item, "timeSpent") ?? string.Empty,
+                AuthorName = ReadString(author, "name")
+                    ?? ReadString(author, "key")
+                    ?? ReadString(author, "displayName")
+                    ?? string.Empty
             });
         }
 

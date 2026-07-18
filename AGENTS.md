@@ -53,6 +53,8 @@
   - `src/ToolboxWeb.Web/Localization/en-US.json`
 - Avoid pasting long inline Vietnamese literals directly into `cshtml` when a localization key is appropriate.
 - If text appears mojibake or broken, fix it with clean UTF-8 content or localization keys instead of copying the broken text forward.
+- Preserve the file's existing line-ending style when editing. For repo text files that are already Windows-style, keep `CRLF` and do not leave mixed `CRLF/LF` endings after partial edits.
+- After touching localization or other text-heavy files such as `.json`, `.cshtml`, `.css`, and `.js`, normalize line endings before finishing if the editor/tool introduced mixed endings.
 
 ## Identity UI Rules
 

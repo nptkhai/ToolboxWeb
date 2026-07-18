@@ -1,114 +1,121 @@
+@using System.Globalization
+@using System.Text.Json
+@using ToolboxWeb.Web.Constants
 @model ToolboxWeb.Web.ViewModels.Jira.JiraDashboardPageViewModel
 @{
     ViewData["Title"] = T["Jira.Dashboard.Title"];
+    var currentCulture = CultureInfo.CurrentUICulture.Name;
+    var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html";
+    var dashboardRowsJson = JsonSerializer.Serialize(Model.Rows);
+    var dashboardConfigJson = JsonSerializer.Serialize(new
+    {
+        currentCulture,
+        browseBaseUrl = Model.Session.BaseUrl?.TrimEnd('/'),
+        initialSort = Model.Filter.Sort,
+        initialDirection = Model.Filter.Direction,
+        emptyState = T["Jira.Dashboard.EmptyState"].Value,
+        columns = new
+        {
+            index = T["Jira.Table.Index"].Value,
+            project = T["Jira.Table.Project"].Value,
+            subTaskKey = T["Jira.Table.SubtaskKey"].Value,
+            subTaskSummary = T["Jira.Table.SubtaskSummary"].Value,
+            issueKey = T["Jira.Table.IssueKey"].Value,
+            issueSummary = T["Jira.Table.IssueSummary"].Value,
+            status = T["Jira.Table.Status"].Value,
+            dueDate = T["Jira.Table.DueDate"].Value,
+            estimate = T["Jira.Table.EstimateTime"].Value,
+            logged = T["Jira.Table.LogTime"].Value
+        }
+    });
 }
 
-<div class="jira-shell">
-    <section class="jira-session-card">
-        <div>
-            <span class="page-kicker">@T["Jira.Session.Kicker"]</span>
-            <h2>@Model.Session.DisplayName</h2>
-            <p>@T["Jira.Session.Description"]</p>
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/kendo/icons/index.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/tabulator/css/tabulator.min.css" asp-append-version="true" />
+}
+
+<div class="jira-dashboard-shell">
+    <form method="get" action="@dashboardHref" class="jira-dashboard-toolbar" data-jira-dashboard-form>
+        <div class="jira-dashboard-toolbar-label">
+            <span class="jira-dashboard-toolbar-caption">@T["Jira.Dashboard.ToolbarLabel"]</span>
+            <strong>@Model.Filter.RangeLabel</strong>
         </div>
-        <dl class="jira-session-meta">
-            <div>
-                <dt>@T["Jira.Session.User"]</dt>
-                <dd>@Model.Session.Username</dd>
+
+        <div class="jira-dashboard-toolbar-controls">
+            <div class="jira-dashboard-period-tabs" data-jira-period-tabs>
+                <button class="jira-dashboard-period-button @(Model.Filter.PeriodType == "day" ? "is-active" : null)" type="button" data-period="day">@T["Jira.Dashboard.Filter.Day"]</button>
+                <button class="jira-dashboard-period-button @(Model.Filter.PeriodType == "week" ? "is-active" : null)" type="button" data-period="week">@T["Jira.Dashboard.Filter.Week"]</button>
+                <button class="jira-dashboard-period-button @(Model.Filter.PeriodType == "month" ? "is-active" : null)" type="button" data-period="month">@T["Jira.Dashboard.Filter.Month"]</button>
+                <button class="jira-dashboard-period-button @(Model.Filter.PeriodType == "year" ? "is-active" : null)" type="button" data-period="year">@T["Jira.Dashboard.Filter.Year"]</button>
             </div>
-            <div>
-                <dt>@T["Jira.Session.BaseUrl"]</dt>
-                <dd>@Model.Session.BaseUrl</dd>
+
+            <div class="jira-dashboard-period-input @(Model.Filter.PeriodType == "day" ? "is-active" : null)" data-period-input="day">
+                <input id="jira-dashboard-day" class="form-control jira-dashboard-picker" type="text" value="@Model.Filter.DayValue" autocomplete="off" />
             </div>
-            <div>
-                <dt>@T["Jira.Session.LoginAt"]</dt>
-                <dd>@Model.Session.LoginAt.ToString("dd/MM/yyyy HH:mm")</dd>
+            <div class="jira-dashboard-period-input @(Model.Filter.PeriodType == "week" ? "is-active" : null)" data-period-input="week">
+                <input id="jira-dashboard-week" class="form-control jira-dashboard-week-input" type="week" value="@Model.Filter.WeekValue" />
             </div>
-            <div>
-                <dt>@T["Jira.Session.ExpiresAt"]</dt>
-                <dd>@Model.Session.ExpiresAt.ToString("dd/MM/yyyy HH:mm")</dd>
+            <div class="jira-dashboard-period-input @(Model.Filter.PeriodType == "month" ? "is-active" : null)" data-period-input="month">
+                <input id="jira-dashboard-month" class="form-control jira-dashboard-picker" type="text" value="@Model.Filter.MonthValue" autocomplete="off" />
             </div>
-        </dl>
+            <div class="jira-dashboard-period-input @(Model.Filter.PeriodType == "year" ? "is-active" : null)" data-period-input="year">
+                <input id="jira-dashboard-year" class="form-control jira-dashboard-picker jira-dashboard-year-input" type="text" value="@Model.Filter.YearValue" autocomplete="off" />
+            </div>
+
+            <input type="hidden" name="periodType" value="@Model.Filter.PeriodType" data-jira-period-type />
+            <input type="hidden" name="periodValue" value="@Model.Filter.PeriodValue" data-jira-period-value />
+            <input type="hidden" name="sort" value="@Model.Filter.Sort" data-jira-sort />
+            <input type="hidden" name="dir" value="@Model.Filter.Direction" data-jira-direction />
+
+            <button type="submit" class="btn btn-primary jira-dashboard-search">@T["Jira.Dashboard.Filter.Search"]</button>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger jira-dashboard-alert" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <section class="jira-dashboard-stats" aria-label="@T["Jira.Dashboard.Title"]">
+        @foreach (var stat in Model.Stats)
+        {
+            <article class="jira-dashboard-stat-card jira-dashboard-stat-card--@stat.AccentClass">
+                <span class="jira-dashboard-stat-label">@stat.Label</span>
+                <strong class="jira-dashboard-stat-value">@stat.Value</strong>
+                <span class="jira-dashboard-stat-hint">@stat.Hint</span>
+            </article>
+        }
     </section>
 
-    <div class="jira-panels">
-        <section class="panel jira-panel">
-            <div class="panel-header">
-                <div>
-                    <h2>@T["Jira.Dashboard.AssignedTitle"]</h2>
-                    <p>@T["Jira.Dashboard.AssignedNote"]</p>
-                </div>
+    <section class="jira-dashboard-table-card">
+        <div class="jira-dashboard-table-head">
+            <div>
+                <h2>@T["Jira.Dashboard.SubtasksTitle"]</h2>
+                <p>@T["Jira.Dashboard.SubtasksHint"]</p>
             </div>
+        </div>
 
-            @if (!Model.AssignedIssues.Any())
-            {
-                <div class="muted">@T["Jira.Common.NoItems"]</div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle jira-table">
-                        <thead>
-                            <tr>
-                                <th>@T["Jira.Table.Key"]</th>
-                                <th>@T["Jira.Table.Summary"]</th>
-                                <th>@T["Jira.Table.Status"]</th>
-                                <th>@T["Jira.Table.DueDate"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var issue in Model.AssignedIssues)
-                        {
-                            <tr>
-                                <td>@issue.IssueKey</td>
-                                <td>@issue.Summary</td>
-                                <td>@issue.Status</td>
-                                <td>@(issue.DueDate?.ToString("dd/MM/yyyy") ?? "-")</td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </section>
+        <div id="jira-dashboard-grid" class="jira-dashboard-grid-host"></div>
 
-        <section class="panel jira-panel">
-            <div class="panel-header">
-                <div>
-                    <h2>@T["Jira.Dashboard.DueTitle"]</h2>
-                    <p>@T["Jira.Dashboard.DueNote"]</p>
-                </div>
-            </div>
-
-            @if (!Model.DueSubTasks.Any())
-            {
-                <div class="muted">@T["Jira.Common.NoItems"]</div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle jira-table">
-                        <thead>
-                            <tr>
-                                <th>@T["Jira.Table.Key"]</th>
-                                <th>@T["Jira.Table.Summary"]</th>
-                                <th>@T["Jira.Table.Status"]</th>
-                                <th>@T["Jira.Table.DueDate"]</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var issue in Model.DueSubTasks)
-                        {
-                            <tr>
-                                <td>@issue.IssueKey</td>
-                                <td>@issue.Summary</td>
-                                <td>@issue.Status</td>
-                                <td>@(issue.DueDate?.ToString("dd/MM/yyyy") ?? "-")</td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </section>
-    </div>
+        <div class="jira-dashboard-jql">
+            <span class="jira-dashboard-jql-label">@T["Jira.Dashboard.JqlLabel"]</span>
+            <code class="jira-dashboard-jql-code">@Model.AppliedJql</code>
+        </div>
+    </section>
 </div>
+
+<script id="jira-dashboard-rows" type="application/json">@Html.Raw(dashboardRowsJson)</script>
+<script id="jira-dashboard-config" type="application/json">@Html.Raw(dashboardConfigJson)</script>
+
+@section Scripts {
+    <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
+    @if (currentCulture == "vi-VN")
+    {
+        <script src="~/vendor/kendo/cultures/kendo.culture.vi-VN.min.js" asp-append-version="true"></script>
+        <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
+    }
+    <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script src="~/js/jira-dashboard.js" asp-append-version="true"></script>
+}

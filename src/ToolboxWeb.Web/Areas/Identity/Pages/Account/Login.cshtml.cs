@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Localization;
+using ToolboxWeb.Web.Constants;
 using Microsoft.Extensions.Options;
 using ToolboxWeb.Web.Domain;
 using ToolboxWeb.Web.Services;
@@ -48,10 +49,11 @@ public class LoginModel : PageModel
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return LocalRedirect(ResolveReturnUrl(returnUrl));
+            var isJiraUser = User.HasClaim(ToolboxClaimTypes.AuthSource, AuthSources.Jira);
+            return LocalRedirect(ResolveReturnUrl(returnUrl, isJiraUser));
         }
 
-        ReturnUrl = ResolveReturnUrl(returnUrl);
+        ReturnUrl = NormalizeReturnUrl(returnUrl);
         JiraInput.BaseUrl = _jiraOptions.Value.DefaultBaseUrl;
         ActiveMode = LocalMode;
         return Page();
@@ -59,7 +61,7 @@ public class LoginModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
-        ReturnUrl = ResolveReturnUrl(returnUrl);
+        ReturnUrl = NormalizeReturnUrl(returnUrl);
         JiraInput.BaseUrl = _jiraOptions.Value.DefaultBaseUrl;
         ActiveMode = LocalMode;
 
@@ -72,7 +74,7 @@ public class LoginModel : PageModel
         var result = await _signInManager.PasswordSignInAsync(LocalInput.Email.Trim(), LocalInput.Password, LocalInput.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
-            return LocalRedirect(ReturnUrl);
+            return LocalRedirect(ResolveReturnUrl(returnUrl, preferJiraDashboard: false));
         }
 
         if (result.IsLockedOut)
@@ -87,7 +89,7 @@ public class LoginModel : PageModel
 
     public async Task<IActionResult> OnPostJiraAsync(string? returnUrl = null)
     {
-        ReturnUrl = ResolveReturnUrl(returnUrl);
+        ReturnUrl = NormalizeReturnUrl(returnUrl);
         ActiveMode = JiraMode;
 
         if (string.IsNullOrWhiteSpace(JiraInput.BaseUrl)
@@ -101,15 +103,45 @@ public class LoginModel : PageModel
         var result = await _jiraAuth.SignInAsync(HttpContext, JiraInput.BaseUrl, JiraInput.Username, JiraInput.Password);
         if (result.Succeeded)
         {
-            return LocalRedirect(ReturnUrl);
+            return LocalRedirect(ResolveReturnUrl(returnUrl, preferJiraDashboard: true));
         }
 
         JiraErrorMessage = string.IsNullOrWhiteSpace(result.Message) ? _localizer["Jira.LoginFailed"].Value : result.Message;
         return Page();
     }
 
-    private string ResolveReturnUrl(string? returnUrl)
+    private string ResolveReturnUrl(string? returnUrl, bool preferJiraDashboard = false)
     {
-        return Url.IsLocalUrl(returnUrl) ? returnUrl! : Url.Content("~/dashboard.html");
+        var normalizedReturnUrl = NormalizeReturnUrl(returnUrl);
+        if (!string.IsNullOrWhiteSpace(normalizedReturnUrl))
+        {
+            if (preferJiraDashboard || !IsJiraOnlyPath(normalizedReturnUrl))
+            {
+                return normalizedReturnUrl;
+            }
+        }
+
+        return preferJiraDashboard
+            ? (Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html")
+            : (Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html");
+    }
+
+    private string NormalizeReturnUrl(string? returnUrl)
+    {
+        return Url.IsLocalUrl(returnUrl) ? returnUrl! : string.Empty;
+    }
+
+    private static bool IsJiraOnlyPath(string returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+        {
+            return false;
+        }
+
+        var path = returnUrl.Split('?', '#')[0];
+        return string.Equals(path, "/jira-dashboard", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(path, "/jira-dashboard.html", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(path, "/jira-worklist", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(path, "/jira-worklist.html", StringComparison.OrdinalIgnoreCase);
     }
 }
