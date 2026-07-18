@@ -1,4 +1,6 @@
 @using ToolboxWeb.Web.Constants
+@using ToolboxWeb.Web.Services
+@inject ICurrentUserService CurrentUser
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentUICulture.Name">
 <head>
@@ -37,6 +39,11 @@
                     <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ComponentsHtml) ?? "/component.html")">@T["Nav.Components"]</a>
                     <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.KendoDemoHtml) ?? "/demo-kendo.html")">@T["Nav.KendoDemo"]</a>
                     <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.TabulatorDemoHtml) ?? "/tabulator-demo.html")">@T["Nav.TabulatorDemo"]</a>
+                    @if (CurrentUser.IsJiraUser)
+                    {
+                        <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html")">@T["Nav.JiraDashboard"]</a>
+                        <a href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraWorklistHtml) ?? "/jira-worklist.html")">@T["Nav.JiraWorklist"]</a>
+                    }
                 </nav>
             }
             else
@@ -61,7 +68,7 @@
                     <partial name="_LoginPartial" />
                 </div>
             </header>
-            <main class="content-area" role="main">
+            <main class="content-area @(ViewData["ContentAreaClass"] as string)" role="main">
                 @if (TempData["SuccessMessage"] is string successMessage)
                 {
                     <div class="alert alert-success">@successMessage</div>

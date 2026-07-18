@@ -7,5 +7,6 @@ public enum ActivityEntityType
     FocusSession = 3,
     QuickLink = 4,
     PromptTemplate = 5,
-    TabulatorTask = 6
+    TabulatorTask = 6,
+    UserProfile = 7
 }

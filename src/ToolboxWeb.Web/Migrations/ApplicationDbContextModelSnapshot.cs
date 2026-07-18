@@ -188,6 +188,12 @@ namespace ToolboxWeb.Web.Data.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AuthSource")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
@@ -206,6 +212,15 @@ namespace ToolboxWeb.Web.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("JiraBaseUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("JiraDisplayName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("JiraUsername")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("NormalizedEmail")

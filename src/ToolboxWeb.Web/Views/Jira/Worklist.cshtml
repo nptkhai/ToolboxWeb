@@ -1,0 +1,184 @@
+@using ToolboxWeb.Web.Constants
+@model ToolboxWeb.Web.ViewModels.Jira.JiraWorklistPageViewModel
+@{
+    ViewData["Title"] = T["Jira.Worklist.Title"];
+}
+
+<div class="jira-shell">
+    <section class="jira-session-card">
+        <div>
+            <span class="page-kicker">@T["Jira.Session.Kicker"]</span>
+            <h2>@T["Jira.Worklist.Title"]</h2>
+            <p>@T["Jira.Worklist.Description"]</p>
+        </div>
+        <dl class="jira-session-meta">
+            <div>
+                <dt>@T["Jira.Session.User"]</dt>
+                <dd>@Model.Session.Username</dd>
+            </div>
+            <div>
+                <dt>@T["Jira.Session.BaseUrl"]</dt>
+                <dd>@Model.Session.BaseUrl</dd>
+            </div>
+            <div>
+                <dt>@T["Jira.Session.ExpiresAt"]</dt>
+                <dd>@Model.Session.ExpiresAt.ToString("dd/MM/yyyy HH:mm")</dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="panel jira-panel">
+        <div class="panel-header">
+            <div>
+                <h2>@T["Jira.Worklist.FilterTitle"]</h2>
+                <p>@T["Jira.Worklist.FilterNote"]</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+        }
+
+        <form method="post" class="jira-search-form" data-jira-search-form>
+            @Html.AntiForgeryToken()
+            <div class="form-grid jira-search-grid">
+                <div>
+                    <label class="form-label" for="jira-filter-select">@T["Jira.Worklist.FiltersLabel"]</label>
+                    <select id="jira-filter-select" class="form-select" data-jira-filter-select>
+                        <option value="">@T["Jira.Worklist.FiltersEmpty"]</option>
+                        @foreach (var filter in Model.Filters)
+                        {
+                            <option value="@filter.Id" data-jql="@filter.Jql">@filter.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" asp-for="Search.Project">@T["Jira.Worklist.Project"]</label>
+                    <input class="form-control" asp-for="Search.Project" />
+                </div>
+                <div>
+                    <label class="form-label" asp-for="Search.IssueKey">@T["Jira.Worklist.IssueKey"]</label>
+                    <input class="form-control" asp-for="Search.IssueKey" />
+                </div>
+                <div>
+                    <label class="form-label" asp-for="Search.Status">@T["Jira.Worklist.Status"]</label>
+                    <select class="form-select" asp-for="Search.Status">
+                        <option value="">@T["Jira.Worklist.StatusEmpty"]</option>
+                        <option>Open</option>
+                        <option>In Analysis</option>
+                        <option>To Do</option>
+                        <option>In Progress</option>
+                        <option>Done</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" asp-for="Search.Assignee">@T["Jira.Worklist.Assignee"]</label>
+                    <select class="form-select" asp-for="Search.Assignee">
+                        <option value="">@T["Jira.Worklist.AssigneeEmpty"]</option>
+                        <option value="currentUser()">@T["Jira.Worklist.AssigneeCurrentUser"]</option>
+                        @foreach (var user in Model.Users)
+                        {
+                            <option value="@user.Name">@user.DisplayName</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" asp-for="Search.Reporter">@T["Jira.Worklist.Reporter"]</label>
+                    <select class="form-select" asp-for="Search.Reporter">
+                        <option value="">@T["Jira.Worklist.ReporterEmpty"]</option>
+                        @foreach (var user in Model.Users)
+                        {
+                            <option value="@user.Name">@user.DisplayName</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" asp-for="Search.FromDate">@T["Jira.Worklist.FromDate"]</label>
+                    <input class="form-control" asp-for="Search.FromDate" type="date" />
+                </div>
+                <div>
+                    <label class="form-label" asp-for="Search.ToDate">@T["Jira.Worklist.ToDate"]</label>
+                    <input class="form-control" asp-for="Search.ToDate" type="date" />
+                </div>
+            </div>
+
+            <label class="form-check jira-advanced-toggle">
+                <input class="form-check-input" asp-for="Search.Advanced" data-jira-advanced-toggle />
+                <span class="form-check-label">@T["Jira.Worklist.AdvancedLabel"]</span>
+            </label>
+
+            <div class="jira-advanced-block @(Model.Search.Advanced ? string.Empty : "d-none")" data-jira-advanced-panel>
+                <label class="form-label" asp-for="Search.AdvancedJql">@T["Jira.Worklist.AdvancedJql"]</label>
+                <textarea class="form-control" asp-for="Search.AdvancedJql" rows="4">@Model.Search.AdvancedJql</textarea>
+            </div>
+
+            <div class="inline-actions">
+                <button type="submit" class="btn btn-primary">@T["Jira.Worklist.SearchButton"]</button>
+                <a class="btn btn-outline-secondary" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraWorklistHtml) ?? "/jira-worklist.html")">@T["Jira.Worklist.ResetButton"]</a>
+            </div>
+        </form>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(Model.AppliedJql))
+    {
+        <section class="panel jira-panel">
+            <div class="panel-header">
+                <h2>@T["Jira.Worklist.AppliedJql"]</h2>
+            </div>
+            <pre class="jira-jql-preview">@Model.AppliedJql</pre>
+        </section>
+    }
+
+    <section class="panel jira-panel">
+        <div class="panel-header">
+            <div>
+                <h2>@T["Jira.Worklist.ResultsTitle"]</h2>
+                <p>@T["Jira.Worklist.ResultsNote"]</p>
+            </div>
+        </div>
+
+        @if (!Model.Issues.Any())
+        {
+            <div class="muted">@T["Jira.Worklist.NoResults"]</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle jira-table">
+                    <thead>
+                        <tr>
+                            <th>@T["Jira.Table.Key"]</th>
+                            <th>@T["Jira.Table.Summary"]</th>
+                            <th>@T["Jira.Table.Status"]</th>
+                            <th>@T["Jira.Table.Type"]</th>
+                            <th>@T["Jira.Table.DueDate"]</th>
+                            <th>@T["Jira.Table.Parent"]</th>
+                            <th>@T["Jira.Table.Estimate"]</th>
+                            <th>@T["Jira.Table.Logged"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var issue in Model.Issues)
+                    {
+                        <tr>
+                            <td>@issue.IssueKey</td>
+                            <td>@issue.Summary</td>
+                            <td>@issue.Status</td>
+                            <td>@issue.Type</td>
+                            <td>@(issue.DueDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td>@(string.IsNullOrWhiteSpace(issue.Parent) ? "-" : $"{issue.Parent} - {issue.ParentSummary}")</td>
+                            <td>@(string.IsNullOrWhiteSpace(issue.Estimate) ? "-" : issue.Estimate)</td>
+                            <td>@(string.IsNullOrWhiteSpace(issue.LoggedDates) ? "-" : issue.LoggedDates)</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/js/jira-pages.js" asp-append-version="true"></script>
+}

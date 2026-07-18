@@ -1,0 +1,50 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.IndexModel
+@{
+    ViewData["Title"] = T["Profile.PageTitle"];
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="alert">@Model.StatusMessage</div>
+}
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+<div class="identity-profile-card">
+    <div class="identity-profile-copy">
+        <span class="identity-profile-kicker">@T["Profile.SectionKicker"]</span>
+        <h3>@T["Profile.SectionTitle"]</h3>
+        <p>@T["Profile.SectionDescription"]</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="identity-profile-form">
+        <div class="identity-profile-avatar">
+            <partial name="/Views/Shared/Controls/_ImageUploadControl.cshtml" model="Model.AvatarControl" />
+        </div>
+
+        <div class="identity-profile-fields">
+            <div class="form-grid">
+                <div>
+                    <label class="form-label">@T["Profile.UserNameLabel"]</label>
+                    <input class="form-control" type="text" value="@Model.Profile.UserName" readonly />
+                </div>
+                <div>
+                    <label class="form-label">@T["Profile.EmailLabel"]</label>
+                    <input class="form-control" type="email" value="@Model.Profile.Email" readonly />
+                </div>
+            </div>
+
+            <div class="helper">@T["Profile.FormHelper"]</div>
+
+            <div class="inline-actions">
+                <button type="submit" class="btn btn-primary">@T["Profile.SaveButton"]</button>
+                <a asp-page="./PersonalData" class="btn btn-outline-secondary">@T["Profile.OpenPersonalData"]</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,46 @@
+@model ToolboxWeb.Web.ViewModels.FileAttachmentControlViewModel
+@using System.Text.Json
+@{
+    var iconSpritePath = Url.Content("~/vendor/bootstrap-icons/bootstrap-icons.svg");
+}
+<div class="tbx-upload-control tbx-upload-files @(Model.RootCssClass ?? string.Empty)"
+     data-upload-control
+     data-upload-kind="files"
+     data-icon-sprite="@iconSpritePath"
+     data-remove-label="@Model.RemoveText"
+     data-empty-text="@Model.EmptyText"
+     data-invalid-type-message="@Model.InvalidTypeMessage"
+     data-allowed-extensions='@JsonSerializer.Serialize(Model.AllowedExtensions)'
+     data-initial-items='@JsonSerializer.Serialize(Model.InitialItems)'>
+    @if (Model.AllowMultiple)
+    {
+        <input class="tbx-upload-input" type="file" name="@Model.InputName" accept="@Model.Accept" multiple hidden />
+    }
+    else
+    {
+        <input class="tbx-upload-input" type="file" name="@Model.InputName" accept="@Model.Accept" hidden />
+    }
+    <input class="tbx-upload-removed" type="hidden" name="@Model.RemovedInputName" />
+    <div class="tbx-upload-card" data-upload-dropzone aria-label="@(Model.AriaLabel ?? Model.TriggerText)">
+        <div class="tbx-upload-file-list-wrapper" data-upload-list-wrapper>
+            <div class="tbx-upload-file-header">
+                <span>@Model.HeaderText</span>
+                <button type="button" class="tbx-upload-clear-all" data-upload-clear-all>@Model.ClearAllText</button>
+            </div>
+            <div class="tbx-upload-file-preview-list" data-upload-list></div>
+        </div>
+        <button type="button" class="tbx-upload-trigger-ui" data-upload-trigger>
+            <span class="tbx-upload-icon" aria-hidden="true">
+                <svg class="tbx-bi" focusable="false" viewBox="0 0 16 16">
+                    <use href="@($"{iconSpritePath}#paperclip")" xlink:href="@($"{iconSpritePath}#paperclip")"></use>
+                </svg>
+            </span>
+            <span class="tbx-upload-text">@Model.TriggerText</span>
+        </button>
+    </div>
+    <div class="tbx-upload-feedback" data-upload-feedback hidden></div>
+    @if (!string.IsNullOrWhiteSpace(Model.HelperText))
+    {
+        <div class="helper">@Model.HelperText</div>
+    }
+</div>

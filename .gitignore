@@ -14,5 +14,6 @@ obj/
 TestResults/
 artifacts/
 publish/
+.tmp/
 src/ToolboxWeb.Web/Content/css/*.min.css.map
 src/ToolboxWeb.Web/DataProtectionKeys/

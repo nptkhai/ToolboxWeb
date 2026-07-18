@@ -1,12 +1,61 @@
 @using Microsoft.AspNetCore.Identity
+@using System.Linq
 @using ToolboxWeb.Web.Domain
+@using ToolboxWeb.Web.Services
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
+@inject IUserProfileService UserProfileService
+@inject ICurrentUserService CurrentUser
+@{
+    static string BuildInitials(string? value)
+    {
+        var source = string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Split('@', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)[0];
+
+        var parts = source
+            .Split(new[] { ' ', '.', '_', '-' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .ToArray();
+
+        if (parts.Length >= 2)
+        {
+            return string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant();
+        }
+
+        if (parts.Length == 1)
+        {
+            return string.Concat(parts[0].Take(2)).ToUpperInvariant();
+        }
+
+        return "TW";
+    }
+}
 
 @if (SignInManager.IsSignedIn(User))
 {
+    var userId = UserManager.GetUserId(User);
+    var profile = !string.IsNullOrWhiteSpace(userId)
+        ? await UserProfileService.GetProfileAsync(userId)
+        : null;
+    var accountLabel = CurrentUser.DisplayName ?? profile?.DisplayName ?? profile?.Email ?? profile?.UserName ?? User.Identity?.Name ?? T["Auth.ManageAccount"].Value;
+    var avatarUrl = profile?.AvatarUrl;
+    var initials = BuildInitials(accountLabel);
+
     <div class="account-menu">
-        <a asp-area="Identity" asp-page="/Account/Manage/Index">@User.Identity?.Name</a>
+        <a class="account-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="@T["Auth.ManageAccount"]">
+            <span class="account-avatar">
+                @if (!string.IsNullOrWhiteSpace(avatarUrl))
+                {
+                    <img src="@Url.Content(avatarUrl)" alt="@T["Profile.AvatarAlt"]" />
+                }
+                else
+                {
+                    <span aria-hidden="true">@initials</span>
+                }
+            </span>
+            <span class="account-name">@accountLabel</span>
+        </a>
         <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
             <button type="submit">@T["Auth.Logout"]</button>
         </form>

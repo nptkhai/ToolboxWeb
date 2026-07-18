@@ -1,0 +1,55 @@
+@model ToolboxWeb.Web.ViewModels.ImageUploadControlViewModel
+@using System.Text.Json
+@{
+    var iconSpritePath = Url.Content("~/vendor/bootstrap-icons/bootstrap-icons.svg");
+    var initialItems = string.IsNullOrWhiteSpace(Model.CurrentImageUrl)
+        ? Array.Empty<object>()
+        : new[]
+        {
+            new
+            {
+                id = Model.CurrentItemId ?? "current-image",
+                name = Model.CurrentFileName ?? "image",
+                size = Model.CurrentFileSize ?? 0,
+                type = "image/*",
+                url = Model.CurrentImageUrl
+            }
+        };
+}
+<div class="tbx-upload-control tbx-upload-image @(Model.RootCssClass ?? string.Empty)"
+     data-upload-control
+     data-upload-kind="image"
+     data-icon-sprite="@iconSpritePath"
+     data-remove-label="@Model.RemoveText"
+     data-empty-text="@Model.EmptyTitle"
+     data-invalid-type-message="@Model.InvalidTypeMessage"
+     data-allowed-extensions='@JsonSerializer.Serialize(Model.AllowedExtensions)'
+     data-image-placeholder-title="@Model.EmptyTitle"
+     data-image-placeholder-note="@Model.EmptyNote"
+     data-initial-items='@JsonSerializer.Serialize(initialItems)'>
+    <input class="tbx-upload-input" type="file" name="@Model.InputName" accept="@Model.Accept" hidden />
+    <input class="tbx-upload-removed" type="hidden" name="@Model.RemovedInputName" />
+    <div class="tbx-upload-card" data-upload-dropzone aria-label="@(Model.AriaLabel ?? Model.TriggerText)">
+        <div class="tbx-upload-preview-wrapper" data-upload-preview-wrapper>
+            <img class="tbx-upload-preview-image" data-upload-preview alt="@Model.EmptyTitle" />
+            <button type="button" class="tbx-upload-image-delete" data-upload-clear aria-label="@Model.RemoveText">
+                <svg class="tbx-bi" aria-hidden="true" focusable="false" viewBox="0 0 16 16">
+                    <use href="@($"{iconSpritePath}#x-lg")" xlink:href="@($"{iconSpritePath}#x-lg")"></use>
+                </svg>
+            </button>
+        </div>
+        <button type="button" class="tbx-upload-trigger-ui" data-upload-trigger>
+            <span class="tbx-upload-icon" aria-hidden="true">
+                <svg class="tbx-bi" focusable="false" viewBox="0 0 16 16">
+                    <use href="@($"{iconSpritePath}#image")" xlink:href="@($"{iconSpritePath}#image")"></use>
+                </svg>
+            </span>
+            <span class="tbx-upload-text">@Model.TriggerText</span>
+        </button>
+    </div>
+    <div class="tbx-upload-feedback" data-upload-feedback hidden></div>
+    @if (!string.IsNullOrWhiteSpace(Model.HelperText))
+    {
+        <div class="helper">@Model.HelperText</div>
+    }
+</div>

@@ -1,0 +1,10 @@
+namespace ToolboxWeb.Web.ViewModels;
+
+public class UserProfileManageViewModel
+{
+    public string UserName { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string DisplayName { get; init; } = string.Empty;
+    public string AuthSource { get; init; } = string.Empty;
+    public string? AvatarUrl { get; init; }
+}

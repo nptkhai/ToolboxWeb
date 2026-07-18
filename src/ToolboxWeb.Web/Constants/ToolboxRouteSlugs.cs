@@ -13,6 +13,8 @@ public static class ToolboxRouteSlugs
         public const string Components = "component";
         public const string KendoDemo = "kendo-ui-demo";
         public const string TabulatorDemo = "tabulator-demo";
+        public const string JiraDashboard = "jira-dashboard";
+        public const string JiraWorklist = "jira-worklist";
         public const string Privacy = "privacy";
         public const string Error = "error";
     }
@@ -28,6 +30,8 @@ public static class ToolboxRouteSlugs
         public const string Components = "component.html";
         public const string KendoDemo = "demo-kendo.html";
         public const string TabulatorDemo = "tabulator-demo.html";
+        public const string JiraDashboard = "jira-dashboard.html";
+        public const string JiraWorklist = "jira-worklist.html";
         public const string Privacy = "privacy.html";
         public const string Error = "error.html";
     }
@@ -45,6 +49,8 @@ public static class ToolboxRouteSlugs
         public const string KendoDemoHtml = "kendo-demo-html";
         public const string KendoDemoTabHtml = "kendo-demo-tab-html";
         public const string TabulatorDemoHtml = "tabulator-demo-html";
+        public const string JiraDashboardHtml = "jira-dashboard-html";
+        public const string JiraWorklistHtml = "jira-worklist-html";
         public const string PrivacyHtml = "privacy-html";
         public const string ErrorHtml = "error-html";
     }

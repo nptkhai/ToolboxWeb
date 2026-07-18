@@ -39,6 +39,8 @@
   - add activity logging for important create, update, delete, complete, or use actions,
   - add a migration if schema changed.
 - When changing schema, update both the entity model and `ApplicationDbContext`, and explicitly consider migration compatibility risk.
+- If a schema change touches `ApplicationUser` or any table read by built-in ASP.NET Identity pages, verify the actual runtime database file is updated before considering the task done.
+- For identity-facing schema additions, do not validate only the custom page you edited. Also test the built-in tabs that still query the same user record, especially `Manage/Index`, `Manage/Email`, `Manage/ChangePassword`, `Manage/TwoFactorAuthentication`, and `Manage/PersonalData`.
 - Do not bypass service-layer user isolation by querying DbContext directly from views or controllers.
 
 ## Routing, Localization, Encoding
@@ -52,6 +54,13 @@
 - Avoid pasting long inline Vietnamese literals directly into `cshtml` when a localization key is appropriate.
 - If text appears mojibake or broken, fix it with clean UTF-8 content or localization keys instead of copying the broken text forward.
 
+## Identity UI Rules
+
+- `Areas/Identity/Pages/Account/Manage/` is a shared surface that mixes local pages and package-provided pages. Do not customize only one page and assume the rest of the folder will visually match.
+- Before changing any page inside `Account/Manage`, inspect the folder-level `_Layout.cshtml`, `_ViewStart.cshtml`, nav behavior, and whether package pages in the same folder will inherit the same wrapper.
+- If you introduce a custom manage page layout, make it folder-wide so tab switches do not jump between different wrappers or duplicate navigation blocks.
+- When you add profile or account UI that reads user data, make sure it degrades safely if the current runtime database has not yet picked up the newest schema.
+
 ## Frontend Library Rules
 
 - Bootstrap is the default base UI layer.
@@ -60,6 +69,8 @@
 - Asset-present libraries such as `ECharts`, `FullCalendar`, `Quill`, and `SheetJS` should be treated as available assets, not automatically as wired, supported live integrations.
 - For Kendo UI Core, only live-use widgets that are confirmed usable in the current local bundle.
 - If a Kendo widget is missing from the current bundle, use a catalog note or fallback pattern instead of initializing it blindly.
+- Shared frontend controls must be instance-scoped. Do not rely on global IDs or one-off selectors when the same control can appear multiple times on one screen.
+- For reusable upload-like controls, keep JavaScript queries relative to the control root and require unique `InputName` and removed-state field names per instance so add, update, and delete flows do not leak across controls.
 
 ## Preferred Controls
 
@@ -108,9 +119,14 @@
 
 - Backend change: run `dotnet build`.
 - Schema change: run `dotnet build` and review the migration impact.
+- Build verification artifacts must go to a temp path outside the repo, or the repo must ignore them first. Do not leave ad hoc verification output directories inside the working tree.
 - Route or UI change: check canonical route behavior, localization impact, and asset loading.
 - Kendo, Tabulator, or Components changes:
   - verify the widget really exists in the local bundle before marking it usable,
   - keep runtime behavior aligned with any "usable now" or bundle status labels,
   - confirm the demo sits in the correct component family tab,
   - confirm JavaScript bindings are not targeting duplicate IDs.
+- Identity or profile changes:
+  - confirm only one manage navigation shell renders,
+  - confirm tab switches inside `Account/Manage` do not fall back to a different embedded layout,
+  - confirm schema-backed fields used by account pages exist in the actual runtime SQLite file.

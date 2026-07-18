@@ -1,0 +1,114 @@
+@model ToolboxWeb.Web.ViewModels.Jira.JiraDashboardPageViewModel
+@{
+    ViewData["Title"] = T["Jira.Dashboard.Title"];
+}
+
+<div class="jira-shell">
+    <section class="jira-session-card">
+        <div>
+            <span class="page-kicker">@T["Jira.Session.Kicker"]</span>
+            <h2>@Model.Session.DisplayName</h2>
+            <p>@T["Jira.Session.Description"]</p>
+        </div>
+        <dl class="jira-session-meta">
+            <div>
+                <dt>@T["Jira.Session.User"]</dt>
+                <dd>@Model.Session.Username</dd>
+            </div>
+            <div>
+                <dt>@T["Jira.Session.BaseUrl"]</dt>
+                <dd>@Model.Session.BaseUrl</dd>
+            </div>
+            <div>
+                <dt>@T["Jira.Session.LoginAt"]</dt>
+                <dd>@Model.Session.LoginAt.ToString("dd/MM/yyyy HH:mm")</dd>
+            </div>
+            <div>
+                <dt>@T["Jira.Session.ExpiresAt"]</dt>
+                <dd>@Model.Session.ExpiresAt.ToString("dd/MM/yyyy HH:mm")</dd>
+            </div>
+        </dl>
+    </section>
+
+    <div class="jira-panels">
+        <section class="panel jira-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>@T["Jira.Dashboard.AssignedTitle"]</h2>
+                    <p>@T["Jira.Dashboard.AssignedNote"]</p>
+                </div>
+            </div>
+
+            @if (!Model.AssignedIssues.Any())
+            {
+                <div class="muted">@T["Jira.Common.NoItems"]</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle jira-table">
+                        <thead>
+                            <tr>
+                                <th>@T["Jira.Table.Key"]</th>
+                                <th>@T["Jira.Table.Summary"]</th>
+                                <th>@T["Jira.Table.Status"]</th>
+                                <th>@T["Jira.Table.DueDate"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var issue in Model.AssignedIssues)
+                        {
+                            <tr>
+                                <td>@issue.IssueKey</td>
+                                <td>@issue.Summary</td>
+                                <td>@issue.Status</td>
+                                <td>@(issue.DueDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        <section class="panel jira-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>@T["Jira.Dashboard.DueTitle"]</h2>
+                    <p>@T["Jira.Dashboard.DueNote"]</p>
+                </div>
+            </div>
+
+            @if (!Model.DueSubTasks.Any())
+            {
+                <div class="muted">@T["Jira.Common.NoItems"]</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle jira-table">
+                        <thead>
+                            <tr>
+                                <th>@T["Jira.Table.Key"]</th>
+                                <th>@T["Jira.Table.Summary"]</th>
+                                <th>@T["Jira.Table.Status"]</th>
+                                <th>@T["Jira.Table.DueDate"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var issue in Model.DueSubTasks)
+                        {
+                            <tr>
+                                <td>@issue.IssueKey</td>
+                                <td>@issue.Summary</td>
+                                <td>@issue.Status</td>
+                                <td>@(issue.DueDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    </div>
+</div>

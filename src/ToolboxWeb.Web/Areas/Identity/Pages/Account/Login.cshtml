@@ -1,0 +1,125 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = T["Login.Title"];
+    ViewData["ContentAreaClass"] = "content-area--login";
+    var isJiraMode = string.Equals(Model.ActiveMode, "jira", StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="auth-login-page" data-login-mode="@(isJiraMode ? "jira" : "local")">
+    <div class="auth-login-shell">
+        <div class="auth-login-panel">
+            <div class="auth-login-panel-head">
+                <h2>@T["Login.Title"]</h2>
+            </div>
+
+            <div class="auth-login-methods" role="tablist">
+                <button type="button"
+                        class="auth-login-method @(isJiraMode ? null : "is-active")"
+                        data-login-switch="local"
+                        role="tab"
+                        aria-selected="@((!isJiraMode).ToString().ToLowerInvariant())">
+                    <span>@T["Login.Local.ShortTitle"]</span>
+                </button>
+                <button type="button"
+                        class="auth-login-method @(isJiraMode ? "is-active" : null)"
+                        data-login-switch="jira"
+                        role="tab"
+                        aria-selected="@(isJiraMode.ToString().ToLowerInvariant())">
+                    <span>@T["Login.Jira.ShortTitle"]</span>
+                </button>
+            </div>
+
+            <div class="auth-login-viewport">
+                <div class="auth-login-track">
+                    <section class="auth-login-form-panel" data-login-panel="local">
+                        <div class="auth-login-form-head">
+                            <h3>@T["Login.Local.Title"]</h3>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.LocalErrorMessage))
+                        {
+                            <div class="alert alert-danger" role="alert">@Model.LocalErrorMessage</div>
+                        }
+
+                        <form method="post"
+                              asp-page="./Login"
+                              asp-route-returnUrl="@Model.ReturnUrl"
+                              class="auth-login-form">
+                            <div class="auth-login-input auth-login-input--floating">
+                                <input id="local-email"
+                                       class="form-control"
+                                       asp-for="LocalInput.Email"
+                                       autocomplete="username"
+                                       placeholder=" " />
+                                <label class="form-label" for="local-email">@T["Login.Local.Email"]</label>
+                            </div>
+                            <div class="auth-login-input auth-login-input--floating">
+                                <input id="local-password"
+                                       class="form-control"
+                                       asp-for="LocalInput.Password"
+                                       type="password"
+                                       autocomplete="current-password"
+                                       placeholder=" " />
+                                <label class="form-label" for="local-password">@T["Login.Local.Password"]</label>
+                            </div>
+                            <label class="form-check auth-login-check">
+                                <input class="form-check-input" asp-for="LocalInput.RememberMe" />
+                                <span class="form-check-label">@T["Login.Local.RememberMe"]</span>
+                            </label>
+                            <button type="submit" class="btn btn-primary auth-login-submit">@T["Login.Local.Submit"]</button>
+                        </form>
+                    </section>
+
+                    <section class="auth-login-form-panel" data-login-panel="jira">
+                        <div class="auth-login-form-head">
+                            <h3>@T["Login.Jira.Title"]</h3>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.JiraErrorMessage))
+                        {
+                            <div class="alert alert-danger" role="alert">@Model.JiraErrorMessage</div>
+                        }
+
+                        <form method="post"
+                              asp-page="./Login"
+                              asp-page-handler="Jira"
+                              asp-route-returnUrl="@Model.ReturnUrl"
+                              class="auth-login-form">
+                            <div class="auth-login-input auth-login-input--floating">
+                                <input id="jira-base-url"
+                                       class="form-control"
+                                       asp-for="JiraInput.BaseUrl"
+                                       autocomplete="url"
+                                       placeholder=" " />
+                                <label class="form-label" for="jira-base-url">@T["Login.Jira.BaseUrl"]</label>
+                            </div>
+                            <div class="auth-login-input auth-login-input--floating">
+                                <input id="jira-username"
+                                       class="form-control"
+                                       asp-for="JiraInput.Username"
+                                       autocomplete="username"
+                                       placeholder=" " />
+                                <label class="form-label" for="jira-username">@T["Login.Jira.Username"]</label>
+                            </div>
+                            <div class="auth-login-input auth-login-input--floating">
+                                <input id="jira-password"
+                                       class="form-control"
+                                       asp-for="JiraInput.Password"
+                                       type="password"
+                                       autocomplete="current-password"
+                                       placeholder=" " />
+                                <label class="form-label" for="jira-password">@T["Login.Jira.Password"]</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary auth-login-submit">@T["Login.Jira.Submit"]</button>
+                        </form>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/login-page.js" asp-append-version="true"></script>
+}

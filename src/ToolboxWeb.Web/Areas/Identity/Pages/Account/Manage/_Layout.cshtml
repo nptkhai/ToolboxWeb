@@ -1,0 +1,37 @@
+@{
+    Layout = "/Views/Shared/_Layout.cshtml";
+
+    var currentPath = Context.Request.Path.Value ?? string.Empty;
+
+    bool IsActive(string path)
+    {
+        return currentPath.Equals(path, StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+<div class="identity-manage-shell">
+    <div class="identity-manage-head">
+        <div>
+            <h2>@T["Profile.PageTitle"]</h2>
+            <p>@T["Profile.PageDescription"]</p>
+        </div>
+    </div>
+
+    <div class="identity-manage-grid">
+        <aside class="identity-manage-nav">
+            <a class="@(IsActive("/Identity/Account/Manage") ? "active" : null)" asp-page="./Index">@T["Profile.Nav.Profile"]</a>
+            <a class="@(IsActive("/Identity/Account/Manage/Email") ? "active" : null)" asp-page="./Email">@T["Profile.Nav.Email"]</a>
+            <a class="@(IsActive("/Identity/Account/Manage/ChangePassword") ? "active" : null)" asp-page="./ChangePassword">@T["Profile.Nav.Password"]</a>
+            <a class="@(IsActive("/Identity/Account/Manage/TwoFactorAuthentication") ? "active" : null)" asp-page="./TwoFactorAuthentication">@T["Profile.Nav.TwoFactor"]</a>
+            <a class="@(IsActive("/Identity/Account/Manage/PersonalData") ? "active" : null)" asp-page="./PersonalData">@T["Profile.Nav.PersonalData"]</a>
+        </aside>
+
+        <section class="identity-manage-panel">
+            @RenderBody()
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}

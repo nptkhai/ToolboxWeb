@@ -60,6 +60,34 @@
         new { id = 4, title = LocalText("Catalog asset ngoài bundle", "Catalog asset-only libraries"), owner = "Khai", dueDate = new DateTime(2026, 6, 25), status = T["TabulatorTaskStatus.Todo"].Value, statusCode = "todo", priority = T["TabulatorTaskPriority.Low"].Value, priorityCode = "low", progress = 22 }
     };
 
+    var demoImageUploadControl = new ImageUploadControlViewModel
+    {
+        InputName = "ComponentDemoAvatar",
+        RemovedInputName = "ComponentDemoAvatarRemoved",
+        TriggerText = LocalText("Chọn ảnh đại diện", "Choose cover image"),
+        RemoveText = LocalText("Xóa", "Delete"),
+        EmptyTitle = LocalText("Chọn ảnh đại diện", "Choose cover image"),
+        EmptyNote = LocalText("Kéo thả ảnh vào đây hoặc bấm để cập nhật.", "Drop an image here or click to update it."),
+        HelperText = LocalText("Control này chỉ giữ ảnh ở giao diện và trong input file. Chỉ khi submit form thật thì backend mới lưu ảnh vào source và ghi URL xuống cơ sở dữ liệu.", "This control only keeps the image in the UI and file input. The backend should save the file and persist its URL only when the real form is submitted."),
+        InvalidTypeMessage = LocalText("Chỉ được đính kèm ảnh JPG, JPEG, PNG, GIF hoặc WEBP.", "Only JPG, JPEG, PNG, GIF, or WEBP images are allowed."),
+        AriaLabel = LocalText("Chọn hoặc kéo thả ảnh đại diện", "Choose or drag a cover image"),
+        RootCssClass = "tbx-upload-image-fixed"
+    };
+
+    var demoFileAttachmentControl = new FileAttachmentControlViewModel
+    {
+        InputName = "ComponentDemoAttachments",
+        RemovedInputName = "ComponentDemoAttachmentsRemoved",
+        TriggerText = LocalText("Đính kèm tệp tin", "Attach files"),
+        HeaderText = LocalText("Tệp đính kèm đã chọn:", "Selected attachments:"),
+        ClearAllText = LocalText("Xóa hết", "Clear all"),
+        RemoveText = LocalText("Xóa", "Delete"),
+        EmptyText = LocalText("Chưa có file đính kèm nào.", "No attachment files yet."),
+        HelperText = LocalText("Danh sách file chỉ tồn tại trong giao diện và input file cho đến lúc submit. Không có file nào được lưu xuống source ngay khi bạn vừa chọn.", "The selected files stay only in the UI and file input until form submit. Nothing is written into the source as soon as a user picks files."),
+        InvalidTypeMessage = LocalText("Chỉ nhận các file thông dụng như PDF, Word, Excel, PowerPoint, TXT, CSV hoặc ảnh JPG, JPEG, PNG, GIF, WEBP.", "Only common files such as PDF, Word, Excel, PowerPoint, TXT, CSV, or JPG, JPEG, PNG, GIF, WEBP images are allowed."),
+        AriaLabel = LocalText("Chọn hoặc kéo thả file đính kèm", "Choose or drag attachment files")
+    };
+
     var bundleOnlyCatalog = new[]
     {
         new { Name = "ActionSheet", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Có thể dùng cho action menu mobile hoặc thao tác nhanh theo ngữ cảnh, nhưng trang hub hiện chưa demo để giữ bố cục gọn.", "Useful for mobile action menus or quick context actions; not live-demoed here to keep the hub compact.") },
@@ -1049,6 +1077,34 @@
                                 </ol>
                                 <div class="helper">@LocalText("Popup cÃ³ nÃºt ÄÃ³ng Ä‘á»ƒ thoÃ¡t mÃ  khÃ´ng thay Ä‘á»•i dá»¯ liá»‡u, cÃ²n nÃºt LÆ°u sáº½ thÃªm dÃ²ng á»Ÿ tráº¡ng thÃ¡i chÆ°a commit server cho Ä‘áº¿n khi báº¡n báº¥m LÆ°u thay Ä‘á»•i trong grid.", "The popup includes a Close button to exit without changes, while Save adds a client-side row that stays pending until you click Save changes in the grid.")</div>
                             </div>
+                        </div>
+                    </article>
+
+                    <article class="component-card">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>@LocalText("Common Image Attachment Control", "Common Image Attachment Control")</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap + HTML + shared JS</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Control chung để chọn, cập nhật, kéo thả, hiển thị và xóa một hình ảnh với khung preview cố định.", "A shared control for choosing, updating, drag-dropping, previewing, and removing a single image inside a fixed preview frame.")</p>
+                        <div class="component-sample">
+                            <partial name="/Views/Shared/Controls/_ImageUploadControl.cshtml" model="demoImageUploadControl" />
+                        </div>
+                    </article>
+
+                    <article class="component-card component-card-wide">
+                        <div class="component-card-head">
+                            <div>
+                                <h4>@LocalText("Common Attachment File Control", "Common Attachment File Control")</h4>
+                                <div class="component-meta-line">@T["Components.LibraryLabel"]: Bootstrap + HTML + shared JS</div>
+                            </div>
+                            <span class="component-status-badge status-usable">@T["Components.StatusUsableNow"]</span>
+                        </div>
+                        <p class="component-note">@LocalText("Control chung để đính kèm, hiển thị, thêm file mới, kéo thả nhiều file và xóa từng dòng file với chiều cao gọn hơn.", "A shared control for attaching, listing, adding, drag-dropping multiple files, and removing each file row with a more compact height.")</p>
+                        <div class="component-sample">
+                            <partial name="/Views/Shared/Controls/_FileAttachmentControl.cshtml" model="demoFileAttachmentControl" />
                         </div>
                     </article>
 
