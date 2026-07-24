@@ -228,6 +228,8 @@
   "Jira.Dashboard.ToolbarLabel": "Tracking period",
   "Jira.Dashboard.Filter.Day": "Day",
   "Jira.Dashboard.Filter.Week": "Week",
+  "Jira.Dashboard.Filter.WeekPlaceholder": "Select week",
+  "Jira.Dashboard.Filter.WeekOption": "Week {0}, {1}",
   "Jira.Dashboard.Filter.Month": "Month",
   "Jira.Dashboard.Filter.Year": "Year",
   "Jira.Dashboard.Filter.Search": "Search",

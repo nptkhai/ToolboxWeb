@@ -229,6 +229,8 @@
   "Jira.Dashboard.ToolbarLabel": "Kỳ theo dõi",
   "Jira.Dashboard.Filter.Day": "Ngày",
   "Jira.Dashboard.Filter.Week": "Tuần",
+  "Jira.Dashboard.Filter.WeekPlaceholder": "Chọn tuần",
+  "Jira.Dashboard.Filter.WeekOption": "Tuần {0}, {1}",
   "Jira.Dashboard.Filter.Month": "Tháng",
   "Jira.Dashboard.Filter.Year": "Năm",
   "Jira.Dashboard.Filter.Search": "Tìm kiếm",

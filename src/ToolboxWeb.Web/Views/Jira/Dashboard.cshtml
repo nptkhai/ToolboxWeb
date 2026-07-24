@@ -14,6 +14,8 @@
         initialSort = Model.Filter.Sort,
         initialDirection = Model.Filter.Direction,
         emptyState = T["Jira.Dashboard.EmptyState"].Value,
+        weekPickerPlaceholder = T["Jira.Dashboard.Filter.WeekPlaceholder"].Value,
+        weekPickerOption = T["Jira.Dashboard.Filter.WeekOption"].Value,
         columns = new
         {
             index = T["Jira.Table.Index"].Value,
@@ -55,7 +57,7 @@
                 <input id="jira-dashboard-day" class="form-control jira-dashboard-picker" type="text" value="@Model.Filter.DayValue" autocomplete="off" />
             </div>
             <div class="jira-dashboard-period-input @(Model.Filter.PeriodType == "week" ? "is-active" : null)" data-period-input="week">
-                <input id="jira-dashboard-week" class="form-control jira-dashboard-week-input" type="week" value="@Model.Filter.WeekValue" />
+                <input id="jira-dashboard-week" class="form-control jira-dashboard-picker jira-dashboard-week-picker" type="text" value="@Model.Filter.WeekValue" autocomplete="off" />
             </div>
             <div class="jira-dashboard-period-input @(Model.Filter.PeriodType == "month" ? "is-active" : null)" data-period-input="month">
                 <input id="jira-dashboard-month" class="form-control jira-dashboard-picker" type="text" value="@Model.Filter.MonthValue" autocomplete="off" />

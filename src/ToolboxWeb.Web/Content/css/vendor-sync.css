@@ -1,435 +1,984 @@
+/*
+ * Shared control skin. This file is loaded after page styles so Bootstrap,
+ * Kendo UI Core, and Tabulator use the same control language everywhere.
+ */
 :root {
-  --ui-radius-sm: .5rem;
-  --ui-radius-md: .625rem;
-  --ui-radius-lg: .875rem;
-  --ui-focus-ring: 0 0 0 .2rem color-mix(in srgb, var(--accent) 16%, transparent);
-  --ui-popup-shadow: 0 .9rem 2rem rgba(23, 32, 51, .14);
-  --ui-soft-fill: color-mix(in srgb, var(--surface-2) 72%, var(--surface));
-  --ui-soft-fill-hover: color-mix(in srgb, var(--accent) 6%, var(--surface));
-  --ui-soft-border: color-mix(in srgb, var(--line) 88%, transparent);
+    --ui-accent: #3652ff;
+    --ui-accent-strong: #2946ed;
+    --ui-accent-soft: rgba(54, 82, 255, .10);
+    --ui-accent-ring: rgba(54, 82, 255, .18);
+    --ui-radius-sm: 8px;
+    --ui-radius-md: 12px;
+    --ui-radius-lg: 16px;
+    --ui-control-height: 46px;
+    --ui-control-border: #dfe3ee;
+    --ui-control-hover-border: #c4cbdf;
+    --ui-control-fill: #ffffff;
+    --ui-control-muted: #72788a;
+    --ui-focus-ring: 0 0 0 4px var(--ui-accent-ring);
+    --ui-popup-shadow: 0 16px 34px -16px rgba(20, 22, 31, .28);
+    --ui-soft-fill: color-mix(in srgb, var(--surface-2) 72%, var(--surface));
+    --ui-soft-fill-hover: var(--ui-accent-soft);
+    --ui-transition: border-color .16s ease, background-color .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease;
 }
 
-:root[data-theme="dark"] {
-  --ui-popup-shadow: 0 1rem 2.2rem rgba(2, 6, 23, .45);
-  --ui-soft-fill: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
-  --ui-soft-fill-hover: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    :root[data-theme="dark"] {
+        --ui-accent: #8a9aff;
+        --ui-accent-strong: #a4b0ff;
+        --ui-accent-soft: rgba(138, 154, 255, .16);
+        --ui-accent-ring: rgba(138, 154, 255, .26);
+        --ui-control-border: #435069;
+        --ui-control-hover-border: #617198;
+        --ui-control-fill: #202b3b;
+        --ui-control-muted: #aeb8cb;
+        --ui-popup-shadow: 0 18px 38px -16px rgba(2, 6, 23, .62);
+        --ui-soft-fill: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+    }
+
+/* Bootstrap form controls and buttons */
+.content-area .form-control:not(.k-input-inner):not(.k-input),
+.content-area .form-select {
+    background-color: var(--ui-control-fill);
+    border: 1.5px solid var(--ui-control-border);
+    border-radius: var(--ui-radius-md);
+    box-shadow: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: .95rem;
+    min-height: var(--ui-control-height);
+    padding: .62rem .9rem;
+    transition: var(--ui-transition);
 }
 
-.btn,
-.form-control,
-.form-select,
-.form-check-input {
-  border-radius: var(--ui-radius-md);
-  font-family: inherit;
+.content-area textarea.form-control:not(.k-input-inner):not(.k-input) {
+    min-height: 108px;
+    resize: vertical;
 }
 
-.btn {
-  box-shadow: none;
-  font-weight: 600;
+.content-area .form-control:not(.k-input-inner):not(.k-input):hover:not(:disabled):not([readonly]),
+.content-area .form-select:hover:not(:disabled) {
+    border-color: var(--ui-control-hover-border);
 }
 
-.btn:focus,
-.btn:focus-visible,
-.form-control:focus,
-.form-select:focus,
-.form-check-input:focus {
-  box-shadow: var(--ui-focus-ring);
+.content-area .form-control:not(.k-input-inner):not(.k-input):focus,
+.content-area .form-select:focus {
+    background-color: var(--ui-control-fill);
+    border-color: var(--ui-accent);
+    box-shadow: var(--ui-focus-ring);
+    color: var(--text);
 }
 
-.k-widget,
-.k-button,
-.k-input,
-.k-picker,
-.k-dropdownlist,
-.k-multiselect,
-.k-combobox,
-.k-listview,
-.k-pager,
-.k-menu,
-.k-panelbar,
-.k-tooltip,
-.k-window,
-.k-notification,
-.k-dialog,
-.k-animation-container,
-.k-popup,
-.k-list-container {
-  color: var(--text);
-  font-family: inherit;
+.content-area .form-control:not(.k-input-inner):not(.k-input)::placeholder {
+    color: var(--ui-control-muted);
+    opacity: 1;
 }
 
-.k-button {
-  border-radius: var(--ui-radius-md);
-  box-shadow: none;
-  font-weight: 600;
-  transition: background-color .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease;
+.content-area .form-control:not(.k-input-inner):not(.k-input):disabled,
+.content-area .form-select:disabled {
+    background: color-mix(in srgb, var(--ui-control-fill) 72%, var(--surface-2));
+    color: var(--muted);
+    cursor: not-allowed;
+    opacity: .78;
 }
 
-.k-button-solid-base,
-.k-button-solid,
-.k-button-solid-secondary,
-.k-button-flat-base {
-  background: var(--surface);
-  border-color: var(--line);
-  color: var(--text);
+.content-area .form-control:not(.k-input-inner):not(.k-input)[type="file"] {
+    padding: .35rem .5rem;
 }
 
-.k-button-solid-base:hover,
-.k-button-solid:hover,
-.k-button-solid-secondary:hover,
-.k-button-flat-base:hover {
-  background: var(--ui-soft-fill-hover);
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
-  color: var(--text);
+    .content-area .form-control:not(.k-input-inner):not(.k-input)[type="file"]::file-selector-button {
+        background: var(--ui-accent-soft);
+        border: 0;
+        border-radius: var(--ui-radius-sm);
+        color: var(--ui-accent);
+        font: inherit;
+        font-weight: 700;
+        margin: 0 .65rem 0 0;
+        padding: .42rem .7rem;
+    }
+
+.content-area .form-check-input {
+    background-color: var(--ui-control-fill);
+    border: 1.5px solid var(--ui-control-border);
+    box-shadow: none;
+    cursor: pointer;
+    height: 1.05rem;
+    margin-top: .2rem;
+    transition: var(--ui-transition);
+    width: 1.05rem;
 }
 
-.k-button-solid-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+    .content-area .form-check-input:checked {
+        background-color: var(--ui-accent);
+        border-color: var(--ui-accent);
+    }
+
+    .content-area .form-check-input:focus {
+        border-color: var(--ui-accent);
+        box-shadow: var(--ui-focus-ring);
+    }
+
+.content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input),
+.content-area .form-floating > .form-select {
+    min-height: calc(var(--ui-control-height) + 10px);
 }
 
-.k-button-solid-primary:hover,
-.k-button-solid-primary:focus,
-.k-button-solid-primary.k-focus {
-  background: color-mix(in srgb, var(--accent) 90%, #ffffff 10%);
-  border-color: color-mix(in srgb, var(--accent) 90%, #ffffff 10%);
-  color: #fff;
+.content-area .form-floating > label {
+    color: var(--ui-control-muted);
 }
 
-.k-button-solid-base:focus,
-.k-button-solid-secondary:focus,
-.k-button-solid-primary:focus,
-.k-button-solid-base.k-focus,
-.k-button-solid-secondary.k-focus,
-.k-button-solid-primary.k-focus {
-  box-shadow: var(--ui-focus-ring);
+.content-area .input-group > .form-control:not(.k-input-inner):not(.k-input),
+.content-area .input-group > .form-select {
+    position: relative;
 }
 
-.k-input-solid,
-.k-picker-solid,
-.k-dropdownlist,
-.k-multiselect,
-.k-combobox,
-.k-textbox,
-.k-numerictextbox,
-.k-datepicker,
-.k-timepicker,
-.k-datetimepicker,
-.k-picker {
-  background: var(--surface);
-  border-color: var(--line);
-  border-radius: var(--ui-radius-md);
-  box-shadow: none;
-  color: var(--text);
-  transition: border-color .14s ease, box-shadow .14s ease, background-color .14s ease;
+.content-area .input-group-text {
+    background: var(--ui-soft-fill);
+    border: 1.5px solid var(--ui-control-border);
+    color: var(--ui-control-muted);
+    min-height: var(--ui-control-height);
 }
 
-.k-input-solid:hover,
-.k-picker-solid:hover,
-.k-dropdownlist:hover,
-.k-multiselect:hover,
-.k-combobox:hover,
-.k-textbox:hover,
-.k-numerictextbox:hover,
-.k-datepicker:hover,
-.k-timepicker:hover,
-.k-datetimepicker:hover,
-.k-picker:hover {
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+.content-area .btn {
+    align-items: center;
+    border-radius: 10px;
+    box-shadow: none;
+    display: inline-flex;
+    font-family: inherit;
+    font-size: .92rem;
+    font-weight: 700;
+    justify-content: center;
+    line-height: 1.2;
+    min-height: 42px;
+    padding: .58rem 1rem;
+    transition: var(--ui-transition);
 }
 
-.k-input-solid.k-focus,
-.k-picker-solid.k-focus,
-.k-dropdownlist.k-focus,
-.k-multiselect.k-focus,
-.k-combobox.k-focus,
-.k-textbox.k-focus,
-.k-numerictextbox.k-focus,
-.k-datepicker.k-focus,
-.k-timepicker.k-focus,
-.k-datetimepicker.k-focus,
-.k-picker.k-focus,
-.k-focus > .k-input-inner,
-.k-focus > .k-input-button {
-  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
-  box-shadow: var(--ui-focus-ring);
+    .content-area .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .content-area .btn:focus,
+    .content-area .btn:focus-visible {
+        box-shadow: var(--ui-focus-ring);
+    }
+
+.content-area .btn-primary {
+    background: linear-gradient(135deg, var(--ui-accent), var(--ui-accent-strong));
+    border-color: var(--ui-accent);
+    color: #fff;
 }
 
-.k-input-inner,
-.k-input-button,
-.k-select,
-.k-input-spinner,
-.k-clear-value {
-  color: var(--text);
+    .content-area .btn-primary:hover,
+    .content-area .btn-primary:focus {
+        background: linear-gradient(135deg, var(--ui-accent-strong), var(--ui-accent));
+        border-color: var(--ui-accent-strong);
+        color: #fff;
+    }
+
+.content-area .btn-outline-secondary,
+.content-area .btn-light {
+    background: var(--ui-control-fill);
+    border-color: var(--ui-control-border);
+    color: var(--text);
 }
 
-.k-input-inner,
-.k-input-value-text {
-  font-size: .95rem;
+    .content-area .btn-outline-secondary:hover,
+    .content-area .btn-light:hover {
+        background: var(--ui-accent-soft);
+        border-color: color-mix(in srgb, var(--ui-accent) 38%, var(--ui-control-border));
+        color: var(--ui-accent);
+    }
+
+.content-area .btn-outline-primary {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--ui-accent) 58%, var(--ui-control-border));
+    color: var(--ui-accent);
 }
 
-.k-input-inner::placeholder {
-  color: var(--muted);
-  opacity: 1;
+    .content-area .btn-outline-primary:hover {
+        background: var(--ui-accent);
+        border-color: var(--ui-accent);
+        color: #fff;
+    }
+
+.content-area .btn-outline-danger {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--danger) 52%, var(--ui-control-border));
+    color: var(--danger);
 }
 
-.k-invalid,
-.k-input.k-invalid,
-.k-picker.k-invalid,
-.k-dropdownlist.k-invalid,
-.k-multiselect.k-invalid,
-.k-combobox.k-invalid {
-  border-color: color-mix(in srgb, var(--danger) 60%, var(--line));
+    .content-area .btn-outline-danger:hover {
+        background: color-mix(in srgb, var(--danger) 10%, var(--ui-control-fill));
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+
+.content-area .btn-sm {
+    border-radius: var(--ui-radius-sm);
+    font-size: .82rem;
+    min-height: 32px;
+    padding: .38rem .66rem;
 }
 
-.k-form-error,
-.k-invalid-msg,
-.field-validation-error {
-  color: var(--danger);
-  font-size: .84rem;
+.content-area .nav-tabs {
+    border-bottom-color: var(--ui-control-border);
+    gap: 5px;
 }
 
-.k-chip,
-.k-chip-solid-base {
-  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
-  border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
-  border-radius: 999px;
-  color: var(--text);
+    .content-area .nav-tabs .nav-link,
+    .content-area .nav-pills .nav-link {
+        border-radius: 10px 10px 0 0;
+        color: var(--ui-control-muted);
+        font-weight: 700;
+        transition: var(--ui-transition);
+    }
+
+        .content-area .nav-tabs .nav-link:hover,
+        .content-area .nav-tabs .nav-link:focus {
+            background: var(--ui-accent-soft);
+            border-color: transparent;
+            color: var(--ui-accent);
+        }
+
+        .content-area .nav-tabs .nav-link.active {
+            background: var(--ui-control-fill);
+            border-color: var(--ui-control-border) var(--ui-control-border) var(--ui-control-fill);
+            color: var(--ui-accent);
+        }
+
+.content-area .nav-pills .nav-link {
+    border-radius: 10px;
 }
 
-.k-chip .k-chip-label {
-  color: inherit;
+    .content-area .nav-pills .nav-link.active,
+    .content-area .nav-pills .show > .nav-link {
+        background: var(--ui-accent);
+        color: #fff;
+    }
+
+.content-area .dropdown-menu,
+.content-area .modal-content {
+    background: var(--ui-control-fill);
+    border: 1px solid var(--ui-control-border);
+    border-radius: var(--ui-radius-lg);
+    box-shadow: var(--ui-popup-shadow);
+    color: var(--text);
 }
 
-.k-popup,
-.k-animation-container,
-.k-list-container,
-.k-calendar-container,
-.k-window,
-.k-notification,
-.k-tooltip {
-  color: var(--text);
+.content-area .dropdown-item {
+    border-radius: var(--ui-radius-sm);
+    color: var(--text);
+    font-weight: 600;
+    margin: 2px 6px;
+    padding: .6rem .75rem;
+    width: calc(100% - 12px);
 }
 
-.k-animation-container .k-list-container,
-.k-list-container,
-.k-popup,
-.k-tooltip,
-.k-window-content,
-.k-notification-group .k-notification {
-  background: var(--surface);
+    .content-area .dropdown-item:hover,
+    .content-area .dropdown-item:focus {
+        background: var(--ui-accent-soft);
+        color: var(--ui-accent);
+    }
+
+.content-area .modal-header,
+.content-area .modal-footer {
+    border-color: var(--ui-control-border);
 }
 
-.k-list-container,
-.k-popup,
-.k-window,
-.k-tooltip,
-.k-notification-group .k-notification,
-.k-calendar-container {
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius-lg);
-  box-shadow: var(--ui-popup-shadow);
+.content-area .alert {
+    border-radius: var(--ui-radius-md);
+    box-shadow: 0 8px 18px -18px rgba(20, 22, 31, .44);
 }
 
-.k-list {
-  background: transparent;
+/* Bare action buttons used by the existing Tabulator demo toolbars. */
+.content-area .tabulator-toolbar button {
+    align-items: center;
+    background: var(--ui-control-fill);
+    border: 1.5px solid var(--ui-control-border);
+    border-radius: 10px;
+    color: var(--text);
+    display: inline-flex;
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 700;
+    justify-content: center;
+    min-height: 40px;
+    padding: .5rem .88rem;
+    transition: var(--ui-transition);
 }
 
-.k-list-ul {
-  padding: 4px;
+    .content-area .tabulator-toolbar button:hover {
+        background: var(--ui-accent-soft);
+        border-color: color-mix(in srgb, var(--ui-accent) 38%, var(--ui-control-border));
+        color: var(--ui-accent);
+        transform: translateY(-1px);
+    }
+
+    .content-area .tabulator-toolbar button.primary {
+        background: linear-gradient(135deg, var(--ui-accent), var(--ui-accent-strong));
+        border-color: var(--ui-accent);
+        color: #fff;
+    }
+
+    .content-area .tabulator-toolbar button.danger {
+        border-color: color-mix(in srgb, var(--danger) 52%, var(--ui-control-border));
+        color: var(--danger);
+    }
+
+/* Kendo UI Core: input shells, buttons, dropdown popups, and calendars. */
+.content-area .k-widget,
+.content-area .k-button,
+.content-area .k-input,
+.content-area .k-picker,
+.content-area .k-dropdownlist,
+.content-area .k-multiselect,
+.content-area .k-combobox,
+.content-area .k-listview,
+.content-area .k-pager,
+.content-area .k-menu,
+.content-area .k-panelbar {
+    color: var(--text);
+    font-family: inherit;
 }
 
-.k-list-item,
-.k-list-optionlabel,
-.k-menu-group .k-item > .k-link,
-.k-menu .k-item > .k-link,
-.k-panelbar > .k-item > .k-link {
-  border-radius: var(--ui-radius-sm);
-  transition: background-color .14s ease, color .14s ease;
+.content-area .k-button {
+    border-radius: 10px;
+    box-shadow: none;
+    font-family: inherit;
+    font-weight: 700;
+    min-height: 40px;
+    transition: var(--ui-transition);
 }
 
-.k-list-item:hover,
-.k-list-optionlabel:hover,
-.k-menu-group .k-item > .k-link:hover,
-.k-menu .k-item > .k-link:hover,
-.k-panelbar > .k-item > .k-link:hover {
-  background: var(--ui-soft-fill-hover);
-  color: var(--text);
+.content-area .k-button-solid-base,
+.content-area .k-button-solid,
+.content-area .k-button-solid-secondary,
+.content-area .k-button-flat-base {
+    background: var(--ui-control-fill);
+    border-color: var(--ui-control-border);
+    color: var(--text);
 }
 
-.k-list-item.k-selected,
-.k-selected.k-list-optionlabel,
-.k-menu .k-item.k-selected > .k-link,
-.k-panelbar > .k-item.k-selected > .k-link {
-  background: var(--accent);
-  color: #fff;
+    .content-area .k-button-solid-base:hover,
+    .content-area .k-button-solid:hover,
+    .content-area .k-button-solid-secondary:hover,
+    .content-area .k-button-flat-base:hover {
+        background: var(--ui-accent-soft);
+        border-color: color-mix(in srgb, var(--ui-accent) 38%, var(--ui-control-border));
+        color: var(--ui-accent);
+    }
+
+.content-area .k-button-solid-primary {
+    background: linear-gradient(135deg, var(--ui-accent), var(--ui-accent-strong));
+    border-color: var(--ui-accent);
+    color: #fff;
 }
 
-.k-list-item.k-focus,
-.k-list-optionlabel.k-focus {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent);
+    .content-area .k-button-solid-primary:hover,
+    .content-area .k-button-solid-primary:focus,
+    .content-area .k-button-solid-primary.k-focus {
+        background: linear-gradient(135deg, var(--ui-accent-strong), var(--ui-accent));
+        border-color: var(--ui-accent-strong);
+        color: #fff;
+    }
+
+.content-area .k-button:focus,
+.content-area .k-button.k-focus {
+    box-shadow: var(--ui-focus-ring);
 }
 
-.k-window {
-  overflow: hidden;
+.content-area .k-input-solid,
+.content-area .k-picker-solid,
+.content-area .k-dropdownlist,
+.content-area .k-multiselect,
+.content-area .k-combobox,
+.content-area .k-textbox,
+.content-area .k-numerictextbox,
+.content-area .k-datepicker,
+.content-area .k-timepicker,
+.content-area .k-datetimepicker,
+.content-area .k-picker {
+    background: var(--ui-control-fill);
+    border: 1.5px solid var(--ui-control-border);
+    border-radius: var(--ui-radius-md);
+    box-shadow: none;
+    color: var(--text);
+    min-height: var(--ui-control-height);
+    transition: var(--ui-transition);
 }
 
-.k-window-titlebar,
-.k-dialog-titlebar {
-  background: color-mix(in srgb, var(--surface-2) 64%, var(--surface));
-  border-bottom: 1px solid var(--line);
-  color: var(--text);
+    .content-area .k-input-solid:hover,
+    .content-area .k-picker-solid:hover,
+    .content-area .k-dropdownlist:hover,
+    .content-area .k-multiselect:hover,
+    .content-area .k-combobox:hover,
+    .content-area .k-textbox:hover,
+    .content-area .k-numerictextbox:hover,
+    .content-area .k-datepicker:hover,
+    .content-area .k-timepicker:hover,
+    .content-area .k-datetimepicker:hover,
+    .content-area .k-picker:hover {
+        border-color: var(--ui-control-hover-border);
+    }
+
+    .content-area .k-input-solid.k-focus,
+    .content-area .k-picker-solid.k-focus,
+    .content-area .k-dropdownlist.k-focus,
+    .content-area .k-multiselect.k-focus,
+    .content-area .k-combobox.k-focus,
+    .content-area .k-textbox.k-focus,
+    .content-area .k-numerictextbox.k-focus,
+    .content-area .k-datepicker.k-focus,
+    .content-area .k-timepicker.k-focus,
+    .content-area .k-datetimepicker.k-focus,
+    .content-area .k-picker.k-focus,
+    .content-area .k-input-solid:focus-within,
+    .content-area .k-picker-solid:focus-within,
+    .content-area .k-dropdownlist:focus-within,
+    .content-area .k-multiselect:focus-within,
+    .content-area .k-combobox:focus-within,
+    .content-area .k-picker:focus-within {
+        border-color: var(--ui-accent);
+        box-shadow: var(--ui-focus-ring);
+    }
+
+.content-area .k-input-inner,
+.content-area .k-input-value-text {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: .95rem;
+    min-height: 0;
 }
 
-.k-window-title,
-.k-dialog-title {
-  font-weight: 700;
+    .content-area .k-input-inner::placeholder {
+        color: var(--ui-control-muted);
+        opacity: 1;
+    }
+
+.content-area .k-input-button,
+.content-area .k-select,
+.content-area .k-input-spinner,
+.content-area .k-clear-value {
+    color: var(--ui-control-muted);
 }
 
-.k-window-actions .k-button {
-  background: transparent;
-  border-color: transparent;
-  color: var(--muted);
+.content-area .k-picker .k-input-button,
+.content-area .k-dropdownlist .k-input-button,
+.content-area .k-combobox .k-input-button {
+    background: transparent;
+    border-left: 1px solid color-mix(in srgb, var(--ui-control-border) 80%, transparent);
+    border-radius: 0 var(--ui-radius-md) var(--ui-radius-md) 0;
 }
 
-.k-window-actions .k-button:hover {
-  background: var(--ui-soft-fill-hover);
-  color: var(--text);
+.content-area .k-invalid,
+.content-area .k-input.k-invalid,
+.content-area .k-picker.k-invalid,
+.content-area .k-dropdownlist.k-invalid,
+.content-area .k-multiselect.k-invalid,
+.content-area .k-combobox.k-invalid {
+    border-color: color-mix(in srgb, var(--danger) 70%, var(--ui-control-border));
 }
 
-.k-notification-group .k-notification {
-  color: var(--text);
+.content-area .k-form-error,
+.content-area .k-invalid-msg,
+.content-area .field-validation-error {
+    color: var(--danger);
+    font-size: .84rem;
 }
 
-.k-notification-info {
-  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
-  border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
+.content-area .k-chip,
+.content-area .k-chip-solid-base {
+    background: var(--ui-accent-soft);
+    border-color: color-mix(in srgb, var(--ui-accent) 22%, var(--ui-control-border));
+    border-radius: 999px;
+    color: var(--ui-accent);
+    font-weight: 700;
 }
 
-.k-notification-success {
-  background: rgba(22, 163, 74, .10);
-  border-color: rgba(22, 163, 74, .22);
+body > .k-animation-container .k-list-container,
+body > .k-animation-container .k-popup,
+body > .k-animation-container .k-calendar-container,
+body > .k-window,
+body > .k-tooltip,
+body > .k-notification-group .k-notification,
+.content-area .k-list-container,
+.content-area .k-popup,
+.content-area .k-window,
+.content-area .k-tooltip,
+.content-area .k-calendar-container {
+    background: var(--ui-control-fill);
+    border: 1px solid var(--ui-control-border);
+    border-radius: var(--ui-radius-lg);
+    box-shadow: var(--ui-popup-shadow);
+    color: var(--text);
 }
 
-.k-notification-error {
-  background: rgba(180, 35, 24, .10);
-  border-color: rgba(180, 35, 24, .22);
+body > .k-animation-container .k-list-ul,
+.content-area .k-list-ul {
+    padding: 7px;
 }
 
-.k-tooltip {
-  padding: 10px 12px;
+body > .k-animation-container .k-list-item,
+body > .k-animation-container .k-list-optionlabel,
+.content-area .k-list-item,
+.content-area .k-list-optionlabel,
+.content-area .k-menu-group .k-item > .k-link,
+.content-area .k-menu .k-item > .k-link,
+.content-area .k-panelbar > .k-item > .k-link {
+    border-left: 3px solid transparent;
+    border-radius: var(--ui-radius-sm);
+    color: var(--text);
+    font-weight: 600;
+    margin: 2px 0;
+    min-height: 40px;
+    padding: 9px 11px;
+    transition: var(--ui-transition);
 }
 
-.k-menu,
-.k-panelbar {
-  background: transparent;
-  border-color: var(--line);
-  color: var(--text);
+    body > .k-animation-container .k-list-item:hover,
+    body > .k-animation-container .k-list-optionlabel:hover,
+    .content-area .k-list-item:hover,
+    .content-area .k-list-optionlabel:hover,
+    .content-area .k-menu-group .k-item > .k-link:hover,
+    .content-area .k-menu .k-item > .k-link:hover,
+    .content-area .k-panelbar > .k-item > .k-link:hover {
+        background: var(--ui-accent-soft);
+        border-left-color: var(--ui-accent);
+        color: var(--ui-accent);
+    }
+
+    body > .k-animation-container .k-list-item.k-selected,
+    body > .k-animation-container .k-selected.k-list-optionlabel,
+    .content-area .k-list-item.k-selected,
+    .content-area .k-selected.k-list-optionlabel,
+    .content-area .k-menu .k-item.k-selected > .k-link,
+    .content-area .k-panelbar > .k-item.k-selected > .k-link {
+        background: var(--ui-accent-soft);
+        border-left-color: var(--ui-accent);
+        color: var(--ui-accent);
+    }
+
+    body > .k-animation-container .k-list-item.k-focus,
+    .content-area .k-list-item.k-focus,
+    .content-area .k-list-optionlabel.k-focus {
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 34%, transparent);
+    }
+
+.content-area .k-window {
+    overflow: hidden;
 }
 
-.k-menu .k-item > .k-link,
-.k-panelbar > .k-item > .k-link {
-  color: var(--text);
-  font-weight: 600;
+.content-area .k-window-titlebar,
+.content-area .k-dialog-titlebar {
+    background: color-mix(in srgb, var(--ui-control-fill) 76%, var(--surface-2));
+    border-bottom: 1px solid var(--ui-control-border);
+    color: var(--text);
+    padding: 13px 16px;
 }
 
-.k-menu-group,
-.k-panelbar-content {
-  background: var(--surface);
-  border-color: var(--line);
+.content-area .k-window-title,
+.content-area .k-dialog-title {
+    font-weight: 800;
 }
 
-.k-panelbar > .k-item {
-  border-color: var(--line);
+.content-area .k-window-actions .k-button {
+    background: transparent;
+    border-color: transparent;
+    color: var(--ui-control-muted);
+    min-height: 32px;
+    min-width: 32px;
 }
 
-.k-panelbar > .k-item > .k-link.k-selected,
-.k-panelbar > .k-item.k-active > .k-link {
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-  color: var(--text);
+    .content-area .k-window-actions .k-button:hover {
+        background: var(--ui-accent-soft);
+        color: var(--ui-accent);
+    }
+
+.content-area .k-notification-group .k-notification {
+    color: var(--text);
 }
 
-.k-pager {
-  background: transparent;
-  color: var(--muted);
+.content-area .k-notification-info {
+    background: color-mix(in srgb, var(--ui-accent) 9%, var(--ui-control-fill));
+    border-color: color-mix(in srgb, var(--ui-accent) 24%, var(--ui-control-border));
 }
 
-.k-pager .k-pager-numbers-wrap .k-button,
-.k-pager .k-button,
-.k-pager .k-picker {
-  border-radius: var(--ui-radius-sm);
+.content-area .k-notification-success {
+    background: rgba(22, 163, 74, .10);
+    border-color: rgba(22, 163, 74, .28);
 }
 
-.k-pager .k-button:hover,
-.k-pager .k-button.k-selected {
-  background: var(--ui-soft-fill-hover);
-  color: var(--text);
+.content-area .k-notification-error {
+    background: rgba(180, 35, 24, .10);
+    border-color: rgba(180, 35, 24, .28);
 }
 
-.k-pager .k-button.k-selected {
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+.content-area .k-tooltip {
+    padding: 10px 12px;
 }
 
-.k-listview {
-  background: transparent;
+.content-area .k-menu,
+.content-area .k-panelbar {
+    background: transparent;
+    border-color: var(--ui-control-border);
+    color: var(--text);
 }
 
-.k-splitter {
-  border-color: var(--line);
-  border-radius: var(--ui-radius-md);
+.content-area .k-menu-group,
+.content-area .k-panelbar-content {
+    background: var(--ui-control-fill);
+    border-color: var(--ui-control-border);
 }
 
-.k-splitbar {
-  background: color-mix(in srgb, var(--surface-2) 60%, var(--surface));
+.content-area .k-panelbar > .k-item {
+    border-color: var(--ui-control-border);
 }
 
-.k-calendar,
-.k-calendar .k-content,
-.k-calendar .k-calendar-view {
-  background: var(--surface);
-  color: var(--text);
+    .content-area .k-panelbar > .k-item > .k-link.k-selected,
+    .content-area .k-panelbar > .k-item.k-active > .k-link {
+        background: var(--ui-accent-soft);
+        border-left-color: var(--ui-accent);
+        color: var(--ui-accent);
+    }
+
+.content-area .k-pager {
+    background: transparent;
+    color: var(--ui-control-muted);
 }
 
-.k-calendar .k-button-flat-primary,
-.k-calendar .k-link {
-  border-radius: .45rem;
+    .content-area .k-pager .k-pager-numbers-wrap .k-button,
+    .content-area .k-pager .k-button,
+    .content-area .k-pager .k-picker {
+        border-radius: var(--ui-radius-sm);
+    }
+
+        .content-area .k-pager .k-button:hover,
+        .content-area .k-pager .k-button.k-selected {
+            background: var(--ui-accent-soft);
+            color: var(--ui-accent);
+        }
+
+        .content-area .k-pager .k-button.k-selected {
+            border-color: color-mix(in srgb, var(--ui-accent) 30%, var(--ui-control-border));
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 18%, transparent);
+        }
+
+body > .k-animation-container .k-calendar,
+body > .k-animation-container .k-calendar .k-content,
+body > .k-animation-container .k-calendar .k-calendar-view,
+.content-area .k-calendar,
+.content-area .k-calendar .k-content,
+.content-area .k-calendar .k-calendar-view {
+    background: var(--ui-control-fill);
+    color: var(--text);
 }
 
-.k-calendar .k-link:hover,
-.k-calendar .k-button-flat-primary:hover {
-  background: var(--ui-soft-fill-hover);
+    body > .k-animation-container .k-calendar .k-button-flat-primary,
+    body > .k-animation-container .k-calendar .k-link,
+    .content-area .k-calendar .k-button-flat-primary,
+    .content-area .k-calendar .k-link {
+        border-radius: 9px;
+    }
+
+        body > .k-animation-container .k-calendar .k-link:hover,
+        body > .k-animation-container .k-calendar .k-button-flat-primary:hover,
+        .content-area .k-calendar .k-link:hover,
+        .content-area .k-calendar .k-button-flat-primary:hover {
+            background: var(--ui-accent-soft);
+            color: var(--ui-accent);
+        }
+
+    body > .k-animation-container .k-calendar .k-selected .k-link,
+    body > .k-animation-container .k-calendar .k-focus .k-link,
+    .content-area .k-calendar .k-selected .k-link,
+    .content-area .k-calendar .k-focus .k-link {
+        background: var(--ui-accent);
+        color: #fff;
+    }
+
+/* Tabulator: same borders, popup menu, inline editor, and grid hierarchy. */
+.content-area .tabulator {
+    background: var(--ui-control-fill);
+    border: 1.5px solid var(--ui-control-border);
+    border-radius: var(--ui-radius-lg);
+    color: var(--text);
+    font-family: inherit;
+    overflow: hidden;
 }
 
-.k-calendar .k-selected .k-link,
-.k-calendar .k-focus .k-link {
-  background: var(--accent);
-  color: #fff;
-}
+    .content-area .tabulator .tabulator-header {
+        background: color-mix(in srgb, var(--ui-control-fill) 74%, var(--surface-2));
+        border-bottom: 1.5px solid var(--ui-control-border);
+        color: var(--ui-control-muted);
+        font-size: .76rem;
+        font-weight: 800;
+        letter-spacing: .035em;
+        text-transform: uppercase;
+    }
+
+        .content-area .tabulator .tabulator-header .tabulator-col {
+            background: transparent;
+            border-right: 1px solid color-mix(in srgb, var(--ui-control-border) 82%, transparent);
+            color: var(--ui-control-muted);
+            min-height: 48px;
+        }
+
+            .content-area .tabulator .tabulator-header .tabulator-col:hover {
+                background: var(--ui-accent-soft);
+                color: var(--ui-accent);
+            }
+
+    .content-area .tabulator .tabulator-col .tabulator-col-content {
+        padding: 13px 12px;
+    }
+
+    .content-area .tabulator .tabulator-tableholder {
+        background: var(--ui-control-fill);
+    }
+
+    .content-area .tabulator .tabulator-row {
+        background: var(--ui-control-fill);
+        border-bottom: 1px solid color-mix(in srgb, var(--ui-control-border) 72%, transparent);
+        transition: background-color .14s ease;
+    }
+
+        .content-area .tabulator .tabulator-row:nth-child(even) {
+            background: color-mix(in srgb, var(--ui-control-fill) 92%, var(--surface-2));
+        }
+
+        .content-area .tabulator .tabulator-row:hover,
+        .content-area .tabulator .tabulator-row.tabulator-selected:hover {
+            background: var(--ui-accent-soft);
+        }
+
+        .content-area .tabulator .tabulator-row.tabulator-selected {
+            background: color-mix(in srgb, var(--ui-accent) 12%, var(--ui-control-fill));
+        }
+
+        .content-area .tabulator .tabulator-row .tabulator-cell {
+            border-right: 1px solid color-mix(in srgb, var(--ui-control-border) 72%, transparent);
+            color: var(--text);
+            padding: 11px 12px;
+            vertical-align: middle;
+        }
+
+    .content-area .tabulator .tabulator-cell:focus,
+    .content-area .tabulator .tabulator-col:focus {
+        outline: 0;
+    }
+
+    .content-area .tabulator .tabulator-cell.tabulator-editing {
+        background: color-mix(in srgb, var(--ui-accent) 7%, var(--ui-control-fill));
+        box-shadow: inset 0 0 0 2px var(--ui-accent);
+    }
+
+    .content-area .tabulator .tabulator-cell input:not([type="checkbox"]),
+    .content-area .tabulator .tabulator-cell textarea,
+    .content-area .tabulator .tabulator-cell select {
+        background: var(--ui-control-fill);
+        border: 1.5px solid var(--ui-accent);
+        border-radius: var(--ui-radius-sm);
+        box-shadow: var(--ui-focus-ring);
+        color: var(--text);
+        font: inherit;
+        min-height: 36px;
+        outline: 0;
+        padding: .35rem .55rem;
+    }
+
+    .content-area .tabulator .tabulator-cell textarea {
+        min-height: 78px;
+    }
+
+    .content-area .tabulator .tabulator-footer {
+        background: color-mix(in srgb, var(--ui-control-fill) 76%, var(--surface-2));
+        border-top: 1px solid var(--ui-control-border);
+        color: var(--ui-control-muted);
+    }
+
+    .content-area .tabulator .tabulator-page {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--ui-radius-sm);
+        color: var(--ui-control-muted);
+        font-weight: 700;
+        min-height: 32px;
+    }
+
+        .content-area .tabulator .tabulator-page.active,
+        .content-area .tabulator .tabulator-page:hover {
+            background: var(--ui-accent-soft);
+            border-color: color-mix(in srgb, var(--ui-accent) 24%, var(--ui-control-border));
+            color: var(--ui-accent);
+        }
+
+    .content-area .tabulator .tabulator-placeholder {
+        background: var(--ui-control-fill);
+        color: var(--ui-control-muted);
+    }
+
+    .content-area .tabulator ::-webkit-scrollbar {
+        height: 10px;
+        width: 10px;
+    }
+
+    .content-area .tabulator ::-webkit-scrollbar-thumb {
+        background: color-mix(in srgb, var(--ui-control-border) 72%, var(--ui-control-muted));
+        border: 2px solid var(--ui-control-fill);
+        border-radius: 999px;
+    }
+
+    .content-area .tabulator ::-webkit-scrollbar-track {
+        background: color-mix(in srgb, var(--ui-control-fill) 82%, var(--surface-2));
+    }
 
 .tabulator-edit-list,
 .tabulator-menu {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: .75rem;
-  box-shadow: var(--ui-popup-shadow);
-  color: var(--text);
+    background: var(--ui-control-fill);
+    border: 1px solid var(--ui-control-border);
+    border-radius: var(--ui-radius-md);
+    box-shadow: var(--ui-popup-shadow);
+    color: var(--text);
+    padding: 6px;
 }
 
-.tabulator-edit-list .tabulator-edit-list-item,
-.tabulator-menu .tabulator-menu-item {
-  border-radius: .45rem;
-  transition: background-color .14s ease, color .14s ease;
+    .tabulator-edit-list .tabulator-edit-list-item,
+    .tabulator-menu .tabulator-menu-item {
+        border-left: 3px solid transparent;
+        border-radius: var(--ui-radius-sm);
+        color: var(--text);
+        font-weight: 600;
+        margin: 2px 0;
+        padding: 9px 10px;
+        transition: var(--ui-transition);
+    }
+
+        .tabulator-edit-list .tabulator-edit-list-item:hover,
+        .tabulator-menu .tabulator-menu-item:hover {
+            background: var(--ui-accent-soft);
+            border-left-color: var(--ui-accent);
+            color: var(--ui-accent);
+        }
+
+        .tabulator-edit-list .tabulator-edit-list-item.active,
+        .tabulator-menu .tabulator-menu-item.active {
+            background: var(--ui-accent-soft);
+            border-left-color: var(--ui-accent);
+            color: var(--ui-accent);
+        }
+
+/* Login intentionally has its own glass-panel design and floating underline inputs. */
+.content-area.content-area--login .auth-login-input .form-control {
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid var(--login-line);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--login-text-primary);
+    min-height: 50px;
+    padding: 10px 2px 8px;
 }
 
-.tabulator-edit-list .tabulator-edit-list-item:hover,
-.tabulator-menu .tabulator-menu-item:hover {
-  background: var(--ui-soft-fill-hover);
+    .content-area.content-area--login .auth-login-input .form-control:hover,
+    .content-area.content-area--login .auth-login-input .form-control:focus {
+        background: transparent;
+        border-color: var(--login-text-primary);
+        box-shadow: none;
+        color: var(--login-text-primary);
+    }
+
+.content-area.content-area--login .auth-login-check .form-check-input {
+    background-color: rgba(255, 255, 255, .24);
+    border-color: rgba(255, 255, 255, .7);
+    border-radius: .25rem;
+    box-shadow: none;
+    height: 1rem;
+    width: 1rem;
 }
 
-.tabulator-edit-list .tabulator-edit-list-item.active,
-.tabulator-menu .tabulator-menu-item.active {
-  background: var(--accent);
-  color: #fff;
+    .content-area.content-area--login .auth-login-check .form-check-input:checked {
+        background-color: var(--login-text-primary);
+        border-color: var(--login-text-primary);
+    }
+
+.content-area.content-area--login .auth-login-submit {
+    background: rgba(255, 255, 255, .96);
+    border: 0;
+    border-radius: 999px;
+    color: #111827;
+    min-height: 48px;
+    transform: none;
+}
+
+    .content-area.content-area--login .auth-login-submit:hover,
+    .content-area.content-area--login .auth-login-submit:focus {
+        background: #fff;
+        border: 0;
+        box-shadow: none;
+        color: #111827;
+        transform: none;
+    }
+
+.content-area.content-area--login .auth-login-panel .alert {
+    background: rgba(185, 28, 28, .18);
+    border: 1px solid rgba(254, 202, 202, .28);
+    border-radius: var(--ui-radius-md);
+    box-shadow: none;
+    color: #fff;
+}
+
+/* Jira has a compact filter toolbar. Its Kendo pickers must not inherit the
+   larger generic input shell used on ordinary forms. */
+.content-area .jira-dashboard-shell .k-picker,
+.content-area .jira-dashboard-shell .k-datepicker {
+    background: color-mix(in srgb, var(--jira-panel-alt) 78%, transparent);
+    border: 1px solid var(--jira-border);
+    border-radius: 12px;
+    box-shadow: none;
+    color: var(--jira-text);
+    min-height: 46px;
+    min-width: 220px;
+}
+
+    .content-area .jira-dashboard-shell .k-picker:hover,
+    .content-area .jira-dashboard-shell .k-picker.k-hover,
+    .content-area .jira-dashboard-shell .k-picker.k-focus,
+    .content-area .jira-dashboard-shell .k-picker:focus-within,
+    .content-area .jira-dashboard-shell .k-datepicker:hover,
+    .content-area .jira-dashboard-shell .k-datepicker.k-hover,
+    .content-area .jira-dashboard-shell .k-datepicker.k-focus,
+    .content-area .jira-dashboard-shell .k-datepicker:focus-within {
+        border-color: color-mix(in srgb, var(--jira-blue) 45%, var(--jira-border));
+        box-shadow: none;
+    }
+
+    .content-area .jira-dashboard-shell .k-picker .k-input-inner,
+    .content-area .jira-dashboard-shell .k-datepicker .k-input-inner {
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        color: var(--jira-text);
+        font-size: .95rem;
+        min-height: 44px;
+        padding: 0 12px;
+    }
+
+    .content-area .jira-dashboard-shell .k-picker .k-input-button,
+    .content-area .jira-dashboard-shell .k-datepicker .k-input-button,
+    .content-area .jira-dashboard-shell .k-datepicker .k-select {
+        background: transparent;
+        border-left: 1px solid color-mix(in srgb, var(--jira-border) 76%, transparent);
+        border-radius: 0 12px 12px 0;
+        color: var(--jira-text-dim);
+        flex: 0 0 46px;
+        width: 46px;
+    }
+
+.content-area .jira-dashboard-shell .jira-dashboard-year-picker {
+    min-width: 118px;
+    width: 118px;
 }
