@@ -504,7 +504,7 @@ body > .k-animation-container .k-popup,
 body > .k-animation-container .k-calendar-container,
 body > .k-window,
 body > .k-tooltip,
-body > .k-notification-group .k-notification,
+.tbx-notification-host .k-notification,
 .content-area .k-list-container,
 .content-area .k-popup,
 .content-area .k-window,
@@ -598,23 +598,144 @@ body > .k-animation-container .k-list-optionlabel,
         color: var(--ui-accent);
     }
 
-.content-area .k-notification-group .k-notification {
-    color: var(--text);
+.content-area .k-notification,
+.tbx-notification-host .k-notification {
+    align-items: flex-start;
+    background-color: #ffffff;
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, .12), 0 8px 10px -6px rgba(0, 0, 0, .08);
+    gap: 14px;
+    overflow: hidden;
+    position: relative;
+    width: 400px;
+    max-width: calc(100vw - 48px);
+    padding: 16px;
 }
 
-.content-area .k-notification-info {
-    background: color-mix(in srgb, var(--ui-accent) 9%, var(--ui-control-fill));
-    border-color: color-mix(in srgb, var(--ui-accent) 24%, var(--ui-control-border));
+.content-area .k-notification-status,
+.tbx-notification-host .k-notification-status {
+    align-items: center;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+    display: flex;
+    flex: 0 0 auto;
+    height: 44px;
+    justify-content: center;
+    position: relative;
+    width: 44px;
+    z-index: 1;
 }
 
-.content-area .k-notification-success {
-    background: rgba(22, 163, 74, .10);
-    border-color: rgba(22, 163, 74, .28);
+    .content-area .k-notification-status .k-icon,
+    .tbx-notification-host .k-notification-status .k-icon {
+        font-size: 18px;
+    }
+
+.content-area .k-notification-content,
+.tbx-notification-host .k-notification-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-top: 2px;
+    position: relative;
+    z-index: 1;
 }
 
-.content-area .k-notification-error {
-    background: rgba(180, 35, 24, .10);
-    border-color: rgba(180, 35, 24, .28);
+.content-area .k-notification-actions,
+.tbx-notification-host .k-notification-actions {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.content-area .k-notification-action,
+.tbx-notification-host .k-notification-action {
+    background: transparent;
+    border: none;
+    color: #98a2b3;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px;
+    transition: color .2s ease;
+}
+
+    .content-area .k-notification-action:hover,
+    .tbx-notification-host .k-notification-action:hover {
+        color: #344054;
+    }
+
+.content-area .k-notification-info,
+.tbx-notification-host .k-notification-info {
+    background: linear-gradient(100deg, #b2e3ff, #ffffff 65%);
+}
+
+.content-area .k-notification-info .k-notification-status,
+.tbx-notification-host .k-notification-info .k-notification-status {
+    color: #2b85d3;
+}
+
+.content-area .k-notification-info .tbx-notify-title,
+.tbx-notification-host .k-notification-info .tbx-notify-title {
+    color: #2b85d3;
+}
+
+.content-area .k-notification-success,
+.tbx-notification-host .k-notification-success {
+    background: linear-gradient(100deg, #baf0d0, #ffffff 65%);
+}
+
+.content-area .k-notification-success .k-notification-status,
+.tbx-notification-host .k-notification-success .k-notification-status {
+    color: #27a857;
+}
+
+.content-area .k-notification-success .tbx-notify-title,
+.tbx-notification-host .k-notification-success .tbx-notify-title {
+    color: #27a857;
+}
+
+.content-area .k-notification-warning,
+.tbx-notification-host .k-notification-warning {
+    background: linear-gradient(100deg, #fde8b3, #ffffff 65%);
+}
+
+.content-area .k-notification-warning .k-notification-status,
+.tbx-notification-host .k-notification-warning .k-notification-status {
+    color: #e6a219;
+}
+
+.content-area .k-notification-warning .tbx-notify-title,
+.tbx-notification-host .k-notification-warning .tbx-notify-title {
+    color: #e6a219;
+}
+
+.content-area .k-notification-error,
+.tbx-notification-host .k-notification-error {
+    background: linear-gradient(100deg, #fccfcb, #ffffff 65%);
+}
+
+.content-area .k-notification-error .k-notification-status,
+.tbx-notification-host .k-notification-error .k-notification-status {
+    color: #e5484d;
+}
+
+.content-area .k-notification-error .tbx-notify-title,
+.tbx-notification-host .k-notification-error .tbx-notify-title {
+    color: #e5484d;
+}
+
+.tbx-notify-title {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 4px;
+}
+
+.tbx-notify-desc {
+    color: #667085;
+    font-size: 13.5px;
+    line-height: 1.4;
 }
 
 .content-area .k-tooltip {

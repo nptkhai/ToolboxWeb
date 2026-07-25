@@ -1,6 +1,21 @@
+@using System.Text.Json
 @using ToolboxWeb.Web.Constants
 @using ToolboxWeb.Web.Services
 @inject ICurrentUserService CurrentUser
+@{
+    var flashSuccessMessage = TempData["SuccessMessage"] as string;
+    var flashErrorMessage = TempData["ErrorMessage"] as string;
+    var flashNotifications = new List<object>();
+    if (!string.IsNullOrEmpty(flashSuccessMessage))
+    {
+        flashNotifications.Add(new { type = "success", message = flashSuccessMessage });
+    }
+    if (!string.IsNullOrEmpty(flashErrorMessage))
+    {
+        flashNotifications.Add(new { type = "error", message = flashErrorMessage });
+    }
+    var hasFlashNotification = flashNotifications.Count > 0;
+}
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentUICulture.Name">
 <head>
@@ -10,6 +25,11 @@
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (hasFlashNotification)
+    {
+        <link rel="stylesheet" href="~/vendor/kendo/icons/index.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+    }
     @await RenderSectionAsync("Styles", required: false)
     <link rel="stylesheet" href="~/css/vendor-sync.css" asp-append-version="true" />
     <script>
@@ -20,6 +40,11 @@
     </script>
 </head>
 <body>
+    @if (hasFlashNotification)
+    {
+        <div id="tbx-notification-host" class="tbx-notification-host" aria-hidden="true"></div>
+        <script id="tbx-flash-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(flashNotifications))</script>
+    }
     @{
         var currentCulture = CultureInfo.CurrentUICulture.Name;
         var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
@@ -74,20 +99,21 @@
                 </div>
             </header>
             <main class="content-area @(ViewData["ContentAreaClass"] as string)" role="main">
-                @if (TempData["SuccessMessage"] is string successMessage)
-                {
-                    <div class="alert alert-success">@successMessage</div>
-                }
-                @if (TempData["ErrorMessage"] is string errorMessage)
-                {
-                    <div class="alert alert-danger">@errorMessage</div>
-                }
                 @RenderBody()
             </main>
         </div>
     </div>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @if (hasFlashNotification)
+    {
+        <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
+        @if (currentCulture == "vi-VN")
+        {
+            <script src="~/vendor/kendo/cultures/kendo.culture.vi-VN.min.js" asp-append-version="true"></script>
+            <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
+        }
+    }
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

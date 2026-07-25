@@ -13,6 +13,12 @@
     const directionInput = form.querySelector("[data-jira-direction]");
     const buttons = Array.from(form.querySelectorAll("[data-period]"));
     const inputWraps = Array.from(form.querySelectorAll("[data-period-input]"));
+    const navButtons = Array.from(form.querySelectorAll("[data-nav-step]"));
+    const searchButton = form.querySelector(".jira-dashboard-search");
+    const rangeLabelEl = form.querySelector("[data-jira-range-label]");
+    const statsHost = document.querySelector("[data-jira-stats]");
+    const alertHost = document.querySelector("[data-jira-alert-host]");
+    const jqlEl = document.querySelector("[data-jira-jql]");
     const currentType = periodTypeInput?.value || "week";
 
     const inputs = {
@@ -28,6 +34,10 @@
         month: null,
         year: null
     };
+
+    let table = null;
+    let referenceDate = null;
+    let syncingPickers = false;
 
     const tabulatorFieldMap = {
         project: "project",
@@ -213,20 +223,146 @@
         }
     }
 
+    function buildWeekOptions(centerYear) {
+        const firstWeekYear = centerYear - 3;
+        const lastWeekYear = centerYear + 3;
+        const weekOptions = [];
+
+        for (let year = firstWeekYear; year <= lastWeekYear; year += 1) {
+            for (let week = 1; week <= 53; week += 1) {
+                const value = `${year}-W${pad2(week)}`;
+                const weekStart = parseIsoWeek(value);
+                if (!weekStart || !formatIsoWeek(weekStart).startsWith(`${year}-W`)) {
+                    continue;
+                }
+
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                weekOptions.push({
+                    value,
+                    text: formatWeekOption(week, year),
+                    range: `${pad2(weekStart.getDate())}/${pad2(weekStart.getMonth() + 1)} - ${pad2(weekEnd.getDate())}/${pad2(weekEnd.getMonth() + 1)}/${weekEnd.getFullYear()}`
+                });
+            }
+        }
+
+        return weekOptions;
+    }
+
+    let weekOptionsCenterYear = new Date().getFullYear();
+
+    function ensureWeekOptionForDate(date) {
+        if (!widgets.week) {
+            return;
+        }
+
+        const year = date.getFullYear();
+        if (Math.abs(year - weekOptionsCenterYear) > 2) {
+            weekOptionsCenterYear = year;
+            widgets.week.dataSource.data(buildWeekOptions(weekOptionsCenterYear));
+        }
+    }
+
+    function getPeriodDate(period) {
+        if (period === "day") {
+            return widgets.day ? widgets.day.value() : parseIsoDate(inputs.day?.value);
+        }
+
+        if (period === "month") {
+            return widgets.month ? widgets.month.value() : parseIsoMonth(inputs.month?.value);
+        }
+
+        if (period === "year") {
+            return widgets.year ? widgets.year.value() : parseYear(inputs.year?.value);
+        }
+
+        const weekValue = widgets.week ? widgets.week.value() : inputs.week?.value;
+        return parseIsoWeek(weekValue);
+    }
+
+    function applyReferenceDate(date) {
+        if (!(date instanceof Date) || Number.isNaN(date.getTime()) || syncingPickers) {
+            return;
+        }
+
+        referenceDate = date;
+        syncingPickers = true;
+
+        try {
+            const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+            const yearStart = new Date(date.getFullYear(), 0, 1);
+
+            if (widgets.day) {
+                widgets.day.value(date);
+            } else if (inputs.day) {
+                inputs.day.value = formatIsoDate(date);
+            }
+
+            if (widgets.week) {
+                ensureWeekOptionForDate(date);
+                widgets.week.value(formatIsoWeek(date));
+            } else if (inputs.week) {
+                inputs.week.value = formatIsoWeek(date);
+            }
+
+            if (widgets.month) {
+                widgets.month.value(monthStart);
+            } else if (inputs.month) {
+                inputs.month.value = formatIsoMonth(monthStart);
+            }
+
+            if (widgets.year) {
+                widgets.year.value(yearStart);
+            } else if (inputs.year) {
+                inputs.year.value = String(date.getFullYear());
+            }
+        } finally {
+            syncingPickers = false;
+        }
+    }
+
+    function shiftReferenceDate(period, steps) {
+        if (!referenceDate) {
+            return;
+        }
+
+        const next = new Date(referenceDate);
+
+        if (period === "day") {
+            next.setDate(next.getDate() + steps);
+        } else if (period === "month") {
+            next.setMonth(next.getMonth() + steps);
+        } else if (period === "year") {
+            next.setFullYear(next.getFullYear() + steps);
+        } else {
+            next.setDate(next.getDate() + (steps * 7));
+        }
+
+        applyReferenceDate(next);
+    }
+
     function initNativeFallback() {
         if (inputs.day) {
             inputs.day.type = "date";
             inputs.day.value = periodValueInput?.value && currentType === "day"
                 ? periodValueInput.value
                 : (inputs.day.value || "");
+            inputs.day.addEventListener("change", () => applyReferenceDate(parseIsoDate(inputs.day.value)));
         }
 
         if (inputs.month) {
             inputs.month.type = "month";
+            inputs.month.addEventListener("change", () => applyReferenceDate(parseIsoMonth(inputs.month.value)));
         }
 
         if (inputs.week) {
             inputs.week.type = "week";
+            inputs.week.addEventListener("change", () => {
+                const parsed = parseIsoWeek(inputs.week.value);
+                if (parsed) {
+                    applyReferenceDate(parsed);
+                }
+            });
         }
 
         if (inputs.year) {
@@ -234,6 +370,7 @@
             inputs.year.min = "2000";
             inputs.year.max = "2100";
             inputs.year.inputMode = "numeric";
+            inputs.year.addEventListener("change", () => applyReferenceDate(parseYear(inputs.year.value)));
         }
     }
 
@@ -257,34 +394,13 @@
             value: parseIsoDate(inputs.day.value),
             popup: popupOptions
         }).data("kendoDatePicker");
+        widgets.day.bind("change", () => applyReferenceDate(widgets.day.value()));
 
         const selectedWeekDate = parseIsoWeek(inputs.week.value);
-        const selectedWeekYear = selectedWeekDate?.getFullYear() || new Date().getFullYear();
-        const currentYear = new Date().getFullYear();
-        const firstWeekYear = Math.min(selectedWeekYear, currentYear) - 3;
-        const lastWeekYear = Math.max(selectedWeekYear, currentYear) + 3;
-        const weekOptions = [];
-
-        for (let year = firstWeekYear; year <= lastWeekYear; year += 1) {
-            for (let week = 1; week <= 53; week += 1) {
-                const value = `${year}-W${pad2(week)}`;
-                const weekStart = parseIsoWeek(value);
-                if (!weekStart || !formatIsoWeek(weekStart).startsWith(`${year}-W`)) {
-                    continue;
-                }
-
-                const weekEnd = new Date(weekStart);
-                weekEnd.setDate(weekEnd.getDate() + 6);
-                weekOptions.push({
-                    value,
-                    text: formatWeekOption(week, year),
-                    range: `${pad2(weekStart.getDate())}/${pad2(weekStart.getMonth() + 1)} - ${pad2(weekEnd.getDate())}/${pad2(weekEnd.getMonth() + 1)}/${weekEnd.getFullYear()}`
-                });
-            }
-        }
+        weekOptionsCenterYear = selectedWeekDate?.getFullYear() || new Date().getFullYear();
 
         widgets.week = $(inputs.week).kendoComboBox({
-            dataSource: weekOptions,
+            dataSource: buildWeekOptions(weekOptionsCenterYear),
             dataTextField: "text",
             dataValueField: "value",
             filter: "contains",
@@ -293,6 +409,12 @@
             template: "<div class='jira-dashboard-week-option'><strong>#: text #</strong><span>#: range #</span></div>",
             value: inputs.week.value
         }).data("kendoComboBox");
+        widgets.week.bind("change", () => {
+            const parsed = parseIsoWeek(widgets.week.value());
+            if (parsed) {
+                applyReferenceDate(parsed);
+            }
+        });
 
         widgets.month = $(inputs.month).kendoDatePicker({
             format: "MM/yyyy",
@@ -301,6 +423,7 @@
             value: parseIsoMonth(inputs.month.value),
             popup: popupOptions
         }).data("kendoDatePicker");
+        widgets.month.bind("change", () => applyReferenceDate(widgets.month.value()));
 
         widgets.year = $(inputs.year).kendoDatePicker({
             format: "yyyy",
@@ -309,6 +432,7 @@
             value: parseYear(inputs.year.value),
             popup: popupOptions
         }).data("kendoDatePicker");
+        widgets.year.bind("change", () => applyReferenceDate(widgets.year.value()));
 
         if (widgets.year?.wrapper) {
             widgets.year.wrapper.addClass("jira-dashboard-year-picker");
@@ -358,22 +482,22 @@
     function mapRows(data) {
         return Array.isArray(data)
             ? data.map((row) => ({
-                index: row.Index,
-                project: row.Project,
-                subTaskKey: row.SubTaskKey,
-                subTaskSummary: row.SubTaskSummary,
-                issueKey: row.IssueKey,
-                issueSummary: row.IssueSummary,
-                status: row.Status,
-                statusTone: row.StatusTone,
-                dueDateText: row.DueDateText,
-                dueDateSort: row.DueDate || "",
-                dueDateSortValue: toDueDateSortValue(row.DueDate),
-                estimateTimeText: row.EstimateTimeText,
-                loggedTimeText: row.LoggedTimeText,
-                estimateHours: row.EstimateHours,
-                loggedHours: row.LoggedHours,
-                isOverdue: row.IsOverdue
+                index: row.index,
+                project: row.project,
+                subTaskKey: row.subTaskKey,
+                subTaskSummary: row.subTaskSummary,
+                issueKey: row.issueKey,
+                issueSummary: row.issueSummary,
+                status: row.status,
+                statusTone: row.statusTone,
+                dueDateText: row.dueDateText,
+                dueDateSort: row.dueDate || "",
+                dueDateSortValue: toDueDateSortValue(row.dueDate),
+                estimateTimeText: row.estimateTimeText,
+                loggedTimeText: row.loggedTimeText,
+                estimateHours: row.estimateHours,
+                loggedHours: row.loggedHours,
+                isOverdue: row.isOverdue
             }))
             : [];
     }
@@ -392,7 +516,7 @@
         const sortField = tabulatorFieldMap[config.initialSort] || "dueDateSort";
         const sortDirection = config.initialDirection === "desc" ? "desc" : "asc";
 
-        const table = new Tabulator(gridHost, {
+        table = new Tabulator(gridHost, {
             data,
             index: "index",
             layout: "fitDataStretch",
@@ -533,20 +657,163 @@
         });
     }
 
+    function renderStats(stats) {
+        if (!statsHost) {
+            return;
+        }
+
+        statsHost.innerHTML = (Array.isArray(stats) ? stats : []).map((stat) => `
+            <article class="jira-dashboard-stat-card jira-dashboard-stat-card--${escapeHtml(stat.accentClass)}">
+                <span class="jira-dashboard-stat-label">${escapeHtml(stat.label)}</span>
+                <strong class="jira-dashboard-stat-value">${escapeHtml(stat.value)}</strong>
+                <span class="jira-dashboard-stat-hint">${escapeHtml(stat.hint)}</span>
+            </article>
+        `).join("");
+    }
+
+    function renderAlert(message) {
+        if (!alertHost) {
+            return;
+        }
+
+        alertHost.innerHTML = message
+            ? `<div class="alert alert-danger jira-dashboard-alert" role="alert">${escapeHtml(message)}</div>`
+            : "";
+    }
+
+    function getPeriodDateFromFilter(filter) {
+        switch (filter.periodType) {
+            case "day":
+                return parseIsoDate(filter.dayValue);
+            case "month":
+                return parseIsoMonth(filter.monthValue);
+            case "year":
+                return parseYear(filter.yearValue);
+            default:
+                return parseIsoWeek(filter.weekValue);
+        }
+    }
+
+    function applyFilterResult(filter) {
+        if (!filter) {
+            return;
+        }
+
+        if (rangeLabelEl) {
+            rangeLabelEl.textContent = filter.rangeLabel || "";
+        }
+
+        if (sortInput && filter.sort) {
+            sortInput.value = filter.sort;
+        }
+
+        if (directionInput && filter.direction) {
+            directionInput.value = filter.direction;
+        }
+
+        if (periodValueInput && filter.periodValue) {
+            periodValueInput.value = filter.periodValue;
+        }
+
+        const derivedDate = getPeriodDateFromFilter(filter);
+        if (derivedDate) {
+            applyReferenceDate(derivedDate);
+        }
+
+        syncVisibleInput(filter.periodType || currentType);
+    }
+
+    function setSearchBusy(isBusy) {
+        if (!searchButton) {
+            return;
+        }
+
+        searchButton.disabled = isBusy;
+        searchButton.classList.toggle("is-loading", isBusy);
+    }
+
+    async function performSearch() {
+        const activeType = periodTypeInput?.value || "week";
+        const periodValue = resolvePeriodValue(activeType);
+
+        if (periodValueInput) {
+            periodValueInput.value = periodValue;
+        }
+
+        const params = new URLSearchParams({
+            periodType: activeType,
+            periodValue,
+            sort: sortInput?.value || "dueDate",
+            dir: directionInput?.value || "asc"
+        });
+
+        setSearchBusy(true);
+
+        try {
+            const response = await fetch(`${config.dashboardApiUrl || "/Jira/Dashboard"}?${params.toString()}`, {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            });
+            const payload = await response.json().catch(() => null);
+
+            if (payload?.requiresLogin) {
+                const returnUrl = `${window.location.pathname}${window.location.search}`;
+                window.location.href = `${config.loginUrl || "/Identity/Account/Login"}?returnUrl=${encodeURIComponent(returnUrl)}`;
+                return;
+            }
+
+            if (!response.ok || !payload?.success) {
+                window.Toolbox?.notify(payload?.message || config.searchErrorMessage || "Search failed.", "error");
+                return;
+            }
+
+            const data = payload.data || {};
+            applyFilterResult(data.filter);
+            renderStats(data.stats);
+            renderAlert(data.errorMessage);
+
+            if (jqlEl) {
+                jqlEl.textContent = data.appliedJql || "";
+            }
+
+            if (table) {
+                table.replaceData(mapRows(data.rows));
+            }
+
+            if (data.errorMessage) {
+                window.Toolbox?.notify(data.errorMessage, "error");
+            }
+
+            const newUrl = `${form.getAttribute("action")}?${params.toString()}`;
+            window.history.pushState({}, "", newUrl);
+        } catch {
+            window.Toolbox?.notify(config.searchErrorMessage || "Search failed.", "error");
+        } finally {
+            setSearchBusy(false);
+        }
+    }
+
+    navButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const steps = Number(button.dataset.navStep || "0");
+            if (steps) {
+                shiftReferenceDate(periodTypeInput?.value || "week", steps);
+            }
+        });
+    });
+
     buttons.forEach((button) => {
         button.addEventListener("click", () => {
             syncVisibleInput(button.dataset.period || "week");
         });
     });
 
-    form.addEventListener("submit", () => {
-        const activeType = periodTypeInput?.value || "week";
-        if (periodValueInput) {
-            periodValueInput.value = resolvePeriodValue(activeType);
-        }
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        performSearch();
     });
 
     initKendoPickers();
     initTabulator();
     syncVisibleInput(currentType);
+    referenceDate = getPeriodDate(currentType);
 })(window, document, window.jQuery);

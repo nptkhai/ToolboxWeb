@@ -262,6 +262,22 @@ a {
     white-space: nowrap;
 }
 
+.tbx-notification-host {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    pointer-events: none;
+    position: fixed;
+    right: 24px;
+    top: 92px;
+    z-index: 20000;
+}
+
+    .tbx-notification-host .k-notification {
+        pointer-events: auto;
+    }
+
 .content-area {
     padding: 26px 28px 40px;
 }
@@ -1106,6 +1122,32 @@ a {
         color: #111827;
     }
 
+.jira-dashboard-period-nav {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+}
+
+.jira-dashboard-nav-button {
+    align-items: center;
+    background: color-mix(in srgb, var(--jira-panel-alt) 78%, transparent);
+    border: 1px solid var(--jira-border);
+    border-radius: 10px;
+    color: var(--jira-text-dim);
+    display: flex;
+    font-size: 1rem;
+    font-weight: 700;
+    height: 46px;
+    justify-content: center;
+    transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+    width: 38px;
+}
+
+    .jira-dashboard-nav-button:hover {
+        border-color: color-mix(in srgb, var(--jira-blue) 45%, var(--jira-border));
+        color: var(--jira-text);
+    }
+
 .jira-dashboard-period-input {
     display: none;
 }
@@ -1194,6 +1236,11 @@ a {
 .jira-dashboard-search.btn {
     min-width: 132px;
 }
+
+    .jira-dashboard-search.btn.is-loading {
+        opacity: .7;
+        pointer-events: none;
+    }
 
 .jira-dashboard-alert {
     margin-bottom: 0;
