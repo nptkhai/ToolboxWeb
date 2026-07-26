@@ -35,6 +35,9 @@ public class JiraController : Controller
         "verify"
     ];
 
+    private const string MyOpenSubtasksBaseJql =
+        "assignee = currentUser() AND issuetype in subTaskIssueTypes() AND statusCategory != Done";
+
     private readonly IJiraAuthService _jiraAuth;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
@@ -204,6 +207,155 @@ public class JiraController : Controller
                 _localizer["Jira.NotFound"].Value,
                 _localizer["Jira.InvalidRequest"].Value)));
         }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> TaskBoard([FromQuery] JiraDashboardQueryViewModel query)
+    {
+        var session = await GetSessionOrSignOutAsync();
+        if (session is null)
+        {
+            return Json(JiraApiResponse<object>.LoginRequired(_localizer["Jira.SessionExpired"].Value));
+        }
+
+        var periodType = NormalizePeriodType(query.PeriodType);
+        var (rangeStart, rangeEnd, periodValue) = ResolveRange(periodType, query.PeriodValue);
+        var jql = string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"{MyOpenSubtasksBaseJql} AND duedate >= \"{rangeStart:yyyy-MM-dd}\" AND duedate <= \"{rangeEnd:yyyy-MM-dd}\" ORDER BY duedate ASC");
+
+        string? errorMessage = null;
+        IReadOnlyList<JiraDashboardRowViewModel> rows = [];
+
+        try
+        {
+            var issues = await session.Client.SearchIssuesAsync(jql, includeWorklogs: true);
+            rows = MapSubtaskRows(issues);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = JiraErrorHelper.ToUserMessage(
+                ex,
+                _localizer["Jira.TaskBoard.Error"].Value,
+                _localizer["Jira.SessionExpired"].Value,
+                _localizer["Jira.NotFound"].Value,
+                _localizer["Jira.InvalidRequest"].Value);
+        }
+
+        var filter = BuildDashboardFilter(periodType, periodValue, "dueDate", "asc", rangeStart, rangeEnd);
+
+        return Json(JiraApiResponse<object>.Ok(new
+        {
+            filter,
+            rows,
+            errorMessage
+        }));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> AutoScheduleSearch([FromQuery] JiraAutoScheduleSearchRequest request)
+    {
+        var session = await GetSessionOrSignOutAsync();
+        if (session is null)
+        {
+            return Json(JiraApiResponse<object>.LoginRequired(_localizer["Jira.SessionExpired"].Value));
+        }
+
+        var jql = BuildAutoScheduleJql(request);
+        string? errorMessage = null;
+        IReadOnlyList<JiraDashboardRowViewModel> rows = [];
+
+        try
+        {
+            var issues = await session.Client.SearchIssuesAsync(jql, includeWorklogs: true);
+            rows = MapSubtaskRows(issues);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = JiraErrorHelper.ToUserMessage(
+                ex,
+                _localizer["Jira.AutoSchedule.Error"].Value,
+                _localizer["Jira.SessionExpired"].Value,
+                _localizer["Jira.NotFound"].Value,
+                _localizer["Jira.InvalidRequest"].Value);
+        }
+
+        return Json(JiraApiResponse<object>.Ok(new
+        {
+            rows,
+            appliedJql = jql,
+            errorMessage
+        }));
+    }
+
+    private static string BuildAutoScheduleJql(JiraAutoScheduleSearchRequest request)
+    {
+        var parts = new List<string> { MyOpenSubtasksBaseJql };
+
+        if (!string.IsNullOrWhiteSpace(request.Project))
+        {
+            parts.Add($"project = \"{request.Project.Trim()}\"");
+        }
+
+        switch (request.Status?.Trim().ToLowerInvariant())
+        {
+            case "todo":
+                parts.Add("statusCategory = \"To Do\"");
+                break;
+            case "doing":
+                parts.Add("statusCategory = \"In Progress\"");
+                break;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Text))
+        {
+            var text = request.Text.Trim().Replace("\"", "\\\"");
+            parts.Add($"(summary ~ \"{text}\" OR key = \"{text}\")");
+        }
+
+        if (request.DueFrom.HasValue)
+        {
+            parts.Add($"duedate >= \"{request.DueFrom.Value:yyyy-MM-dd}\"");
+        }
+
+        if (request.DueTo.HasValue)
+        {
+            parts.Add($"duedate <= \"{request.DueTo.Value:yyyy-MM-dd}\"");
+        }
+
+        return string.Join(" AND ", parts) + " ORDER BY duedate ASC";
+    }
+
+    private static IReadOnlyList<JiraDashboardRowViewModel> MapSubtaskRows(IReadOnlyList<JiraIssue> issues)
+    {
+        return issues.Select((issue, index) =>
+        {
+            var subTaskKey = issue.IssueKey ?? string.Empty;
+            var status = issue.Status ?? string.Empty;
+            var estimateHours = ParseHours(issue.Estimate);
+            var loggedHours = issue.Worklogs.Sum(w => ParseHours(w.TimeSpent));
+            var isDone = IsDoneStatus(status);
+
+            return new JiraDashboardRowViewModel
+            {
+                Index = index + 1,
+                Project = DeriveProject(subTaskKey),
+                SubTaskKey = subTaskKey,
+                SubTaskSummary = issue.Summary ?? string.Empty,
+                IssueKey = issue.Parent ?? string.Empty,
+                IssueSummary = issue.ParentSummary ?? string.Empty,
+                Status = status,
+                StatusTone = ResolveStatusTone(status),
+                DueDate = issue.DueDate,
+                CreateDate = issue.CreateDate,
+                DueDateText = issue.DueDate?.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture) ?? "-",
+                EstimateTimeText = FormatHours(estimateHours),
+                LoggedTimeText = FormatHours(loggedHours),
+                EstimateHours = estimateHours,
+                LoggedHours = loggedHours,
+                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < DateTime.Today && !isDone
+            };
+        }).ToArray();
     }
 
     private async Task<JiraDashboardPageViewModel> BuildDashboardPageModelAsync(JiraSession session, JiraDashboardQueryViewModel? query)
