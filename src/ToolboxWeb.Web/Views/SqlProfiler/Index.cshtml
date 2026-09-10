@@ -1,0 +1,253 @@
+@using System.Text.Json
+@using ToolboxWeb.Web.ViewModels.SqlProfiler
+@model ProfilerPageViewModel
+@{
+    ViewData["Title"] = T["SqlProfiler.Title"];
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+    // Dictionary keys keep their casing, so they line up with the values the API returns.
+    var kindLabels = new Dictionary<string, string>
+    {
+        ["Procedure"] = T["SqlProfiler.Kind.Procedure"].Value,
+        ["Trigger"] = T["SqlProfiler.Kind.Trigger"].Value,
+        ["Function"] = T["SqlProfiler.Kind.Function"].Value,
+        ["Error"] = T["SqlProfiler.Kind.Error"].Value
+    };
+
+    var configJson = JsonSerializer.Serialize(new
+    {
+        urls = new
+        {
+            testConnection = Url.Action("TestConnection", "SqlProfiler"),
+            start = Url.Action("StartCapture", "SqlProfiler"),
+            events = Url.Action("Events", "SqlProfiler"),
+            stop = Url.Action("StopCapture", "SqlProfiler"),
+            recent = Url.Action("RecentProcedures", "SqlProfiler"),
+            definition = Url.Action("Definition", "SqlProfiler"),
+            export = Url.Action("Export", "SqlProfiler"),
+            abandon = Url.Action("Abandon", "SqlProfiler")
+        },
+        kinds = kindLabels,
+        @params = new
+        {
+            name = T["SqlProfiler.Param.Name"].Value,
+            kind = T["SqlProfiler.Param.Kind"].Value,
+            value = T["SqlProfiler.Param.Value"].Value
+        },
+        columns = new
+        {
+            time = T["SqlProfiler.Grid.Time"].Value,
+            kind = T["SqlProfiler.Grid.Kind"].Value,
+            objectName = T["SqlProfiler.Grid.Object"].Value,
+            user = T["SqlProfiler.Grid.User"].Value,
+            host = T["SqlProfiler.Grid.Host"].Value,
+            app = T["SqlProfiler.Grid.App"].Value,
+            duration = T["SqlProfiler.Grid.Duration"].Value,
+            cpu = T["SqlProfiler.Grid.Cpu"].Value,
+            reads = T["SqlProfiler.Grid.Reads"].Value,
+            calls = T["SqlProfiler.Grid.Calls"].Value,
+            lastRun = T["SqlProfiler.Grid.LastRun"].Value,
+            average = T["SqlProfiler.Grid.Average"].Value,
+            total = T["SqlProfiler.Grid.Total"].Value
+        },
+        messages = new
+        {
+            testing = T["SchemaCompare.Message.Testing"].Value,
+            connected = T["SqlProfiler.Message.Connected"].Value,
+            noCapturePermission = T["SqlProfiler.Message.NoCapturePermission"].Value,
+            azureNotSupported = T["SqlProfiler.Message.AzureNotSupported"].Value,
+            connectionRequired = T["SqlProfiler.Message.ConnectionRequired"].Value,
+            databaseRequired = T["SqlProfiler.Message.DatabaseRequired"].Value,
+            capturing = T["SqlProfiler.Message.Capturing"].Value,
+            stopped = T["SqlProfiler.Message.Stopped"].Value,
+            gridEmpty = T["SqlProfiler.Message.GridEmpty"].Value,
+            waiting = T["SqlProfiler.Message.Waiting"].Value,
+            detailHint = T["SqlProfiler.Message.DetailHint"].Value,
+            eventsDropped = T["SqlProfiler.Message.EventsDropped"].Value,
+            autoStop = T["SqlProfiler.Message.AutoStop"].Value,
+            summary = T["SqlProfiler.Message.Summary"].Value,
+            copied = T["SchemaCompare.Message.Copied"].Value,
+            copyFailed = T["SchemaCompare.Message.CopyFailed"].Value,
+            networkError = T["SchemaCompare.Error.Network"].Value,
+            genericError = T["SqlProfiler.Error.StartFailed"].Value,
+            loadingDefinition = T["SqlProfiler.Message.LoadingDefinition"].Value,
+            planCacheNote = T["SqlProfiler.Message.PlanCacheNote"].Value
+        }
+    }, jsonOptions);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/tabulator/css/tabulator.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sql-profiler.css" asp-append-version="true" />
+}
+
+<div class="sp-page" id="sp-root">
+    @Html.AntiForgeryToken()
+
+    <section class="panel">
+        <div class="panel-header">
+            <h2>@T["SqlProfiler.Connection"]</h2>
+            <span class="muted">@T["SqlProfiler.Intro"]</span>
+        </div>
+        <div class="form-grid">
+            <div class="sp-conn-grid">
+                <div>
+                    <label class="form-label" for="sp-server">@T["SchemaCompare.Field.Server"]</label>
+                    <input class="form-control" id="sp-server" data-field="server" autocomplete="off"
+                           placeholder="@T["SchemaCompare.Field.ServerPlaceholder"]" />
+                </div>
+                <div>
+                    <label class="form-label" for="sp-username">@T["SchemaCompare.Field.Username"]</label>
+                    <input class="form-control" id="sp-username" data-field="username" autocomplete="off" />
+                </div>
+                <div>
+                    <label class="form-label" for="sp-password">@T["SchemaCompare.Field.Password"]</label>
+                    <input class="form-control" id="sp-password" data-field="password" type="password" autocomplete="new-password" />
+                </div>
+                <div>
+                    <label class="form-label" for="sp-database">@T["SchemaCompare.Field.Database"]</label>
+                    <input id="sp-database" data-field="database" />
+                </div>
+            </div>
+            <div class="inline-actions">
+                <div class="form-check">
+                    <input class="form-check-input" id="sp-trust" data-field="trustServerCertificate" type="checkbox" checked />
+                    <label class="form-check-label" for="sp-trust">@T["SchemaCompare.Field.TrustServerCertificate"]</label>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" type="button" id="sp-test">
+                    @T["SchemaCompare.Action.TestConnection"]
+                </button>
+            </div>
+        </div>
+        <div class="sp-status" data-role="conn-status" role="status" aria-live="polite"></div>
+        @if (Model.HostAllowlistEnabled)
+        {
+            <p class="muted"><small>@T["SchemaCompare.HostAllowlistNotice"]</small></p>
+        }
+    </section>
+
+    <section class="panel">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="sp-tab-capture" data-bs-toggle="tab" data-bs-target="#sp-pane-capture"
+                        type="button" role="tab" aria-controls="sp-pane-capture" aria-selected="true">
+                    @T["SqlProfiler.Tab.Capture"]
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="sp-tab-recent" data-bs-toggle="tab" data-bs-target="#sp-pane-recent"
+                        type="button" role="tab" aria-controls="sp-pane-recent" aria-selected="false">
+                    @T["SqlProfiler.Tab.Recent"]
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- ------------------------------------------------ capture ---- -->
+            <div class="tab-pane fade show active" id="sp-pane-capture" role="tabpanel" aria-labelledby="sp-tab-capture">
+                <p class="muted sp-howto">@T["SqlProfiler.Capture.HowTo"]</p>
+
+                <div class="sp-toolbar">
+                    <button class="btn btn-primary" type="button" id="sp-start">@T["SqlProfiler.Action.Start"]</button>
+                    <button class="btn btn-outline-danger" type="button" id="sp-stop" disabled>@T["SqlProfiler.Action.Stop"]</button>
+                    <span class="sp-clock" id="sp-clock">00:00:00</span>
+                    <span class="sp-live" id="sp-live" hidden>@T["SqlProfiler.Message.Recording"]</span>
+                    <span class="spacer"></span>
+                    <a class="btn btn-outline-secondary btn-sm" id="sp-export" href="#">@T["SqlProfiler.Action.Export"]</a>
+                </div>
+
+                <div class="sp-filters">
+                    <div>
+                        <label class="form-label" for="sp-min-duration">@T["SqlProfiler.Filter.MinDuration"]</label>
+                        <input class="form-control form-control-sm" id="sp-min-duration" type="number" min="0" value="0" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="sp-filter-user">@T["SqlProfiler.Filter.User"]</label>
+                        <input class="form-control form-control-sm" id="sp-filter-user" autocomplete="off" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="sp-filter-host">@T["SqlProfiler.Filter.Host"]</label>
+                        <input class="form-control form-control-sm" id="sp-filter-host" autocomplete="off" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="sp-filter-app">@T["SqlProfiler.Filter.App"]</label>
+                        <input class="form-control form-control-sm" id="sp-filter-app" autocomplete="off" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="sp-warn">@T["SqlProfiler.Filter.WarnMs"]</label>
+                        <input class="form-control form-control-sm" id="sp-warn" type="number" min="0" value="300" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="sp-danger">@T["SqlProfiler.Filter.DangerMs"]</label>
+                        <input class="form-control form-control-sm" id="sp-danger" type="number" min="0" value="1000" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="sp-auto-stop">@T["SqlProfiler.Filter.AutoStop"]</label>
+                        <input class="form-control form-control-sm" id="sp-auto-stop" type="number" min="1" max="120" value="15" />
+                    </div>
+                </div>
+
+                <div class="sp-checks">
+                    <div class="form-check">
+                        <input class="form-check-input" id="sp-cap-proc" type="checkbox" checked />
+                        <label class="form-check-label" for="sp-cap-proc">@T["SqlProfiler.Capture.Procedures"]</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" id="sp-cap-module" type="checkbox" checked />
+                        <label class="form-check-label" for="sp-cap-module">@T["SqlProfiler.Capture.Modules"]</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" id="sp-cap-error" type="checkbox" checked />
+                        <label class="form-check-label" for="sp-cap-error">@T["SqlProfiler.Capture.Errors"]</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" id="sp-mask" type="checkbox" />
+                        <label class="form-check-label" for="sp-mask">@T["SqlProfiler.Capture.MaskParameters"]</label>
+                    </div>
+                </div>
+
+                <div class="sp-summary" data-role="summary" hidden></div>
+                <div class="sp-warning" data-role="dropped" hidden></div>
+
+                <div class="sp-grid" id="sp-grid"></div>
+            </div>
+
+            <!-- ------------------------------------------------- recent ---- -->
+            <div class="tab-pane fade" id="sp-pane-recent" role="tabpanel" aria-labelledby="sp-tab-recent">
+                <p class="muted sp-howto">@T["SqlProfiler.Recent.HowTo"]</p>
+
+                <div class="sp-toolbar">
+                    <label class="form-label mb-0" for="sp-minutes">@T["SqlProfiler.Recent.Minutes"]</label>
+                    <input class="form-control form-control-sm sp-minutes" id="sp-minutes" type="number" min="1" max="1440" value="5" />
+                    <button class="btn btn-primary btn-sm" type="button" id="sp-refresh-recent">@T["SqlProfiler.Action.Refresh"]</button>
+                    <span class="muted" data-role="recent-status" role="status" aria-live="polite"></span>
+                </div>
+
+                <div class="sp-grid" id="sp-recent-grid"></div>
+            </div>
+        </div>
+
+        <!-- ------------------------------------------------------ detail ---- -->
+        <div class="sp-detail">
+            <div class="sp-detail-header">
+                <strong data-role="detail-title">@T["SqlProfiler.Message.DetailHint"]</strong>
+                <span class="spacer"></span>
+                <button class="btn btn-outline-secondary btn-sm" type="button" id="sp-copy-exec" hidden>@T["SqlProfiler.Action.CopyExec"]</button>
+                <button class="btn btn-outline-secondary btn-sm" type="button" id="sp-load-definition" hidden>@T["SqlProfiler.Action.ViewDefinition"]</button>
+                <span class="muted" data-role="detail-status" role="status" aria-live="polite"></span>
+            </div>
+            <div class="sp-detail-body" data-role="detail-body">
+                <p class="muted">@T["SqlProfiler.Message.DetailHint"]</p>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script id="sp-config" type="application/json">@Html.Raw(configJson)</script>
+
+@section Scripts {
+    <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script src="~/js/sql-profiler.js" asp-append-version="true"></script>
+}

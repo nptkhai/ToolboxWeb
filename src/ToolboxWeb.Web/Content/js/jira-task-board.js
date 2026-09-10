@@ -3,6 +3,7 @@
 
     const DAY_MS = 24 * 60 * 60 * 1000;
     const WEEKDAY_NAMES_VI = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    const WEEKDAY_HEADER_VI = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
     function parseJsonScript(id, fallback) {
         const el = document.getElementById(id);
@@ -123,7 +124,7 @@
         let inputWraps = [];
         let navButtons = [];
         let inputs = {};
-        let widgets = { day: null, week: null, month: null };
+        let widgets = { week: null, month: null };
         let config = {};
         let boardConfig = {};
         let rows = [];
@@ -208,12 +209,6 @@
             try {
                 const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
 
-                if (widgets.day) {
-                    widgets.day.value(date);
-                } else if (inputs.day) {
-                    inputs.day.value = toDateInputValue(date);
-                }
-
                 if (widgets.week) {
                     ensureWeekOptionForDate(date);
                     widgets.week.value(formatIsoWeek(date));
@@ -237,9 +232,7 @@
             }
 
             const next = new Date(referenceDate);
-            if (periodType === "day") {
-                next.setDate(next.getDate() + steps);
-            } else if (periodType === "month") {
+            if (periodType === "month") {
                 next.setMonth(next.getMonth() + steps);
             } else {
                 next.setDate(next.getDate() + steps * 7);
@@ -249,11 +242,6 @@
         }
 
         function initNativeFallback() {
-            if (inputs.day) {
-                inputs.day.type = "date";
-                inputs.day.addEventListener("change", () => applyReferenceDate(parseIsoDate(inputs.day.value)));
-            }
-
             if (inputs.week) {
                 inputs.week.type = "week";
                 inputs.week.addEventListener("change", () => {
@@ -282,12 +270,6 @@
 
             const popupOptions = { appendTo: $(document.body), collision: "fit flip" };
 
-            widgets.day = $(inputs.day).kendoDatePicker({
-                format: "dd/MM/yyyy",
-                popup: popupOptions
-            }).data("kendoDatePicker");
-            widgets.day.bind("change", () => applyReferenceDate(widgets.day.value()));
-
             weekOptionsCenterYear = new Date().getFullYear();
             widgets.week = $(inputs.week).kendoComboBox({
                 dataSource: buildWeekOptions(weekOptionsCenterYear),
@@ -315,10 +297,6 @@
         }
 
         function resolvePeriodValue() {
-            if (periodType === "day") {
-                return widgets.day ? toDateInputValue(widgets.day.value()) : (inputs.day?.value || "");
-            }
-
             if (periodType === "month") {
                 return widgets.month ? formatIsoMonth(widgets.month.value()) : (inputs.month?.value || "");
             }
@@ -337,12 +315,57 @@
             inputWraps.forEach((wrap) => wrap.classList.toggle("is-active", wrap.dataset.periodInput === nextPeriod));
         }
 
+        function issueLinkHtml(issueKey) {
+            const text = escapeHtml(issueKey || "-");
+            const baseUrl = (config.browseBaseUrl || "").replace(/\/+$/, "");
+
+            if (!baseUrl || !issueKey) {
+                return `<span class="jira-board-card-key">${text}</span>`;
+            }
+
+            const href = `${baseUrl}/browse/${encodeURIComponent(issueKey)}`;
+            // draggable="false" so grabbing the key still drags the card, not the link itself
+            return `<a class="jira-board-card-key jira-dashboard-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" draggable="false">${text}</a>`;
+        }
+
+        function isDoneRow(row) {
+            return row?.statusTone === "done";
+        }
+
+        // Done work is measured by the time actually logged; outstanding work by its estimate.
+        function summariseDay(dayRows) {
+            const doneHours = dayRows
+                .filter(isDoneRow)
+                .reduce((total, row) => total + Number(row.loggedHours || 0), 0);
+            const openHours = dayRows
+                .filter((row) => !isDoneRow(row))
+                .reduce((total, row) => total + Number(row.estimateHours || 0), 0);
+
+            return { doneHours, openHours, totalHours: doneHours + openHours };
+        }
+
+        function loadBarHtml(dayRows) {
+            const capacity = boardConfig.dayCapacityHours || 8;
+            const { doneHours, openHours, totalHours } = summariseDay(dayRows);
+            // Segments are scaled against whichever is larger so an over-capacity day still
+            // shows the done/open split correctly instead of clipping one segment away.
+            const scale = Math.max(capacity, totalHours) || 1;
+            const donePct = (doneHours / scale) * 100;
+            const openPct = (openHours / scale) * 100;
+
+            return `<span class="jira-board-load-bar" title="${doneHours.toFixed(1)}h done + ${openHours.toFixed(1)}h todo">
+                <span class="jira-board-load-fill jira-board-load-fill--done" style="width:${donePct}%"></span>
+                <span class="jira-board-load-fill jira-board-load-fill--open" style="width:${openPct}%"></span>
+            </span>`;
+        }
+
         function cardHtml(row) {
-            const overdue = row.dueDate && startOfDay(new Date(row.dueDate)) < startOfDay(new Date()) && !/done/i.test(row.status || "");
+            const done = isDoneRow(row);
+            const overdue = !done && row.dueDate && startOfDay(new Date(row.dueDate)) < startOfDay(new Date());
             const dueLabel = row.dueDate ? fmtShort(new Date(row.dueDate)) : "-";
-            return `<div class="jira-board-card" draggable="true" data-key="${escapeHtml(row.subTaskKey)}">
+            return `<div class="jira-board-card ${done ? "is-done" : ""}" draggable="${done ? "false" : "true"}" data-key="${escapeHtml(row.subTaskKey)}" data-done="${done}">
                 <div class="jira-board-card-top">
-                    <span class="jira-board-card-key">${escapeHtml(row.subTaskKey)}</span>
+                    ${issueLinkHtml(row.subTaskKey)}
                     <span class="jira-board-card-project">${escapeHtml(row.project)}</span>
                 </div>
                 <div class="jira-board-card-title">${escapeHtml(row.subTaskSummary)}</div>
@@ -352,19 +375,6 @@
                 </div>
                 <div class="jira-board-card-hours">Est: ${Number(row.estimateHours || 0)}h · Log: ${Number(row.loggedHours || 0)}h</div>
             </div>`;
-        }
-
-        function loadClass(sumHours) {
-            const capacity = boardConfig.dayCapacityHours || 8;
-            if (sumHours > capacity) {
-                return "jira-board-load--over";
-            }
-
-            if (sumHours >= capacity * 0.75) {
-                return "jira-board-load--high";
-            }
-
-            return "jira-board-load--ok";
         }
 
         function renderDayColumns(rangeStart, rangeEnd) {
@@ -381,9 +391,8 @@
             root.innerHTML = `<div class="jira-board-columns">${days.map((day) => {
                 const dateStr = toDateInputValue(day);
                 const dayRows = rows.filter((row) => row.dueDate && sameDay(new Date(row.dueDate), day));
-                const sumHours = dayRows.reduce((total, row) => total + Number(row.estimateHours || 0), 0);
+                const { totalHours } = summariseDay(dayRows);
                 const isToday = sameDay(day, today);
-                const pct = Math.min(100, Math.round((sumHours / capacity) * 100));
 
                 return `<div class="jira-board-day-col ${isToday ? "is-today" : ""}" data-date="${dateStr}">
                     <div class="jira-board-day-head">
@@ -391,8 +400,8 @@
                         <span class="jira-board-day-count">${dayRows.length}</span>
                     </div>
                     <div class="jira-board-day-load">
-                        <span>${sumHours.toFixed(1)}h/${capacity}h</span>
-                        <span class="jira-board-load-bar"><span class="jira-board-load-fill ${loadClass(sumHours)}" style="width:${pct}%"></span></span>
+                        <span>${totalHours.toFixed(1)}h/${capacity}h</span>
+                        ${loadBarHtml(dayRows)}
                     </div>
                     <div class="jira-board-day-body" data-date="${dateStr}">
                         ${dayRows.length ? dayRows.map(cardHtml).join("") : `<div class="jira-board-day-empty">${escapeHtml(boardConfig.noTasks || "")}</div>`}
@@ -403,16 +412,23 @@
             wireDragAndDrop();
         }
 
-        function wireDragAndDrop() {
-            root.querySelectorAll(".jira-board-card").forEach((card) => {
+        // Completed subtasks are history — they stay pinned to the day they were finished.
+        function wireCardDragging(cardSelector) {
+            root.querySelectorAll(cardSelector).forEach((card) => {
+                if (card.dataset.done === "true") {
+                    return;
+                }
+
                 on(card, "dragstart", (event) => {
                     card.classList.add("is-dragging");
                     event.dataTransfer.setData("text/plain", card.dataset.key);
                 });
                 on(card, "dragend", () => card.classList.remove("is-dragging"));
             });
+        }
 
-            root.querySelectorAll(".jira-board-day-body").forEach((zone) => {
+        function wireDropZones(zoneSelector) {
+            root.querySelectorAll(zoneSelector).forEach((zone) => {
                 on(zone, "dragover", (event) => {
                     event.preventDefault();
                     zone.classList.add("is-drag-over");
@@ -424,13 +440,12 @@
                     const key = event.dataTransfer.getData("text/plain");
                     const targetDate = zone.dataset.date;
                     const row = rows.find((item) => item.subTaskKey === key);
-                    if (!row || sameDay(new Date(row.dueDate || targetDate), parseIsoDate(targetDate))) {
+                    if (!row || isDoneRow(row) || sameDay(new Date(row.dueDate || targetDate), parseIsoDate(targetDate))) {
                         return;
                     }
 
                     row.dueDate = `${targetDate}T00:00:00`;
-                    const range = currentRange();
-                    renderDayColumns(range.start, range.end);
+                    render();
                     notify(
                         (boardConfig.movedToast || "Moved {0} to {1}").replace("{0}", key).replace("{1}", targetDate),
                         "success"
@@ -439,20 +454,83 @@
             });
         }
 
+        function wireDragAndDrop() {
+            wireCardDragging(".jira-board-card");
+            wireDropZones(".jira-board-day-body");
+        }
+
+        function calCardHtml(row) {
+            const done = isDoneRow(row);
+            const label = `${escapeHtml(row.subTaskKey)} — ${escapeHtml(row.subTaskSummary)}`;
+            return `<div class="jira-cal-card ${done ? "is-done" : ""}" draggable="${done ? "false" : "true"}" data-key="${escapeHtml(row.subTaskKey)}" data-done="${done}" title="${label}">
+                ${issueLinkHtml(row.subTaskKey)} ${escapeHtml(row.subTaskSummary)}
+            </div>`;
+        }
+
+        function renderMonthCalendar(monthRef) {
+            const monthIndex = monthRef.getMonth();
+            const year = monthRef.getFullYear();
+            const first = new Date(year, monthIndex, 1);
+            const last = new Date(year, monthIndex + 1, 0);
+            const startOffset = (first.getDay() + 6) % 7;
+            const endOffset = (last.getDay() + 6) % 7;
+            const gridStart = addDays(first, -startOffset);
+            const gridEnd = addDays(last, 6 - endOffset);
+
+            const days = [];
+            let cursor = new Date(gridStart);
+            while (cursor <= gridEnd) {
+                days.push(new Date(cursor));
+                cursor = addDays(cursor, 1);
+            }
+
+            const today = startOfDay(new Date());
+            const header = WEEKDAY_HEADER_VI.map((label) => `<span>${label}</span>`).join("");
+
+            const cells = days.map((day) => {
+                const inMonth = day.getMonth() === monthIndex;
+                if (!inMonth) {
+                    return `<div class="jira-cal-cell is-other-month"><div class="jira-cal-cell-head"><span class="jira-cal-daynum">${day.getDate()}</span></div></div>`;
+                }
+
+                const dateStr = toDateInputValue(day);
+                const dayRows = rows.filter((row) => row.dueDate && sameDay(new Date(row.dueDate), day));
+                const { doneHours, openHours, totalHours } = summariseDay(dayRows);
+                const isToday = sameDay(day, today);
+                const loadTitle = `${doneHours.toFixed(1)}h done + ${openHours.toFixed(1)}h todo`;
+
+                return `<div class="jira-cal-cell ${isToday ? "is-today" : ""}" data-date="${dateStr}">
+                    <div class="jira-cal-cell-head">
+                        <span class="jira-cal-daynum">${day.getDate()}${isToday ? " •" : ""}</span>
+                        ${dayRows.length ? `<span class="jira-cal-load" title="${loadTitle}">${totalHours.toFixed(1)}h</span>` : ""}
+                    </div>
+                    <div class="jira-cal-cards" data-date="${dateStr}">
+                        ${dayRows.map(calCardHtml).join("")}
+                    </div>
+                </div>`;
+            }).join("");
+
+            root.innerHTML = `<div class="jira-cal-weekday-header">${header}</div><div class="jira-cal-grid">${cells}</div>`;
+            wireCalendarDragAndDrop();
+        }
+
+        function wireCalendarDragAndDrop() {
+            wireCardDragging(".jira-cal-card");
+            wireDropZones(".jira-cal-cards");
+        }
+
+        function render() {
+            if (periodType === "month") {
+                renderMonthCalendar(referenceDate || new Date());
+                return;
+            }
+
+            const range = currentRange();
+            renderDayColumns(range.start, range.end);
+        }
+
         function currentRange() {
             const ref = referenceDate || new Date();
-
-            if (periodType === "day") {
-                const day = startOfDay(ref);
-                return { start: day, end: day };
-            }
-
-            if (periodType === "month") {
-                const start = new Date(ref.getFullYear(), ref.getMonth(), 1);
-                const end = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
-                return { start, end };
-            }
-
             const monday = getIsoWeekMonday(ref);
             return { start: monday, end: addDays(monday, 6) };
         }
@@ -466,14 +544,9 @@
                 rangeLabelEl.textContent = filter.rangeLabel || "";
             }
 
-            let derivedDate = null;
-            if (filter.periodType === "day") {
-                derivedDate = parseIsoDate(filter.dayValue);
-            } else if (filter.periodType === "month") {
-                derivedDate = parseIsoMonth(filter.monthValue);
-            } else {
-                derivedDate = parseIsoWeek(filter.weekValue);
-            }
+            const derivedDate = filter.periodType === "month"
+                ? parseIsoMonth(filter.monthValue)
+                : parseIsoWeek(filter.weekValue);
 
             if (derivedDate) {
                 applyReferenceDate(derivedDate);
@@ -507,17 +580,20 @@
                 renderAlert(data.errorMessage);
                 rows = Array.isArray(data.rows) ? data.rows.slice() : [];
                 applyFilterResult(data.filter);
-
-                const range = currentRange();
-                renderDayColumns(range.start, range.end);
+                render();
             } catch {
                 renderAlert(boardConfig.error);
             }
         }
 
+        // Always reset the filter to the period that contains today (current week / current month)
+        // and reload, then bring today into view.
         function jumpToToday() {
-            const el = root.querySelector(".jira-board-day-col.is-today");
-            el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+            applyReferenceDate(new Date());
+            fetchAndRender().then(() => {
+                root?.querySelector(".jira-board-day-col.is-today, .jira-cal-cell.is-today")
+                    ?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+            });
         }
 
         return {
@@ -535,11 +611,10 @@
                 inputWraps = Array.from(toolbar.querySelectorAll("[data-period-input]"));
                 navButtons = Array.from(toolbar.querySelectorAll("[data-nav-step]"));
                 inputs = {
-                    day: document.getElementById("jira-board-day"),
                     week: document.getElementById("jira-board-week"),
                     month: document.getElementById("jira-board-month")
                 };
-                widgets = { day: null, week: null, month: null };
+                widgets = { week: null, month: null };
 
                 config = parseJsonScript("jira-worklist-config", {});
                 boardConfig = parseJsonScript("jira-task-board-config", {});
@@ -574,10 +649,9 @@
             },
             destroy() {
                 offAll();
-                if (widgets.day) { widgets.day.destroy(); }
                 if (widgets.week) { widgets.week.destroy(); }
                 if (widgets.month) { widgets.month.destroy(); }
-                widgets = { day: null, week: null, month: null };
+                widgets = { week: null, month: null };
                 if (root) {
                     root.innerHTML = "";
                 }

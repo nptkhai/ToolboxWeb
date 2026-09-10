@@ -1775,32 +1775,42 @@ a {
     }
 }
 
+.jira-tabs-shell {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+}
+
 .jira-page-tabs {
-    border-bottom-color: var(--jira-border);
-    gap: 4px;
+    border-bottom: 1px solid var(--line);
+    gap: 8px;
+    padding: 14px 14px 0;
 }
 
     .jira-page-tabs .nav-link {
         border: 1px solid transparent;
-        border-radius: 12px 12px 0 0;
-        color: var(--jira-text-dim);
-        font-weight: 700;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+        color: var(--muted);
+        font-weight: 800;
+        transition: color .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+
+    .jira-page-tabs .nav-link:hover,
+    .jira-page-tabs .nav-link:focus {
+        color: var(--text);
+        transform: translateY(-1px);
     }
 
     .jira-page-tabs .nav-link.active {
-        background: var(--jira-panel);
-        border-color: var(--jira-border);
-        border-bottom-color: var(--jira-panel);
-        color: var(--jira-text);
+        background: var(--surface);
+        border-color: var(--line) var(--line) var(--surface);
+        color: var(--text);
     }
 
 .jira-tab-content {
-    background: var(--jira-panel);
-    border: 1px solid var(--jira-border);
-    border-radius: 0 16px 16px 16px;
-    display: grid;
-    gap: 18px;
-    padding: 20px;
+    padding: 18px;
 }
 
 .jira-tab-content .tab-pane.active {
@@ -1808,21 +1818,24 @@ a {
     gap: 18px;
 }
 
-/* ===== Tab: Quản lý công việc (board) ===== */
-#jira-tab-board-pane.tab-pane.active {
-    min-height: 70vh;
+.jira-icon-button {
+    padding: 0;
 }
 
+    .jira-icon-button svg {
+        display: block;
+    }
+
+/* ===== Tab: Quản lý công việc (board) — toolbar + board keep their own card box, like Jira Dashboard ===== */
 .jira-board-root {
     overflow-x: auto;
     padding-bottom: 6px;
 }
 
 .jira-board-columns {
-    align-items: stretch;
+    align-items: flex-start;
     display: flex;
-    gap: 14px;
-    min-height: min(55vh, 520px);
+    gap: 12px;
 }
 
 .jira-board-day-col {
@@ -1836,58 +1849,81 @@ a {
     min-width: 230px;
 }
 
+    /* Weekend columns (T7, CN) sit slightly back so work days read first */
+    .jira-board-columns .jira-board-day-col:nth-child(6),
+    .jira-board-columns .jira-board-day-col:nth-child(7) {
+        background: color-mix(in srgb, var(--jira-panel-alt) 55%, transparent);
+    }
+
     .jira-board-day-col.is-today {
+        background: color-mix(in srgb, var(--jira-mint) 7%, var(--jira-panel-alt));
         border-color: var(--jira-mint);
     }
 
 .jira-board-day-head {
     border-bottom: 1px solid var(--jira-border-soft);
-    padding: 12px 14px;
+    padding: 11px 12px;
 }
 
 .jira-board-day-label {
+    color: var(--jira-text);
     font-size: 12.5px;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .jira-board-day-count {
-    color: var(--jira-text-faint);
+    background: color-mix(in srgb, var(--jira-panel) 80%, transparent);
+    border-radius: 999px;
+    color: var(--jira-text-dim);
     float: right;
-    font-family: var(--app-font-family);
-    font-size: 11px;
+    font-size: 10.5px;
+    font-weight: 700;
+    min-width: 22px;
+    padding: 1px 7px;
+    text-align: center;
 }
 
+/* Sibling of .jira-board-day-head, so it needs its own horizontal padding
+   to keep the load bar clear of the column borders. */
 .jira-board-day-load {
     align-items: center;
+    color: var(--jira-text);
     display: flex;
     font-size: 11px;
-    gap: 6px;
-    margin-top: 6px;
+    font-weight: 700;
+    gap: 10px;
+    padding: 9px 12px 11px;
 }
 
+    .jira-board-day-load > span:first-child {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+/* Two stacked segments: logged time on finished subtasks, then estimate still outstanding. */
 .jira-board-load-bar {
-    background: var(--jira-panel);
-    border-radius: 3px;
+    background: color-mix(in srgb, var(--jira-border) 60%, var(--jira-panel));
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--jira-border) 70%, transparent);
+    display: flex;
     flex: 1;
-    height: 5px;
+    height: 8px;
+    min-width: 0;
     overflow: hidden;
 }
 
 .jira-board-load-fill {
     display: block;
     height: 100%;
+    transition: width .25s ease;
 }
 
-    .jira-board-load-fill.jira-board-load--ok {
+    .jira-board-load-fill--done {
         background: var(--jira-mint);
     }
 
-    .jira-board-load-fill.jira-board-load--high {
+    .jira-board-load-fill--open {
         background: var(--jira-amber);
-    }
-
-    .jira-board-load-fill.jira-board-load--over {
-        background: var(--jira-rose);
     }
 
 .jira-board-day-body {
@@ -1895,7 +1931,7 @@ a {
     flex: 1;
     flex-direction: column;
     gap: 8px;
-    min-height: 320px;
+    min-height: 180px;
     padding: 10px;
 }
 
@@ -1913,6 +1949,145 @@ a {
     text-align: center;
 }
 
+/* Month calendar: 7 fixed-width columns (minmax(0,…) stops long summaries from stretching them),
+   only the row height grows to fit every subtask. */
+.jira-cal-weekday-header,
+.jira-cal-grid {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.jira-cal-weekday-header {
+    background: color-mix(in srgb, var(--jira-panel-alt) 60%, transparent);
+    border: 1px solid var(--jira-border-soft);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    padding: 8px 0;
+}
+
+    .jira-cal-weekday-header span {
+        color: var(--jira-text-dim);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .04em;
+        min-width: 0;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+.jira-cal-cell {
+    background: var(--jira-panel-alt);
+    border: 1px solid var(--jira-border);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    min-height: 96px;
+    min-width: 0;
+    padding: 8px;
+}
+
+    /* Weekend columns (T7, CN) sit slightly back so work days read first */
+    .jira-cal-grid .jira-cal-cell:nth-child(7n + 6),
+    .jira-cal-grid .jira-cal-cell:nth-child(7n) {
+        background: color-mix(in srgb, var(--jira-panel-alt) 55%, transparent);
+    }
+
+    .jira-cal-cell.is-today {
+        background: color-mix(in srgb, var(--jira-mint) 7%, var(--jira-panel-alt));
+        border-color: var(--jira-mint);
+    }
+
+    .jira-cal-cell.is-other-month {
+        background: none;
+        border-style: dashed;
+        opacity: .45;
+    }
+
+.jira-cal-cell-head {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    gap: 6px;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.jira-cal-daynum {
+    color: var(--jira-text);
+    font-size: 12.5px;
+    font-weight: 800;
+}
+
+.jira-cal-cell.is-other-month .jira-cal-daynum {
+    color: var(--jira-text-faint);
+    font-weight: 600;
+}
+
+.jira-cal-cell.is-today .jira-cal-daynum {
+    color: var(--jira-mint);
+}
+
+.jira-cal-load {
+    background: color-mix(in srgb, var(--jira-panel) 80%, transparent);
+    border-radius: 999px;
+    color: var(--jira-text-dim);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    white-space: nowrap;
+}
+
+.jira-cal-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+    .jira-cal-cards.is-drag-over {
+        background: color-mix(in srgb, var(--jira-mint) 8%, transparent);
+        border-radius: 6px;
+        outline: 1.5px dashed var(--jira-mint);
+        outline-offset: -2px;
+    }
+
+.jira-cal-card {
+    background: var(--jira-panel);
+    border: 1px solid var(--jira-border);
+    border-left: 3px solid var(--jira-blue);
+    border-radius: 6px;
+    cursor: grab;
+    font-size: 10.5px;
+    line-height: 1.35;
+    min-width: 0;
+    overflow: hidden;
+    padding: 5px 7px;
+    text-overflow: ellipsis;
+    transition: border-color .18s ease, box-shadow .18s ease;
+    white-space: nowrap;
+}
+
+    .jira-cal-card.is-dragging {
+        opacity: .4;
+    }
+
+    .jira-cal-card.is-done {
+        background: color-mix(in srgb, var(--jira-mint) 6%, var(--jira-panel));
+        border-left-color: var(--jira-mint);
+        color: var(--jira-text-dim);
+        cursor: default;
+    }
+
+    .jira-cal-card:hover {
+        border-color: var(--jira-blue);
+        box-shadow: 0 4px 10px rgba(15, 23, 42, .10);
+    }
+
+    .jira-cal-card .jira-board-card-key {
+        font-weight: 800;
+    }
+
 .jira-board-card {
     background: var(--jira-panel);
     border: 1px solid var(--jira-border);
@@ -1925,6 +2100,17 @@ a {
         opacity: .4;
     }
 
+    /* Finished subtasks are read-only history: no grab cursor, visually receded. */
+    .jira-board-card.is-done {
+        background: color-mix(in srgb, var(--jira-mint) 6%, var(--jira-panel));
+        border-left: 3px solid var(--jira-mint);
+        cursor: default;
+    }
+
+        .jira-board-card.is-done .jira-board-card-title {
+            color: var(--jira-text-dim);
+        }
+
 .jira-board-card-top {
     align-items: center;
     display: flex;
@@ -1936,6 +2122,20 @@ a {
     color: var(--jira-text-faint);
     font-size: 11px;
 }
+
+/* Element+class beats the plain .jira-board-card-key colour above, so the
+   subtask key still reads as a link inside board and calendar cards. */
+a.jira-board-card-key {
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+    a.jira-board-card-key:hover,
+    a.jira-board-card-key:focus {
+        color: color-mix(in srgb, var(--accent) 78%, var(--jira-text) 22%);
+        text-decoration: underline;
+    }
 
 .jira-board-card-project {
     background: var(--jira-panel-alt);

@@ -55,7 +55,9 @@
         var checklistHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html";
         var focusTimerHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html";
         var quickLinksHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.QuickLinksHtml) ?? "/quick-links.html";
-        // var componentsHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ComponentsHtml) ?? "/component.html";
+        var componentsHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ComponentsHtml) ?? "/component.html";
+        var schemaCompareHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SchemaCompareHtml) ?? "/schema-compare.html";
+        var sqlProfilerHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SqlProfilerHtml) ?? "/sql-profiler.html";
         var brandHref = CurrentUser.IsJiraUser ? jiraDashboardHref : dashboardHref;
     }
     <div class="app-shell">
@@ -75,7 +77,9 @@
                     <a href="@checklistHref">@T["Nav.Checklist"]</a>
                     <a href="@focusTimerHref">@T["Nav.FocusTimer"]</a>
                     <a href="@quickLinksHref">@T["Nav.QuickLinks"]</a>
-                    @* <a href="@componentsHref">@T["Nav.Components"]</a> *@
+                    <a href="@schemaCompareHref">@T["Nav.SchemaCompare"]</a>
+                    <a href="@sqlProfilerHref">@T["Nav.SqlProfiler"]</a>
+                    <a href="@componentsHref">@T["Nav.Components"]</a>
                 </nav>
             }
             else

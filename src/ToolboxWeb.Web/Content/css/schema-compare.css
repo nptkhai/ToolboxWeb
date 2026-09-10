@@ -1,0 +1,1607 @@
+/* ============================================================================
+   Schema compare — feature stylesheet.
+
+   Every selector below is nested under .sc-page (the page root, #sc-root), so this file
+   cannot reach any other screen. Colours come from the site tokens (--surface, --text,
+   --accent, ...) so the light/dark toggle keeps working; only the states this feature needs
+   are defined locally, and they are redefined for dark mode rather than hard-coded once.
+
+   Spacing is an 8px scale (--sc-1 = 4px half-step, then 8/12/16/24/32).
+
+   Breakpoints change the LAYOUT, not just the size:
+     < 600px   phone   — object table becomes a card list, type list becomes a chip strip,
+                         one column everywhere, run bar pinned to the bottom of the screen
+     600-1023  tablet  — table returns, type list stays a chip strip, endpoints stack
+     >= 1024   desktop — type list becomes a fixed side column, endpoints sit side by side
+   ============================================================================ */
+
+.sc-page {
+    /* spacing scale */
+    --sc-1: 4px;
+    --sc-2: 8px;
+    --sc-3: 12px;
+    --sc-4: 16px;
+    --sc-6: 24px;
+    --sc-8: 32px;
+    --sc-radius: 10px;
+    --sc-radius-sm: 8px;
+    /* only in source -> will be added to the target */
+    --sc-add: #0f7a4d;
+    --sc-add-bg: rgba(15, 122, 77, .12);
+    /* present on both sides but different */
+    --sc-change: #9a6100;
+    --sc-change-bg: rgba(154, 97, 0, .12);
+    /* only in target -> will be removed */
+    --sc-del: #c02a32;
+    --sc-del-bg: rgba(192, 42, 50, .12);
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--sc-4);
+}
+
+:root[data-theme="dark"] .sc-page {
+    --sc-add: #5be3a4;
+    --sc-add-bg: rgba(91, 227, 164, .14);
+    --sc-change: #ffcc73;
+    --sc-change-bg: rgba(255, 204, 115, .14);
+    --sc-del: #ff8f8f;
+    --sc-del-bg: rgba(255, 143, 143, .14);
+}
+
+/* ---------------------------------------------------------------- primitives */
+
+.sc-page .sc-btn {
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: var(--sc-radius-sm);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: .875rem;
+    font-weight: 600;
+    gap: var(--sc-2);
+    justify-content: center;
+    line-height: 1.2;
+    min-height: 40px;
+    padding: var(--sc-2) var(--sc-4);
+    text-decoration: none;
+    transition: background .12s, border-color .12s, color .12s;
+    white-space: nowrap;
+}
+
+.sc-page .sc-btn:disabled {
+    cursor: not-allowed;
+    opacity: .55;
+}
+
+/* One primary action per screen; it is the only filled button. */
+.sc-page .sc-btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-size: .95rem;
+    min-height: 44px;
+    padding: var(--sc-3) var(--sc-6);
+}
+
+.sc-page .sc-btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 84%, #000);
+}
+
+/* In dark mode --accent is a light blue, so white text on it is barely readable;
+   the filled button flips to dark ink instead. */
+:root[data-theme="dark"] .sc-page .sc-btn-primary {
+    color: #0b1220;
+}
+
+:root[data-theme="dark"] .sc-page .sc-btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 82%, #fff);
+}
+
+:root[data-theme="dark"] .sc-page .sc-spinner {
+    border-color: rgba(11, 18, 32, .35);
+    border-top-color: #0b1220;
+}
+
+.sc-page .sc-btn-ghost {
+    background: var(--surface);
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.sc-page .sc-btn-ghost:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.sc-page .sc-btn-danger {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--sc-del) 60%, transparent);
+    color: var(--sc-del);
+}
+
+.sc-page .sc-btn-danger:hover:not(:disabled) {
+    background: var(--sc-del-bg);
+}
+
+.sc-page .sc-btn-link {
+    background: none;
+    color: var(--accent);
+    min-height: 32px;
+    padding: var(--sc-1) var(--sc-2);
+    text-decoration: underline;
+}
+
+.sc-page .sc-btn-sm {
+    font-size: .82rem;
+    min-height: 36px;
+    padding: var(--sc-1) var(--sc-3);
+}
+
+.sc-page .sc-btn-icon {
+    min-height: 36px;
+    padding: var(--sc-1);
+    width: 36px;
+}
+
+.sc-page .sc-check {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    font-size: .875rem;
+    gap: var(--sc-2);
+    line-height: 1.35;
+    margin: 0;
+    min-height: 32px;
+}
+
+.sc-page .sc-check input {
+    flex: none;
+    height: 16px;
+    margin: 0;
+    width: 16px;
+}
+
+.sc-page .sc-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sc-1);
+    min-width: 0;
+}
+
+.sc-page .form-label {
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.sc-page .form-control {
+    border-radius: var(--sc-radius-sm);
+    min-height: 40px;
+}
+
+/* Grid and flex items default to min-width:auto, so a single input at its intrinsic size can
+   push the whole page sideways on a phone. */
+.sc-page > *,
+.sc-page .sc-field-grid > *,
+.sc-page .sc-endpoints > *,
+.sc-page .sc-progress-grid > *,
+.sc-page .sc-result-layout > * {
+    min-width: 0;
+}
+
+.sc-page input,
+.sc-page textarea,
+.sc-page select {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.sc-page .sc-group-title {
+    color: var(--muted);
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.sc-page .sc-note,
+.sc-page .sc-empty {
+    color: var(--muted);
+    font-size: .84rem;
+    margin: 0;
+}
+
+/* ---------------------------------------------------------------- steps */
+
+.sc-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sc-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sc-step {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--sc-radius);
+    box-shadow: var(--shadow);
+    padding: var(--sc-4);
+}
+
+.sc-step-head {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-2) var(--sc-3);
+    margin-bottom: var(--sc-4);
+}
+
+.sc-step-no {
+    align-self: center;
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    border-radius: 50%;
+    color: var(--accent);
+    display: grid;
+    flex: none;
+    font-size: .8rem;
+    font-weight: 700;
+    height: 24px;
+    place-items: center;
+    width: 24px;
+}
+
+.sc-step-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.sc-step-hint {
+    color: var(--muted);
+    font-size: .8rem;
+}
+
+/* ---------------------------------------------------------------- endpoints */
+
+.sc-endpoints {
+    display: grid;
+    gap: var(--sc-4);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.sc-endpoint {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--sc-radius);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sc-3);
+    padding: var(--sc-4);
+}
+
+.sc-ep-head {
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-2);
+    justify-content: space-between;
+    padding-bottom: var(--sc-3);
+}
+
+.sc-ep-role {
+    align-items: center;
+    display: flex;
+    font-size: .95rem;
+    font-weight: 700;
+    gap: var(--sc-2);
+}
+
+.sc-role-dot {
+    border-radius: 50%;
+    flex: none;
+    height: 10px;
+    width: 10px;
+}
+
+.sc-endpoint[data-side="source"] .sc-role-dot {
+    background: var(--accent);
+}
+
+.sc-endpoint[data-side="target"] .sc-role-dot {
+    background: var(--accent-2);
+}
+
+.sc-ep-tag {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: .74rem;
+    font-weight: 600;
+    padding: var(--sc-1) var(--sc-3);
+}
+
+.sc-endpoint[data-side="source"] .sc-ep-tag {
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+    color: var(--accent);
+}
+
+.sc-endpoint[data-side="target"] .sc-ep-tag {
+    background: color-mix(in srgb, var(--accent-2) 14%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent-2) 34%, transparent);
+    color: var(--accent-2);
+}
+
+.sc-field-grid {
+    display: grid;
+    gap: var(--sc-3);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.sc-ep-foot {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-3);
+    justify-content: space-between;
+}
+
+/* Connection result. Carries an icon as well as a colour so it still reads without colour. */
+.sc-status {
+    border-radius: var(--sc-radius-sm);
+    font-size: .82rem;
+    line-height: 1.45;
+    margin: 0;
+    min-height: 0;
+    padding: 0;
+}
+
+.sc-status:not(:empty) {
+    padding: var(--sc-2) var(--sc-3);
+}
+
+.sc-status:not(:empty)::before {
+    font-weight: 700;
+    margin-right: var(--sc-2);
+}
+
+.sc-status.ok {
+    background: var(--sc-add-bg);
+    color: var(--sc-add);
+}
+
+.sc-status.ok::before {
+    content: "\2713";
+}
+
+.sc-status.error {
+    background: var(--sc-del-bg);
+    color: var(--sc-del);
+}
+
+.sc-status.error::before {
+    content: "\26A0";
+}
+
+/* ---------------------------------------------------------------- scope chips */
+
+.sc-scope-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-2);
+}
+
+.sc-scope-chip {
+    align-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    gap: var(--sc-2);
+    margin: 0;
+    min-height: 40px;
+    padding: var(--sc-2) var(--sc-4) var(--sc-2) var(--sc-3);
+    transition: background .12s, border-color .12s, color .12s;
+    user-select: none;
+}
+
+.sc-scope-chip:hover {
+    border-color: var(--accent);
+}
+
+/* The input stays in the DOM for the JS, but the tick is what the eye reads. */
+.sc-scope-chip input {
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 1px;
+}
+
+.sc-chip-tick {
+    align-items: center;
+    border: 1.5px solid var(--line);
+    border-radius: 5px;
+    display: inline-flex;
+    flex: none;
+    height: 18px;
+    justify-content: center;
+    width: 18px;
+}
+
+.sc-chip-tick::before {
+    color: #fff;
+    content: "\2713";
+    font-size: .7rem;
+    font-weight: 700;
+    opacity: 0;
+}
+
+.sc-chip-text {
+    font-size: .86rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.sc-scope-chip:has(input:checked) {
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.sc-scope-chip:has(input:checked) .sc-chip-tick {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.sc-scope-chip:has(input:checked) .sc-chip-tick::before {
+    opacity: 1;
+}
+
+.sc-scope-chip:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- advanced */
+
+.sc-advanced-toggle {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-top: 1px dashed var(--line);
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: .86rem;
+    font-weight: 600;
+    gap: var(--sc-2);
+    margin-top: var(--sc-4);
+    min-height: 44px;
+    padding: var(--sc-3) 0 0;
+    text-align: left;
+    width: 100%;
+}
+
+.sc-caret {
+    border-bottom: 4.5px solid transparent;
+    border-left: 6px solid currentColor;
+    border-top: 4.5px solid transparent;
+    flex: none;
+    height: 0;
+    transition: transform .18s;
+    width: 0;
+}
+
+.sc-advanced-toggle[aria-expanded="true"] .sc-caret {
+    transform: rotate(90deg);
+}
+
+.sc-advanced {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sc-6);
+    margin-top: var(--sc-4);
+}
+
+.sc-advanced-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sc-3);
+}
+
+.sc-group-head {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-3);
+    justify-content: space-between;
+}
+
+.sc-check-grid {
+    display: grid;
+    gap: var(--sc-2) var(--sc-4);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* ---------------------------------------------------------------- name mapping */
+
+.sc-mapping {
+    border-top: 1px solid var(--line);
+    padding-top: var(--sc-4);
+}
+
+.sc-map-row {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-3);
+}
+
+.sc-code-input {
+    font-family: Consolas, "Cascadia Mono", monospace;
+    text-transform: uppercase;
+}
+
+.sc-map-arrow {
+    color: var(--muted);
+    padding-bottom: 10px;
+}
+
+.sc-field-code {
+    width: 200px;
+}
+
+.sc-mapping-input {
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: .82rem;
+    min-height: 72px;
+}
+
+/* Guidance stays on screen rather than folding away: these two boxes are what tells the
+   reader that a code swap only touches database-name positions, which is the whole safety
+   story of this feature. Dashed border marks them as explanation, not input. */
+.sc-hint-box {
+    background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+    border: 1px dashed color-mix(in srgb, var(--accent) 38%, transparent);
+    border-radius: var(--sc-radius-sm);
+    color: var(--muted);
+    font-size: .82rem;
+    line-height: 1.65;
+    margin: 0;
+    overflow-wrap: anywhere;
+    padding: var(--sc-3) var(--sc-3) var(--sc-3) var(--sc-8);
+    position: relative;
+}
+
+.sc-hint-box::before {
+    content: "💡";
+    font-size: .9rem;
+    line-height: 1.5;
+    left: var(--sc-3);
+    position: absolute;
+    top: var(--sc-3);
+}
+
+.sc-hint-box strong {
+    color: var(--text);
+}
+
+/* Database names inside the guidance read as code, not prose. */
+.sc-hint-box code,
+.sc-code-token {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: .78rem;
+    padding: 1px 6px;
+    white-space: nowrap;
+}
+
+.sc-code-token.to {
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+    color: var(--accent);
+}
+
+.sc-code-pair {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sc-1);
+    margin-right: var(--sc-2);
+    white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- run bar */
+
+.sc-run-bar {
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--sc-radius);
+    bottom: var(--sc-3);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-3);
+    padding: var(--sc-3) var(--sc-4);
+    position: sticky;
+    z-index: 4;
+}
+
+.sc-run-spacer {
+    flex: 1;
+}
+
+.sc-clock {
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.sc-run-status {
+    font-size: .84rem;
+}
+
+.sc-run-status.ok {
+    color: var(--sc-add);
+}
+
+.sc-run-status.error {
+    color: var(--sc-del);
+}
+
+/* Shown only while a comparison is in flight — the loading state of this screen. */
+.sc-spinner {
+    animation: sc-spin .9s linear infinite;
+    border: 2px solid rgba(255, 255, 255, .45);
+    border-radius: 50%;
+    border-top-color: #fff;
+    display: none;
+    flex: none;
+    height: 14px;
+    width: 14px;
+}
+
+.sc-run-btn:disabled .sc-spinner {
+    display: block;
+}
+
+@keyframes sc-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.sc-quick-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-2) var(--sc-4);
+    font-size: .82rem;
+}
+
+.qs-item {
+    align-items: baseline;
+    display: inline-flex;
+    gap: var(--sc-1);
+}
+
+.qs-label {
+    color: var(--muted);
+}
+
+.sc-quick-summary b {
+    font-variant-numeric: tabular-nums;
+}
+
+.qs-add b {
+    color: var(--sc-add);
+}
+
+.qs-change b {
+    color: var(--sc-change);
+}
+
+.qs-del b {
+    color: var(--sc-del);
+}
+
+/* ---------------------------------------------------------------- results shell */
+
+.sc-results {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--sc-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.sc-page .sc-tabs {
+    border-bottom: 1px solid var(--line);
+    flex-wrap: nowrap;
+    gap: var(--sc-1);
+    overflow-x: auto;
+    padding: var(--sc-2) var(--sc-3) 0;
+    scrollbar-width: thin;
+}
+
+.sc-page .sc-tabs .nav-link {
+    border: 0;
+    border-bottom: 2.5px solid transparent;
+    border-radius: 0;
+    color: var(--muted);
+    font-size: .9rem;
+    font-weight: 600;
+    min-height: 44px;
+    padding: var(--sc-2) var(--sc-4);
+    white-space: nowrap;
+}
+
+.sc-page .sc-tabs .nav-link.active {
+    background: none;
+    border-bottom-color: var(--accent);
+    color: var(--accent);
+}
+
+.sc-page .tab-content {
+    padding: var(--sc-4);
+}
+
+/* ---------------------------------------------------------------- progress */
+
+.sc-progress-grid {
+    display: grid;
+    gap: var(--sc-4);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.sc-progress-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sc-2);
+    min-width: 0;
+}
+
+/* Wide content scrolls inside its own frame instead of widening the page. */
+.sc-table-scroll {
+    border: 1px solid var(--line);
+    border-radius: var(--sc-radius-sm);
+    max-height: 420px;
+    overflow: auto;
+}
+
+.sc-progress-table {
+    border-collapse: collapse;
+    font-size: .8rem;
+    min-width: 420px;
+    width: 100%;
+}
+
+.sc-progress-table th {
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    padding: var(--sc-2) var(--sc-3);
+    position: sticky;
+    text-align: center;
+    text-transform: uppercase;
+    top: 0;
+    z-index: 1;
+}
+
+.sc-progress-table td {
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+    padding: var(--sc-2) var(--sc-3);
+}
+
+.sc-progress-table .sc-col-time {
+    width: 104px;
+}
+
+.sc-progress-table .sc-col-state {
+    width: 116px;
+}
+
+.sc-progress-table td.time,
+.sc-progress-table td.state {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.sc-progress-table td.time {
+    color: var(--muted);
+    font-family: Consolas, "Cascadia Mono", monospace;
+}
+
+/* Status carries a mark as well as a colour. */
+.sc-progress-table td.state {
+    font-weight: 600;
+}
+
+.sc-progress-table td.state::before {
+    margin-right: var(--sc-1);
+}
+
+.sc-progress-table td.state.Completed {
+    color: var(--sc-add);
+}
+
+.sc-progress-table td.state.Completed::before {
+    content: "\2713";
+}
+
+.sc-progress-table td.state.Running {
+    color: var(--accent);
+}
+
+.sc-progress-table td.state.Running::before {
+    content: "\25CF";
+}
+
+.sc-progress-table td.state.Failed {
+    color: var(--sc-del);
+}
+
+.sc-progress-table td.state.Failed::before {
+    content: "\26A0";
+}
+
+/* ---------------------------------------------------------------- result layout */
+
+.sc-result-layout {
+    display: grid;
+    gap: var(--sc-4);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.sc-type-panel {
+    display: none;
+}
+
+.sc-result-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sc-3);
+    min-width: 0;
+}
+
+/* Type filter as a horizontal strip; becomes the side column on desktop. */
+.sc-type-strip {
+    display: flex;
+    gap: var(--sc-2);
+    overflow-x: auto;
+    padding-bottom: var(--sc-1);
+    scrollbar-width: thin;
+}
+
+.sc-type-chip {
+    align-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex;
+    flex: none;
+    font-size: .84rem;
+    font-weight: 600;
+    gap: var(--sc-2);
+    min-height: 40px;
+    padding: var(--sc-2) var(--sc-3);
+}
+
+.sc-type-chip .count {
+    background: var(--surface);
+    border-radius: 999px;
+    font-size: .74rem;
+    font-weight: 700;
+    padding: 1px 7px;
+}
+
+.sc-type-chip.active {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.sc-type-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sc-type-list li {
+    align-items: center;
+    border-radius: var(--sc-radius-sm);
+    cursor: pointer;
+    display: flex;
+    font-size: .86rem;
+    gap: var(--sc-2);
+    justify-content: space-between;
+    min-height: 40px;
+    padding: var(--sc-2) var(--sc-3);
+}
+
+.sc-type-list li:hover {
+    background: var(--surface-2);
+}
+
+.sc-type-list li.active {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.sc-type-list li .count {
+    background: var(--surface-2);
+    border-radius: 999px;
+    flex: none;
+    font-size: .74rem;
+    font-weight: 700;
+    padding: 1px 8px;
+}
+
+.sc-type-list li.active .count {
+    background: color-mix(in srgb, var(--accent) 24%, var(--surface));
+}
+
+/* ---------------------------------------------------------------- toolbar & filters */
+
+.sc-grid-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-3);
+}
+
+.sc-search-wrap {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.sc-search {
+    width: 100%;
+}
+
+.sc-bulk {
+    display: flex;
+    gap: var(--sc-2);
+}
+
+.sc-filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-2);
+}
+
+.sc-filter {
+    align-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: .82rem;
+    font-weight: 600;
+    gap: var(--sc-2);
+    min-height: 40px;
+    padding: var(--sc-2) var(--sc-3);
+}
+
+.sc-filter-mark {
+    font-weight: 700;
+}
+
+.sc-filter-count {
+    background: var(--surface);
+    border-radius: 999px;
+    font-size: .74rem;
+    font-weight: 700;
+    padding: 1px 7px;
+}
+
+.sc-filter[data-filter="Add"] {
+    color: var(--sc-add);
+}
+
+.sc-filter[data-filter="Change"] {
+    color: var(--sc-change);
+}
+
+.sc-filter[data-filter="Delete"] {
+    color: var(--sc-del);
+}
+
+.sc-filter.active {
+    border-color: currentColor;
+    box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.sc-filter[data-filter="all"].active {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent);
+}
+
+.sc-mapped-note {
+    align-items: center;
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+    border-radius: var(--sc-radius-sm);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: .82rem;
+    gap: var(--sc-2);
+    padding: var(--sc-2) var(--sc-3);
+}
+
+/* ---------------------------------------------------------------- object table */
+
+.sc-grid {
+    border: 1px solid var(--line);
+    border-radius: var(--sc-radius-sm);
+    overflow: hidden;
+}
+
+/* Roomier rows and a header tall enough for the full column name — the old 26px header cut
+   "Loại đối tượng" down to "Loại đối t...". */
+.sc-page .tabulator {
+    background: var(--surface);
+    border: 0;
+    font-size: .84rem;
+}
+
+.sc-page .tabulator .tabulator-header {
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.sc-page .tabulator .tabulator-header .tabulator-col {
+    background: transparent;
+    border-right: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+
+.sc-page .tabulator .tabulator-col-title {
+    font-size: .76rem;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    white-space: normal;
+}
+
+.sc-page .tabulator .tabulator-row {
+    background: var(--surface);
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+    color: var(--text);
+}
+
+.sc-page .tabulator .tabulator-row:hover {
+    background: var(--surface-2);
+}
+
+.sc-page .tabulator .tabulator-cell {
+    border-right: 1px solid color-mix(in srgb, var(--line) 40%, transparent);
+    padding: var(--sc-2) var(--sc-3);
+}
+
+.sc-page .tabulator .tabulator-row.sc-selected-row,
+.sc-page .tabulator .tabulator-row.sc-selected-row:hover {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+
+.sc-page .tabulator .tabulator-placeholder {
+    color: var(--muted);
+    font-size: .88rem;
+}
+
+.sc-row-check,
+.sc-header-check {
+    height: 17px;
+    width: 17px;
+}
+
+/* Status pill: mark plus text, so it does not depend on colour alone. */
+.sc-status-symbol {
+    align-items: center;
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: .76rem;
+    font-weight: 700;
+    gap: var(--sc-1);
+    justify-content: center;
+    line-height: 1.2;
+    padding: 3px 9px;
+    white-space: nowrap;
+}
+
+.sc-status-symbol.Add {
+    background: var(--sc-add-bg);
+    color: var(--sc-add);
+}
+
+.sc-status-symbol.Change {
+    background: var(--sc-change-bg);
+    color: var(--sc-change);
+}
+
+.sc-status-symbol.Delete {
+    background: var(--sc-del-bg);
+    color: var(--sc-del);
+}
+
+/* ---------------------------------------------------------------- card list (phone) */
+
+.sc-card-list {
+    display: none;
+    flex-direction: column;
+    gap: var(--sc-2);
+}
+
+.sc-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--sc-radius-sm);
+    display: flex;
+    gap: var(--sc-3);
+    padding: var(--sc-3);
+    text-align: left;
+    width: 100%;
+}
+
+.sc-card.sc-selected-row {
+    border-color: var(--accent);
+}
+
+.sc-card-check {
+    align-items: center;
+    display: flex;
+    flex: none;
+    min-height: 44px;
+    min-width: 24px;
+}
+
+.sc-card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--sc-1);
+    min-width: 0;
+}
+
+.sc-card-name {
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: .84rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.sc-card-name.dim {
+    color: var(--muted);
+    font-style: italic;
+}
+
+.sc-card-meta {
+    align-items: center;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: .76rem;
+    gap: var(--sc-2);
+}
+
+.sc-card-open {
+    align-self: flex-start;
+    background: none;
+    border: 0;
+    color: var(--accent);
+    cursor: pointer;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 600;
+    min-height: 36px;
+    padding: 0;
+    text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------- detail */
+
+.sc-detail {
+    border: 1px solid var(--line);
+    border-radius: var(--sc-radius-sm);
+    overflow: hidden;
+}
+
+.sc-detail-header {
+    align-items: center;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-2);
+    padding: var(--sc-2) var(--sc-3);
+}
+
+.sc-detail-header .spacer {
+    flex: 1;
+}
+
+[data-role="detail-title"] {
+    overflow-wrap: anywhere;
+}
+
+.sc-detail-summary {
+    color: var(--muted);
+    font-size: .8rem;
+}
+
+.sc-detail-toggle {
+    font-size: .8rem;
+}
+
+.sc-detail-body {
+    max-height: 62vh;
+    overflow: auto;
+    padding: var(--sc-3);
+    resize: vertical;
+}
+
+.sc-detail.expanded .sc-detail-body {
+    max-height: 82vh;
+}
+
+/* .sc-page .sc-btn sets display:inline-flex, so this needs the same specificity to win. */
+.sc-page .sc-detail-back {
+    display: none;
+}
+
+/* ---------------------------------------------------------------- diff table */
+
+.sc-diff-table {
+    border-collapse: collapse;
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: .78rem;
+    table-layout: fixed;
+    width: 100%;
+}
+
+.sc-diff-table th {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    padding: var(--sc-1) var(--sc-2);
+    position: sticky;
+    text-align: center;
+    top: 0;
+    z-index: 1;
+}
+
+.sc-diff-table td {
+    border: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+    padding: 2px var(--sc-2);
+    vertical-align: top;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.sc-diff-table col.num {
+    width: 48px;
+}
+
+.sc-diff-table td.num {
+    color: var(--muted);
+    text-align: right;
+    user-select: none;
+}
+
+.sc-diff-table tr.Changed td.src,
+.sc-diff-table tr.Changed td.dst {
+    background: var(--sc-change-bg);
+    box-shadow: inset 3px 0 0 var(--sc-change);
+}
+
+.sc-diff-table tr.OnlyInSource td.src {
+    background: var(--sc-add-bg);
+    box-shadow: inset 3px 0 0 var(--sc-add);
+}
+
+.sc-diff-table tr.OnlyInTarget td.dst {
+    background: var(--sc-del-bg);
+    box-shadow: inset 3px 0 0 var(--sc-del);
+}
+
+.sc-diff-table tr.OnlyInSource td.dst,
+.sc-diff-table tr.OnlyInTarget td.src {
+    background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(127, 127, 127, .08) 5px, rgba(127, 127, 127, .08) 10px);
+}
+
+.sc-diff-table tr.sc-fold td {
+    background: var(--surface-2);
+    color: var(--muted);
+    cursor: pointer;
+    text-align: center;
+}
+
+.sc-diff-table tr.sc-fold td:hover {
+    color: var(--accent);
+}
+
+/* ---------------------------------------------------------------- script */
+
+.sc-script-bar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sc-2);
+    margin-bottom: var(--sc-3);
+}
+
+.sc-script-warn {
+    background: var(--sc-del-bg);
+    border: 1px solid color-mix(in srgb, var(--sc-del) 40%, transparent);
+    border-radius: var(--sc-radius-sm);
+    color: var(--sc-del);
+    font-size: .84rem;
+    margin-bottom: var(--sc-3);
+    padding: var(--sc-3);
+}
+
+.sc-script-warn ul {
+    margin: var(--sc-1) 0 0;
+    padding-left: var(--sc-6);
+}
+
+.sc-script-warn li {
+    margin-top: 3px;
+}
+
+.sc-script {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--sc-radius-sm);
+    color: var(--text);
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: .8rem;
+    min-height: 420px;
+    padding: var(--sc-3);
+    white-space: pre;
+    width: 100%;
+}
+
+/* ============================================================================
+   TABLET — from 600px: the object table is readable again, endpoints still stack.
+   ============================================================================ */
+
+@media (min-width: 600px) {
+    .sc-page {
+        gap: var(--sc-6);
+    }
+
+    .sc-step {
+        padding: var(--sc-6);
+    }
+
+    .sc-field-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sc-check-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sc-page .tab-content {
+        padding: var(--sc-6);
+    }
+}
+
+/* ============================================================================
+   DESKTOP — from 1024px: endpoints side by side, type list becomes a side column,
+   progress logs sit next to each other.
+   ============================================================================ */
+
+@media (min-width: 1024px) {
+    .sc-endpoints {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sc-check-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .sc-progress-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sc-result-layout {
+        grid-template-columns: 232px minmax(0, 1fr);
+    }
+
+    .sc-type-panel {
+        /* Without this the panel stretches to the full height of the grid plus the detail
+           pane beside it, leaving a tall empty column under seven short rows. */
+        align-self: start;
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-2);
+        max-height: 52vh;
+        overflow-y: auto;
+        padding-right: var(--sc-4);
+        position: sticky;
+        top: var(--sc-3);
+    }
+
+    /* The strip and the column are the same filter; only one is on screen at a time. */
+    .sc-type-strip {
+        display: none;
+    }
+}
+
+/* ============================================================================
+   WIDE — from 1600px the page keeps filling the window (no max-width), so the extra
+   room goes into more columns rather than into wider text fields.
+   ============================================================================ */
+
+@media (min-width: 1600px) {
+    .sc-check-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .sc-result-layout {
+        grid-template-columns: 280px minmax(0, 1fr);
+    }
+
+    /* A server name or a mapping line is never 1600px long; capping the inputs keeps
+       the label and its value close enough to read as a pair. */
+    .sc-endpoint .form-control,
+    .sc-mapping-input {
+        max-width: 720px;
+    }
+}
+
+/* ============================================================================
+   PHONE — below 600px: the object table becomes a card list, and the run bar is pinned
+   to the bottom of the screen because it is the action people come back to.
+   ============================================================================ */
+
+@media (max-width: 599.98px) {
+    .sc-grid {
+        display: none;
+    }
+
+    .sc-card-list {
+        display: flex;
+    }
+
+    .sc-map-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .sc-field-code {
+        width: 100%;
+    }
+
+    .sc-map-arrow {
+        display: none;
+    }
+
+    .sc-code-token,
+    .sc-code-pair {
+        white-space: normal;
+    }
+
+    .sc-code-token {
+        overflow-wrap: anywhere;
+    }
+
+    .sc-run-bar {
+        border-radius: var(--sc-radius) var(--sc-radius) 0 0;
+        bottom: 0;
+        left: 0;
+        margin: 0 calc(-1 * var(--sc-3));
+        padding: var(--sc-3);
+        position: sticky;
+    }
+
+    .sc-run-spacer {
+        display: none;
+    }
+
+    /* Four status filters stacked would push the list off the first screen, so they
+       scroll sideways in their own strip, like the type chips above them. */
+    .sc-filter-buttons {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: var(--sc-1);
+        scrollbar-width: thin;
+    }
+
+    .sc-filter {
+        flex: none;
+    }
+
+    .sc-run-btn {
+        flex: 1 1 100%;
+    }
+
+    .sc-quick-summary {
+        order: -1;
+        width: 100%;
+    }
+
+    /* Picking an object and reading its diff are two steps on a phone, not one screen. */
+    .sc-result-main.sc-showing-detail .sc-card-list,
+    .sc-result-main.sc-showing-detail .sc-grid-toolbar,
+    .sc-result-main.sc-showing-detail .sc-filter-buttons,
+    .sc-result-main.sc-showing-detail .sc-type-strip,
+    .sc-result-main.sc-showing-detail .sc-mapped-note {
+        display: none;
+    }
+
+    .sc-page .sc-result-main.sc-showing-detail .sc-detail-back {
+        display: inline-flex;
+    }
+
+    .sc-detail-body {
+        max-height: none;
+    }
+
+    .sc-diff-table {
+        font-size: .72rem;
+    }
+}
+
+/* Touch devices: nothing people tap may be smaller than about 44px. */
+@media (pointer: coarse) {
+    .sc-page .sc-btn,
+    .sc-scope-chip,
+    .sc-filter,
+    .sc-type-chip,
+    .sc-type-list li,
+    .sc-help > summary {
+        min-height: 44px;
+    }
+
+    .sc-page .sc-btn-icon {
+        width: 44px;
+    }
+
+    .sc-page .sc-check,
+    .sc-card-open {
+        min-height: 44px;
+    }
+
+    .sc-page .sc-check input,
+    .sc-row-check,
+    .sc-header-check {
+        height: 20px;
+        width: 20px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sc-page *,
+    .sc-page *::before {
+        animation-duration: .001ms !important;
+        transition: none !important;
+    }
+}

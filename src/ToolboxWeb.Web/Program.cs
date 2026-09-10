@@ -11,8 +11,15 @@ using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Data;
 using ToolboxWeb.Web.Domain;
 using ToolboxWeb.Web.Extensions;
+using ToolboxWeb.Web.Infrastructure.DacFx;
+using ToolboxWeb.Web.Infrastructure.Logging;
 using ToolboxWeb.Web.Localization;
 using ToolboxWeb.Web.ViewModels.Jira;
+
+if (await DacFxExtractWorker.TryRunAsync(args))
+{
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -21,6 +28,10 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 });
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+
+// Under IIS Express there is no console to read, so anything worth diagnosing after the fact
+// has to reach a file. See Logging:File in appsettings.json.
+builder.Logging.AddFile(builder.Configuration, builder.Environment.ContentRootPath);
 
 var supportedCultures = new[]
 {

@@ -1,0 +1,243 @@
+/* SQL profiler page: capture stored procedure activity while using another app. */
+
+.sp-page {
+    display: grid;
+    gap: 18px;
+}
+
+.sp-conn-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.sp-status {
+    font-size: .84rem;
+    margin-top: 10px;
+    min-height: 1.2em;
+}
+
+    .sp-status.ok {
+        color: var(--success, #15803d);
+    }
+
+    .sp-status.error {
+        color: var(--danger);
+    }
+
+.sp-howto {
+    margin: 14px 0 12px;
+}
+
+.sp-toolbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+    .sp-toolbar .spacer {
+        flex: 1 1 auto;
+    }
+
+.sp-minutes {
+    max-width: 100px;
+}
+
+.sp-clock {
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+.sp-live {
+    align-items: center;
+    color: var(--danger);
+    display: inline-flex;
+    font-weight: 700;
+    gap: 6px;
+}
+
+    .sp-live::before {
+        animation: sp-pulse 1.2s ease-in-out infinite;
+        background: var(--danger);
+        border-radius: 50%;
+        content: "";
+        height: 9px;
+        width: 9px;
+    }
+
+@keyframes sp-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sp-live::before {
+        animation: none;
+    }
+}
+
+.sp-filters {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    margin-bottom: 12px;
+}
+
+    .sp-filters .form-label {
+        font-size: .78rem;
+        margin-bottom: 2px;
+    }
+
+.sp-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin-bottom: 14px;
+}
+
+.sp-summary {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+}
+
+    .sp-summary span strong {
+        font-size: 1.05rem;
+    }
+
+.sp-warning {
+    background: rgba(217, 119, 6, .12);
+    border: 1px solid rgba(217, 119, 6, .4);
+    border-radius: 8px;
+    color: #b45309;
+    margin-bottom: 12px;
+    padding: 8px 14px;
+}
+
+.sp-grid {
+    min-height: 240px;
+}
+
+/* Rows shade by how long the call took, so a slow one is visible without reading numbers. */
+.tabulator-row.sp-warn {
+    background: rgba(217, 119, 6, .14) !important;
+}
+
+.tabulator-row.sp-danger {
+    background: rgba(190, 18, 60, .14) !important;
+}
+
+.tabulator-row.sp-failed {
+    background: rgba(190, 18, 60, .26) !important;
+    font-weight: 700;
+}
+
+.sp-kind {
+    border-radius: 999px;
+    font-size: .74rem;
+    font-weight: 700;
+    padding: 2px 9px;
+}
+
+    .sp-kind.Procedure { background: rgba(37, 99, 235, .14); color: #1d4ed8; }
+    .sp-kind.Trigger   { background: rgba(147, 51, 234, .14); color: #7e22ce; }
+    .sp-kind.Function  { background: rgba(15, 118, 110, .14); color: #0f766e; }
+    .sp-kind.Error     { background: rgba(190, 18, 60, .18); color: #be123c; }
+
+/* ------------------------------------------------------------------ detail */
+
+.sp-detail {
+    border-top: 1px solid var(--line);
+    margin-top: 16px;
+    padding-top: 14px;
+}
+
+.sp-detail-header {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+    .sp-detail-header .spacer {
+        flex: 1 1 auto;
+    }
+
+.sp-detail-body {
+    max-height: 380px;
+    overflow: auto;
+}
+
+.sp-exec {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: .82rem;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.sp-param-table {
+    border-collapse: collapse;
+    font-size: .84rem;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+    .sp-param-table th {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        padding: 6px 9px;
+        text-align: center;
+    }
+
+    .sp-param-table td {
+        border: 1px solid var(--line);
+        padding: 5px 9px;
+        vertical-align: top;
+        word-break: break-word;
+    }
+
+        .sp-param-table td.name,
+        .sp-param-table td.value {
+            font-family: Consolas, "Cascadia Mono", monospace;
+            text-align: left;
+        }
+
+        .sp-param-table td.kind {
+            text-align: center;
+        }
+
+.sp-definition {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: .8rem;
+    max-height: 260px;
+    overflow: auto;
+    padding: 10px 12px;
+    white-space: pre;
+}
+
+.sp-error-box {
+    background: rgba(190, 18, 60, .1);
+    border: 1px solid rgba(190, 18, 60, .35);
+    border-radius: 8px;
+    color: #be123c;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+}

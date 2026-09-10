@@ -14,6 +14,7 @@
     const buttons = Array.from(form.querySelectorAll("[data-period]"));
     const inputWraps = Array.from(form.querySelectorAll("[data-period-input]"));
     const navButtons = Array.from(form.querySelectorAll("[data-nav-step]"));
+    const jumpTodayButton = form.querySelector("[data-jira-jump-today]");
     const searchButton = form.querySelector(".jira-dashboard-search");
     const rangeLabelEl = form.querySelector("[data-jira-range-label]");
     const statsHost = document.querySelector("[data-jira-stats]");
@@ -799,6 +800,11 @@
                 shiftReferenceDate(periodTypeInput?.value || "week", steps);
             }
         });
+    });
+
+    jumpTodayButton?.addEventListener("click", () => {
+        applyReferenceDate(new Date());
+        performSearch();
     });
 
     buttons.forEach((button) => {

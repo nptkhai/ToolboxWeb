@@ -8,5 +8,7 @@ public enum ActivityEntityType
     QuickLink = 4,
     PromptTemplate = 5,
     TabulatorTask = 6,
-    UserProfile = 7
+    UserProfile = 7,
+    SchemaCompare = 8,
+    SqlProfiler = 9
 }

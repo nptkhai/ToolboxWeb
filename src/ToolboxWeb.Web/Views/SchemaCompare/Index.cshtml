@@ -1,0 +1,452 @@
+@using System.Text.Json
+@using ToolboxWeb.Web.ViewModels.SchemaCompare
+@model SchemaComparePageViewModel
+@{
+    ViewData["Title"] = T["SchemaCompare.Title"];
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+    // Dictionary keys are not touched by PropertyNamingPolicy, so these stay PascalCase and
+    // match the values the API returns.
+    var actionLabels = new Dictionary<string, string>
+    {
+        ["Add"] = T["SchemaCompare.Change.OnlyInSource"].Value,
+        ["Change"] = T["SchemaCompare.Change.Different"].Value,
+        ["Delete"] = T["SchemaCompare.Change.OnlyInTarget"].Value
+    };
+    var lineStateLabels = new Dictionary<string, string>
+    {
+        ["Same"] = T["SchemaCompare.Line.Same"].Value,
+        ["Changed"] = T["SchemaCompare.Line.Changed"].Value,
+        ["OnlyInSource"] = T["SchemaCompare.Line.OnlyInSource"].Value,
+        ["OnlyInTarget"] = T["SchemaCompare.Line.OnlyInTarget"].Value
+    };
+
+    var configJson = JsonSerializer.Serialize(new
+    {
+        urls = new
+        {
+            testConnection = Url.Action("TestConnection", "SchemaCompare"),
+            start = Url.Action("StartCompare", "SchemaCompare"),
+            progress = Url.Action("Progress", "SchemaCompare"),
+            toggle = Url.Action("ToggleInclude", "SchemaCompare"),
+            detail = Url.Action("DiffDetail", "SchemaCompare"),
+            script = Url.Action("GenerateScript", "SchemaCompare"),
+            download = Url.Action("DownloadScript", "SchemaCompare"),
+            cancel = Url.Action("CancelCompare", "SchemaCompare")
+        },
+        actions = actionLabels,
+        lineStates = lineStateLabels,
+        columns = new
+        {
+            sourceName = T["SchemaCompare.Grid.SourceName"].Value,
+            status = T["SchemaCompare.Grid.Status"].Value,
+            targetName = T["SchemaCompare.Grid.TargetName"].Value,
+            objectType = T["SchemaCompare.Grid.ObjectType"].Value,
+            changes = T["SchemaCompare.Grid.ChangeCount"].Value
+        },
+        messages = new
+        {
+            testing = T["SchemaCompare.Message.Testing"].Value,
+            connected = T["SchemaCompare.Message.Connected"].Value,
+            comparing = T["SchemaCompare.Message.Comparing"].Value,
+            genericError = T["SchemaCompare.Error.CompareFailed"].Value,
+            networkError = T["SchemaCompare.Error.Network"].Value,
+            bothSidesRequired = T["SchemaCompare.Message.BothSidesRequired"].Value,
+            gridEmpty = T["SchemaCompare.Message.GridEmpty"].Value,
+            noDifferences = T["SchemaCompare.Message.NoDifferences"].Value,
+            detailHint = T["SchemaCompare.Message.DetailHint"].Value,
+            detailEmpty = T["SchemaCompare.Message.DetailEmpty"].Value,
+            copied = T["SchemaCompare.Message.Copied"].Value,
+            copyFailed = T["SchemaCompare.Message.CopyFailed"].Value,
+            summary = T["SchemaCompare.Message.Summary"].Value,
+            blocked = T["SchemaCompare.Message.Blocked"].Value,
+            destructiveDefault = T["SchemaCompare.Message.DestructiveDefault"].Value,
+            scriptSelection = T["SchemaCompare.Message.ScriptSelection"].Value,
+            scriptEmpty = T["SchemaCompare.Message.ScriptEmpty"].Value,
+            allTypes = T["SchemaCompare.Result.AllTypes"].Value,
+            elapsed = T["SchemaCompare.Message.Elapsed"].Value,
+            mappedSame = T["SchemaCompare.Message.MappedSame"].Value,
+            showMapped = T["SchemaCompare.Action.ShowMapped"].Value,
+            hideMapped = T["SchemaCompare.Action.HideMapped"].Value,
+            collapsedLines = T["SchemaCompare.Detail.CollapsedLines"].Value,
+            expand = T["SchemaCompare.Detail.Expand"].Value,
+            collapse = T["SchemaCompare.Detail.Collapse"].Value,
+            mappingAutoFilled = T["SchemaCompare.Mapping.AutoFilled"].Value,
+            mappingAutoFailed = T["SchemaCompare.Mapping.AutoFailed"].Value,
+            cancelling = T["SchemaCompare.Message.Cancelling"].Value,
+            showDetail = T["SchemaCompare.Result.ShowDetail"].Value,
+            mappingCodeTitle = T["SchemaCompare.Mapping.CodeHelpTitle"].Value,
+            mappingCodeSuffix = T["SchemaCompare.Mapping.CodeHelpSuffix"].Value,
+            mappingCodeEmpty = T["SchemaCompare.Mapping.CodeHelpEmpty"].Value,
+            toggleWorking = T["SchemaCompare.Message.ToggleWorking"].Value,
+            toggleDone = T["SchemaCompare.Message.ToggleDone"].Value
+        },
+        stats = new
+        {
+            total = T["SchemaCompare.Stats.Total"].Value,
+            onlyInSource = T["SchemaCompare.Stats.OnlyInSource"].Value,
+            different = T["SchemaCompare.Stats.Different"].Value,
+            onlyInTarget = T["SchemaCompare.Stats.OnlyInTarget"].Value
+        }
+    }, jsonOptions);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/tabulator/css/tabulator.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/schema-compare.css" asp-append-version="true" />
+}
+
+<div class="sc-page" id="sc-root">
+    @Html.AntiForgeryToken()
+
+    @*
+        Step 1 — connections. Two mirrored cards so the eye can compare field by field, with
+        the role and its consequence stated in the header rather than in a paragraph above.
+    *@
+    <ol class="sc-steps">
+        <li class="sc-step" data-step="1">
+            <div class="sc-step-head">
+                <span class="sc-step-no" aria-hidden="true">1</span>
+                <h2 class="sc-step-title">@T["SchemaCompare.Step.Connections"]</h2>
+            </div>
+
+            <div class="sc-endpoints">
+                @foreach (var side in new[]
+                {
+                    new { Key = "source", Title = T["SchemaCompare.Source"].Value, Hint = T["SchemaCompare.SourceHint"].Value },
+                    new { Key = "target", Title = T["SchemaCompare.Target"].Value, Hint = T["SchemaCompare.TargetHint"].Value }
+                })
+                {
+                    <section class="sc-endpoint" data-side="@side.Key">
+                        <header class="sc-ep-head">
+                            <span class="sc-ep-role">
+                                <span class="sc-role-dot" aria-hidden="true"></span>
+                                @side.Title
+                            </span>
+                            <span class="sc-ep-tag">@side.Hint</span>
+                        </header>
+
+                        <div class="sc-field-grid">
+                            <div class="sc-field">
+                                <label class="form-label" for="@(side.Key)-server">@T["SchemaCompare.Field.Server"]</label>
+                                <input class="form-control" id="@(side.Key)-server" data-field="server" autocomplete="off"
+                                       placeholder="@T["SchemaCompare.Field.ServerPlaceholder"]" />
+                            </div>
+                            <div class="sc-field">
+                                <label class="form-label" for="@(side.Key)-database">@T["SchemaCompare.Field.Database"]</label>
+                                <input id="@(side.Key)-database" data-field="database" />
+                            </div>
+                            <div class="sc-field">
+                                <label class="form-label" for="@(side.Key)-username">@T["SchemaCompare.Field.Username"]</label>
+                                <input class="form-control" id="@(side.Key)-username" data-field="username" autocomplete="off" />
+                            </div>
+                            <div class="sc-field">
+                                <label class="form-label" for="@(side.Key)-password">@T["SchemaCompare.Field.Password"]</label>
+                                <input class="form-control" id="@(side.Key)-password" data-field="password" type="password" autocomplete="new-password" />
+                            </div>
+                        </div>
+
+                        <div class="sc-ep-foot">
+                            <label class="sc-check" for="@(side.Key)-trust">
+                                <input class="form-check-input" id="@(side.Key)-trust" data-field="trustServerCertificate" type="checkbox" checked />
+                                <span>@T["SchemaCompare.Field.TrustServerCertificate"]</span>
+                            </label>
+                            <button class="sc-btn sc-btn-ghost" type="button" data-action="test">
+                                @T["SchemaCompare.Action.TestConnection"]
+                            </button>
+                        </div>
+
+                        <p class="sc-status" data-role="status" role="status" aria-live="polite"></p>
+                    </section>
+                }
+            </div>
+        </li>
+
+        @*
+            Step 2 — what to compare. Scope is the only thing most runs touch, so it stays
+            open; noise reduction and name mapping are collapsed because they are set once and
+            then left alone.
+        *@
+        <li class="sc-step" data-step="2">
+            <div class="sc-step-head">
+                <span class="sc-step-no" aria-hidden="true">2</span>
+                <h2 class="sc-step-title">@T["SchemaCompare.Options.Title"]</h2>
+                <span class="sc-step-hint">@T["SchemaCompare.Options.ScopeHint"]</span>
+            </div>
+
+            <div class="sc-scope-chips" role="group" aria-label="@T["SchemaCompare.Options.Scope"]">
+                @foreach (var scope in new[]
+                {
+                    new { Key = "tables", Label = T["SchemaCompare.Scope.Tables"].Value, Checked = true },
+                    new { Key = "views", Label = T["SchemaCompare.Scope.Views"].Value, Checked = true },
+                    new { Key = "storedProcedures", Label = T["SchemaCompare.Scope.StoredProcedures"].Value, Checked = true },
+                    new { Key = "functions", Label = T["SchemaCompare.Scope.Functions"].Value, Checked = true },
+                    new { Key = "triggers", Label = T["SchemaCompare.Scope.Triggers"].Value, Checked = true },
+                    new { Key = "tableTypes", Label = T["SchemaCompare.Scope.TableTypes"].Value, Checked = true },
+                    new { Key = "sequences", Label = T["SchemaCompare.Scope.Sequences"].Value, Checked = true },
+                    new { Key = "synonyms", Label = T["SchemaCompare.Scope.Synonyms"].Value, Checked = true },
+                    new { Key = "fullText", Label = T["SchemaCompare.Scope.FullText"].Value, Checked = true },
+                    new { Key = "extendedProperties", Label = T["SchemaCompare.Scope.ExtendedProperties"].Value, Checked = false },
+                    new { Key = "securityObjects", Label = T["SchemaCompare.Scope.SecurityObjects"].Value, Checked = false }
+                })
+                {
+                    <label class="sc-scope-chip" for="scope-@scope.Key">
+                        <input class="form-check-input" id="scope-@scope.Key" data-scope="@scope.Key" type="checkbox" checked="@scope.Checked" />
+                        <span class="sc-chip-tick" aria-hidden="true"></span>
+                        <span class="sc-chip-text">@scope.Label</span>
+                    </label>
+                }
+            </div>
+
+            <button class="sc-advanced-toggle" type="button" id="sc-toggle-options" aria-expanded="false" aria-controls="sc-options">
+                <span class="sc-caret" aria-hidden="true"></span>@T["SchemaCompare.Options.Advanced"]
+            </button>
+
+            <div class="sc-advanced" id="sc-options" hidden>
+                <section class="sc-advanced-group">
+                    <h3 class="sc-group-title">@T["SchemaCompare.Options.Noise"]</h3>
+                    <div class="sc-check-grid">
+                        @foreach (var option in new[]
+                        {
+                            new { Key = "ignoreWhitespace", Label = T["SchemaCompare.Options.IgnoreWhitespace"].Value, Checked = true },
+                            new { Key = "ignoreComments", Label = T["SchemaCompare.Options.IgnoreComments"].Value, Checked = false },
+                            new { Key = "ignoreKeywordCasing", Label = T["SchemaCompare.Options.IgnoreKeywordCasing"].Value, Checked = true },
+                            new { Key = "ignoreColumnOrder", Label = T["SchemaCompare.Options.IgnoreColumnOrder"].Value, Checked = true },
+                            new { Key = "ignoreIdentitySeed", Label = T["SchemaCompare.Options.IgnoreIdentitySeed"].Value, Checked = true },
+                            new { Key = "ignoreFillFactor", Label = T["SchemaCompare.Options.IgnoreFillFactor"].Value, Checked = true },
+                            new { Key = "ignoreFilegroupPlacement", Label = T["SchemaCompare.Options.IgnoreFilegroupPlacement"].Value, Checked = true },
+                            new { Key = "ignoreIndexOptions", Label = T["SchemaCompare.Options.IgnoreIndexOptions"].Value, Checked = true },
+                            new { Key = "ignoreExtendedProperties", Label = T["SchemaCompare.Options.IgnoreExtendedProperties"].Value, Checked = true }
+                        })
+                        {
+                            <label class="sc-check" for="opt-@option.Key">
+                                <input class="form-check-input" id="opt-@option.Key" data-option="@option.Key" type="checkbox" checked="@option.Checked" />
+                                <span>@option.Label</span>
+                            </label>
+                        }
+                    </div>
+                </section>
+
+                <section class="sc-advanced-group sc-mapping" id="sc-mapping">
+                    <div class="sc-group-head">
+                        <h3 class="sc-group-title">@T["SchemaCompare.Mapping.Title"]</h3>
+                        <button class="sc-btn sc-btn-ghost sc-btn-sm" type="button" id="sc-mapping-auto">@T["SchemaCompare.Mapping.Auto"]</button>
+                    </div>
+
+                    <div class="sc-map-row">
+                        <div class="sc-field sc-field-code">
+                            <label class="form-label" for="sc-code-from">@T["SchemaCompare.Mapping.CodeFrom"]</label>
+                            <input class="form-control sc-code-input" id="sc-code-from" autocomplete="off" placeholder="ORG" />
+                        </div>
+                        <span class="sc-map-arrow" aria-hidden="true">&rarr;</span>
+                        <div class="sc-field sc-field-code">
+                            <label class="form-label" for="sc-code-to">@T["SchemaCompare.Mapping.CodeTo"]</label>
+                            <input class="form-control sc-code-input" id="sc-code-to" autocomplete="off" placeholder="FBU" />
+                        </div>
+                    </div>
+
+                    @*
+                        The examples are rebuilt from whatever codes are typed, so the box shows
+                        the actual rewrite rather than a fixed sentence about it.
+                    *@
+                    <p class="sc-hint-box" data-role="code-preview" aria-live="polite"></p>
+
+                    <div class="sc-field">
+                        <label class="form-label" for="sc-mapping-input">@T["SchemaCompare.Mapping.ExtraTitle"]</label>
+                        <textarea class="form-control sc-mapping-input" id="sc-mapping-input" rows="2"
+                                  placeholder="@T["SchemaCompare.Mapping.Placeholder"]" spellcheck="false"></textarea>
+                    </div>
+
+                    <p class="sc-hint-box">
+                        <strong>@T["SchemaCompare.Mapping.HelpSummary"]:</strong>
+                        @T["SchemaCompare.Mapping.Help"]
+                    </p>
+                </section>
+            </div>
+        </li>
+    </ol>
+
+    @* The one primary action on this screen; everything beside it is secondary. *@
+    <div class="sc-run-bar">
+        <button class="sc-btn sc-btn-primary sc-run-btn" type="button" id="sc-compare">
+            <span class="sc-spinner" aria-hidden="true"></span>
+            <span class="sc-run-label">@T["SchemaCompare.Action.Compare"]</span>
+        </button>
+        <button class="sc-btn sc-btn-danger" type="button" id="sc-cancel" hidden>@T["SchemaCompare.Action.Cancel"]</button>
+        <span class="sc-clock" id="sc-clock">00:00:00</span>
+        <span class="sc-run-status" data-role="compare-status" role="status" aria-live="polite"></span>
+        <span class="sc-run-spacer"></span>
+        <div class="sc-quick-summary" data-role="quick-summary" hidden>
+            <span class="qs-item"><span class="qs-label">@T["SchemaCompare.Stats.Total"]</span><b data-count="all">0</b></span>
+            <span class="qs-item qs-change"><span class="qs-label">@T["SchemaCompare.Stats.Different"]</span><b data-count="Change">0</b></span>
+            <span class="qs-item qs-add"><span class="qs-label">@T["SchemaCompare.Stats.OnlyInSource"]</span><b data-count="Add">0</b></span>
+            <span class="qs-item qs-del"><span class="qs-label">@T["SchemaCompare.Stats.OnlyInTarget"]</span><b data-count="Delete">0</b></span>
+        </div>
+    </div>
+
+    @if (Model.HostAllowlistEnabled)
+    {
+        <p class="sc-note">@T["SchemaCompare.HostAllowlistNotice"]</p>
+    }
+
+    <section class="sc-results" id="sc-results" hidden>
+        <ul class="nav nav-tabs sc-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="sc-tab-progress" data-bs-toggle="tab" data-bs-target="#sc-pane-progress"
+                        type="button" role="tab" aria-controls="sc-pane-progress" aria-selected="true">
+                    @T["SchemaCompare.Tab.Progress"]
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="sc-tab-result" data-bs-toggle="tab" data-bs-target="#sc-pane-result"
+                        type="button" role="tab" aria-controls="sc-pane-result" aria-selected="false">
+                    @T["SchemaCompare.Tab.Result"]
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="sc-tab-script" data-bs-toggle="tab" data-bs-target="#sc-pane-script"
+                        type="button" role="tab" aria-controls="sc-pane-script" aria-selected="false">
+                    @T["SchemaCompare.Tab.Script"]
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="sc-pane-progress" role="tabpanel" aria-labelledby="sc-tab-progress">
+                <div class="sc-progress-grid">
+                    <div class="sc-progress-column">
+                        <h3 class="sc-group-title" data-role="progress-title-source">@T["SchemaCompare.Source"]</h3>
+                        <div class="sc-table-scroll">
+                            <table class="sc-progress-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sc-col-time">@T["SchemaCompare.Progress.Time"]</th>
+                                        <th>@T["SchemaCompare.Progress.Operation"]</th>
+                                        <th class="sc-col-state">@T["SchemaCompare.Progress.Status"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-role="progress-source"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="sc-progress-column">
+                        <h3 class="sc-group-title" data-role="progress-title-target">@T["SchemaCompare.Target"]</h3>
+                        <div class="sc-table-scroll">
+                            <table class="sc-progress-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sc-col-time">@T["SchemaCompare.Progress.Time"]</th>
+                                        <th>@T["SchemaCompare.Progress.Operation"]</th>
+                                        <th class="sc-col-state">@T["SchemaCompare.Progress.Status"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-role="progress-target"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="sc-pane-result" role="tabpanel" aria-labelledby="sc-tab-result">
+                <div class="sc-result-layout">
+                    @* Desktop keeps the type list as a column; below 1024px it becomes the
+                       horizontal chip strip further down, which is the same data. *@
+                    <aside class="sc-type-panel">
+                        <h3 class="sc-group-title">@T["SchemaCompare.Result.ObjectTypes"]</h3>
+                        <ul class="sc-type-list" data-role="type-list"></ul>
+                    </aside>
+
+                    <div class="sc-result-main">
+                        <div class="sc-type-strip" data-role="type-chips" aria-label="@T["SchemaCompare.Result.ObjectTypes"]"></div>
+
+                        <div class="sc-grid-toolbar">
+                            <div class="sc-search-wrap">
+                                <input class="form-control sc-search" id="sc-search" type="search"
+                                       placeholder="@T["SchemaCompare.Action.SearchPlaceholder"]" autocomplete="off" />
+                            </div>
+                            <div class="sc-bulk">
+                                <button class="sc-btn sc-btn-ghost sc-btn-sm" type="button" id="sc-check-all">@T["SchemaCompare.Action.CheckAll"]</button>
+                                <button class="sc-btn sc-btn-ghost sc-btn-sm" type="button" id="sc-uncheck-all">@T["SchemaCompare.Action.UncheckAll"]</button>
+                            </div>
+                        </div>
+
+                        <div class="sc-filter-buttons" data-role="filters" role="group" aria-label="@T["SchemaCompare.Result.FilterLabel"]">
+                            <button class="sc-filter active" type="button" data-filter="all">
+                                <span class="sc-filter-text">@T["SchemaCompare.Filter.All"]</span>
+                                <span class="sc-filter-count" data-count="all">0</span>
+                            </button>
+                            <button class="sc-filter" type="button" data-filter="Change">
+                                <span class="sc-filter-mark" aria-hidden="true">&#8800;</span>
+                                <span class="sc-filter-text">@T["SchemaCompare.Change.Different"]</span>
+                                <span class="sc-filter-count" data-count="Change">0</span>
+                            </button>
+                            <button class="sc-filter" type="button" data-filter="Add">
+                                <span class="sc-filter-mark" aria-hidden="true">&plus;</span>
+                                <span class="sc-filter-text">@T["SchemaCompare.Change.OnlyInSource"]</span>
+                                <span class="sc-filter-count" data-count="Add">0</span>
+                            </button>
+                            <button class="sc-filter" type="button" data-filter="Delete">
+                                <span class="sc-filter-mark" aria-hidden="true">&minus;</span>
+                                <span class="sc-filter-text">@T["SchemaCompare.Change.OnlyInTarget"]</span>
+                                <span class="sc-filter-count" data-count="Delete">0</span>
+                            </button>
+                        </div>
+
+                        <div class="sc-mapped-note" data-role="mapped-note" hidden>
+                            <span data-role="mapped-text"></span>
+                            <button class="sc-btn sc-btn-link sc-btn-sm" type="button" id="sc-toggle-mapped">@T["SchemaCompare.Action.ShowMapped"]</button>
+                        </div>
+
+                        @* Table on tablet and up; the card list below takes over under 600px. *@
+                        <div class="sc-grid" id="sc-grid"></div>
+                        <div class="sc-card-list" data-role="card-list"></div>
+
+                        <div class="sc-detail" data-role="detail">
+                            <div class="sc-detail-header">
+                                <button class="sc-btn sc-btn-ghost sc-btn-sm sc-detail-back" type="button" data-role="detail-back">
+                                    @T["SchemaCompare.Result.BackToList"]
+                                </button>
+                                <strong data-role="detail-title">@T["SchemaCompare.Message.DetailHint"]</strong>
+                                <span class="sc-detail-summary" data-role="detail-summary"></span>
+                                <span class="spacer"></span>
+                                <label class="sc-check sc-detail-toggle" hidden data-role="only-changes-wrap">
+                                    <input class="form-check-input" type="checkbox" id="sc-only-changes" checked />
+                                    <span>@T["SchemaCompare.Detail.OnlyChanges"]</span>
+                                </label>
+                                <button class="sc-btn sc-btn-ghost sc-btn-icon" type="button" id="sc-prev-change" hidden title="@T["SchemaCompare.Detail.PrevChange"]">&uarr;</button>
+                                <button class="sc-btn sc-btn-ghost sc-btn-icon" type="button" id="sc-next-change" hidden title="@T["SchemaCompare.Detail.NextChange"]">&darr;</button>
+                                <button class="sc-btn sc-btn-ghost sc-btn-sm" type="button" id="sc-expand-detail" hidden>@T["SchemaCompare.Detail.Expand"]</button>
+                            </div>
+                            <div class="sc-detail-body" data-role="detail-body">
+                                <p class="sc-empty">@T["SchemaCompare.Message.DetailHint"]</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="sc-pane-script" role="tabpanel" aria-labelledby="sc-tab-script">
+                <div class="sc-script-bar">
+                    <a class="sc-btn sc-btn-primary sc-btn-sm" id="sc-download-script" href="#">@T["SchemaCompare.Action.DownloadScript"]</a>
+                    <button class="sc-btn sc-btn-ghost sc-btn-sm" type="button" id="sc-refresh-script">@T["SchemaCompare.Action.GenerateScript"]</button>
+                    <button class="sc-btn sc-btn-ghost sc-btn-sm" type="button" id="sc-copy-script">@T["Action.Copy"]</button>
+                    <span class="sc-run-status" data-role="script-status" role="status" aria-live="polite"></span>
+                </div>
+                <div class="sc-script-warn" data-role="script-warnings" hidden>
+                    <strong>@T["SchemaCompare.Script.Warnings"]</strong>
+                    <ul data-role="script-warning-list"></ul>
+                </div>
+                <textarea class="sc-script" id="sc-script" readonly spellcheck="false"></textarea>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script id="sc-config" type="application/json">@Html.Raw(configJson)</script>
+
+@section Scripts {
+    <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script src="~/js/schema-compare.js" asp-append-version="true"></script>
+}

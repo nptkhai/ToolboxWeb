@@ -78,6 +78,7 @@
 }
 
 <div class="jira-shell jira-dashboard-shell">
+    <section class="jira-tabs-shell">
     <ul class="nav nav-tabs jira-page-tabs" id="jira-worklist-tabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="jira-tab-search" data-bs-toggle="tab" data-bs-target="#jira-tab-search-pane" type="button" role="tab" aria-controls="jira-tab-search-pane" aria-selected="true">@T["Jira.Worklist.Tabs.Search"]</button>
@@ -246,7 +247,6 @@
 
                 <div class="jira-dashboard-toolbar-controls">
                     <div class="jira-dashboard-period-tabs" data-jira-board-period-tabs>
-                        <button type="button" class="jira-dashboard-period-button" data-period="day">@T["Jira.Dashboard.Filter.Day"]</button>
                         <button type="button" class="jira-dashboard-period-button is-active" data-period="week">@T["Jira.Dashboard.Filter.Week"]</button>
                         <button type="button" class="jira-dashboard-period-button" data-period="month">@T["Jira.Dashboard.Filter.Month"]</button>
                     </div>
@@ -255,9 +255,6 @@
                         <button type="button" class="jira-dashboard-nav-button" data-nav-step="-2" title="@T["Jira.Dashboard.Filter.NavBack2"]" aria-label="@T["Jira.Dashboard.Filter.NavBack2"]">&laquo;</button>
                         <button type="button" class="jira-dashboard-nav-button" data-nav-step="-1" title="@T["Jira.Dashboard.Filter.NavBack1"]" aria-label="@T["Jira.Dashboard.Filter.NavBack1"]">&lsaquo;</button>
 
-                        <div class="jira-dashboard-period-input" data-period-input="day">
-                            <input id="jira-board-day" class="form-control jira-dashboard-picker" type="text" autocomplete="off" />
-                        </div>
                         <div class="jira-dashboard-period-input is-active" data-period-input="week">
                             <input id="jira-board-week" class="form-control jira-dashboard-picker jira-dashboard-week-picker" type="text" autocomplete="off" />
                         </div>
@@ -269,8 +266,10 @@
                         <button type="button" class="jira-dashboard-nav-button" data-nav-step="2" title="@T["Jira.Dashboard.Filter.NavForward2"]" aria-label="@T["Jira.Dashboard.Filter.NavForward2"]">&raquo;</button>
                     </div>
 
+                    <button type="button" class="jira-dashboard-nav-button jira-icon-button" data-jira-board-today title="@T["Jira.TaskBoard.JumpToday"]" aria-label="@T["Jira.TaskBoard.JumpToday"]">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+                    </button>
                     <button type="button" class="btn btn-primary jira-dashboard-search" data-jira-board-search>@T["Jira.Dashboard.Filter.Search"]</button>
-                    <button type="button" class="btn btn-outline-secondary" data-jira-board-today>@T["Jira.TaskBoard.JumpToday"]</button>
                 </div>
             </div>
 
@@ -408,6 +407,7 @@
             </div>
         </div>
     </div>
+    </section>
 </div>
 
 <script id="jira-worklist-config" type="application/json">@Html.Raw(worklistConfigJson)</script>

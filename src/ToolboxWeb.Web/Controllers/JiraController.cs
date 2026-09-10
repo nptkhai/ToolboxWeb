@@ -35,8 +35,12 @@ public class JiraController : Controller
         "verify"
     ];
 
+    private const string MySubtasksBaseJql =
+        "assignee = currentUser() AND issuetype in subTaskIssueTypes()";
+
+    // Auto-scheduling only ever plans work that is still outstanding.
     private const string MyOpenSubtasksBaseJql =
-        "assignee = currentUser() AND issuetype in subTaskIssueTypes() AND statusCategory != Done";
+        MySubtasksBaseJql + " AND statusCategory != Done";
 
     private readonly IJiraAuthService _jiraAuth;
     private readonly IStringLocalizer<SharedResource> _localizer;
@@ -222,7 +226,7 @@ public class JiraController : Controller
         var (rangeStart, rangeEnd, periodValue) = ResolveRange(periodType, query.PeriodValue);
         var jql = string.Create(
             System.Globalization.CultureInfo.InvariantCulture,
-            $"{MyOpenSubtasksBaseJql} AND duedate >= \"{rangeStart:yyyy-MM-dd}\" AND duedate <= \"{rangeEnd:yyyy-MM-dd}\" ORDER BY duedate ASC");
+            $"{MySubtasksBaseJql} AND duedate >= \"{rangeStart:yyyy-MM-dd}\" AND duedate <= \"{rangeEnd:yyyy-MM-dd}\" ORDER BY duedate ASC");
 
         string? errorMessage = null;
         IReadOnlyList<JiraDashboardRowViewModel> rows = [];
