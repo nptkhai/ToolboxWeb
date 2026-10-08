@@ -1,0 +1,55 @@
+@model NoteContentFieldModel
+@{
+    var format = Model.Format;
+}
+<div class="nv-block" data-content-block>
+    <div class="nv-block-head">
+        <label class="nv-label" for="@Model.Id">@T[Model.LabelKey]</label>
+        <div class="nv-tools">
+            @if (format.Format == NoteFormat.Json)
+            {
+                <button class="nv-tool" type="button" data-tool="json-format" data-target="#@Model.Id">
+                    <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-format" /></svg>
+                    <span>@T["Notes.Tool.JsonFormat"]</span>
+                </button>
+            }
+            @if (format.Format == NoteFormat.Xml)
+            {
+                <button class="nv-tool" type="button" data-tool="xml-check" data-target="#@Model.Id">
+                    <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-check" /></svg>
+                    <span>@T["Notes.Tool.XmlCheck"]</span>
+                </button>
+            }
+            <button class="nv-tool" type="button" data-tool="copy" data-target="#@Model.Id" title="@T["Action.Copy"]">
+                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                <span>@T["Action.Copy"]</span>
+            </button>
+            <button class="nv-tool" type="button" data-tool="download" data-target="#@Model.Id"
+                    data-file-name="@Model.FileName" data-extension="@format.DownloadExtension" data-mime="@format.MimeType"
+                    title="@T["Notes.Tool.Download"]">
+                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-download" /></svg>
+                <span>@T["Notes.Tool.Download"]</span>
+            </button>
+        </div>
+    </div>
+
+    <textarea class="form-control nv-content@(format.IsCode ? " is-code" : null)" id="@Model.Id" name="Content"
+              rows="@Model.Rows" maxlength="200000" spellcheck="@(format.IsCode ? "false" : "true")"
+              placeholder="@Model.Placeholder" data-autosize>@Model.Content</textarea>
+    <p class="nv-code-status" data-role="code-status" role="status" aria-live="polite"></p>
+
+    @if (Model.Links.Count > 0)
+    {
+        <ul class="nv-links" aria-label="@T["Notes.LinksTitle"]">
+            @foreach (var link in Model.Links)
+            {
+                <li>
+                    <a href="@link" target="_blank" rel="noopener noreferrer">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-external" /></svg>
+                        <span>@link</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+</div>

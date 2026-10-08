@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ToolboxWeb.Web.Domain;
+using ToolboxWeb.Web.Enums;
 
 namespace ToolboxWeb.Web.Data;
 
@@ -28,7 +29,32 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(x => x.Title).HasMaxLength(160).IsRequired();
             entity.Property(x => x.Content).IsRequired();
             entity.Property(x => x.Tags).HasMaxLength(250);
+
+            // Rows that existed before formats were introduced become Text. The sentinel says
+            // "Text means use the column default", which is also Text, so inserts are unaffected
+            // and EF does not warn that the CLR default (0) is not a real format.
+            entity.Property(x => x.Format)
+                .HasDefaultValue(NoteFormat.Text)
+                .HasSentinel(NoteFormat.Text);
+
             entity.HasIndex(x => new { x.UserId, x.IsPinned, x.UpdatedAt });
+            entity.HasIndex(x => new { x.UserId, x.ParentId });
+
+            // Deleting a group deletes its sub-notes with it.
+            entity.HasOne(x => x.Parent)
+                .WithMany(x => x.Children)
+                .HasForeignKey(x => x.ParentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.OwnsOne(x => x.Server, server =>
+            {
+                server.Property(x => x.Host).HasMaxLength(200);
+                server.Property(x => x.Username).HasMaxLength(128);
+                server.Property(x => x.Database).HasMaxLength(128);
+            });
+
+            // Always materialised (possibly empty), so callers never have to null-check it.
+            entity.Navigation(x => x.Server).IsRequired();
         });
 
         builder.Entity<ChecklistItem>(entity =>

@@ -1,0 +1,73 @@
+@model NoteServerFieldsModel
+@{
+    var p = Model.IdPrefix;
+    var server = Model.Server;
+}
+<fieldset class="nv-server" data-server-fields>
+    <legend class="nv-label">@T["Notes.Server.Legend"]</legend>
+
+    <div class="nv-server-grid">
+        <div class="nv-field nv-field-host">
+            <label class="nv-label" for="@(p)-host">@T["Notes.Server.Host"]</label>
+            <input class="form-control" id="@(p)-host" name="Host" value="@server.Host" maxlength="200"
+                   autocomplete="off" spellcheck="false" placeholder="192.168.0.10" data-field="host"
+                   required="@Model.RequireHost" />
+        </div>
+        <div class="nv-field nv-field-port">
+            <label class="nv-label" for="@(p)-port">@T["Notes.Server.Port"]</label>
+            <input class="form-control" id="@(p)-port" name="Port" value="@server.Port" type="number"
+                   min="1" max="65535" inputmode="numeric" placeholder="1433" data-field="port" />
+        </div>
+        <div class="nv-field">
+            <label class="nv-label" for="@(p)-user">@T["Notes.Server.Username"]</label>
+            <input class="form-control" id="@(p)-user" name="Username" value="@server.Username" maxlength="128"
+                   autocomplete="off" spellcheck="false" data-field="user" />
+        </div>
+        <div class="nv-field">
+            <label class="nv-label" for="@(p)-db">@T["Notes.Server.Database"]</label>
+            <input class="form-control" id="@(p)-db" name="Database" value="@server.Database" maxlength="128"
+                   autocomplete="off" spellcheck="false" data-field="db" />
+        </div>
+        <div class="nv-field nv-field-password">
+            <label class="nv-label" for="@(p)-pass">@T["Notes.Server.Password"]</label>
+            @* Write-only: the stored password is never put into the page. *@
+            <input class="form-control" id="@(p)-pass" name="NewPassword" type="password" maxlength="512"
+                   autocomplete="new-password" data-field="password"
+                   placeholder="@(server.HasPassword ? T["Notes.Server.PasswordKeep"] : T["Notes.Server.PasswordNone"])" />
+        </div>
+    </div>
+
+    @if (Model.NoteId is int noteId)
+    {
+        <div class="nv-server-actions" data-secret-scope data-note-id="@noteId" data-has-password="@(server.HasPassword ? "true" : "false")">
+            @if (server.HasPassword)
+            {
+                <span class="nv-secret" data-role="secret-value" aria-live="polite">••••••••</span>
+                <button class="nv-btn nv-btn-ghost nv-btn-sm" type="button" data-secret-action="reveal">
+                    <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-eye" /></svg>
+                    <span data-role="reveal-label">@T["Notes.Server.Reveal"]</span>
+                </button>
+                <button class="nv-btn nv-btn-ghost nv-btn-sm" type="button" data-secret-action="copy">
+                    <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                    <span>@T["Notes.Server.CopyPassword"]</span>
+                </button>
+            }
+            <button class="nv-btn nv-btn-ghost nv-btn-sm" type="button" data-secret-action="connection">
+                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-plug" /></svg>
+                <span>@T["Notes.Server.CopyConnectionString"]</span>
+            </button>
+            @if (server.HasPassword)
+            {
+                <label class="nv-check" for="@(p)-clear">
+                    <input class="form-check-input" id="@(p)-clear" name="ClearPassword" type="checkbox" value="true" />
+                    <span>@T["Notes.Server.ClearPassword"]</span>
+                </label>
+            }
+        </div>
+    }
+
+    <p class="nv-hint">
+        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-lock" /></svg>
+        @T["Notes.Server.EncryptedHint"]
+    </p>
+</fieldset>

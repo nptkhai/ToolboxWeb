@@ -42,6 +42,9 @@
 - If a schema change touches `ApplicationUser` or any table read by built-in ASP.NET Identity pages, verify the actual runtime database file is updated before considering the task done.
 - For identity-facing schema additions, do not validate only the custom page you edited. Also test the built-in tabs that still query the same user record, especially `Manage/Index`, `Manage/Email`, `Manage/ChangePassword`, `Manage/TwoFactorAuthentication`, and `Manage/PersonalData`.
 - Do not bypass service-layer user isolation by querying DbContext directly from views or controllers.
+- Treat the configured `Storage` paths as runtime-owned data. In Production, keep the SQLite database, uploaded files, and Data Protection keys outside the published website directory.
+- Serve `/uploads` from the configured external uploads directory; do not add user-uploaded files back into `Content/` or the publish package.
+- Keep `app.db` and `Content/uploads/**` excluded from publish so deployments cannot overwrite or delete user data.
 
 ## Routing, Localization, Encoding
 

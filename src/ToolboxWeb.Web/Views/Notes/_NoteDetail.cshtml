@@ -1,0 +1,305 @@
+@using ToolboxWeb.Web.Constants
+@model NotesIndexViewModel
+@{
+    var note = Model.Selected!;
+    var format = note.Format;
+    var isMixed = format.Format == NoteFormat.Mixed;
+    var isServer = format.Format == NoteFormat.Server;
+    var isLink = format.Format == NoteFormat.Link;
+    var isTask = format.Format == NoteFormat.Checklist;
+    var backUrl = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.NotesHtml, new { format = Model.ActiveFormat?.Slug, search = Model.Search });
+    var childFormLabel = isMixed ? null : T["Notes.ChildContentPlaceholder", T[format.LabelKey]].Value;
+
+    // A server group is a title and a description; each connection is one of its sub-notes.
+    var childrenTitle = isServer ? T["Notes.Server.Connections"] : T["Notes.Children"];
+    var childrenHint = isServer ? T["Notes.Server.ChildrenHint"]
+        : isLink ? T["Notes.Link.ChildrenHint"]
+        : isTask ? T["Notes.Task.ChildrenHint"]
+        : isMixed ? T["Notes.ChildrenHintMixed"]
+        : T["Notes.ChildrenHintSame", format.Badge];
+
+    // Built here rather than inline: an interpolated string inside a quoted tag-helper
+    // attribute would end the attribute at its first quote.
+    // For these formats the description is a short line; the sub-notes are the content.
+    var groupContent = new NoteContentFieldModel(
+        "nv-content-" + note.Id, note.Content, format, note.Title, "Notes.Description", null, note.Links, isServer || isLink || isTask ? 4 : 10);
+    var addServerFields = new NoteServerFieldsModel("nv-add-srv-" + note.Id, new NoteServerViewModel(), null, isServer);
+}
+
+@* Phones show the list and the detail as two steps; this is the way back. *@
+<a class="nv-back" href="@backUrl">
+    <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-back" /></svg>
+    @T["Notes.Back"]
+</a>
+
+<header class="nv-detail-head @format.CssClass">
+    <span class="nv-badge">@format.Badge</span>
+    <span class="nv-meta">
+        @T["Notes.UpdatedLabel"]
+        <time datetime="@note.UpdatedUtc.ToString("o")" title="@note.UpdatedUtc.FormatVietnamDateTime()" data-relative>@note.UpdatedUtc.FormatVietnamDateTime()</time>
+    </span>
+    <span class="nv-spacer"></span>
+
+    <form method="post" asp-action="TogglePin" class="nv-inline-form">
+        <input type="hidden" name="id" value="@note.Id" />
+        <partial name="_NoteReturnState" model="Model" />
+        <button class="nv-btn nv-btn-icon@(note.IsPinned ? " is-on" : null)" type="submit" aria-pressed="@(note.IsPinned ? "true" : "false")"
+                title="@(note.IsPinned ? T["Notes.Unpin"] : T["Notes.Pin"])">
+            <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-pin" /></svg>
+            <span class="visually-hidden">@(note.IsPinned ? T["Notes.Unpin"] : T["Notes.Pin"])</span>
+        </button>
+    </form>
+
+    <form method="post" asp-action="Delete" class="nv-inline-form" data-confirm-delete
+          data-title="@note.Title" data-children="@note.Children.Count">
+        <input type="hidden" name="id" value="@note.Id" />
+        <partial name="_NoteReturnState" model="Model" />
+        <button class="nv-btn nv-btn-icon nv-btn-danger" type="submit" title="@T["Action.Delete"]">
+            <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-trash" /></svg>
+            <span class="visually-hidden">@T["Action.Delete"]</span>
+        </button>
+    </form>
+</header>
+
+<form method="post" asp-action="Update" class="nv-edit @format.CssClass" data-dirty-track>
+    <input type="hidden" name="Id" value="@note.Id" />
+    <partial name="_NoteReturnState" model="Model" />
+
+    <label class="visually-hidden" for="nv-title-@note.Id">@T["Notes.NoteTitlePlaceholder"]</label>
+    <input class="nv-title-input" id="nv-title-@note.Id" name="Title" value="@note.Title"
+           required maxlength="160" autocomplete="off" />
+
+    <div class="nv-meta-row">
+        <div class="nv-field nv-field-format">
+            <label class="nv-label" for="nv-format-@note.Id">@T["Notes.Format.Label"]</label>
+            <select class="form-select" id="nv-format-@note.Id" name="Format">
+                @foreach (var option in NoteFormatCatalog.All)
+                {
+                    <option value="@((int)option.Format)" selected="@(option.Format == format.Format)">@T[option.LabelKey] (@option.Badge)</option>
+                }
+            </select>
+        </div>
+        <div class="nv-field nv-field-tags">
+            <label class="nv-label" for="nv-tags-@note.Id">@T["Notes.NoteTagsPlaceholder"]</label>
+            <input class="form-control" id="nv-tags-@note.Id" name="Tags" value="@note.Tags" maxlength="250"
+                   placeholder="@T["Notes.TagsPlaceholder"]" autocomplete="off" />
+        </div>
+    </div>
+
+    <partial name="_NoteContentField" model="groupContent" />
+
+    <footer class="nv-form-foot">
+        <span class="nv-hint nv-kbd-hint">@T["Notes.SaveHint"]</span>
+        <button class="nv-btn nv-btn-primary" type="submit" data-save>@T["Notes.Save"]</button>
+    </footer>
+</form>
+
+<section class="nv-children" aria-labelledby="nv-children-title-@note.Id">
+    <div class="nv-children-head">
+        <h3 class="nv-children-title" id="nv-children-title-@note.Id">
+            @childrenTitle <span class="nv-count">(@note.Children.Count)</span>
+        </h3>
+        <p class="nv-hint">@childrenHint</p>
+    </div>
+
+    @foreach (var child in note.Children)
+    {
+        var childServer = child.Format.Format == NoteFormat.Server;
+        var childLink = child.Format.Format == NoteFormat.Link;
+        var childTask = child.Format.Format == NoteFormat.Checklist;
+
+        // A connection, a set of links and a checklist are their rows; only the other formats
+        // keep a free-text box. Text written before a format change still shows, so nothing is
+        // ever hidden from its owner, and a Mixed sub-note keeps the box for switching back.
+        var showChildContent = isMixed
+            || (!childServer && !childLink && !childTask)
+            || (childServer && !string.IsNullOrEmpty(child.Content));
+
+        // The one line under the title while the row is collapsed.
+        var childSub = childServer ? child.Server.Summary
+            : childLink && child.LinkRows.Count > 0 ? T["Notes.Link.Count", child.LinkRows.Count].Value
+            : childTask && child.TaskRows.Count > 0
+                ? T["Notes.Task.Progress", child.TaskRows.Count(row => row.Status.Slug == "done"), child.TaskRows.Count].Value
+                : string.Empty;
+
+        // In a Mixed group the fields follow the format picked in the form, so they are always
+        // rendered and cannot be required in the browser; the server validates the host.
+        var childServerFields = new NoteServerFieldsModel("nv-srv-" + child.Id, child.Server, child.Id, childServer && !isMixed);
+        var childContent = new NoteContentFieldModel(
+            "nv-content-" + child.Id, child.Content, child.Format, child.Title,
+            childServer ? "Notes.Server.Notes" : "Notes.NoteContentPlaceholder",
+            null, child.Links, 6);
+        <article class="nv-child @child.Format.CssClass" id="child-@child.Id">
+            <details open="@(Model.FocusChildId == child.Id)">
+                <summary>
+                    <svg class="nv-icon nv-chevron" aria-hidden="true"><use href="#nv-i-chevron" /></svg>
+                    @if (isMixed)
+                    {
+                        <span class="nv-badge">@child.Format.Badge</span>
+                    }
+                    <span class="nv-child-text">
+                        <span class="nv-child-title">@child.Title</span>
+                        @if (!string.IsNullOrEmpty(childSub))
+                        {
+                            <span class="nv-child-sub">@childSub</span>
+                        }
+                    </span>
+                    <time datetime="@child.UpdatedUtc.ToString("o")" title="@child.UpdatedUtc.FormatVietnamDateTime()" data-relative>@child.UpdatedUtc.FormatVietnamDateTime()</time>
+                </summary>
+
+                <form method="post" asp-action="Update" class="nv-child-form" data-dirty-track>
+                    <input type="hidden" name="Id" value="@child.Id" />
+                    <input type="hidden" name="ParentId" value="@note.Id" />
+                    <partial name="_NoteReturnState" model="Model" />
+
+                    <div class="nv-meta-row">
+                        <div class="nv-field nv-field-grow">
+                            <label class="nv-label" for="nv-child-title-@child.Id">@T["Notes.NoteTitlePlaceholder"]</label>
+                            <input class="form-control" id="nv-child-title-@child.Id" name="Title" value="@child.Title"
+                                   required maxlength="160" autocomplete="off" />
+                        </div>
+                        @if (isMixed)
+                        {
+                            <div class="nv-field nv-field-format">
+                                <label class="nv-label" for="nv-child-format-@child.Id">@T["Notes.Format.Label"]</label>
+                                <select class="form-select" id="nv-child-format-@child.Id" name="Format" data-format-switch>
+                                    @foreach (var option in NoteFormatCatalog.ChildFormats)
+                                    {
+                                        <option value="@((int)option.Format)" selected="@(option.Format == child.Format.Format)">@T[option.LabelKey] (@option.Badge)</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="hidden" name="Format" value="@((int)child.Format.Format)" />
+                        }
+                    </div>
+
+                    @if (childServer || isMixed)
+                    {
+                        <div class="nv-slot nv-slot-server@(isMixed ? " is-conditional" : null)" data-slot="server">
+                            <partial name="_NoteServerFields" model="childServerFields" />
+                        </div>
+                    }
+
+                    @if (childLink || isMixed)
+                    {
+                        <partial name="_NoteLinkRows" model="new NoteLinkRowsModel(child.LinkRows, isMixed)" />
+                    }
+
+                    @if (childTask || isMixed)
+                    {
+                        <partial name="_NoteTaskRows" model="new NoteTaskRowsModel(child.TaskRows, isMixed)" />
+                    }
+
+                    @if (showChildContent)
+                    {
+                        <div class="nv-slot nv-slot-content@(isMixed ? " is-conditional" : null)" data-slot="content">
+                            <partial name="_NoteContentField" model="childContent" />
+                        </div>
+                    }
+
+                    <footer class="nv-form-foot">
+                        <button class="nv-btn nv-btn-primary nv-btn-sm" type="submit" data-save>@T["Notes.Save"]</button>
+                    </footer>
+                </form>
+            </details>
+
+            @* Kept outside <summary>: a form is not allowed inside it, and a click here must not toggle the row. *@
+            <div class="nv-child-actions">
+                @if (childServer)
+                {
+                    @* Works while the row is collapsed: the fields are in the page, just not shown. *@
+                    <button class="nv-btn nv-btn-icon nv-btn-sm" type="button" data-secret-action="connection" title="@T["Notes.Server.CopyConnectionString"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-plug" /></svg>
+                        <span class="visually-hidden">@T["Notes.Server.CopyConnectionString"]</span>
+                    </button>
+                }
+                else
+                {
+                    <button class="nv-btn nv-btn-icon nv-btn-sm" type="button" data-tool="copy" data-target="#nv-content-@child.Id" title="@T["Action.Copy"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                        <span class="visually-hidden">@T["Action.Copy"]</span>
+                    </button>
+                }
+                <form method="post" asp-action="Delete" class="nv-inline-form" data-confirm-delete data-title="@child.Title" data-children="0">
+                    <input type="hidden" name="id" value="@child.Id" />
+                    <partial name="_NoteReturnState" model="Model" />
+                    <button class="nv-btn nv-btn-icon nv-btn-sm nv-btn-danger" type="submit" title="@T["Action.Delete"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-trash" /></svg>
+                        <span class="visually-hidden">@T["Action.Delete"]</span>
+                    </button>
+                </form>
+            </div>
+        </article>
+    }
+
+    <form method="post" asp-action="Create" class="nv-child-add @format.CssClass" data-dirty-track>
+        <input type="hidden" name="ParentId" value="@note.Id" />
+        <partial name="_NoteReturnState" model="Model" />
+
+        <div class="nv-meta-row">
+            <div class="nv-field nv-field-grow">
+                <label class="nv-label" for="nv-add-title-@note.Id">@(isServer ? T["Notes.Server.AddConnection"] : T["Notes.AddChild"])</label>
+                <input class="form-control" id="nv-add-title-@note.Id" name="Title" required maxlength="160"
+                       placeholder="@(isServer ? T["Notes.Server.ConnectionTitlePlaceholder"] : T["Notes.ChildTitlePlaceholder"])" autocomplete="off" />
+            </div>
+            @if (isMixed)
+            {
+                <div class="nv-field nv-field-format">
+                    <label class="nv-label" for="nv-add-format-@note.Id">@T["Notes.Format.Label"]</label>
+                    <select class="form-select" id="nv-add-format-@note.Id" name="Format" data-format-switch>
+                        @foreach (var option in NoteFormatCatalog.ChildFormats)
+                        {
+                            <option value="@((int)option.Format)" data-slug="@option.Slug">@T[option.LabelKey] (@option.Badge)</option>
+                        }
+                    </select>
+                </div>
+            }
+            else
+            {
+                <input type="hidden" name="Format" value="@((int)format.Format)" />
+            }
+        </div>
+
+        @if (isServer || isMixed)
+        {
+            @* In a Mixed group these only show while "Server" is picked (CSS :has), so they cannot be required here. *@
+            <div class="nv-slot nv-slot-server@(isMixed ? " is-conditional" : null)" data-slot="server">
+                <partial name="_NoteServerFields" model="addServerFields" />
+            </div>
+        }
+
+        @if (isLink || isMixed)
+        {
+            <partial name="_NoteLinkRows" model="new NoteLinkRowsModel([], isMixed)" />
+        }
+
+        @if (isTask || isMixed)
+        {
+            <partial name="_NoteTaskRows" model="new NoteTaskRowsModel([], isMixed)" />
+        }
+
+        @* The row editors are the content for those formats. In a Mixed group CSS shows whichever
+           block matches the format being picked. *@
+        @if (!isServer && !isLink && !isTask)
+        {
+            <div class="nv-slot nv-slot-content@(isMixed ? " is-conditional" : null)" data-slot="content">
+                <label class="visually-hidden" for="nv-add-content-@note.Id">@T["Notes.NoteContentPlaceholder"]</label>
+                <textarea class="form-control nv-content@(format.IsCode ? " is-code" : null)" id="nv-add-content-@note.Id" name="Content"
+                          rows="4" maxlength="200000" spellcheck="@(format.IsCode ? "false" : "true")" data-autosize
+                          placeholder="@(childFormLabel ?? T["Notes.NoteContentPlaceholder"].Value)"></textarea>
+            </div>
+        }
+
+        @* Says "save": a filled-in form with only an "Add" button reads as if nothing saves it. *@
+        <footer class="nv-form-foot">
+            <span class="nv-hint nv-kbd-hint">@T["Notes.SaveHint"]</span>
+            <button class="nv-btn nv-btn-primary nv-btn-sm" type="submit" data-save>
+                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-check" /></svg>
+                @(isServer ? T["Notes.Server.SaveConnection"] : T["Notes.AddChildButton"])
+            </button>
+        </footer>
+    </form>
+</section>

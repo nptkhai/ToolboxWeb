@@ -1,0 +1,21 @@
+@*
+    One confirmation dialog for every delete button on the page. Each delete is a real form, so
+    it still works without JavaScript; notes.js intercepts the submit to ask first.
+*@
+<div class="modal fade nv-modal" id="nv-delete" tabindex="-1" aria-labelledby="nv-delete-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="nv-delete-title">@T["Notes.DeleteTitle"]</h2>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="@T["Action.Cancel"]"></button>
+            </div>
+            <div class="modal-body">
+                <p class="nv-delete-message" data-role="delete-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="nv-btn nv-btn-ghost" type="button" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button class="nv-btn nv-btn-danger-solid" type="button" data-role="delete-confirm">@T["Action.Delete"]</button>
+            </div>
+        </div>
+    </div>
+</div>

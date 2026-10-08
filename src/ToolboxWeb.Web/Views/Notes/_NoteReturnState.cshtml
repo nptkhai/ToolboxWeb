@@ -1,0 +1,10 @@
+@model NotesIndexViewModel
+@* Carries the filter the user was looking at through a POST, so the redirect lands on the same view. *@
+@if (Model.ActiveFormat is not null)
+{
+    <input type="hidden" name="ReturnFormat" value="@Model.ActiveFormat.Slug" />
+}
+@if (!string.IsNullOrWhiteSpace(Model.Search))
+{
+    <input type="hidden" name="ReturnSearch" value="@Model.Search" />
+}

@@ -1,58 +1,179 @@
+@using System.Text.Json
+@using ToolboxWeb.Web.Constants
 @model NotesIndexViewModel
 @{
     ViewData["Title"] = T["Notes.Title"];
+
+    var formatSlug = Model.ActiveFormat?.Slug;
+    string ListUrl(string? format, string? search, int? id = null) =>
+        Url.RouteUrl(ToolboxRouteSlugs.RouteNames.NotesHtml, new { format, search, id }) ?? "/notes.html";
+
+    // A phone swaps the list for the detail only when the user actually picked a note.
+    var rootClass = "nv-page" + (Model.HasExplicitSelection ? " nv-has-selection" : string.Empty);
+
+    var configJson = JsonSerializer.Serialize(new
+    {
+        urls = new { reveal = Url.Action("RevealSecret", "Notes") },
+        messages = new
+        {
+            copied = T["Action.Copied"].Value,
+            copyFailed = T["Notes.CopyFailed"].Value,
+            jsonValid = T["Notes.Tool.JsonValid"].Value,
+            jsonInvalid = T["Notes.Tool.JsonInvalid"].Value,
+            xmlValid = T["Notes.Tool.XmlValid"].Value,
+            xmlInvalid = T["Notes.Tool.XmlInvalid"].Value,
+            deleteConfirm = T["Notes.DeleteConfirm"].Value,
+            deleteConfirmWithChildren = T["Notes.DeleteConfirmWithChildren"].Value,
+            unsaved = T["Notes.UnsavedWarning"].Value,
+            reveal = T["Notes.Server.Reveal"].Value,
+            hide = T["Notes.Server.Hide"].Value,
+            passwordCopied = T["Notes.Server.PasswordCopied"].Value,
+            connectionCopied = T["Notes.Server.ConnectionCopied"].Value,
+            hostMissing = T["Notes.Server.HostRequired"].Value,
+            networkError = T["Notes.NetworkError"].Value
+        }
+    }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 }
 
-<div class="tool-grid">
-    <section class="panel span-4">
-        <div class="panel-header"><h2>@T["Notes.CreateNote"]</h2></div>
-        <form asp-action="Create" method="post" class="form-grid">
-            <input asp-for="Form.Title" name="Title" class="form-control" placeholder="@T["Notes.NoteTitlePlaceholder"]" />
-            <span asp-validation-for="Form.Title" class="text-danger"></span>
-            <textarea asp-for="Form.Content" name="Content" class="form-control" rows="7" placeholder="@T["Notes.NoteContentPlaceholder"]"></textarea>
-            <span asp-validation-for="Form.Content" class="text-danger"></span>
-            <input asp-for="Form.Tags" name="Tags" class="form-control" placeholder="@T["Notes.NoteTagsPlaceholder"]" />
-            <label class="form-check">
-                <input asp-for="Form.IsPinned" name="IsPinned" class="form-check-input" />
-                <span class="form-check-label">@T["Common.Pinned"]</span>
-            </label>
-            <button class="btn btn-primary" type="submit">@T["Action.Create"]</button>
-        </form>
-    </section>
+@section Styles {
+    <link rel="stylesheet" href="~/css/notes.css" asp-append-version="true" />
+}
 
-    <section class="panel span-8">
-        <div class="panel-header">
-            <h2>@T["Notes.AllNotes"]</h2>
-            <form asp-action="Index" method="get" class="inline-actions">
-                <input name="search" value="@Model.Search" class="form-control" placeholder="@T["Notes.SearchNotesPlaceholder"]" />
-                <button class="btn btn-outline-secondary" type="submit">@T["Action.Search"]</button>
-            </form>
-        </div>
-        <div class="stack">
-            @foreach (var note in Model.Notes)
+<partial name="_NoteIcons" />
+
+<div class="@rootClass" id="nv-root">
+    @Html.AntiForgeryToken()
+
+    <header class="nv-head">
+        @* The layout already shows the page title "Ghi chú"; this line only adds the totals. *@
+        <p class="nv-summary">
+            <strong>@Model.TotalCount</strong> @T["Notes.Summary.Notes"]
+            <span class="nv-sep" aria-hidden="true">·</span>
+            <strong>@Model.FormatsInUse</strong> @T["Notes.Summary.Formats"]
+        </p>
+
+        <form class="nv-search" method="get" action="@ListUrl(null, null)" role="search">
+            @if (formatSlug is not null)
             {
-                <div class="item-row">
-                    <div>
-                        <div class="item-title">@note.Title</div>
-                        <div class="item-meta">
-                            @if (!string.IsNullOrWhiteSpace(note.Tags))
-                            {
-                                @note.Tags <text>&middot; </text>
-                            }
-                            @((note.UpdatedAt ?? note.CreatedAt).FormatVietnamDateTime())
-                        </div>
-                        <div class="item-content">@note.Content</div>
-                    </div>
-                    <form asp-action="Delete" method="post">
-                        <input type="hidden" name="id" value="@note.Id" />
-                        <button class="btn btn-sm btn-outline-danger" type="submit">@T["Action.Delete"]</button>
-                    </form>
-                </div>
+                <input type="hidden" name="format" value="@formatSlug" />
             }
+            <svg class="nv-icon nv-search-icon" aria-hidden="true"><use href="#nv-i-search" /></svg>
+            <input class="form-control" type="search" name="search" value="@Model.Search"
+                   placeholder="@T["Notes.SearchNotesPlaceholder"]" aria-label="@T["Notes.SearchNotesPlaceholder"]"
+                   autocomplete="off" data-shortcut-target="search" />
+        </form>
+
+        <button class="nv-btn nv-btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#nv-create" data-shortcut-target="new">
+            <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-plus" /></svg>
+            @T["Notes.New"]
+        </button>
+    </header>
+
+    @if (!Model.HasAnyNotes)
+    {
+        <section class="nv-onboard">
+            <svg class="nv-onboard-icon" aria-hidden="true"><use href="#nv-i-note" /></svg>
+            <h2>@T["Notes.Empty.Title"]</h2>
+            <p>@T["Notes.Empty.Hint"]</p>
+            <button class="nv-btn nv-btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#nv-create">
+                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-plus" /></svg>
+                @T["Notes.Empty.Create"]
+            </button>
+        </section>
+    }
+    else
+    {
+        <nav class="nv-formats" aria-label="@T["Notes.Format.Label"]">
+            <a class="nv-chip@(Model.ActiveFormat is null ? " is-active" : null)" href="@ListUrl(null, Model.Search)"
+               aria-current="@(Model.ActiveFormat is null ? "page" : null)">
+                @T["Notes.FilterAll"]
+                <span class="nv-chip-count">@Model.MatchingCount</span>
+            </a>
+            @foreach (var entry in Model.FormatCounts)
+            {
+                var active = Model.ActiveFormat?.Format == entry.Format.Format;
+                <a class="nv-chip @entry.Format.CssClass@(active ? " is-active" : null)@(entry.Count == 0 ? " is-empty" : null)"
+                   href="@ListUrl(entry.Format.Slug, Model.Search)" aria-current="@(active ? "page" : null)">
+                    <span class="nv-dot" aria-hidden="true"></span>
+                    @T[entry.Format.LabelKey]
+                    <span class="nv-chip-count">@entry.Count</span>
+                </a>
+            }
+        </nav>
+
+        <div class="nv-body">
+            <section class="nv-list" aria-label="@T["Notes.AllNotes"]">
+                @if (Model.Items.Count == 0)
+                {
+                    <div class="nv-empty">
+                        <p class="nv-empty-title">@T["Notes.NoMatch.Title"]</p>
+                        <a class="nv-btn nv-btn-ghost nv-btn-sm" href="@ListUrl(null, null)">
+                            <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-close" /></svg>
+                            @T["Notes.NoMatch.Clear"]
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <ul class="nv-items">
+                        @foreach (var item in Model.Items)
+                        {
+                            <li>
+                                <a class="nv-item @item.Format.CssClass@(item.IsSelected ? " is-selected" : null)"
+                                   href="@ListUrl(formatSlug, Model.Search, item.Id)" aria-current="@(item.IsSelected ? "true" : null)">
+                                    <span class="nv-item-head">
+                                        <span class="nv-badge">@item.Format.Badge</span>
+                                        <span class="nv-item-title">@item.Title</span>
+                                        @if (item.IsPinned)
+                                        {
+                                            <svg class="nv-icon nv-pin-mark" role="img" aria-label="@T["Common.Pinned"]"><use href="#nv-i-pin" /></svg>
+                                        }
+                                        @if (item.ChildCount > 0)
+                                        {
+                                            <span class="nv-count-pill">@(item.Format.Format == NoteFormat.Server
+                                                ? T["Notes.Server.ConnectionCount", item.ChildCount]
+                                                : T["Notes.ChildCount", item.ChildCount])</span>
+                                        }
+                                    </span>
+                                    @if (!string.IsNullOrEmpty(item.Preview))
+                                    {
+                                        <span class="nv-item-preview">@item.Preview</span>
+                                    }
+                                    <span class="nv-item-foot">
+                                        <time datetime="@item.UpdatedUtc.ToString("o")" title="@item.UpdatedUtc.FormatVietnamDateTime()" data-relative>@item.UpdatedUtc.FormatVietnamDateTime()</time>
+                                        @if (item.MatchedInChild)
+                                        {
+                                            <span class="nv-match-note">@T["Notes.MatchedInChild"]</span>
+                                        }
+                                    </span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+
+            <section class="nv-detail">
+                @if (Model.Selected is not null)
+                {
+                    <partial name="_NoteDetail" model="Model" />
+                }
+                else
+                {
+                    <p class="nv-empty nv-empty-title">@T["Notes.NoSelection"]</p>
+                }
+            </section>
         </div>
-    </section>
+
+        <p class="nv-hint nv-shortcuts">@T["Notes.Shortcuts"]</p>
+    }
 </div>
 
+<partial name="_NoteCreateModal" model="Model" />
+<partial name="_NoteDeleteModal" />
+
+<script id="nv-config" type="application/json">@Html.Raw(configJson)</script>
+
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/notes.js" asp-append-version="true"></script>
 }

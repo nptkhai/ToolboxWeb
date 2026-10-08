@@ -1,0 +1,1300 @@
+/* ============================================================================
+   Notes — feature stylesheet.
+
+   Scoped to the page root (.nv-page) and to the page's own dialogs (.nv-modal), which
+   Bootstrap renders outside that root. Colours come from the site tokens (--surface, --text,
+   --accent, ...) so the light/dark toggle and the animated sky behind the page keep working;
+   only the eight format colours are local, and each has a dark-mode value.
+
+   Spacing is an 8px scale (--nv-1 = 4px half-step, then 8/12/16/24/32).
+
+   Layout by width:
+     < 768px   list and detail are two steps; the detail has a "back to the list" link
+     >= 768px  list beside detail
+     >= 1200px wider list
+   ============================================================================ */
+
+:is(.nv-page, .nv-modal) {
+    --nv-1: 4px;
+    --nv-2: 8px;
+    --nv-3: 12px;
+    --nv-4: 16px;
+    --nv-6: 24px;
+    --nv-8: 32px;
+    --nv-radius: 12px;
+    --nv-radius-sm: 8px;
+    --nv-mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+    --nv-ok: #0f7a4d;
+    --nv-danger: var(--danger);
+
+    /* One colour per format; the dot, badge and tints all derive from it. */
+    --nv-c-txt: #64748b;
+    --nv-c-js: #a16207;
+    --nv-c-css: #2563eb;
+    --nv-c-json: #0f766e;
+    --nv-c-xml: #9333ea;
+    --nv-c-url: #4f46e5;
+    --nv-c-srv: #dc2626;
+    --nv-c-chk: #db2777;
+    --nv-c-mix: #15803d;
+
+    /* One colour per checklist state. Each state also has a name, so colour is never the only clue. */
+    --nv-st-todo: #64748b;
+    --nv-st-doing: #2563eb;
+    --nv-st-review: #9333ea;
+    --nv-st-wait: #b45309;
+    --nv-st-high: #ea580c;
+    --nv-st-done: #15803d;
+    --nv-st-drop: #dc2626;
+}
+
+:root[data-theme="dark"] :is(.nv-page, .nv-modal) {
+    --nv-ok: #5be3a4;
+    --nv-c-txt: #94a3b8;
+    --nv-c-js: #facc15;
+    --nv-c-css: #60a5fa;
+    --nv-c-json: #2dd4bf;
+    --nv-c-xml: #c084fc;
+    --nv-c-url: #a5b4fc;
+    --nv-c-srv: #f87171;
+    --nv-c-chk: #f472b6;
+    --nv-c-mix: #4ade80;
+
+    --nv-st-todo: #94a3b8;
+    --nv-st-doing: #60a5fa;
+    --nv-st-review: #c084fc;
+    --nv-st-wait: #fbbf24;
+    --nv-st-high: #fb923c;
+    --nv-st-done: #4ade80;
+    --nv-st-drop: #f87171;
+}
+
+:is(.nv-page, .nv-modal) .nv-fmt-txt { --nv-fmt: var(--nv-c-txt); }
+:is(.nv-page, .nv-modal) .nv-fmt-js { --nv-fmt: var(--nv-c-js); }
+:is(.nv-page, .nv-modal) .nv-fmt-css { --nv-fmt: var(--nv-c-css); }
+:is(.nv-page, .nv-modal) .nv-fmt-json { --nv-fmt: var(--nv-c-json); }
+:is(.nv-page, .nv-modal) .nv-fmt-xml { --nv-fmt: var(--nv-c-xml); }
+:is(.nv-page, .nv-modal) .nv-fmt-url { --nv-fmt: var(--nv-c-url); }
+:is(.nv-page, .nv-modal) .nv-fmt-srv { --nv-fmt: var(--nv-c-srv); }
+:is(.nv-page, .nv-modal) .nv-fmt-chk { --nv-fmt: var(--nv-c-chk); }
+:is(.nv-page, .nv-modal) .nv-fmt-mix { --nv-fmt: var(--nv-c-mix); }
+
+/* The icon sprite is a hidden sibling of the page. */
+.nv-sprite {
+    height: 0;
+    overflow: hidden;
+    position: absolute;
+    width: 0;
+}
+
+/* ---------------------------------------------------------------- primitives */
+
+:is(.nv-page, .nv-modal) .nv-icon {
+    fill: none;
+    flex: none;
+    height: 16px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    width: 16px;
+}
+
+:is(.nv-page, .nv-modal) .nv-btn {
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--nv-radius-sm);
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: .875rem;
+    font-weight: 600;
+    gap: var(--nv-2);
+    justify-content: center;
+    line-height: 1.2;
+    min-height: 40px;
+    padding: var(--nv-2) var(--nv-4);
+    text-decoration: none;
+    transition: background .12s, border-color .12s, color .12s, opacity .12s;
+    white-space: nowrap;
+}
+
+:is(.nv-page, .nv-modal) .nv-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+:is(.nv-page, .nv-modal) .nv-btn:disabled {
+    cursor: default;
+    opacity: .45;
+}
+
+/* The filled button marks the action that matters on its part of the screen. */
+:is(.nv-page, .nv-modal) .nv-btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+:is(.nv-page, .nv-modal) .nv-btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 84%, #000);
+    color: #fff;
+}
+
+/* Dark-mode --accent is a light blue: white text on it is barely legible. */
+:root[data-theme="dark"] :is(.nv-page, .nv-modal) .nv-btn-primary,
+:root[data-theme="dark"] :is(.nv-page, .nv-modal) .nv-btn-primary:hover:not(:disabled) {
+    color: #0b1220;
+}
+
+:root[data-theme="dark"] :is(.nv-page, .nv-modal) .nv-btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 82%, #fff);
+}
+
+:is(.nv-page, .nv-modal) .nv-btn-ghost {
+    background: var(--surface);
+}
+
+:is(.nv-page, .nv-modal) .nv-btn-sm {
+    font-size: .8rem;
+    min-height: 34px;
+    padding: var(--nv-1) var(--nv-3);
+}
+
+:is(.nv-page, .nv-modal) .nv-btn-icon {
+    min-height: 36px;
+    padding: 0;
+    width: 36px;
+}
+
+:is(.nv-page, .nv-modal) .nv-btn-icon.nv-btn-sm {
+    min-height: 32px;
+    width: 32px;
+}
+
+:is(.nv-page, .nv-modal) .nv-btn-icon.is-on {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+:is(.nv-page, .nv-modal) .nv-btn-danger:hover:not(:disabled) {
+    border-color: var(--nv-danger);
+    color: var(--nv-danger);
+}
+
+:is(.nv-page, .nv-modal) .nv-btn-danger-solid {
+    background: var(--nv-danger);
+    border-color: var(--nv-danger);
+    color: #fff;
+}
+
+:is(.nv-page, .nv-modal) .nv-btn-danger-solid:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--nv-danger) 84%, #000);
+    color: #fff;
+}
+
+:is(.nv-page, .nv-modal) .nv-label {
+    color: var(--muted);
+    font-size: .75rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+:is(.nv-page, .nv-modal) .nv-hint {
+    align-items: center;
+    color: var(--muted);
+    display: flex;
+    font-size: .78rem;
+    gap: var(--nv-2);
+    margin: 0;
+}
+
+:is(.nv-page, .nv-modal) .nv-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--nv-1);
+    min-width: 0;
+}
+
+:is(.nv-page, .nv-modal) .nv-check {
+    align-items: center;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: .85rem;
+    gap: var(--nv-2);
+    margin: 0;
+    min-height: 36px;
+}
+
+:is(.nv-page, .nv-modal) .nv-check input {
+    flex: none;
+    height: 16px;
+    margin: 0;
+    width: 16px;
+}
+
+:is(.nv-page, .nv-modal) .nv-dot {
+    background: var(--nv-fmt, var(--muted));
+    border-radius: 3px;
+    flex: none;
+    height: 9px;
+    width: 9px;
+}
+
+:is(.nv-page, .nv-modal) .nv-badge {
+    background: color-mix(in srgb, var(--nv-fmt, var(--muted)) 14%, var(--surface));
+    border-radius: 5px;
+    color: var(--nv-fmt, var(--muted));
+    flex: none;
+    font-family: var(--nv-mono);
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.5;
+    padding: 0 var(--nv-2);
+}
+
+/* Grid and flex children default to min-width:auto, so one long unbroken line (a URL, a
+   minified snippet) could otherwise push the page sideways on a phone. */
+.nv-page > *,
+.nv-page .nv-body > *,
+.nv-page .nv-meta-row > * {
+    min-width: 0;
+}
+
+/* ---------------------------------------------------------------- page */
+
+.nv-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--nv-4);
+}
+
+.nv-page .nv-head {
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--nv-radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nv-3) var(--nv-4);
+    padding: var(--nv-3) var(--nv-4);
+}
+
+.nv-page .nv-summary {
+    color: var(--muted);
+    font-size: .9rem;
+    margin: 0;
+}
+
+.nv-page .nv-summary strong {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.nv-page .nv-sep {
+    margin: 0 var(--nv-1);
+}
+
+.nv-page .nv-search {
+    flex: 1 1 240px;
+    margin: 0 0 0 auto;
+    max-width: 420px;
+    position: relative;
+}
+
+/* Room for the magnifier. Needs this weight to beat vendor-sync.css, which loads later and
+   resets every form-control's padding. */
+.content-area .nv-page .nv-search .form-control:not(.k-input-inner):not(.k-input) {
+    padding-left: 38px;
+}
+
+.nv-page .nv-search-icon {
+    color: var(--muted);
+    left: 13px;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+/* ---------------------------------------------------------------- format chips */
+
+.nv-page .nv-formats {
+    display: flex;
+    gap: var(--nv-2);
+    overflow-x: auto;
+    padding: 2px 2px var(--nv-1);
+    scrollbar-width: thin;
+}
+
+.nv-page .nv-chip {
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--text);
+    display: inline-flex;
+    flex: none;
+    font-size: .84rem;
+    font-weight: 600;
+    gap: var(--nv-2);
+    min-height: 36px;
+    padding: var(--nv-1) var(--nv-3);
+    text-decoration: none;
+    transition: border-color .12s, background .12s;
+}
+
+.nv-page .nv-chip:hover {
+    border-color: var(--nv-fmt, var(--accent));
+}
+
+.nv-page .nv-chip.is-active {
+    background: color-mix(in srgb, var(--nv-fmt, var(--accent)) 12%, var(--surface));
+    border-color: var(--nv-fmt, var(--accent));
+    box-shadow: inset 0 0 0 1px var(--nv-fmt, var(--accent));
+}
+
+.nv-page .nv-chip.is-empty:not(.is-active) {
+    color: var(--muted);
+}
+
+.nv-page .nv-chip-count {
+    color: var(--muted);
+    font-size: .74rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- list + detail */
+
+.nv-page .nv-body {
+    align-items: start;
+    display: grid;
+    gap: var(--nv-4);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.nv-page .nv-list,
+.nv-page .nv-detail {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--nv-radius);
+    box-shadow: var(--shadow);
+}
+
+.nv-page .nv-list {
+    overflow: hidden;
+}
+
+.nv-page .nv-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nv-page .nv-item {
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    border-left: 3px solid transparent;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: var(--nv-1);
+    padding: var(--nv-3) var(--nv-4) var(--nv-3) calc(var(--nv-4) - 3px);
+    text-decoration: none;
+    transition: background .12s;
+}
+
+.nv-page .nv-items li:last-child .nv-item {
+    border-bottom: 0;
+}
+
+.nv-page .nv-item:hover {
+    background: var(--surface-2);
+}
+
+.nv-page .nv-item.is-selected {
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    border-left-color: var(--accent);
+}
+
+.nv-page .nv-item-head {
+    align-items: center;
+    display: flex;
+    gap: var(--nv-2);
+    min-width: 0;
+}
+
+.nv-page .nv-item-title {
+    flex: 1;
+    font-size: .9rem;
+    font-weight: 700;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nv-page .nv-pin-mark {
+    color: var(--accent);
+    height: 14px;
+    width: 14px;
+}
+
+.nv-page .nv-count-pill {
+    background: var(--surface-2);
+    border-radius: 999px;
+    color: var(--muted);
+    flex: none;
+    font-size: .7rem;
+    font-weight: 700;
+    padding: 1px var(--nv-2);
+}
+
+.nv-page .nv-item-preview {
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--muted);
+    display: -webkit-box;
+    font-size: .8rem;
+    line-height: 1.45;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+.nv-page .nv-item-foot {
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: .74rem;
+    gap: var(--nv-2);
+}
+
+.nv-page .nv-match-note {
+    color: var(--accent);
+}
+
+.nv-page .nv-detail {
+    padding: var(--nv-4) var(--nv-6) var(--nv-6);
+}
+
+/* Only a phone needs a way back; there the list is hidden while a note is open. */
+.nv-page .nv-back {
+    display: none;
+}
+
+.nv-page .nv-detail-head {
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nv-2);
+    padding-bottom: var(--nv-3);
+}
+
+.nv-page .nv-meta {
+    color: var(--muted);
+    font-size: .8rem;
+}
+
+.nv-page .nv-spacer {
+    flex: 1;
+}
+
+.nv-page .nv-inline-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+/* Reads as a heading until it is focused, then shows it is editable. */
+.nv-page .nv-title-input {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--nv-radius-sm);
+    color: var(--text);
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: var(--nv-3) calc(-1 * var(--nv-2)) var(--nv-2);
+    padding: var(--nv-1) var(--nv-2);
+    width: calc(100% + var(--nv-4));
+}
+
+.nv-page .nv-title-input:hover {
+    border-color: var(--line);
+}
+
+.nv-page .nv-title-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+    outline: none;
+}
+
+:is(.nv-page, .nv-modal) .nv-meta-row {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nv-3);
+    margin-bottom: var(--nv-3);
+}
+
+:is(.nv-page, .nv-modal) .nv-field-format {
+    width: 240px;
+}
+
+:is(.nv-page, .nv-modal) .nv-field-tags,
+:is(.nv-page, .nv-modal) .nv-field-grow {
+    flex: 1 1 220px;
+}
+
+/* ---------------------------------------------------------------- content block */
+
+:is(.nv-page, .nv-modal) .nv-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--nv-2);
+    margin: var(--nv-3) 0;
+}
+
+:is(.nv-page, .nv-modal) .nv-block-head {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nv-2);
+    justify-content: space-between;
+}
+
+:is(.nv-page, .nv-modal) .nv-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+:is(.nv-page, .nv-modal) .nv-tool {
+    align-items: center;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 600;
+    gap: 6px;
+    min-height: 32px;
+    padding: var(--nv-1) var(--nv-2);
+}
+
+:is(.nv-page, .nv-modal) .nv-tool:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+:is(.nv-page, .nv-modal) .nv-tool.is-done,
+:is(.nv-page, .nv-modal) .nv-btn.is-done {
+    border-color: var(--nv-ok);
+    color: var(--nv-ok);
+}
+
+/* Outranks vendor-sync.css, which loads after this file and resets form-control fonts. */
+.content-area :is(.nv-page, .nv-modal) textarea.form-control.nv-content:not(.k-input-inner):not(.k-input) {
+    font-size: .9rem;
+    line-height: 1.55;
+    min-height: 120px;
+}
+
+.content-area :is(.nv-page, .nv-modal) textarea.form-control.nv-content.is-code:not(.k-input-inner):not(.k-input) {
+    background-color: color-mix(in srgb, var(--nv-fmt, var(--accent)) 6%, var(--surface));
+    font-family: var(--nv-mono);
+    font-size: .84rem;
+    overflow-wrap: normal;
+    tab-size: 4;
+    white-space: pre;
+}
+
+:is(.nv-page, .nv-modal) .nv-code-status {
+    font-size: .78rem;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+:is(.nv-page, .nv-modal) .nv-code-status:empty {
+    display: none;
+}
+
+:is(.nv-page, .nv-modal) .nv-code-status.is-ok {
+    color: var(--nv-ok);
+}
+
+:is(.nv-page, .nv-modal) .nv-code-status.is-ok::before {
+    content: "\2713  ";
+}
+
+:is(.nv-page, .nv-modal) .nv-code-status.is-error {
+    color: var(--nv-danger);
+}
+
+:is(.nv-page, .nv-modal) .nv-code-status.is-error::before {
+    content: "\26A0  ";
+}
+
+.nv-page .nv-links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--nv-1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nv-page .nv-links a {
+    align-items: center;
+    color: var(--accent);
+    display: inline-flex;
+    font-size: .85rem;
+    gap: 6px;
+    overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- server fields */
+
+:is(.nv-page, .nv-modal) .nv-server {
+    border: 1px solid var(--line);
+    border-radius: var(--nv-radius-sm);
+    margin: 0 0 var(--nv-3);
+    min-width: 0;
+    padding: var(--nv-3) var(--nv-4) var(--nv-4);
+}
+
+/* Bootstrap floats legends and stretches them to full width. */
+:is(.nv-page, .nv-modal) .nv-server > legend {
+    float: none;
+    margin: 0;
+    padding: 0 var(--nv-1);
+    width: auto;
+}
+
+:is(.nv-page, .nv-modal) .nv-server-grid {
+    display: grid;
+    gap: var(--nv-3);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+:is(.nv-page, .nv-modal) .nv-server-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nv-2);
+    margin-top: var(--nv-3);
+}
+
+:is(.nv-page, .nv-modal) .nv-secret {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-family: var(--nv-mono);
+    font-size: .85rem;
+    min-width: 120px;
+    overflow-wrap: anywhere;
+    padding: 6px var(--nv-3);
+}
+
+:is(.nv-page, .nv-modal) .nv-server .nv-hint {
+    margin-top: var(--nv-3);
+}
+
+/* A value the browser refuses (a port above 65535, an empty required title) is marked on the
+   field itself, not only in the browser's passing tooltip. :user-invalid waits until the user
+   has typed or tried to save, so an untouched form is not red. */
+.content-area :is(.nv-page, .nv-modal) .form-control:not(.k-input-inner):not(.k-input):user-invalid {
+    border-color: var(--nv-danger);
+}
+
+.content-area :is(.nv-page, .nv-modal) .form-control:not(.k-input-inner):not(.k-input):user-invalid:focus {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--nv-danger) 22%, transparent);
+}
+
+/* ---------------------------------------------------------------- row editors */
+
+.nv-page .nv-slot {
+    min-width: 0;
+}
+
+.nv-page .nv-rows {
+    border: 1px solid var(--line);
+    border-radius: var(--nv-radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--nv-2);
+    margin: 0 0 var(--nv-3);
+    min-width: 0;
+    padding: var(--nv-3) var(--nv-4) var(--nv-4);
+}
+
+/* Bootstrap floats legends and stretches them to full width. */
+.nv-page .nv-rows > legend {
+    float: none;
+    margin: 0;
+    padding: 0 var(--nv-1);
+    width: auto;
+}
+
+/* Wrapping rather than a fixed grid: the fields share one line when there is room and fall to
+   the next when there is not, with the buttons always beside the field they act on. */
+.nv-page .nv-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--nv-2);
+    min-width: 0;
+}
+
+.nv-page .nv-row .nv-btn {
+    flex: none;
+}
+
+/* The buttons of a row move as one block, so none of them ends up alone on a line. */
+.nv-page .nv-row-actions {
+    display: flex;
+    flex: none;
+    gap: var(--nv-1);
+    margin-left: auto;
+}
+
+.nv-page .nv-row-name {
+    flex: 1 1 110px;
+    min-width: 0;
+}
+
+.nv-page .nv-row-url {
+    flex: 3 1 220px;
+    min-width: 0;
+}
+
+.nv-page .nv-row-text {
+    flex: 1 1 200px;
+    min-width: 0;
+}
+
+.content-area .nv-page .nv-row .form-control.nv-row-url:not(.k-input-inner):not(.k-input) {
+    font-family: var(--nv-mono);
+    font-size: .82rem;
+}
+
+/* Nothing to open until what is typed is a web address. */
+.nv-page [data-row-open]:not([href]) {
+    opacity: .4;
+    pointer-events: none;
+}
+
+.nv-page .nv-rows-foot {
+    display: flex;
+    margin-top: var(--nv-1);
+}
+
+/* ---------------------------------------------------------------- checklist states */
+
+.nv-page .nv-status-box {
+    align-items: center;
+    display: inline-flex;
+    flex: none;
+    gap: var(--nv-2);
+}
+
+.nv-page .nv-swatch {
+    background: var(--nv-row, var(--muted));
+    border-radius: 4px;
+    flex: none;
+    height: 16px;
+    width: 16px;
+}
+
+.content-area .nv-page .nv-status-box .form-select {
+    background-color: color-mix(in srgb, var(--nv-row, var(--muted)) 12%, var(--surface));
+    border-color: color-mix(in srgb, var(--nv-row, var(--muted)) 45%, var(--line));
+    font-size: .82rem;
+    min-width: 132px;
+    padding-right: var(--nv-8);
+    width: auto;
+}
+
+.nv-page .nv-task-row:has(option[value="todo"]:checked) { --nv-row: var(--nv-st-todo); }
+.nv-page .nv-task-row:has(option[value="doing"]:checked) { --nv-row: var(--nv-st-doing); }
+.nv-page .nv-task-row:has(option[value="review"]:checked) { --nv-row: var(--nv-st-review); }
+.nv-page .nv-task-row:has(option[value="wait"]:checked) { --nv-row: var(--nv-st-wait); }
+.nv-page .nv-task-row:has(option[value="high"]:checked) { --nv-row: var(--nv-st-high); }
+.nv-page .nv-task-row:has(option[value="done"]:checked) { --nv-row: var(--nv-st-done); }
+.nv-page .nv-task-row:has(option[value="drop"]:checked) { --nv-row: var(--nv-st-drop); }
+
+/* A finished row reads as finished at a glance, without hiding what it says. */
+.content-area .nv-page .nv-task-row:has(option[value="done"]:checked) .form-control.nv-row-text:not(.k-input-inner):not(.k-input) {
+    color: var(--muted);
+    text-decoration: line-through;
+}
+
+/* On a phone the row has little width to give away. */
+@media (max-width: 600px) {
+    .nv-page .nv-rows {
+        padding: var(--nv-3);
+    }
+
+    .content-area .nv-page .nv-status-box .form-select {
+        min-width: 112px;
+    }
+}
+
+/* ---------------------------------------------------------------- form footer */
+
+:is(.nv-page, .nv-modal) .nv-form-foot {
+    align-items: center;
+    display: flex;
+    gap: var(--nv-3);
+    justify-content: flex-end;
+    margin-top: var(--nv-2);
+}
+
+/* ---------------------------------------------------------------- sub-notes */
+
+.nv-page .nv-children {
+    border-top: 1px solid var(--line);
+    margin-top: var(--nv-6);
+    padding-top: var(--nv-4);
+}
+
+.nv-page .nv-children-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.nv-page .nv-count {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.nv-page .nv-children-head .nv-hint {
+    margin: var(--nv-1) 0 var(--nv-3);
+}
+
+.nv-page .nv-child {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--nv-radius-sm);
+    margin-bottom: var(--nv-2);
+    position: relative;
+}
+
+.nv-page .nv-child > details > summary {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: var(--nv-2);
+    list-style: none;
+    min-height: 44px;
+    /* Room on the right for the copy and delete buttons laid over this row. */
+    padding: var(--nv-2) 92px var(--nv-2) var(--nv-3);
+}
+
+.nv-page .nv-child > details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.nv-page .nv-chevron {
+    color: var(--muted);
+    transition: transform .15s;
+}
+
+.nv-page .nv-child > details[open] .nv-chevron {
+    transform: rotate(90deg);
+}
+
+.nv-page .nv-child-text {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+
+.nv-page .nv-child-title,
+.nv-page .nv-child-sub {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nv-page .nv-child-title {
+    font-weight: 600;
+}
+
+/* user@host:port · database, under a connection's title. */
+.nv-page .nv-child-sub {
+    color: var(--muted);
+    font-family: var(--nv-mono);
+    font-size: .75rem;
+}
+
+.nv-page .nv-child summary time {
+    color: var(--muted);
+    flex: none;
+    font-size: .75rem;
+}
+
+.nv-page .nv-child-actions {
+    display: flex;
+    gap: var(--nv-1);
+    position: absolute;
+    right: var(--nv-2);
+    top: 6px;
+}
+
+.nv-page .nv-child-form {
+    border-top: 1px dashed var(--line);
+    padding: var(--nv-3);
+}
+
+.nv-page .nv-child:target,
+.nv-page .nv-child:has(> details[open]) {
+    border-color: color-mix(in srgb, var(--nv-fmt, var(--accent)) 55%, var(--line));
+}
+
+.nv-page .nv-child-add {
+    background: var(--surface-2);
+    border: 1px dashed var(--line);
+    border-radius: var(--nv-radius-sm);
+    margin-top: var(--nv-3);
+    padding: var(--nv-3);
+}
+
+/* In a Mixed group every editor is rendered and the picked format decides which one shows.
+   notes.js also switches the hidden ones off so they cannot overwrite what is being saved. */
+.nv-page .nv-slot.is-conditional {
+    display: none;
+}
+
+.nv-page .nv-slot-content.is-conditional {
+    display: block;
+}
+
+.nv-page :is(.nv-child-add, .nv-child-form):has(select[data-format-switch] option[value="7"]:checked) .nv-slot-server.is-conditional,
+.nv-page :is(.nv-child-add, .nv-child-form):has(select[data-format-switch] option[value="6"]:checked) .nv-slot-link.is-conditional,
+.nv-page :is(.nv-child-add, .nv-child-form):has(select[data-format-switch] option[value="9"]:checked) .nv-slot-task.is-conditional {
+    display: block;
+}
+
+.nv-page :is(.nv-child-add, .nv-child-form):has(select[data-format-switch] option:is([value="6"], [value="7"], [value="9"]):checked) .nv-slot-content.is-conditional {
+    display: none;
+}
+
+/* ---------------------------------------------------------------- empty states */
+
+.nv-page .nv-onboard {
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--nv-radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: var(--nv-3);
+    padding: var(--nv-8) var(--nv-4);
+    text-align: center;
+}
+
+.nv-page .nv-onboard h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.nv-page .nv-onboard p {
+    color: var(--muted);
+    margin: 0;
+    max-width: 52ch;
+}
+
+.nv-page .nv-onboard-icon {
+    color: var(--accent);
+    fill: none;
+    height: 48px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.4;
+    width: 48px;
+}
+
+.nv-page .nv-empty {
+    align-items: center;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: var(--nv-3);
+    margin: 0;
+    padding: var(--nv-8) var(--nv-4);
+    text-align: center;
+}
+
+.nv-page .nv-empty-title {
+    font-weight: 600;
+    margin: 0;
+}
+
+.nv-page .nv-shortcuts {
+    justify-content: flex-end;
+}
+
+/* ---------------------------------------------------------------- dialogs */
+
+/* notes.js moves the dialogs into this host on <body>; it must not draw a box of its own. */
+.content-area.nv-modal-host {
+    display: contents;
+}
+
+.nv-modal .modal-content {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--nv-radius);
+    color: var(--text);
+}
+
+.nv-modal .modal-header,
+.nv-modal .modal-footer {
+    border-color: var(--line);
+}
+
+.nv-modal .modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+:root[data-theme="dark"] .nv-modal .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.nv-modal .modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--nv-4);
+}
+
+.nv-modal .nv-format-picker {
+    border: 0;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+}
+
+.nv-modal .nv-format-picker > legend {
+    float: none;
+    margin-bottom: var(--nv-2);
+    width: auto;
+}
+
+.nv-modal .nv-picks {
+    display: grid;
+    gap: var(--nv-2);
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.nv-modal .nv-pick {
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: var(--nv-radius-sm);
+    cursor: pointer;
+    display: flex;
+    gap: var(--nv-2);
+    margin: 0;
+    min-height: 44px;
+    padding: var(--nv-2) var(--nv-3);
+    position: relative;
+}
+
+/* The radio stays in the form for submission; the card is what the eye reads. */
+.nv-modal .nv-pick input {
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 1px;
+}
+
+.nv-modal .nv-pick:hover {
+    border-color: var(--nv-fmt, var(--accent));
+}
+
+.nv-modal .nv-pick:has(input:checked) {
+    background: color-mix(in srgb, var(--nv-fmt, var(--accent)) 12%, var(--surface));
+    border-color: var(--nv-fmt, var(--accent));
+    box-shadow: inset 0 0 0 1px var(--nv-fmt, var(--accent));
+}
+
+.nv-modal .nv-pick:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.nv-modal .nv-pick-name {
+    flex: 1;
+    font-size: .88rem;
+    font-weight: 600;
+}
+
+.nv-modal .nv-pick-ext {
+    color: var(--muted);
+    font-family: var(--nv-mono);
+    font-size: .75rem;
+}
+
+/* Code formats get the monospace editor as soon as they are picked. */
+.content-area .nv-modal .nv-create:has(input[name="Format"]:is([value="2"], [value="3"], [value="4"], [value="5"]):checked) textarea.form-control.nv-content:not(.k-input-inner):not(.k-input) {
+    font-family: var(--nv-mono);
+    font-size: .84rem;
+    white-space: pre;
+}
+
+.nv-modal .nv-check-pin {
+    align-self: flex-end;
+    min-height: 44px;
+}
+
+.nv-modal .nv-form-errors ul {
+    background: color-mix(in srgb, var(--nv-danger) 10%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--nv-danger) 40%, transparent);
+    border-radius: var(--nv-radius-sm);
+    color: var(--nv-danger);
+    font-size: .85rem;
+    margin: 0;
+    padding: var(--nv-3) var(--nv-3) var(--nv-3) var(--nv-8);
+}
+
+.nv-modal .nv-form-errors.validation-summary-valid {
+    display: none;
+}
+
+.nv-modal .nv-delete-message {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+/* ============================================================================
+   From 600px: server fields sit two per row.
+   ============================================================================ */
+
+@media (min-width: 600px) {
+    :is(.nv-page, .nv-modal) .nv-server-grid {
+        grid-template-areas:
+            "host port"
+            "user db"
+            "pass pass";
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+
+    :is(.nv-page, .nv-modal) .nv-field-host { grid-area: host; }
+    :is(.nv-page, .nv-modal) .nv-field-port { grid-area: port; }
+    :is(.nv-page, .nv-modal) .nv-field-password { grid-area: pass; }
+}
+
+/* ============================================================================
+   From 768px: list beside detail. The list stays in view while a long note scrolls.
+   ============================================================================ */
+
+@media (min-width: 768px) {
+    .nv-page .nv-body {
+        grid-template-columns: 280px minmax(0, 1fr);
+    }
+
+    .nv-page .nv-list {
+        max-height: calc(100dvh - 24px);
+        overflow-y: auto;
+        position: sticky;
+        scrollbar-width: thin;
+        top: var(--nv-3);
+    }
+}
+
+@media (min-width: 1200px) {
+    .nv-page .nv-body {
+        grid-template-columns: 340px minmax(0, 1fr);
+    }
+}
+
+/* ============================================================================
+   Below 768px: the list and the detail are two steps. Without a picked note the list
+   shows; with one, the detail shows with a way back.
+   ============================================================================ */
+
+@media (max-width: 767.98px) {
+    .nv-page .nv-search {
+        flex-basis: 100%;
+        max-width: none;
+        order: 3;
+    }
+
+    .nv-page:not(.nv-has-selection) .nv-detail {
+        display: none;
+    }
+
+    .nv-page.nv-has-selection .nv-list,
+    .nv-page.nv-has-selection .nv-formats {
+        display: none;
+    }
+
+    .nv-page.nv-has-selection .nv-back {
+        align-items: center;
+        color: var(--accent);
+        display: inline-flex;
+        font-size: .88rem;
+        font-weight: 600;
+        gap: var(--nv-2);
+        margin-bottom: var(--nv-3);
+        min-height: 44px;
+        text-decoration: none;
+    }
+
+    .nv-page .nv-detail {
+        padding: var(--nv-3) var(--nv-4) var(--nv-4);
+    }
+
+    .nv-page .nv-title-input {
+        font-size: 1.2rem;
+    }
+
+    :is(.nv-page, .nv-modal) .nv-field-format {
+        width: 100%;
+    }
+}
+
+/* Touch screens: nothing tapped is smaller than about 44px, and keyboard hints go away. */
+@media (pointer: coarse) {
+    :is(.nv-page, .nv-modal) .nv-btn,
+    :is(.nv-page, .nv-modal) .nv-tool,
+    .nv-page .nv-chip,
+    :is(.nv-page, .nv-modal) .nv-check {
+        min-height: 44px;
+    }
+
+    :is(.nv-page, .nv-modal) .nv-btn-icon,
+    :is(.nv-page, .nv-modal) .nv-btn-icon.nv-btn-sm {
+        min-height: 44px;
+        width: 44px;
+    }
+
+    .nv-page .nv-child > details > summary {
+        padding-right: 108px;
+    }
+
+    .nv-page .nv-shortcuts,
+    .nv-page .nv-kbd-hint {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :is(.nv-page, .nv-modal) * {
+        transition: none !important;
+    }
+}

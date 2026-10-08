@@ -1,0 +1,65 @@
+@model NotesIndexViewModel
+@{
+    var form = Model.Form;
+}
+<div class="modal fade nv-modal" id="nv-create" tabindex="-1" aria-labelledby="nv-create-title" aria-hidden="true"
+     data-open-on-load="@(Model.OpenCreateModal ? "true" : null)">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <form class="modal-content nv-create" method="post" asp-action="Create">
+            <div class="modal-header">
+                <h2 class="modal-title" id="nv-create-title">@T["Notes.CreateNote"]</h2>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="@T["Action.Cancel"]"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="nv-form-errors" asp-validation-summary="All"></div>
+                <partial name="_NoteReturnState" model="Model" />
+
+                <fieldset class="nv-format-picker">
+                    <legend class="nv-label">@T["Notes.Format.Label"]</legend>
+                    <div class="nv-picks">
+                        @foreach (var option in NoteFormatCatalog.All)
+                        {
+                            <label class="nv-pick @option.CssClass">
+                                <input type="radio" name="Format" value="@((int)option.Format)" checked="@(form.Format == option.Format)" />
+                                <span class="nv-dot" aria-hidden="true"></span>
+                                <span class="nv-pick-name">@T[option.LabelKey]</span>
+                                <span class="nv-pick-ext">@option.Badge</span>
+                            </label>
+                        }
+                    </div>
+                </fieldset>
+
+                <div class="nv-field">
+                    <label class="nv-label" for="nv-new-title">@T["Notes.NoteTitlePlaceholder"]</label>
+                    <input class="form-control" id="nv-new-title" name="Title" value="@form.Title" required maxlength="160" autocomplete="off" />
+                </div>
+
+                @* A server group starts as a title and a description; its connections are added
+                   as sub-notes on the detail pane. *@
+                <div class="nv-field">
+                    <label class="nv-label" for="nv-new-content">@T["Notes.Description"]</label>
+                    <textarea class="form-control nv-content" id="nv-new-content" name="Content" rows="8" maxlength="200000"
+                              data-autosize>@form.Content</textarea>
+                </div>
+
+                <div class="nv-meta-row">
+                    <div class="nv-field nv-field-grow">
+                        <label class="nv-label" for="nv-new-tags">@T["Notes.NoteTagsPlaceholder"]</label>
+                        <input class="form-control" id="nv-new-tags" name="Tags" value="@form.Tags" maxlength="250"
+                               placeholder="@T["Notes.TagsPlaceholder"]" autocomplete="off" />
+                    </div>
+                    <label class="nv-check nv-check-pin" for="nv-new-pin">
+                        <input class="form-check-input" id="nv-new-pin" name="IsPinned" type="checkbox" value="true" checked="@form.IsPinned" />
+                        <span>@T["Common.Pinned"]</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="nv-btn nv-btn-ghost" type="button" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button class="nv-btn nv-btn-primary" type="submit">@T["Action.Create"]</button>
+            </div>
+        </form>
+    </div>
+</div>

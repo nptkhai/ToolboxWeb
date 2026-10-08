@@ -1,0 +1,273 @@
+:root {
+    --adaptive-sky-top: #0b1730;
+    --adaptive-sky-mid: #26385f;
+    --adaptive-sky-bottom: #765a78;
+    --adaptive-glow: #ffc779;
+    --adaptive-horizon: .72;
+    --adaptive-orb-x: 76%;
+    --adaptive-orb-y: 20%;
+    --adaptive-orb-opacity: .9;
+}
+
+.adaptive-background {
+    background:
+        radial-gradient(circle at var(--adaptive-orb-x) var(--adaptive-orb-y), color-mix(in srgb, var(--adaptive-glow), transparent 62%) 0, transparent 24%),
+        linear-gradient(180deg, var(--adaptive-sky-top) 0%, var(--adaptive-sky-mid) 51%, var(--adaptive-sky-bottom) 100%);
+    inset: 0;
+    isolation: isolate;
+    overflow: hidden;
+    pointer-events: none;
+    position: fixed;
+    transition: background 1.8s ease;
+    z-index: 0;
+}
+
+.adaptive-background::before {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+    content: "";
+    inset: 0;
+    mix-blend-mode: soft-light;
+    opacity: .18;
+    pointer-events: none;
+    position: absolute;
+    z-index: 7;
+}
+
+.adaptive-background::after {
+    background: linear-gradient(180deg, transparent 48%, rgba(4, 10, 22, var(--adaptive-horizon)) 118%);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 6;
+}
+
+.adaptive-background__orb {
+    aspect-ratio: 1;
+    background: var(--adaptive-glow);
+    border-radius: 50%;
+    box-shadow: 0 0 40px color-mix(in srgb, var(--adaptive-glow), transparent 35%), 0 0 110px color-mix(in srgb, var(--adaptive-glow), transparent 58%);
+    left: var(--adaptive-orb-x);
+    opacity: var(--adaptive-orb-opacity);
+    position: absolute;
+    top: var(--adaptive-orb-y);
+    transform: translate(-50%, -50%);
+    transition: all 1.8s cubic-bezier(.2, .8, .2, 1);
+    width: clamp(76px, 11vw, 148px);
+    z-index: 1;
+}
+
+body[data-adaptive-night="true"] .adaptive-background__orb {
+    background:
+        radial-gradient(circle at 34% 30%, rgba(49, 58, 83, .18) 0 9%, transparent 10%),
+        radial-gradient(circle at 66% 64%, rgba(49, 58, 83, .12) 0 13%, transparent 14%),
+        var(--adaptive-glow);
+    box-shadow: 0 0 28px rgba(223, 233, 255, .34), 0 0 90px rgba(173, 195, 255, .24);
+}
+
+.adaptive-background__stars,
+.adaptive-background__clouds,
+.adaptive-background__mist,
+.adaptive-background__particles,
+.adaptive-background__lightning {
+    inset: 0;
+    position: absolute;
+}
+
+.adaptive-background__stars {
+    opacity: 0;
+    transition: opacity 1.5s ease;
+    z-index: 0;
+}
+
+body[data-adaptive-night="true"] .adaptive-background__stars {
+    opacity: .82;
+}
+
+.adaptive-background__star {
+    animation: adaptive-twinkle var(--speed) ease-in-out infinite alternate;
+    background: #fff;
+    border-radius: 50%;
+    height: var(--size);
+    left: var(--x);
+    opacity: var(--alpha);
+    position: absolute;
+    top: var(--y);
+    width: var(--size);
+}
+
+.adaptive-background__clouds {
+    opacity: 0;
+    transition: opacity 1.4s ease;
+    z-index: 2;
+}
+
+body[data-adaptive-weather="cloudy"] .adaptive-background__clouds,
+body[data-adaptive-weather="fog"] .adaptive-background__clouds,
+body[data-adaptive-weather="rain"] .adaptive-background__clouds,
+body[data-adaptive-weather="snow"] .adaptive-background__clouds,
+body[data-adaptive-weather="storm"] .adaptive-background__clouds {
+    opacity: .72;
+}
+
+body[data-adaptive-weather="storm"] .adaptive-background__clouds {
+    filter: brightness(.52);
+    opacity: .94;
+}
+
+.adaptive-background__cloud {
+    animation: adaptive-drift var(--speed) linear infinite;
+    background: rgba(238, 243, 250, .25);
+    border-radius: 999px;
+    filter: blur(8px);
+    height: calc(var(--w) * .27);
+    left: var(--x);
+    position: absolute;
+    top: var(--y);
+    width: var(--w);
+}
+
+.adaptive-background__cloud::before,
+.adaptive-background__cloud::after {
+    aspect-ratio: 1;
+    background: inherit;
+    border-radius: 50%;
+    bottom: 4%;
+    content: "";
+    position: absolute;
+}
+
+.adaptive-background__cloud::before {
+    left: 18%;
+    width: 35%;
+}
+
+.adaptive-background__cloud::after {
+    right: 16%;
+    width: 46%;
+}
+
+.adaptive-background__mist {
+    opacity: 0;
+    transition: opacity 1.4s ease;
+    z-index: 3;
+}
+
+body[data-adaptive-weather="fog"] .adaptive-background__mist {
+    opacity: .78;
+}
+
+.adaptive-background__mist::before,
+.adaptive-background__mist::after {
+    animation: adaptive-breathe 8s ease-in-out infinite alternate;
+    background: rgba(235, 241, 245, .22);
+    border-radius: 50%;
+    content: "";
+    filter: blur(30px);
+    height: 18%;
+    left: -20%;
+    position: absolute;
+    width: 140%;
+}
+
+.adaptive-background__mist::before {
+    top: 38%;
+}
+
+.adaptive-background__mist::after {
+    animation-delay: -3s;
+    top: 57%;
+}
+
+.adaptive-background__particles {
+    z-index: 4;
+}
+
+.adaptive-background__particle {
+    left: var(--x);
+    opacity: var(--alpha);
+    position: absolute;
+    top: -8%;
+}
+
+.adaptive-background__particle--rain {
+    animation: adaptive-rainfall var(--speed) linear var(--delay) infinite;
+    background: linear-gradient(transparent, rgba(220, 237, 255, .82));
+    height: var(--length);
+    transform: rotate(9deg);
+    width: 1px;
+}
+
+.adaptive-background__particle--snow {
+    animation: adaptive-snowfall var(--speed) linear var(--delay) infinite;
+    background: rgba(255, 255, 255, .94);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(255, 255, 255, .5);
+    height: var(--size);
+    width: var(--size);
+}
+
+.adaptive-background__lightning {
+    background: rgba(224, 235, 255, .55);
+    opacity: 0;
+    z-index: 4;
+}
+
+body[data-adaptive-weather="storm"] .adaptive-background__lightning {
+    animation: adaptive-flash 8s steps(1) infinite;
+}
+
+.adaptive-background__landscape {
+    background: color-mix(in srgb, var(--adaptive-sky-top) 72%, #050a12);
+    bottom: -11%;
+    clip-path: polygon(0 48%, 9% 38%, 18% 52%, 31% 22%, 38% 39%, 47% 15%, 59% 49%, 70% 27%, 79% 43%, 89% 18%, 100% 40%, 100% 100%, 0 100%);
+    height: 32%;
+    left: -5%;
+    opacity: .55;
+    position: absolute;
+    right: -5%;
+    z-index: 3;
+}
+
+@keyframes adaptive-twinkle {
+    to { opacity: .15; transform: scale(.65); }
+}
+
+@keyframes adaptive-drift {
+    from { transform: translateX(-35vw); }
+    to { transform: translateX(135vw); }
+}
+
+@keyframes adaptive-rainfall {
+    to { transform: translate(12vw, 116vh) rotate(9deg); }
+}
+
+@keyframes adaptive-snowfall {
+    to { transform: translate(7vw, 115vh) rotate(240deg); }
+}
+
+@keyframes adaptive-flash {
+    0%, 91%, 94%, 100% { opacity: 0; }
+    92%, 93% { opacity: .52; }
+}
+
+@keyframes adaptive-breathe {
+    to { transform: translate3d(5%, 8px, 0) scale(1.05); }
+}
+
+@media (max-width: 560px) {
+    .adaptive-background__landscape {
+        bottom: -4%;
+        height: 21%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adaptive-background *,
+    .adaptive-background *::before,
+    .adaptive-background *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+    }
+}

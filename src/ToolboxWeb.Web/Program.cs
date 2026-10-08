@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -13,6 +15,7 @@ using ToolboxWeb.Web.Domain;
 using ToolboxWeb.Web.Extensions;
 using ToolboxWeb.Web.Infrastructure.DacFx;
 using ToolboxWeb.Web.Infrastructure.Logging;
+using ToolboxWeb.Web.Infrastructure.Storage;
 using ToolboxWeb.Web.Localization;
 using ToolboxWeb.Web.ViewModels.Jira;
 
@@ -33,6 +36,10 @@ builder.Logging.AddConsole();
 // has to reach a file. See Logging:File in appsettings.json.
 builder.Logging.AddFile(builder.Configuration, builder.Environment.ContentRootPath);
 
+var runtimeStorage = RuntimeStoragePaths.Create(builder.Environment, builder.Configuration);
+runtimeStorage.Initialize(builder.Environment.ContentRootPath);
+builder.Services.AddSingleton(runtimeStorage);
+
 var supportedCultures = new[]
 {
     new CultureInfo("vi-VN"),
@@ -41,6 +48,10 @@ var supportedCultures = new[]
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var sqliteConnection = new SqliteConnectionStringBuilder(connectionString)
+{
+    DataSource = runtimeStorage.DatabasePath
+}.ToString();
 builder.Services.AddLocalization();
 builder.Services.AddSingleton<JsonLocalizationStore>();
 builder.Services.Replace(ServiceDescriptor.Singleton<IStringLocalizerFactory, JsonStringLocalizerFactory>());
@@ -59,7 +70,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     ];
 });
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseSqlite(sqliteConnection));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -112,7 +123,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "DataProtectionKeys")));
+    .PersistKeysToFileSystem(new DirectoryInfo(runtimeStorage.DataProtectionKeysPath));
 var mvcBuilder = builder.Services.AddControllersWithViews()
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();
@@ -146,6 +157,11 @@ else
 
 app.UseRequestLocalization(localizationOptions);
 app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(runtimeStorage.UploadsPath),
+    RequestPath = "/uploads"
+});
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();

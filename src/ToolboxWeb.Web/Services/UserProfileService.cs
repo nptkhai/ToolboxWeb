@@ -4,6 +4,7 @@ using Microsoft.Extensions.Localization;
 using ToolboxWeb.Web.Data;
 using ToolboxWeb.Web.Domain;
 using ToolboxWeb.Web.Enums;
+using ToolboxWeb.Web.Infrastructure.Storage;
 using ToolboxWeb.Web.ViewModels;
 
 namespace ToolboxWeb.Web.Services;
@@ -29,7 +30,7 @@ public class UserProfileService : IUserProfileService
 
     private readonly ApplicationDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IWebHostEnvironment _environment;
+    private readonly RuntimeStoragePaths _storagePaths;
     private readonly IActivityLogService _activityLog;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private bool? _avatarColumnExists;
@@ -37,13 +38,13 @@ public class UserProfileService : IUserProfileService
     public UserProfileService(
         ApplicationDbContext db,
         UserManager<ApplicationUser> userManager,
-        IWebHostEnvironment environment,
+        RuntimeStoragePaths storagePaths,
         IActivityLogService activityLog,
         IStringLocalizer<SharedResource> localizer)
     {
         _db = db;
         _userManager = userManager;
-        _environment = environment;
+        _storagePaths = storagePaths;
         _activityLog = activityLog;
         _localizer = localizer;
     }
@@ -208,7 +209,7 @@ public class UserProfileService : IUserProfileService
     private async Task<(string RelativeUrl, string AbsolutePath)> SaveAvatarAsync(string userId, IFormFile avatarFile)
     {
         var extension = Path.GetExtension(avatarFile.FileName).ToLowerInvariant();
-        var uploadsRoot = Path.Combine(_environment.WebRootPath, "uploads", "images", "profile", userId);
+        var uploadsRoot = Path.Combine(_storagePaths.UploadsPath, "images", "profile", userId);
         Directory.CreateDirectory(uploadsRoot);
 
         var fileName = $"avatar-{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{extension}";
@@ -272,10 +273,18 @@ public class UserProfileService : IUserProfileService
         }
 
         var relativePath = avatarUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var expectedRoot = Path.GetFullPath(Path.Combine(_environment.WebRootPath, "uploads", "images", "profile"));
-        var absolutePath = Path.GetFullPath(Path.Combine(_environment.WebRootPath, relativePath));
+        var uploadsPrefix = $"uploads{Path.DirectorySeparatorChar}";
+        if (!relativePath.StartsWith(uploadsPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
 
-        if (!absolutePath.StartsWith(expectedRoot, StringComparison.OrdinalIgnoreCase))
+        var relativeUploadPath = relativePath[uploadsPrefix.Length..];
+        var expectedRoot = Path.GetFullPath(Path.Combine(_storagePaths.UploadsPath, "images", "profile"));
+        var expectedRootPrefix = Path.TrimEndingDirectorySeparator(expectedRoot) + Path.DirectorySeparatorChar;
+        var absolutePath = Path.GetFullPath(Path.Combine(_storagePaths.UploadsPath, relativeUploadPath));
+
+        if (!absolutePath.StartsWith(expectedRootPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }

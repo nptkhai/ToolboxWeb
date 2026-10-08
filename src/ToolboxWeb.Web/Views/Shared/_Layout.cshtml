@@ -21,9 +21,11 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b1730" />
     <title>@ViewData["Title"] - @T["App.Name"]</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/adaptive-background.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @if (hasFlashNotification)
     {
@@ -40,6 +42,7 @@
     </script>
 </head>
 <body>
+    <partial name="_AdaptiveBackground" />
     @if (hasFlashNotification)
     {
         <div id="tbx-notification-host" class="tbx-notification-host" aria-hidden="true"></div>
@@ -94,6 +97,26 @@
                     <div class="page-kicker">@T["App.Tagline"]</div>
                     <h1>@(ViewData["Title"] ?? T["Dashboard.Title"].Value)</h1>
                 </div>
+                <div class="topbar-environment"
+                     data-environment-summary
+                     data-weather-loading="@T["Environment.Weather.Loading"]"
+                     data-weather-unavailable="@T["Environment.Weather.Unavailable"]"
+                     data-weather-clear="@T["Environment.Weather.Clear"]"
+                     data-weather-cloudy="@T["Environment.Weather.Cloudy"]"
+                     data-weather-fog="@T["Environment.Weather.Fog"]"
+                     data-weather-rain="@T["Environment.Weather.Rain"]"
+                     data-weather-snow="@T["Environment.Weather.Snow"]"
+                     data-weather-storm="@T["Environment.Weather.Storm"]"
+                     aria-live="polite">
+                    <div class="topbar-clock">
+                        <time class="topbar-clock-time" data-current-time datetime="">--:--</time>
+                        <span class="topbar-clock-date" data-current-date>--/--/----</span>
+                    </div>
+                    <div class="topbar-weather">
+                        <span class="topbar-weather-indicator" aria-hidden="true"></span>
+                        <span class="topbar-weather-text" data-current-weather>@T["Environment.Weather.Loading"]</span>
+                    </div>
+                </div>
                 <div class="topbar-actions">
                     <button class="icon-button" type="button" data-theme-toggle aria-label="@T["Action.ToggleTheme"]">&#9681;</button>
                     <form asp-controller="Culture" asp-action="Set" method="post" class="language-switcher">
@@ -111,6 +134,7 @@
     </div>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/adaptive-background.js" asp-append-version="true"></script>
     @if (hasFlashNotification)
     {
         <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>

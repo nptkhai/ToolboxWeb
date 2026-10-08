@@ -1,0 +1,72 @@
+@model NoteLinkRowsModel
+@{
+    // One row per address. The rows post as two lists in screen order, so a name and an address
+    // stay together by position; notes.js clones the template below for "add a link".
+    var rows = Model.Rows.Count > 0 ? Model.Rows : [new NoteLinkRow(string.Empty, string.Empty)];
+}
+<div class="nv-slot nv-slot-link@(Model.Conditional ? " is-conditional" : null)" data-slot="link">
+    <fieldset class="nv-rows" data-rows="link">
+        <legend class="nv-label">@T["Notes.Link.Rows"]</legend>
+
+        @foreach (var row in rows)
+        {
+            <div class="nv-row nv-link-row">
+                <input class="form-control nv-row-name" name="LinkNames" value="@row.Name" maxlength="80"
+                       placeholder="@T["Notes.Link.NamePlaceholder"]" aria-label="@T["Notes.Link.NameLabel"]"
+                       autocomplete="off" />
+                @* Not type="url": a line typed before this editor existed may not be an address,
+                   and the browser would then refuse to save the whole note. *@
+                <input class="form-control nv-row-url" name="LinkUrls" value="@row.Url" maxlength="2000"
+                       placeholder="https://" aria-label="@T["Notes.Link.UrlLabel"]" inputmode="url"
+                       autocomplete="off" spellcheck="false" data-row-url />
+                <span class="nv-row-actions">
+                    <a class="nv-btn nv-btn-icon nv-btn-sm" data-row-open href="@(row.IsWeb ? row.Url : null)"
+                       target="_blank" rel="noopener noreferrer" title="@T["Notes.Link.Open"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-external" /></svg>
+                        <span class="visually-hidden">@T["Notes.Link.Open"]</span>
+                    </a>
+                    <button class="nv-btn nv-btn-icon nv-btn-sm" type="button" data-row-copy data-row-field="url" title="@T["Notes.Link.Copy"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                        <span class="visually-hidden">@T["Notes.Link.Copy"]</span>
+                    </button>
+                    <button class="nv-btn nv-btn-icon nv-btn-sm nv-btn-danger" type="button" data-row-remove title="@T["Notes.Row.Remove"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-close" /></svg>
+                        <span class="visually-hidden">@T["Notes.Row.Remove"]</span>
+                    </button>
+                </span>
+            </div>
+        }
+
+        <template data-row-template>
+            <div class="nv-row nv-link-row">
+                <input class="form-control nv-row-name" name="LinkNames" value="" maxlength="80"
+                       placeholder="@T["Notes.Link.NamePlaceholder"]" aria-label="@T["Notes.Link.NameLabel"]"
+                       autocomplete="off" />
+                <input class="form-control nv-row-url" name="LinkUrls" value="" maxlength="2000"
+                       placeholder="https://" aria-label="@T["Notes.Link.UrlLabel"]" inputmode="url"
+                       autocomplete="off" spellcheck="false" data-row-url />
+                <span class="nv-row-actions">
+                    <a class="nv-btn nv-btn-icon nv-btn-sm" data-row-open target="_blank" rel="noopener noreferrer" title="@T["Notes.Link.Open"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-external" /></svg>
+                        <span class="visually-hidden">@T["Notes.Link.Open"]</span>
+                    </a>
+                    <button class="nv-btn nv-btn-icon nv-btn-sm" type="button" data-row-copy data-row-field="url" title="@T["Notes.Link.Copy"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                        <span class="visually-hidden">@T["Notes.Link.Copy"]</span>
+                    </button>
+                    <button class="nv-btn nv-btn-icon nv-btn-sm nv-btn-danger" type="button" data-row-remove title="@T["Notes.Row.Remove"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-close" /></svg>
+                        <span class="visually-hidden">@T["Notes.Row.Remove"]</span>
+                    </button>
+                </span>
+            </div>
+        </template>
+
+        <div class="nv-rows-foot">
+            <button class="nv-btn nv-btn-sm" type="button" data-add-row>
+                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-plus" /></svg>
+                @T["Notes.Link.Add"]
+            </button>
+        </div>
+    </fieldset>
+</div>

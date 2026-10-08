@@ -1,0 +1,73 @@
+@model NoteTaskRowsModel
+@{
+    // One row per task: what to do, and the state it is in. The state is a named choice, not a
+    // colour alone, so the list still reads in black and white; notes.css tints the row from it.
+    var rows = Model.Rows.Count > 0 ? Model.Rows : [new NoteTaskRow(string.Empty, NoteTaskStatusCatalog.Default)];
+}
+<div class="nv-slot nv-slot-task@(Model.Conditional ? " is-conditional" : null)" data-slot="task">
+    <fieldset class="nv-rows" data-rows="task">
+        <legend class="nv-label">@T["Notes.Task.Rows"]</legend>
+
+        @foreach (var row in rows)
+        {
+            <div class="nv-row nv-task-row">
+                <input class="form-control nv-row-text" name="Items" value="@row.Text" maxlength="300"
+                       placeholder="@T["Notes.Task.RowPlaceholder"]" aria-label="@T["Notes.Task.RowLabel"]"
+                       autocomplete="off" />
+                <span class="nv-status-box">
+                    <span class="nv-swatch" aria-hidden="true"></span>
+                    <select class="form-select nv-status" name="ItemStatuses" aria-label="@T["Notes.Task.StatusLabel"]">
+                        @foreach (var status in NoteTaskStatusCatalog.All)
+                        {
+                            <option value="@status.Slug" selected="@(status.Slug == row.Status.Slug)">@T[status.LabelKey]</option>
+                        }
+                    </select>
+                </span>
+                <span class="nv-row-actions">
+                    <button class="nv-btn nv-btn-icon nv-btn-sm" type="button" data-row-copy data-row-field="text" title="@T["Action.Copy"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                        <span class="visually-hidden">@T["Action.Copy"]</span>
+                    </button>
+                    <button class="nv-btn nv-btn-icon nv-btn-sm nv-btn-danger" type="button" data-row-remove title="@T["Notes.Row.Remove"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-close" /></svg>
+                        <span class="visually-hidden">@T["Notes.Row.Remove"]</span>
+                    </button>
+                </span>
+            </div>
+        }
+
+        <template data-row-template>
+            <div class="nv-row nv-task-row">
+                <input class="form-control nv-row-text" name="Items" value="" maxlength="300"
+                       placeholder="@T["Notes.Task.RowPlaceholder"]" aria-label="@T["Notes.Task.RowLabel"]"
+                       autocomplete="off" />
+                <span class="nv-status-box">
+                    <span class="nv-swatch" aria-hidden="true"></span>
+                    <select class="form-select nv-status" name="ItemStatuses" aria-label="@T["Notes.Task.StatusLabel"]">
+                        @foreach (var status in NoteTaskStatusCatalog.All)
+                        {
+                            <option value="@status.Slug">@T[status.LabelKey]</option>
+                        }
+                    </select>
+                </span>
+                <span class="nv-row-actions">
+                    <button class="nv-btn nv-btn-icon nv-btn-sm" type="button" data-row-copy data-row-field="text" title="@T["Action.Copy"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                        <span class="visually-hidden">@T["Action.Copy"]</span>
+                    </button>
+                    <button class="nv-btn nv-btn-icon nv-btn-sm nv-btn-danger" type="button" data-row-remove title="@T["Notes.Row.Remove"]">
+                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-close" /></svg>
+                        <span class="visually-hidden">@T["Notes.Row.Remove"]</span>
+                    </button>
+                </span>
+            </div>
+        </template>
+
+        <div class="nv-rows-foot">
+            <button class="nv-btn nv-btn-sm" type="button" data-add-row>
+                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-plus" /></svg>
+                @T["Notes.Task.AddRow"]
+            </button>
+        </div>
+    </fieldset>
+</div>

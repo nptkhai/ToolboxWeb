@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using ToolboxWeb.Web.Infrastructure.Excel;
 using ToolboxWeb.Web.Infrastructure.DacFx;
 using ToolboxWeb.Web.Infrastructure.Jira;
+using ToolboxWeb.Web.Infrastructure.Notes;
 using ToolboxWeb.Web.Infrastructure.SqlProfiler;
 using ToolboxWeb.Web.Infrastructure.SqlSchema;
 using ToolboxWeb.Web.Services;
@@ -16,6 +17,8 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IActivityLogService, ActivityLogService>();
+        // Stateless wrapper over the persisted Data Protection key ring.
+        services.AddSingleton<INoteSecretProtector, NoteSecretProtector>();
         services.AddScoped<INoteService, NoteService>();
         services.AddScoped<IChecklistService, ChecklistService>();
         services.AddScoped<IQuickLinkService, QuickLinkService>();
