@@ -7,6 +7,8 @@
 > - Chụp 26 màn hình ở desktop 1440px, mobile 390px, chế độ tối và sidebar thu gọn.
 > - Đọc `site.css`, các view Razor và JavaScript.
 > - Nhóm Jira được đánh giá từ ảnh chụp do người dùng cung cấp, kết hợp đọc mã nguồn, vì môi trường đánh giá không đăng nhập được Jira.
+>
+> **Cập nhật 13/10/2026:** bổ sung [mục 8 – Kế hoạch xử lý chi tiết](#8-kế-hoạch-xử-lý-chi-tiết-theo-thứ-tự-ưu-tiên), và đính chính một số nhận định của bản đầu sau khi đối chiếu lại mã nguồn (xem [mục 9](#9-đính-chính-so-với-bản-đầu)).
 
 ---
 
@@ -19,6 +21,8 @@
 5. [Đánh giá các prompt đang dùng](#5-đánh-giá-các-prompt-đang-dùng)
 6. [Thứ tự ưu tiên cải tiến](#6-thứ-tự-ưu-tiên-cải-tiến)
 7. [Phụ lục: bảng điểm](#7-phụ-lục-bảng-điểm)
+8. [Kế hoạch xử lý chi tiết theo thứ tự ưu tiên](#8-kế-hoạch-xử-lý-chi-tiết-theo-thứ-tự-ưu-tiên)
+9. [Đính chính so với bản đầu](#9-đính-chính-so-với-bản-đầu)
 
 ---
 
@@ -44,7 +48,7 @@ Người dùng chuyển qua lại giữa các trang sẽ thấy như đang dùng
 |---|---|---|
 | 1 | **Không biết mình đang ở trang nào.** Mục của trang hiện tại không được tô sáng. Trong CSS không có `.side-nav a.active`, cũng không có `aria-current`. | Cao |
 | 2 | **Thu gọn sidebar thì menu biến mất hoàn toàn**, chỉ còn chữ "TW". Nguyên nhân: CSS đặt `font-size: 0` rồi dùng `::first-letter` để hiện lại chữ cái đầu, nhưng `::first-letter` không áp dụng cho phần tử `display: flex`. | Cao |
-| 3 | **Mobile không có menu trượt.** Ở 390px, sidebar xếp chồng lên trên cùng và chiếm khoảng 500px; người dùng phải cuộn qua cả menu mới tới nội dung. Header bị vỡ thành 4 dòng, cao khoảng 240px. | Cao |
+| 3 | **Mobile không có menu trượt.** Dưới 900px, sidebar mặc định mở và xếp chồng lên trên cùng, chiếm khoảng 500px; người dùng phải cuộn qua cả menu mới tới nội dung. Nút ☰ ẩn được sidebar, nhưng trạng thái này lưu chung với desktop. Header bị vỡ thành 4 dòng, cao khoảng 240px; ở 1280px, dòng chữ nhỏ trên topbar cũng đã bị xuống 2 dòng. | Cao |
 | 4 | Không có icon, không phân nhóm. Công cụ cá nhân (Ghi chú, Công việc), công cụ kỹ thuật (So sánh DB, Bắt SQL, Component) và Jira nằm lẫn với nhau. | Trung bình |
 | 5 | Thiếu "Không gian prompt" trong menu; trang này chỉ vào được qua widget ở Tổng quan. | Trung bình |
 | 6 | Tên dễ nhầm: "Danh sách công việc" (Jira) đứng cạnh "Công việc" (checklist cá nhân). | Trung bình |
@@ -77,13 +81,14 @@ DEV (chỉ hiện ở môi trường Development hoặc theo role)
 - Nút đổi giao diện dùng ký tự `◑`, hiển thị thành một chấm nhỏ khó hiểu. Nên dùng icon mặt trời/mặt trăng có tooltip.
 - **Tiêu đề bị trùng 2 lần** ở nhiều trang: topbar ghi "Component Hub" rồi nội dung lại có h1 "Component Hub". Tương tự với "Kendo UI Demo" và "Quản lý tài khoản". Trang đăng nhập còn lặp chữ "Đăng nhập" tới 4 lần.
 - Trang đăng nhập vẫn hiện đồng hồ, thời tiết, cùng lúc cả link "Đăng ký" và "Đăng nhập" trên header.
-- Với tài khoản Jira, **ảnh đại diện bị vỡ**: cạnh tên người dùng là icon ảnh lỗi, nhiều khả năng vì URL avatar của Jira cần đăng nhập mới tải được. Cần tải ảnh qua server, hoặc khi lỗi thì quay về hiện chữ viết tắt.
+- Với tài khoản Jira, **ảnh đại diện bị vỡ**: cạnh tên người dùng là icon ảnh lỗi. Ảnh lấy từ `AvatarUrl` trong hồ sơ (file đã upload, phục vụ qua `/uploads`), nên nhiều khả năng file không còn ở thư mục `Storage:UploadsPath` hiện tại; cần kiểm tra trên máy chạy thật. Dù nguyên nhân là gì, giao diện cũng phải tự quay về hiện chữ viết tắt khi ảnh lỗi.
+- Đồng hồ thời tiết gọi `navigator.geolocation` ngay khi tải trang, nên trình duyệt hỏi quyền vị trí ở lần vào đầu tiên mà không giải thích lý do.
 
 ### 2.3 Hình nền hoàng hôn (adaptive background)
 
 - Hình đẹp nhưng **không hợp** với một công cụ làm việc, nhất là công cụ DB/SQL. Mặt trời và núi nằm sau nội dung, cạnh tranh sự chú ý.
 - **Chữ đặt thẳng lên nền gần như không đọc được**: phụ đề trang Kendo Demo, phụ đề trang Quản lý tài khoản, chữ đỏ của trang Access denied.
-- Hình nền chỉ cao 900px. Ở các trang dài (Tổng quan, Prompt, Component), phần bên dưới chuyển sang một dải xanh navy, tạo thành vệt cắt ngang rõ ràng.
+- Hình nền đổi theo giờ (hoàng hôn, đêm trăng…), nên cùng một trang có độ tương phản khác nhau tùy thời điểm mở. Kiểm tra giao diện vì thế khó hơn.
 - **Đề xuất:** mặc định dùng nền trung tính, cho người dùng tự bật hình nền trong Cài đặt. Mọi chữ phải nằm trên một bề mặt (`--surface`).
 
 ### 2.4 Màu sắc và chữ
@@ -119,7 +124,7 @@ DEV (chỉ hiện ở môi trường Development hoặc theo role)
 
 - Form ở Công việc, Liên kết nhanh và Prompt **chỉ có placeholder, không có label**. Gõ vào là mất gợi ý, và không đạt chuẩn WCAG.
 - **Xóa không có bước xác nhận** ở Công việc, Liên kết nhanh và Prompt. Riêng trang Ghi chú có modal xác nhận, nên đây cũng là một điểm thiếu nhất quán.
-- Console báo lỗi JavaScript `Cannot read properties of undefined (reading 'parseColor')` trên 5 trang: Công việc, Component, Kendo Demo, So sánh DB, Bắt SQL.
+- Console báo lỗi JavaScript `Cannot read properties of undefined (reading 'parseColor')` trên mọi trang nạp Kendo: Công việc (khi có thông báo), Component, Kendo Demo, So sánh DB, Bắt SQL, và hai trang Jira. **Đây là lỗi gốc nghiêm trọng**, xem mục 8, việc 1.1: bundle Kendo dừng giữa chừng khi tải, nên TextBox, ListView, Window không được đăng ký.
 - Nhiều chữ có độ tương phản dưới 4.5:1 so với nền, nhất là chữ đặt thẳng lên hình nền.
 - Ô chọn ngày native hiện `mm/dd/yyyy` trong giao diện tiếng Việt (tùy theo ngôn ngữ trình duyệt), không theo quy định dùng Kendo DatePicker trong `AGENTS.md`.
 
@@ -197,14 +202,15 @@ DEV (chỉ hiện ở môi trường Development hoặc theo role)
 - Dàn trang khá tốt: tab theo nhóm, có nhãn trạng thái.
 - Nhưng đây là **công cụ nội bộ cho lập trình viên**, không nên nằm trong menu chính của người dùng. Nên ẩn theo role hoặc chỉ hiện ở môi trường Development.
 - Bố cục thẻ không đều: một thẻ chỉ rộng nửa trang, nửa còn lại bỏ trống.
-- Nhãn đỏ "Not in current Kendo bundle" và thông báo lỗi kiểu dev hiện ngay trong demo.
+- Nhãn đỏ "Not in current Kendo bundle" và thông báo lỗi kiểu dev hiện ngay trong demo. Nhãn này còn **sai sự thật**: TextBox có trong bundle, chỉ không được đăng ký do lỗi tải (mục 8, việc 1.1).
 
 ### 3.10 Kendo UI Demo: 2/10
 
 - Phụ đề **không đọc được** trên nền.
 - **Hộp lỗi đỏ khắp nơi** ("kendoTextBox / kendoListView chưa có trong bundle"), có 2 hộp lỗi lạc hẳn ra ngoài panel ở cuối trang.
 - Bảng chính chỉ có header và một dòng lỗi.
-- **Đề xuất:** xóa trang này hoặc ẩn hẳn. Một trang "demo hỏng" làm giảm uy tín toàn bộ app.
+- **Nguyên nhân thật không nằm ở trang này.** Bundle `kendo.ui.core.min.js` cần thêm thư viện `@progress/kendo-drawing` (biến toàn cục `_progress_kendo_drawing`) nhưng thư viện này không được nạp. Bundle dừng ở module màu (byte ~1.227.548), nên các widget đứng sau điểm đó (TextBox ở ~1.251.900, ListView ~1.310.070, Window ~1.507.757) không bao giờ được đăng ký. Khi thử bổ sung biến này, trang chạy đầy đủ: ô tìm nhanh, bảng ListView có nhãn trạng thái và thanh tiến độ, phân trang, nút "Chi tiết"; không còn lỗi console.
+- **Đề xuất:** sửa lỗi nạp Kendo (mục 8, việc 1.1) thay vì xóa trang; sau đó vẫn chuyển trang này sang nhóm Dev.
 
 ### 3.11 Tabulator Demo: 6/10
 
@@ -242,7 +248,7 @@ DEV (chỉ hiện ở môi trường Development hoặc theo role)
 ### 3.15 Quản lý tài khoản: 4/10
 
 - Các mục menu bên trái là thẻ cao khoảng 95px với nhiều khoảng trống, do grid bị kéo giãn.
-- Trong ảnh chụp thấy **2 mục cùng được tô sáng** (Profile + Password, hoặc Email + Two-factor), nên người dùng không biết mình đang ở đâu.
+- Nhìn như có **2 mục cùng được tô sáng** (Profile + Password, hoặc Email + Two-factor). Kiểm tra CSS cho thấy chỉ một mục có class `active`; các mục còn lại có nền trong suốt, nên mục nào nằm trên vùng sáng của hình nền cũng trông như đang được chọn. Người dùng vẫn không biết mình đang ở đâu. Cần cho mục thường một nền đặc (`--surface`) và tăng độ đậm cho mục active.
 - Tiêu đề trùng ở topbar và trong nội dung; phụ đề không đọc được.
 - Các trang Email và Password vẫn là trang mặc định, tiếng Anh; **label đè lên giá trị** ("Email" đè lên "demo.user@…").
 - Tên đăng nhập hiện trong ô trông như sửa được nhưng thực tế không sửa được.
@@ -342,7 +348,7 @@ Chỉ cần thống nhất 4 thứ này (một bộ chọn kỳ, một kiểu b�
 
 - Nút "Sắp xếp" là hành động quan trọng nhất nhưng lại là nút phụ màu trắng. Nút "Lưu đề xuất" khi bị vô hiệu có màu tím nhạt, nhìn như vẫn bấm được.
 - **Bảng kết quả không cho thấy thay đổi gì.** Cột cần có nhất là **"Hạn cũ → Hạn mới"** (hoặc ngày được xếp), kèm đánh dấu dòng nào thay đổi. Tốt hơn nữa là xem trước ngay trên bảng kanban theo ngày.
-- Lưu đề xuất là **ghi thật vào Jira** nhưng không có bước xác nhận. Cần một hộp thoại: "Sẽ cập nhật hạn của 5 subtask trên Jira", kèm danh sách.
+- **Nút "Lưu đề xuất" thực ra không lưu gì.** Hàm `saveProposal()` trong `Content/js/jira-auto-schedule.js` chỉ gán hạn mới vào dữ liệu trên trình duyệt; thông báo ghi "(chưa lưu vào Jira)", tải lại trang là mất. Tên nút "Lưu" khiến người dùng tưởng đã cập nhật Jira. Kéo thả ở tab Quản lý (`jira-task-board.js`) cũng chỉ đổi dữ liệu tại chỗ. Cần chọn một trong hai hướng: ghi thật lên Jira (có hộp thoại xác nhận kèm danh sách), hoặc đổi tên thành "Áp dụng vào lưới" và hiện rõ trạng thái "chưa lưu".
 - Bảng bên trái hẹp nên tóm tắt bị cắt cụt ("[Khai - P.CNTT - 110820260015] -Kiểm…") mà không có tooltip. Tiêu đề "ESTIMATE …" cũng bị cắt.
 - Bảng bên phải trống, chiếm khoảng 600px.
 - Ước tính `0h` ở các việc To Do sẽ làm hỏng thuật toán sắp lịch. Cần cảnh báo "3 subtask chưa có ước tính", kèm link sang Jira để bổ sung.
@@ -416,14 +422,14 @@ Trả lời: (1) thay đổi chính, (2) file sửa, (3) ảnh hưởng responsi
 | 1 | Sửa sidebar thu gọn mất menu; thêm menu trượt cho mobile | Toàn app |
 | 2 | Thêm trạng thái active cho menu và `aria-current` | Toàn app |
 | 3 | Làm lại trang Đăng ký; sửa label đè chữ ở Đăng ký và trang Email | Identity |
-| 4 | Ẩn Kendo Demo và Component Hub khỏi người dùng thường | Dev |
-| 5 | Sửa lỗi JS `parseColor` | 5 trang |
+| 4 | Sửa lỗi nạp Kendo (thiếu `@progress/kendo-drawing`), rồi chuyển Kendo Demo và Component Hub sang nhóm Dev | Dev, Jira, DB |
+| 5 | Sửa lỗi JS `parseColor` (chính là việc 4) | 7 trang |
 | 6 | Thêm xác nhận khi xóa (Công việc, Liên kết nhanh, Prompt) | Cá nhân |
 | 7 | Trang Access denied: dịch sang tiếng Việt, giải thích lý do, thêm nút hành động | Identity |
 | 8 | Sửa avatar Jira bị vỡ; đổi tên menu Jira và Công việc cho khỏi nhầm | Jira |
 | 9 | Tab Tìm kiếm: mã issue có link và không bẻ dòng; dùng nhãn trạng thái màu; bỏ các cột trống; đổi đúng tên cột "Logged" | Jira |
 | 10 | Kéo thả ở tab Quản lý phải có trạng thái "chưa lưu" và thanh Lưu/Hủy, nếu không thì tắt | Jira |
-| 11 | Thêm xác nhận trước khi "Lưu đề xuất" ghi vào Jira | Jira |
+| 11 | "Lưu đề xuất" và kéo thả chỉ đổi dữ liệu trên trình duyệt: ghi thật lên Jira (có xác nhận), hoặc đổi tên và hiện trạng thái "chưa lưu" | Jira |
 | 12 | Canh phải cột Ước tính và Log theo đúng quy ước lưới | Jira |
 
 ### P1: thống nhất giao diện
@@ -461,7 +467,7 @@ Trả lời: (1) thay đổi chính, (2) file sửa, (3) ảnh hưởng responsi
 | Tabulator Demo | 6 | Ổn, nhãn trạng thái khó hiểu |
 | Jira – Quản lý (kanban) | 6 | Ý tưởng hay, chữ quá nhỏ, kéo thả không lưu |
 | Component Hub | 5 | Công cụ dev nằm trong menu người dùng |
-| Jira – Sắp xếp tự động | 5 | Luồng không rõ, không thấy thay đổi, không xác nhận |
+| Jira – Sắp xếp tự động | 5 | Luồng không rõ, không thấy thay đổi, nút "Lưu" không lưu |
 | Bắt câu lệnh SQL | 4.5 | Lệch với So sánh DB, nút trông như bị vô hiệu |
 | Tổng quan | 4 | Thiếu tóm tắt, dữ liệu "hôm nay" sai nghĩa |
 | Hẹn giờ tập trung | 4 | Lưu được phiên giả, thiếu trạng thái trống |
@@ -471,5 +477,218 @@ Trả lời: (1) thay đổi chính, (2) file sửa, (3) ảnh hưởng responsi
 | Liên kết nhanh | 3.5 | Ô "0" không label, không sửa được |
 | Jira – Tìm kiếm | 3.5 | Bảng thường, mã không có link, JQL lặp |
 | Đăng ký | 2 | Trang scaffold tiếng Anh, label đè chữ |
-| Kendo UI Demo | 2 | Hộp lỗi đỏ khắp trang |
+| Kendo UI Demo | 2 | Hộp lỗi đỏ khắp trang (do lỗi nạp Kendo; sửa xong ước khoảng 6) |
 | Access denied | 1 | Tiếng Anh, không giải thích, không có hành động |
+
+---
+
+## 8. Kế hoạch xử lý chi tiết theo thứ tự ưu tiên
+
+Mỗi việc ghi theo 5 ý:
+- **Vấn đề:** người dùng gặp gì.
+- **Nguyên nhân / vị trí:** file và dòng code liên quan, đã đối chiếu với mã nguồn.
+- **Cách xử lý:** hướng sửa cụ thể.
+- **Kiểm tra:** làm sao biết đã sửa xong.
+- **Công sức:** **S** dưới nửa ngày, **M** từ nửa ngày tới 2 ngày, **L** trên 2 ngày.
+
+Thứ tự giai đoạn là thứ tự nên làm. Trong mỗi giai đoạn, việc đứng trước nên làm trước.
+
+| Giai đoạn | Nội dung | Ước lượng | Kết quả sau giai đoạn |
+|---|---|---|---|
+| 1 | Lỗi gốc và lỗi chức năng | 3–4 ngày | Không còn lỗi console, không còn thao tác gây hiểu nhầm hay mất dữ liệu, dùng được trên mobile |
+| 2 | Nền tảng thiết kế | khoảng 1 tuần | Có bộ token, component dùng chung và quy chuẩn ghi vào `AGENTS.md` |
+| 3 | Làm lại từng màn hình theo chuẩn | 1–2 tuần | Mọi trang cùng một ngôn ngữ thiết kế |
+| 4 | Tối ưu và nâng cấp | liên tục | Nhẹ hơn, có kiểm tra tự động, thêm tính năng giá trị |
+
+### Giai đoạn 1 – Lỗi gốc và lỗi chức năng
+
+#### 1.1 Bundle Kendo dừng giữa chừng: mất TextBox, ListView, Window — **S**
+- **Vấn đề:** lỗi `Cannot read properties of undefined (reading 'parseColor')` trên 7 trang. Kendo Demo và Component Hub hiện hộp lỗi "chưa có trong bundle". Widget Window/TextBox/ListView không dùng được ở bất kỳ đâu.
+- **Nguyên nhân / vị trí:** `Content/vendor/kendo/js/kendo.ui.core.min.js` là bản UMD, cần thư viện `@progress/kendo-drawing` dưới tên biến toàn cục `_progress_kendo_drawing`. App không nạp thư viện này, nên bundle ném lỗi tại `kendo.deepExtend(kendo,{parseColor:t.parseColor…})` (byte ~1.227.548). Các widget đứng sau điểm này không được đăng ký: TextBox ~1.251.900, ListView ~1.310.070, Window ~1.507.757. Các widget đứng trước vẫn chạy: DatePicker, ComboBox, MultiSelect, AutoComplete, NumericTextBox, Notification.
+- **Cách xử lý:**
+  1. Tạo một partial duy nhất `Views/Shared/_KendoScripts.cshtml`, gồm: file UMD của `@progress/kendo-drawing` (đúng phiên bản mà `kendo-ui-core@2026.2.520` khai báo trong dependencies), `kendo.ui.core.min.js`, rồi culture và messages vi-VN. Thay mọi chỗ đang nạp core bằng partial này: `_Layout.cshtml`, `Components/Index.cshtml`, `DemoKendo/Index.cshtml`, `Jira/Dashboard.cshtml`, `Jira/Worklist.cshtml`, `SchemaCompare/Index.cshtml`, `SqlProfiler/Index.cshtml`, và `loadScriptOnce` trong `site.js` (khoảng dòng 666). Kiểm tra file UMD của kendo-drawing gán đúng `window._progress_kendo_drawing`; nếu tên khác thì gán lại trước khi nạp core.
+  2. Nếu cần sửa nóng trong lúc chờ: đặt `<script>window._progress_kendo_drawing = window._progress_kendo_drawing || {};</script>` ngay trước core. Cách này **đã được kiểm chứng**: hết lỗi, `kendoTextBox`, `kendoListView`, `kendoWindow` đều có, trang Kendo Demo chạy đầy đủ. Đổi lại, các tính năng màu và vẽ (ColorPicker) sẽ không chạy.
+  3. Cập nhật `docs/kendo-self-host.md` (thêm kendo-drawing vào danh sách asset) và các nhãn "Usable now / Not in current Kendo bundle" trong Component Hub.
+- **Kiểm tra:** console sạch trên 7 trang; `jQuery.fn.kendoTextBox`, `kendoListView` và `kendoWindow` đều tồn tại; Kendo Demo không còn hộp đỏ.
+
+#### 1.2 Jira: nút "Lưu đề xuất" và kéo thả không lưu gì — **M (đổi tên) / L (ghi thật lên Jira)**
+- **Vấn đề:** người dùng bấm "Lưu đề xuất" hoặc kéo thẻ sang ngày khác và tưởng đã cập nhật Jira. Tải lại trang là mất hết.
+- **Nguyên nhân / vị trí:** `saveProposal()` trong `Content/js/jira-auto-schedule.js` (khoảng dòng 527) và sự kiện `drop` trong `Content/js/jira-task-board.js` (khoảng dòng 437) chỉ gán `row.dueDate` trên trình duyệt. Thông báo `Jira.AutoSchedule.SavedToast` có ghi "(chưa lưu vào Jira)", nhưng chữ quá nhỏ và chỉ hiện thoáng qua.
+- **Cách xử lý (khuyến nghị theo thứ tự):**
+  1. *Ngay lập tức:* đổi nhãn nút thành "Áp dụng vào lưới". Hiện một thanh cố định: "N thay đổi chưa lưu lên Jira · [Hủy]". Đánh dấu thẻ hoặc dòng đã đổi (viền nét đứt kèm "05/10 → 07/10"). Cảnh báo `beforeunload` khi còn thay đổi chưa lưu.
+  2. *Tiếp theo:* thêm hàm `UpdateDueDatesAsync` trong service Jira (gọi REST `PUT /rest/api/2/issue/{key}` với trường `duedate`, dùng phiên Jira hiện tại) và một action controller mỏng. Trước khi gửi, mở modal xác nhận liệt kê từng subtask: hạn cũ → hạn mới. Báo kết quả từng dòng (thành công/lỗi), và ghi activity log.
+- **Kiểm tra:** sau khi lưu, tải lại trang thì hạn mới vẫn còn, và trên Jira hạn cũng đã đổi. Khi còn thay đổi chưa lưu, rời trang phải có cảnh báo.
+
+#### 1.3 Sidebar thu gọn mất toàn bộ menu — **S**
+- **Nguyên nhân / vị trí:** `site.css` dòng 93–100 đặt `font-size: 0` rồi dùng `::first-letter` để hiện lại chữ cái đầu. Nhưng `::first-letter` không áp dụng cho phần tử `display: flex`, nên chữ biến mất hoàn toàn.
+- **Cách xử lý:** trong `_Layout.cshtml`, mỗi link gồm `<span class="nav-icon">` (dùng Kendo font icons, đã có sẵn trong `vendor/kendo/icons`) và `<span class="nav-label">`. Khi thu gọn thì ẩn `.nav-label`, giữ icon, và thêm `title` để hiện tooltip. Bỏ hẳn cách dùng `::first-letter`.
+- **Kiểm tra:** bấm ☰ thì vẫn thấy icon, rê chuột hiện tên trang, tải lại trang vẫn giữ trạng thái thu gọn.
+
+#### 1.4 Menu không có trạng thái đang chọn — **S**
+- **Nguyên nhân / vị trí:** `_Layout.cshtml` dựng link nhưng không so sánh với trang hiện tại; `site.css` không có `.side-nav a.active`.
+- **Cách xử lý:** viết một helper (ví dụ `NavLinkTagHelper`, hoặc hàm trong layout) so sánh `ViewContext.RouteData` hoặc `Context.Request.Path` với route của link, rồi thêm `class="active" aria-current="page"`. CSS: nền `color-mix(accent 12%)`, chữ màu accent, có thanh dọc 3px bên trái.
+- **Kiểm tra:** mỗi trang (kể cả trang con của Jira và Identity) có đúng một mục được tô.
+
+#### 1.5 Mobile: sidebar đẩy nội dung xuống, header 4 dòng — **M**
+- **Nguyên nhân / vị trí:** `site.css` dòng 1774 (`@media (max-width: 900px)`) chỉ chuyển `.app-shell` thành `display:block` và sidebar rộng 100%. Trạng thái ẩn/hiện lưu chung một khóa `toolbox.sidebar` với desktop.
+- **Cách xử lý:**
+  - Dưới 900px: sidebar thành ngăn trượt (`position: fixed; transform: translateX(-100%)`), có lớp phủ mờ, và dùng class riêng `sidebar-open`, không ghi vào localStorage. Đóng ngăn khi bấm link, bấm lớp phủ hoặc phím Esc.
+  - Topbar trên mobile chỉ còn ☰, tên trang và avatar. Đổi theme, ngôn ngữ và đăng xuất chuyển vào menu thả xuống của avatar. Ẩn dòng chữ nhỏ trên topbar và widget thời tiết.
+  - Kiểm tra thêm ở 1280px, vì ở độ rộng này dòng chữ nhỏ trên topbar đã xuống 2 dòng.
+- **Kiểm tra:** ở 390px, nội dung bắt đầu ngay dưới topbar (cao khoảng 56px); không có thanh cuộn ngang.
+
+#### 1.6 Xóa không hỏi lại — **S**
+- **Nguyên nhân / vị trí:** form `Delete` ở `Checklist/Index.cshtml`, `QuickLinks/Index.cshtml` và `PromptTemplates/Index.cshtml` gửi thẳng lên server. Trang Ghi chú đã có `_NoteDeleteModal.cshtml`.
+- **Cách xử lý:** tổng quát hóa thành `Views/Shared/_ConfirmModal.cshtml`, kèm một đoạn JS trong `site.js`: nút nào có `data-confirm="Xóa liên kết 'GitHub'?"` thì mở modal, bấm xác nhận mới submit form. Áp dụng cho cả nút "Xóa dòng chọn" của Tabulator (nút này cũng phải bị vô hiệu khi chưa chọn dòng nào).
+- **Kiểm tra:** mọi hành động xóa đều hiện modal; bấm Hủy thì không mất dữ liệu.
+
+#### 1.7 Label đè lên chữ ở Đăng ký và các trang tài khoản — **S**
+- **Nguyên nhân / vị trí:** `vendor-sync.css` dòng 39–50 đặt `.content-area .form-control { padding: .62rem .9rem }`, độ ưu tiên cao hơn padding riêng của `.form-floating > .form-control` trong Bootstrap. Dòng 71 còn tô màu cho placeholder, trong khi Bootstrap cố ý làm placeholder trong suốt ở dạng floating. Kết quả là label, placeholder và giá trị chồng lên nhau.
+- **Cách xử lý:** thêm `:not(.form-floating > *)` vào hai selector trên, hoặc viết riêng một rule cho `.content-area .form-floating > .form-control` gồm `padding-top: 1.625rem; padding-bottom: .625rem` và `::placeholder { color: transparent }`.
+- **Kiểm tra:** Register, Manage/Email và Manage/ChangePassword hiển thị label nhỏ phía trên giá trị, không chồng chữ.
+
+#### 1.8 Ảnh đại diện vỡ — **S**
+- **Nguyên nhân / vị trí:** `_LoginPartial.cshtml` hiện `<img src="@avatarUrl">` mà không xử lý khi ảnh lỗi. Ảnh lấy từ `AvatarUrl` trong hồ sơ, phục vụ qua `/uploads`; nhiều khả năng file đã không còn trong `Storage:UploadsPath`. Cần kiểm tra trên máy thật.
+- **Cách xử lý:** thêm `onerror` để ẩn ảnh và hiện chữ viết tắt (luôn render sẵn chữ viết tắt bên dưới). Ở `UserProfileService`, chỉ trả về `AvatarUrl` khi file thực sự tồn tại.
+- **Kiểm tra:** xóa thử file avatar thì header hiện chữ viết tắt, không còn icon ảnh lỗi.
+
+#### 1.9 Tab Tìm kiếm Jira: mã issue không có link, trạng thái thô, cột sai nghĩa — **S–M**
+- **Nguyên nhân / vị trí:** `Views/Jira/Worklist.cshtml` (khoảng dòng 207–235) là `<table>` thuần: `@issue.IssueKey` không có link; trạng thái là chữ trơn; cột "Logged" in ra `LoggedDates` (danh sách ngày, không phải số giờ).
+- **Cách xử lý:**
+  - *Nhanh (S):* bọc mã issue bằng link `target="_blank"` có `white-space: nowrap`; dùng chung lớp nhãn trạng thái với Dashboard; đổi tên cột thành "Ngày đã log" hoặc hiện tổng giờ; ẩn cột nào trống toàn bộ.
+  - *Đầy đủ (M):* chuyển bảng sang Tabulator với cấu hình dùng chung (xem 2.4) để có sắp xếp, đếm số dòng và phân trang.
+- **Kiểm tra:** mã issue mở đúng trang Jira; không còn chữ bị bẻ dòng như "NTTM-/2462".
+
+#### 1.10 Canh lề cột số trong bảng Jira — **S**
+- **Nguyên nhân / vị trí:** `Content/js/jira-dashboard.js` (khoảng dòng 529–640) đặt `hozAlign: "center"` cho cả cột Ước tính và Log; bảng của tab Sắp xếp tự động cũng vậy.
+- **Cách xử lý:** đổi thành `hozAlign: "right"` và định dạng `toLocaleString('vi-VN', { maximumFractionDigits: 1 })` kèm hậu tố "h". Mũi tên sắp xếp chỉ hiện ở cột đang được sắp xếp.
+- **Kiểm tra:** cột số thẳng hàng theo hàng đơn vị, hiện dạng `17,5h`.
+
+#### 1.11 Tổng quan: "Công việc hôm nay" sai dữ liệu — **S**
+- **Nguyên nhân / vị trí:** `Services/DashboardService.cs` (khoảng dòng 55) lọc `Status == Todo || DueDate == today`, tức là lấy **mọi** việc chưa xong.
+- **Cách xử lý:** hoặc đổi tiêu đề thành "Việc đang mở", hoặc tách thành 3 nhóm: "Quá hạn" (`DueDate < today`), "Hôm nay" (`DueDate == today`), "Chưa có hạn". Khuyến nghị tách nhóm.
+- **Kiểm tra:** việc không có hạn không còn nằm dưới tiêu đề "hôm nay".
+
+#### 1.12 Hẹn giờ cho lưu phiên khi chưa chạy — **S**
+- **Nguyên nhân / vị trí:** nút submit trong `FocusTimer/Index.cshtml` luôn bấm được.
+- **Cách xử lý:** vô hiệu nút cho tới khi bộ đếm chạy hết, hoặc cho phép lưu số phút thực tế đã chạy (gửi kèm một trường ẩn chứa số giây đã chạy, server kiểm tra lớn hơn 0).
+- **Kiểm tra:** chưa bấm Bắt đầu thì không lưu được phiên.
+
+#### 1.13 Lỗi nhỏ hiển thị — **S**
+- Liên kết nhanh `AI· https…`: Razor cắt mất khoảng trắng trước `<text>`. Sửa bằng `@($"{link.GroupName} · ")`. Ô thứ tự sắp xếp cần có label "Thứ tự".
+- Xóa file thừa `Views/DemoKendo/Index.cshtml.bak` khỏi repo.
+- Trang Access denied: tạo trang riêng `Areas/Identity/Pages/Account/AccessDenied.cshtml` bằng tiếng Việt, giải thích "Trang này dành cho tài khoản đăng nhập bằng Jira", kèm nút [Đăng nhập Jira] và [Về Tổng quan].
+
+### Giai đoạn 2 – Nền tảng thiết kế
+
+#### 2.1 Bộ token màu, khoảng cách, bo góc — **M**
+- **Vấn đề:** 129 mã hex khác nhau; nút chính có 3 màu xanh; độ đậm chữ dùng 6 mức.
+- **Cách xử lý:** gom về `Content/css/tokens.css`: `--color-primary`, `--color-primary-hover`, nhóm màu trạng thái (`--color-success/warning/danger/info` kèm nền nhạt tương ứng), 3 mức xám cho chữ, khoảng cách `--space-1…6` (4/8/12/16/24/32), bo góc `--radius-sm/md/lg/pill`. Dùng find/replace để đổi hex sang biến, mỗi lần một file. Gộp `vendor-sync.css` theo token. Chỉ giữ một kiểu `.btn-primary` (bỏ gradient).
+- **Kiểm tra:** `grep -o "#[0-9a-fA-F]\{6\}"` ngoài `tokens.css` còn gần bằng 0; nút chính ở mọi trang cùng một màu.
+
+#### 2.2 Chữ và font — **S**
+- **Cách xử lý:** hoặc self-host Roboto (`Content/fonts/*.woff2` kèm `@font-face`), hoặc đổi sang `system-ui, "Segoe UI", Roboto, sans-serif` và bỏ khai báo "Roboto" trơ trọi. Thang cỡ chữ bằng rem: 0.75 / 0.875 / 1 / 1.25 / 1.5; không còn cỡ px lẻ (10.5, 11.5, 12.5). Độ đậm chỉ dùng 400/600/700. Tiêu đề panel đậm 600 (đang nhẹ hơn tiêu đề dòng bên trong).
+- **Kiểm tra:** cùng một trang hiển thị giống nhau trên Windows và macOS; không còn chữ dưới 12px.
+
+#### 2.3 Khung tiêu đề trang thống nhất — **S**
+- **Cách xử lý:** tạo partial `_PageHeader` nhận tiêu đề, mô tả và vùng nút. Topbar chỉ hiện tiêu đề trang; bỏ dòng "BỘ CÔNG CỤ NĂNG SUẤT CÁ NHÂN"; bỏ h1 trùng ở Component Hub, Kendo Demo và trang Quản lý tài khoản.
+- **Kiểm tra:** mỗi trang chỉ có một tiêu đề chính.
+
+#### 2.4 Component dùng chung — **M**
+- `_EmptyState` (icon, tiêu đề, mô tả, nút hành động): lấy từ trang Ghi chú.
+- `_ConfirmModal`: từ việc 1.6.
+- `_FormField` (label, ô nhập, gợi ý, thông báo lỗi giữ chỗ cố định): sửa luôn lỗi khoảng cách không đều khi có thẻ validation.
+- `_Toolbar` (số liệu, ô tìm kiếm, nút chính).
+- `jira-status.js`: một bảng ánh xạ trạng thái Jira sang màu dùng chung cho Dashboard, Tìm kiếm, kanban và Sắp xếp tự động.
+- `jira-grid-defaults.js`: cấu hình Tabulator dùng chung (canh lề theo quy ước, định dạng số và ngày, trạng thái trống, tooltip khi chữ bị cắt).
+- `jira-period-picker.js`: một bộ chọn kỳ duy nhất (Ngày/Tuần/Tháng/Năm, tự tải lại khi đổi kỳ, không có nút ×, bỏ « »).
+- `_SqlConnectionForm`: form kết nối dùng chung cho So sánh DB và Bắt SQL.
+
+#### 2.5 Hình nền và độ tương phản — **S**
+- **Cách xử lý:** thêm tùy chọn "Hình nền động" trong trang tài khoản (lưu localStorage, mặc định tắt) và dùng nền trung tính `--bg`. Mọi chữ phải nằm trên `--surface`. Các mục menu trong trang Quản lý tài khoản dùng nền đặc thay vì trong suốt.
+- **Kiểm tra:** chạy axe-core hoặc Lighthouse, không còn lỗi tương phản.
+
+#### 2.6 Topbar gọn lại — **S**
+- **Cách xử lý:** bỏ widget thời tiết, hoặc chỉ hiện khi người dùng bật; chỉ gọi `navigator.geolocation` khi người dùng chủ động bấm. Nút theme dùng icon SVG kèm tooltip. Ngôn ngữ, theme và đăng xuất gom vào menu thả xuống của avatar.
+
+#### 2.7 Sidebar phân nhóm và icon — **S**
+- **Cách xử lý:** chia nhóm theo cấu trúc menu đề xuất ở mục 2.1 phía trên của tài liệu (JIRA / CÁ NHÂN / CÔNG CỤ DB / DEV). Đổi tên "Danh sách công việc" thành "Công việc Jira", "Công việc" thành "Việc cần làm". Thêm "Không gian prompt" vào menu. Nhóm DEV chỉ hiện khi `IWebHostEnvironment.IsDevelopment()` hoặc người dùng có role riêng.
+
+#### 2.8 Bản địa hóa và định dạng — **M**
+- **Cách xử lý:**
+  - Dịch `Profile.Nav.*` trong `vi-VN.json`.
+  - Scaffold các trang Identity còn dùng mặc định (Register, Manage/Email, ChangePassword, TwoFactorAuthentication, PersonalData, AccessDenied) bằng `dotnet aspnet-codegenerator identity --files "..."` rồi chuyển chữ sang key bản địa hóa.
+  - Lập bảng thuật ngữ Jira (giữ nguyên hoặc Việt hóa hẳn), không trộn hai thứ tiếng trong một nhãn.
+  - Viết một helper định dạng số và ngày theo `CultureInfo.CurrentUICulture` (`17,5`, `dd/MM/yyyy HH:mm`). Thống nhất múi giờ: hoặc dùng múi giờ trình duyệt ở mọi chỗ, hoặc dùng +7 ở mọi chỗ.
+- **Kiểm tra:** đổi qua lại VI/EN thì không còn chữ của ngôn ngữ kia; ngày giờ hiển thị cùng một định dạng.
+
+#### 2.9 Ghi quy chuẩn vào `AGENTS.md` và prompt — **S**
+- **Cách xử lý:** thêm mục "UI Standard" vào `AGENTS.md` theo bản đề xuất ở 5.3. Sửa prompt UI tạo sẵn (`SeedPrompt.UiChange.*`) và `docs/FEATURE_PROMPTS.md` cho khớp nhau. Nút Sao chép ghép đủ Nội dung + Định dạng đầu ra. Bỏ đường dẫn riêng của máy (`D:\Source_Toolbox\.codegraph`).
+- **Lý do làm ở giai đoạn 2:** đây là nguyên nhân gốc của sự thiếu nhất quán; nếu không sửa, các màn hình làm mới ở giai đoạn 3 sẽ lại lệch nhau.
+
+### Giai đoạn 3 – Làm lại từng màn hình theo chuẩn
+
+Thứ tự làm theo tần suất sử dụng và mức độ hỏng hiện tại:
+
+| # | Màn hình | Việc chính | Công sức |
+|---|---|---|---|
+| 3.1 | Jira Dashboard | Thẻ "Log/Ước tính %" có cảnh báo; thẻ tiến độ 15/16; so sánh với kỳ trước; biểu đồ giờ log theo ngày so với 8h; nhóm subtask theo issue cha (`groupBy` của Tabulator); khối JQL thu gọn kèm "Sao chép" và "Mở trong Jira"; "Chưa ước tính" màu cam; "Trễ N ngày" | M–L |
+| 3.2 | Jira – Tìm kiếm | Chế độ Bộ lọc / JQL loại trừ nhau; sau khi tìm thì thu form thành một dòng tóm tắt; bỏ khối "JQL đã áp dụng" trùng; bảng theo việc 1.9 | M |
+| 3.3 | Jira – Kanban | Thẻ Done mờ đi kèm nút "Ẩn việc đã xong"; chú thích màu thanh công suất, tô đỏ khi vượt 8h; ghi "Hôm nay" thay "★"; thu hẹp cột cuối tuần; chế độ Tháng dùng lịch; chữ trong thẻ tối thiểu 12px | M |
+| 3.4 | Jira – Sắp xếp tự động | Dạng các bước 1-2-3; cột "Hạn cũ → Hạn mới"; cảnh báo subtask chưa có ước tính; tooltip khi chữ bị cắt; cỡ tiêu đề đồng bộ; luồng lưu theo việc 1.2 | M |
+| 3.5 | Đăng nhập / Đăng ký | Layout riêng `_AuthLayout` không có sidebar và topbar; Đăng ký thành tab thứ ba; quên mật khẩu; ẩn/hiện mật khẩu; một tiêu đề | M |
+| 3.6 | Việc cần làm (checklist) | Áp dụng khuôn trang Ghi chú: toolbar, tìm kiếm, chip lọc (Cần làm / Quá hạn / Đã xong), checkbox ở đầu dòng, form trong modal, Kendo DatePicker, trạng thái trống | M |
+| 3.7 | Tổng quan | Hàng số liệu (việc quá hạn, việc hôm nay, phút tập trung, giờ log Jira nếu có); panel không kéo cao bằng nhau (`align-items: start`); lịch sử hoạt động 5 dòng kèm "Xem tất cả"; liên kết nhanh dạng ô | M |
+| 3.8 | Không gian prompt | Tìm kiếm, lọc theo loại, thu gọn từng prompt; Sao chép đầy đủ và tự tăng số lần dùng; form điền biến `{{ten_bien}}`; form tạo trong modal | M |
+| 3.9 | So sánh DB và Bắt SQL | Dùng `_SqlConnectionForm`; khóa ô Database và nút hành động cho tới khi kết nối thành công; "Tin cậy certificate" mặc định tắt kèm cảnh báo; đánh số bước 3; Bắt SQL có trạng thái trống và trạng thái nút đúng (Dừng chỉ đỏ khi đang ghi; Xuất file bị vô hiệu khi chưa có dữ liệu) | M |
+| 3.10 | Quản lý tài khoản | Trang Identity dịch xong (2.8); menu dạng danh sách gọn có nền đặc; tên đăng nhập là chữ thường thay vì ô nhập; bỏ thuật ngữ "source / input file / file rác" | S–M |
+| 3.11 | Liên kết nhanh | Sửa được; gom theo nhóm; ô có chữ cái đầu (không gọi dịch vụ favicon bên ngoài); có label đầy đủ | S |
+| 3.12 | Hẹn giờ tập trung | Vòng tiến độ; mức nhanh 25/5/15; thông báo trình duyệt và âm báo; tiêu đề tab hiện thời gian còn lại; trạng thái trống cho danh sách phiên | S–M |
+| 3.13 | Component Hub và Kendo Demo | Chuyển sang nhóm Dev; cập nhật nhãn sau khi xong 1.1; bỏ thông báo lỗi kiểu dev; sửa thẻ chỉ rộng nửa trang | S |
+
+### Giai đoạn 4 – Tối ưu và nâng cấp
+
+#### 4.1 Hiệu năng tải trang — **S–M**
+- **Hiện trạng:** `kendo.ui.core.min.js` khoảng 1,5 MB và `default-main.css` khoảng 900 KB được nạp ở 7 trang; Tabulator khoảng 440 KB.
+- **Cách xử lý:**
+  - Chỉ nạp qua partial (việc 1.1) ở trang thực sự cần.
+  - Vì đã có `asp-append-version`, có thể đặt `Cache-Control: max-age=31536000, immutable` cho `/vendor/*` trong `UseStaticFiles`.
+  - Cân nhắc build Kendo theme chỉ gồm các widget đang dùng.
+  - Đồng hồ trên topbar có thể cập nhật mỗi phút thay vì mỗi giây (giờ chỉ hiện tới phút).
+
+#### 4.2 Cấu trúc CSS — **M**
+- **Hiện trạng:** `site.css` khoảng 2.480 dòng (gồm cả Jira, Identity, Login); `vendor-sync.css` khoảng 1.100 dòng.
+- **Cách xử lý:** tách theo module (`jira.css`, `identity.css`, `auth.css`) và chỉ nạp qua `@section Styles`. Xóa rule chết. Thêm stylelint với quy tắc cấm mã hex ngoài `tokens.css`.
+
+#### 4.3 Cấu trúc view — **M**
+- **Hiện trạng:** `Views/Components/Index.cshtml` dài 2.868 dòng (khoảng 154 KB); vẫn còn inline style ở Components và DemoKendo.
+- **Cách xử lý:** tách mỗi tab thành một partial `_Tab*.cshtml`; chuyển inline style thành class.
+
+#### 4.4 Kiểm tra tự động giao diện — **M**
+- **Cách xử lý:** thêm vào `tests/` một bộ Playwright:
+  1. Chụp các trang chính ở 1440px và 390px, sáng và tối, rồi so sánh ảnh (visual regression).
+  2. Chạy axe-core để bắt lỗi tương phản, label, `aria-current`.
+  3. Đảm bảo console không có lỗi JS.
+
+  Script chụp màn hình dùng cho bản đánh giá này có thể làm điểm khởi đầu.
+- **Lý do:** ngăn các lỗi như 1.1 hay 1.3 quay lại mà không ai phát hiện.
+
+#### 4.5 Tính năng nâng giá trị — **M–L**
+- Thanh lệnh **Ctrl+K**: mở nhanh trang, ghi chú, liên kết, prompt, issue Jira.
+- Tổng quan Jira theo tháng: biểu đồ giờ log theo ngày. ECharts đã có sẵn trong asset nhưng chưa được nối vào; cần nối theo đúng quy định của `AGENTS.md`.
+- Nhắc log giờ: cuối ngày nếu chưa đủ 8h thì hiện thông báo trên Tổng quan Jira.
+
+---
+
+## 9. Đính chính so với bản đầu
+
+Sau khi đối chiếu lại mã nguồn, các nhận định sau của bản đầu đã được sửa trong tài liệu này:
+
+| Bản đầu | Thực tế | Đã sửa ở |
+|---|---|---|
+| Hình nền chỉ cao 900px, các trang dài lộ dải navy | Nền dùng `position: fixed`, luôn phủ khung nhìn khi cuộn. Dải navy chỉ xuất hiện do cách chụp ảnh toàn trang | 2.3 |
+| Trang Quản lý tài khoản có 2 mục cùng được tô sáng | Chỉ một mục `active`; các mục khác nền trong suốt nên trông như được chọn khi nằm trên vùng sáng của hình nền | 3.15 |
+| Kendo Demo hỏng vì thiếu widget, đề xuất xóa trang | Các widget có trong bundle; bundle dừng do thiếu `@progress/kendo-drawing`. Đề xuất đổi thành sửa lỗi nạp | 2.6, 3.9, 3.10, 8 (1.1) |
+| "Lưu đề xuất" ghi thật vào Jira mà không xác nhận | Nút chỉ đổi dữ liệu trên trình duyệt, không ghi lên Jira; vấn đề là tên nút gây hiểu nhầm | 4.5, 8 (1.2) |
+| Mobile không có cách ẩn sidebar | Có nút ☰ để ẩn, nhưng sidebar mặc định mở và trạng thái lưu chung với desktop | 2.1 |
+| Avatar Jira vỡ do URL Jira cần đăng nhập | Ảnh lấy từ file upload trong hồ sơ; nguyên nhân cụ thể cần kiểm tra trên máy thật | 2.2, 8 (1.8) |
