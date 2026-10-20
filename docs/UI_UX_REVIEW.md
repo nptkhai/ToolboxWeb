@@ -8,6 +8,8 @@
 > - Đọc `site.css`, các view Razor và JavaScript.
 > - Nhóm Jira được đánh giá từ ảnh chụp do người dùng cung cấp, kết hợp đọc mã nguồn, vì môi trường đánh giá không đăng nhập được Jira.
 >
+> **Cập nhật 20/10/2026:** thêm [mục 10 – Lộ trình triển khai chốt](#10-lộ-trình-triển-khai-chốt), thay thế thứ tự ưu tiên ở mục 6 và 8.
+>
 > **Cập nhật 13/10/2026:** bổ sung [mục 8 – Kế hoạch xử lý chi tiết](#8-kế-hoạch-xử-lý-chi-tiết-theo-thứ-tự-ưu-tiên), và đính chính một số nhận định của bản đầu sau khi đối chiếu lại mã nguồn (xem [mục 9](#9-đính-chính-so-với-bản-đầu)).
 
 ---
@@ -23,6 +25,7 @@
 7. [Phụ lục: bảng điểm](#7-phụ-lục-bảng-điểm)
 8. [Kế hoạch xử lý chi tiết theo thứ tự ưu tiên](#8-kế-hoạch-xử-lý-chi-tiết-theo-thứ-tự-ưu-tiên)
 9. [Đính chính so với bản đầu](#9-đính-chính-so-với-bản-đầu)
+10. [Lộ trình triển khai chốt](#10-lộ-trình-triển-khai-chốt) ← **thứ tự làm việc chính thức**
 
 ---
 
@@ -415,6 +418,8 @@ Trả lời: (1) thay đổi chính, (2) file sửa, (3) ảnh hưởng responsi
 
 ## 6. Thứ tự ưu tiên cải tiến
 
+> **Đã được thay thế** bởi [mục 10 – Lộ trình triển khai chốt](#10-lộ-trình-triển-khai-chốt). Phần dưới đây giữ lại để tham khảo.
+
 ### P0: lỗi, cần sửa ngay
 
 | # | Việc | Màn hình |
@@ -483,6 +488,8 @@ Trả lời: (1) thay đổi chính, (2) file sửa, (3) ảnh hưởng responsi
 ---
 
 ## 8. Kế hoạch xử lý chi tiết theo thứ tự ưu tiên
+
+> **Thứ tự giai đoạn ở mục này đã được thay thế** bởi [mục 10](#10-lộ-trình-triển-khai-chốt). Mục 8 vẫn là danh mục chi tiết (nguyên nhân, cách sửa, cách kiểm tra) cho từng mã việc.
 
 Mỗi việc ghi theo 5 ý:
 - **Vấn đề:** người dùng gặp gì.
@@ -694,3 +701,193 @@ Sau khi đối chiếu lại mã nguồn, các nhận định sau của bản đ
 | Mobile không có cách ẩn sidebar | Có nút ☰ để ẩn, nhưng sidebar mặc định mở và trạng thái lưu chung với desktop | 2.1 |
 | Avatar Jira vỡ do URL Jira cần đăng nhập | Ảnh lấy từ file upload trong hồ sơ; nguyên nhân cụ thể cần kiểm tra trên máy thật | 2.2, 8 (1.8) |
 | Việc 1.1 khuyên nạp thêm `@progress/kendo-drawing` | Gói này là phần mềm thương mại của Progress, trái với nguyên tắc không dùng thư viện có ràng buộc giấy phép. Chỉ dùng biến rỗng tự viết | 8 (1.1) |
+
+---
+
+## 10. Lộ trình triển khai chốt
+
+> Mục này **thay thế thứ tự ưu tiên** ở mục 6 và thứ tự giai đoạn ở mục 8. Mục 8 vẫn được giữ làm **danh mục chi tiết** (nguyên nhân, cách sửa, cách kiểm tra); các mã việc như `1.1`, `2.4` bên dưới trỏ về mục 8.
+
+### 10.1 Vì sao phải xếp lại
+
+Bản kế hoạch ở mục 8 có bốn lỗi về thứ tự:
+
+1. **Quy chuẩn prompt đứng cuối Giai đoạn 2**, trong khi đây là nguyên nhân gốc. Mọi bản sửa sau đó đều do AI thực hiện, nên nếu chưa có chuẩn thì vừa sửa vừa tạo thêm sự thiếu nhất quán.
+2. **Có việc "đánh bóng thứ sắp bị thay".** Ví dụ: sửa mẹo `::first-letter` của sidebar thu gọn (1.3), hay làm menu trượt cho mobile trên sidebar cũ (1.5), trong khi toàn bộ khung app sẽ được làm lại ở bước nền tảng. Làm hai lần là lãng phí.
+3. **Xây nền tảng trước khi chốt quyết định.** Bộ token (2.1) cần biết trước màu nhấn, font, bộ icon và hướng phong cách (Linear). Các quyết định này chưa được ghi lại ở đâu.
+4. **Kiểm tra tự động đứng cuối (4.4).** Đáng lẽ phải có ảnh "trước khi sửa" ngay từ đầu để so sánh và để phát hiện khi một bản sửa làm hỏng trang khác.
+
+### 10.2 Tám nguyên tắc xếp ưu tiên
+
+| # | Nguyên tắc | Hệ quả |
+|---|---|---|
+| 1 | **Luật trước, code sau** | `AGENTS.md`, chính sách giấy phép và prompt được chuẩn hóa đầu tiên |
+| 2 | **Đo trước khi sửa** | Chụp ảnh mốc và kiểm tra lỗi console trước mọi thay đổi |
+| 3 | **Mức độ nghiêm trọng**: mất dữ liệu hoặc gây hiểu sai > chặn chức năng > sai hiển thị > thẩm mỹ | Nút "Lưu" không lưu và xóa không hỏi lại được xử lý ngay |
+| 4 | **Không đánh bóng thứ sắp bị thay** | Lỗi nằm trong phần sẽ làm lại (sidebar, topbar) thì gộp vào lần làm lại, trừ khi lần làm lại còn xa |
+| 5 | **Quyết định trước khi xây** | Có một bước riêng để chốt phong cách, màu, font, icon và thư viện |
+| 6 | **Chung trước riêng**: token → component → khung app → mẫu theo nhóm → từng màn hình | Sửa một chỗ chung thì nhiều trang được hưởng; làm màn hình trước nền tảng thì phải làm lại |
+| 7 | **Theo giá trị**: tần suất dùng × giá trị nghiệp vụ × mức hỏng hiện tại | Nhóm Jira đi trước trong các màn hình |
+| 8 | **Nhỏ và độc lập** | Mỗi việc là một PR riêng, merge được riêng, có tiêu chí hoàn thành |
+
+### 10.3 Tổng quan lộ trình
+
+| Giai đoạn | Mục tiêu | Ước lượng | Ai quyết | Tiêu chí hoàn thành |
+|---|---|---|---|---|
+| **0. Quy trình và luật** | AI và người cùng làm theo một chuẩn; có ảnh mốc | 0,5–1 ngày | Chủ dự án duyệt `AGENTS.md` | `AGENTS.md` mới đã merge; script kiểm tra chạy được và có ảnh mốc |
+| **1. Lỗi độc lập với giao diện** | Hết lỗi gây hiểu sai, mất dữ liệu, chặn chức năng | 2–3 ngày | — | Console sạch mọi trang; mọi thao tác xóa đều hỏi lại; không còn nút "Lưu" mà không lưu |
+| **2. Chốt quyết định thiết kế** | Có đủ dữ kiện để xây nền tảng | 1–2 ngày (+ thời gian chủ dự án xem) | **Chủ dự án** | `docs/DESIGN_DECISIONS.md` được duyệt; bản mẫu tĩnh được duyệt |
+| **3. Nền tảng chung** | Toàn app đổi sang ngôn ngữ thiết kế mới cùng lúc | 5–7 ngày | Chủ dự án duyệt khung app | Mọi trang chạy trong khung mới; trang Component Hub thành bảng mẫu component |
+| **4. Mẫu dùng chung theo nhóm** | Có sẵn khối dựng cho Jira, DB, Identity, trang danh sách | 4–6 ngày | — | Mỗi mẫu đã được dùng ở ít nhất một màn hình |
+| **5. Từng màn hình** | Áp dụng nền tảng và mẫu vào từng trang | 8–12 ngày | Chủ dự án duyệt trang thí điểm (Jira Dashboard) | Không còn trang nào dùng kiểu cũ |
+| **6. Tính năng mới và tối ưu** | Nâng giá trị, giảm dung lượng tải, tự động hóa kiểm tra | liên tục | Chủ dự án chọn thứ tự | Theo từng việc |
+
+**Tổng ước lượng:** khoảng **4–6 tuần làm việc** cho giai đoạn 0–5 với một người. Đây là ước lượng thô, chưa tính thời gian chờ duyệt.
+
+**Bốn điểm dừng để chủ dự án duyệt:** sau GĐ0 (luật), sau GĐ2 (quyết định thiết kế và bản mẫu), sau khung app ở GĐ3, sau trang thí điểm Jira Dashboard ở GĐ5. Không làm tiếp khi điểm dừng trước chưa được duyệt.
+
+### 10.4 Giai đoạn 0 – Quy trình và luật (làm đầu tiên)
+
+| # | Việc | Chi tiết | Công sức |
+|---|---|---|---|
+| 0.1 | **Chính sách giấy phép** trong `AGENTS.md` | Chỉ chấp nhận MIT, Apache-2.0, BSD, ISC, OFL. Cấm `@progress/kendo-drawing` và mọi gói Kendo thương mại. Trước khi thêm thư viện phải kiểm tra `LICENSE` của **cả các gói phụ thuộc**: bài học từ việc 1.1 là Kendo Core dùng Apache-2.0 nhưng lại cần một gói thương mại | S |
+| 0.2 | **`THIRD-PARTY-NOTICES.md`** | Liệt kê thư viện, phiên bản, giấy phép (theo bảng đã kiểm tra); giữ header bản quyền trong file `.min.js` | S |
+| 0.3 | **Quy chuẩn UI** trong `AGENTS.md` (phần không phụ thuộc giá trị cụ thể) | Ô nhập luôn có label; xóa và ghi ra hệ thống ngoài phải xác nhận; mỗi trang một tiêu đề; đủ trạng thái trống/đang tải/lỗi; không đặt chữ lên ảnh nền; không thêm mã hex mới; chữ tối thiểu 12px; không trộn Anh–Việt trong một nhãn; trang Ghi chú là mẫu; kiểm tra ở 1440px, 390px và chế độ tối; định hướng phong cách Linear (học nguyên tắc, không sao chép tài sản). Bỏ đường dẫn `D:\Source_Toolbox\.codegraph` | S |
+| 0.4 | **Định nghĩa "hoàn thành"** trong `AGENTS.md` | `dotnet build` sạch; script kiểm tra (0.6) không báo lỗi console; ảnh mới đã so với ảnh mốc; với trang Jira, chủ dự án đã kiểm tra trên Jira thật | S |
+| 0.5 | **Đồng bộ prompt** | `docs/FEATURE_PROMPTS.md`, `docs/MAINTENANCE_PROMPTS.md` và `SeedPrompt.*` (vi/en) cùng một nội dung; thống nhất tên biến `{{ten_bien}}`; thêm đoạn ngữ cảnh về stack; thêm prompt "Đánh giá UX/accessibility" và "Kiểm tra giấy phép thư viện". **Lưu ý:** `Data/SeedData.cs` chỉ thêm prompt khi người dùng **chưa có** prompt cùng loại, nên tài khoản cũ sẽ không nhận bản mới. Cần chọn một trong hai: chấp nhận điều đó, hoặc thêm nút "Khôi phục prompt mẫu" (làm ở 5.10) | S–M |
+| 0.6 | **Script kiểm tra giao diện và ảnh mốc** | Script Playwright đặt trong `tests/ui/` (kết quả ghi ra thư mục tạm, không ghi vào repo): đăng nhập tài khoản thử, chụp các trang chính ở 1440px/390px, sáng/tối; báo lỗi console; chạy axe-core. Lưu bộ ảnh "trước khi sửa" | M |
+| 0.7 | **Dữ liệu Jira giả cho môi trường Development** *(khuyến nghị)* | Một chế độ chỉ bật ở Development, trả dữ liệu Jira mẫu, để chụp và kiểm tra các trang Jira mà không cần tài khoản Jira thật | M |
+
+**Vì sao 0.7 đáng làm sớm:** Jira là nhóm màn hình ưu tiên số một ở GĐ5 nhưng hiện chỉ kiểm tra được khi có tài khoản Jira thật. Không có 0.7 thì mọi thay đổi Jira đều phải chờ chủ dự án tự kiểm tra.
+
+### 10.5 Giai đoạn 1 – Lỗi độc lập với giao diện
+
+Chỉ gồm những bản sửa **vẫn còn giá trị sau khi làm lại giao diện**. Xếp theo mức độ nghiêm trọng:
+
+| Thứ tự | Mã (mục 8) | Việc | Loại lỗi | Công sức |
+|---|---|---|---|---|
+| 1 | 1.2 (phần đổi tên) | Jira: đổi "Lưu đề xuất" thành "Áp dụng vào lưới"; thanh "N thay đổi chưa lưu"; cảnh báo khi rời trang. Ghi thật lên Jira chuyển sang GĐ6 | Gây hiểu sai, mất thay đổi | S–M |
+| 2 | 1.6 | Xác nhận khi xóa, dùng `_ConfirmModal` dùng chung. Đây là component chung **đầu tiên**, nên làm đúng quy chuẩn GĐ0 để không phải làm lại | Mất dữ liệu | S |
+| 3 | 1.1 | Biến rỗng `_progress_kendo_drawing` trong partial `_KendoScripts` (**không** nạp gói thương mại) | Chặn chức năng, lỗi trên 7 trang | S |
+| 4 | 1.11 | "Công việc hôm nay" lọc đúng dữ liệu (sửa ở service) | Hiển thị sai dữ liệu | S |
+| 5 | 1.12 | Hẹn giờ không cho lưu phiên khi chưa chạy | Dữ liệu sai | S |
+| 6 | 1.9 (phần dữ liệu) | Jira Tìm kiếm: mã issue có link và không bẻ dòng; đổi tên cột "Logged" cho đúng nghĩa. Chuyển sang Tabulator để ở GĐ5 | Hiển thị sai nghĩa | S |
+| 7 | 1.10 | Jira: cột số canh phải, định dạng `17,5h` (sửa trong cấu hình bảng, vẫn giữ sau khi đổi giao diện) | Sai quy ước | S |
+| 8 | 1.7 | Label đè chữ ở các ô floating (sửa 2 selector CSS); người dùng mới đăng ký đang gặp lỗi này | Sai hiển thị | S |
+| 9 | 1.8 | Avatar lỗi thì hiện chữ viết tắt; kiểm tra file trong `Storage:UploadsPath` | Sai hiển thị | S |
+| 10 | 1.4 (phần logic) | Helper xác định trang đang mở và thêm `aria-current`. Phần logic này dùng lại được cho khung app mới; phần màu sắc làm ở GĐ3 | Điều hướng | S |
+| 11 | 1.13 | Trang Access denied tối thiểu (tiếng Việt, có giải thích, có nút); lỗi khoảng trắng ở Liên kết nhanh; xóa `Index.cshtml.bak` | Sai hiển thị | S |
+
+**Chuyển sang giai đoạn sau, không sửa ở GĐ1:**
+- **1.3** (sidebar thu gọn) và **1.5** (mobile): gộp vào khung app ở GĐ3. Sửa mẹo `::first-letter` bây giờ thì GĐ3 sẽ bỏ đi. *Ngoại lệ:* nếu GĐ3 phải lùi quá 3 tuần, làm bản tạm cho 1.5 vì mobile đang gần như không dùng được.
+
+### 10.6 Giai đoạn 2 – Chốt quyết định thiết kế (chủ dự án quyết)
+
+Kết quả của giai đoạn này là file `docs/DESIGN_DECISIONS.md`, ghi lại từng quyết định cùng lý do:
+
+| # | Cần quyết định | Phương án đề xuất | Lý do |
+|---|---|---|---|
+| 2.A | Hướng phong cách | Lấy cảm hứng từ Linear: nền trung tính, một màu nhấn, mật độ cao cho danh sách, rộng rãi cho form | Hợp với công cụ quản lý issue; chữa trực tiếp bệnh thiếu nhất quán |
+| 2.B | Màu nhấn | Màu riêng của ToolboxWeb, **không** dùng tông tím đặc trưng của Linear | Tránh bị coi là nhái nhận diện thương hiệu |
+| 2.C | Font | Inter (OFL), tự host | Miễn phí, hợp phong cách |
+| 2.D | Bộ icon | Lucide (ISC), hoặc mở rộng Bootstrap Icons (MIT, đã có trong repo) | Giấy phép mở; Lucide gần phong cách Linear nhất |
+| 2.E | Thư viện control | **Giữ:** Bootstrap (nền), Tabulator (bảng), Kendo Core (chỉ DatePicker, ComboBox, MultiSelect, AutoComplete, NumericTextBox, Notification). **Không dùng:** ColorPicker và mọi thứ cần kendo-drawing. **Để dành:** ECharts, FullCalendar, Quill — chỉ nối vào khi có màn hình cần | Đúng chính sách giấy phép; giảm phạm vi |
+| 2.F | Widget thời tiết và hình nền động | Bỏ widget thời tiết; hình nền động thành tùy chọn, mặc định tắt | Không phục vụ công việc; làm giảm độ tương phản |
+| 2.G | Mật độ và điểm ngắt màn hình | Dòng danh sách 36–40px; form 40px; điểm ngắt 900px và 600px | Cân bằng giữa danh sách dày và form dễ nhập |
+| 2.H | Múi giờ và định dạng | Một cách duy nhất (khuyến nghị: múi giờ trình duyệt; `dd/MM/yyyy HH:mm`; số `17,5`) | Hết tình trạng lệch ngày |
+| 2.I | **Bản mẫu tĩnh** | Mẫu Jira Dashboard và một trang form, dùng token dự kiến | Kiểm tra token trên giao diện thật trước khi áp cho cả app |
+
+Sau khi các quyết định được duyệt, **điền giá trị cụ thể vào `AGENTS.md`**: tên biến token, thang cỡ chữ, danh sách component dùng chung.
+
+### 10.7 Giai đoạn 3 – Nền tảng chung
+
+Làm theo đúng thứ tự, vì mỗi bước dùng kết quả của bước trước:
+
+| Thứ tự | Việc | Mã gốc | Ghi chú |
+|---|---|---|---|
+| 3.1 | `tokens.css`: màu (sáng/tối), khoảng cách, bo góc, cỡ chữ, bóng, chuyển động | 2.1 | Nền móng của mọi thứ phía sau |
+| 3.2 | Font tự host, kiểu chữ nền | 2.2 | |
+| 3.3 | Giao diện thư viện bên thứ ba theo token: Bootstrap, Kendo (viết lại `vendor-sync.css`), Tabulator | 2.1 | Không làm bước này thì ô Kendo và bảng Tabulator lạc tông |
+| 3.4 | Component nền: nút, ô nhập (label/gợi ý/lỗi), tiêu đề trang, trạng thái trống, toast, modal xác nhận (đã có từ GĐ1), nhãn/icon trạng thái, dòng danh sách, chip lọc, panel trượt | 2.3, 2.4 | |
+| 3.5 | **Khung app**: sidebar phân nhóm có icon, trạng thái đang chọn, thu gọn còn icon, menu trượt trên mobile, header mỏng có breadcrumb, menu tài khoản (theme/ngôn ngữ/đăng xuất), bỏ dòng chữ nhỏ và widget thời tiết, hình nền mặc định tắt | 1.3, 1.4, 1.5, 2.5, 2.6, 2.7 | **Cả app đổi giọng cùng lúc**, tránh cảnh nửa cũ nửa mới. Điểm dừng duyệt |
+| 3.6 | Component Hub thành **bảng mẫu component** (chỉ hiện ở Development hoặc theo role), có cột "Giấy phép" và trạng thái: *Dùng được* / *Không dùng – phụ thuộc thư viện thương mại* / *Không có trong Kendo Core* | 3.13 | Giải quyết phần demo "dang dở" |
+
+### 10.8 Giai đoạn 4 – Mẫu dùng chung theo nhóm màn hình
+
+| Thứ tự | Việc | Mã gốc | Dùng cho |
+|---|---|---|---|
+| 4.1 | Bản địa hóa và định dạng: helper số/ngày, múi giờ theo quyết định 2.H, bảng thuật ngữ Jira, dịch `Profile.Nav.*` | 2.8 | Mọi trang |
+| 4.2 | Identity: `_AuthLayout`; Đăng nhập, Đăng ký (tab), Access denied, các trang Manage được scaffold và dịch; menu tài khoản có nền đặc | 2.8, 3.5, 3.10 | Đăng nhập, tài khoản |
+| 4.3 | Module Jira dùng chung: bộ chọn kỳ, cấu hình bảng mặc định, bảng màu trạng thái, khối JQL thu gọn, thanh chip lọc | 2.4 | 4 màn hình Jira |
+| 4.4 | Form kết nối SQL dùng chung | 2.4 | So sánh DB, Bắt SQL |
+| 4.5 | **Mẫu trang danh sách** (toolbar, tìm kiếm, chip lọc, danh sách, form trong modal, trạng thái trống), lấy từ trang Ghi chú | 2.4 | Việc cần làm, Liên kết nhanh, Prompt |
+
+### 10.9 Giai đoạn 5 – Từng màn hình
+
+Thứ tự tính theo **tần suất dùng × giá trị nghiệp vụ × mức hỏng hiện tại**. Tần suất là **ước đoán** từ vai trò của từng trang; chủ dự án nên điều chỉnh theo thực tế sử dụng.
+
+| Thứ tự | Màn hình | Tần suất (ước) | Giá trị | Mức hỏng | Mã gốc | Công sức |
+|---|---|---|---|---|---|---|
+| 5.1 | **Jira Dashboard** – trang thí điểm, điểm dừng duyệt | Hằng ngày | Cao | Trung bình | 3.1 (mục 8) | M–L |
+| 5.2 | Jira – Tìm kiếm (chuyển sang Tabulator, chế độ chip lọc / JQL) | Hằng ngày | Cao | Cao | 3.2 | M |
+| 5.3 | Jira – Kanban | Hằng ngày | Cao | Trung bình | 3.3 | M |
+| 5.4 | Jira – Sắp xếp tự động (dạng các bước, cột "Hạn cũ → Hạn mới") | Hằng tuần | Cao | Cao | 3.4 | M |
+| 5.5 | Tổng quan (trang đầu của tài khoản thường) | Hằng ngày | Trung bình | Cao | 3.7 | M |
+| 5.6 | Việc cần làm | Hằng ngày | Trung bình | Cao | 3.6 | M |
+| 5.7 | Ghi chú (chỉ áp token, vì đã là mẫu) | Hằng ngày | Trung bình | Thấp | — | S |
+| 5.8 | So sánh DB | Theo đợt | Cao | Thấp | 3.9 | S–M |
+| 5.9 | Bắt SQL | Theo đợt | Cao | Trung bình | 3.9 | M |
+| 5.10 | Không gian prompt (kèm tính năng: sao chép đầy đủ, điền biến, tìm kiếm, khôi phục prompt mẫu) | Hằng tuần | Trung bình | Cao | 3.8 | M |
+| 5.11 | Liên kết nhanh | Hằng tuần | Thấp | Cao | 3.11 | S |
+| 5.12 | Hẹn giờ tập trung | Thỉnh thoảng | Thấp | Trung bình | 3.12 | S–M |
+| 5.13 | Kendo Demo, Tabulator Demo (trang Dev) | Hiếm | Thấp | — | 3.13 | S |
+
+### 10.10 Giai đoạn 6 – Tính năng mới và tối ưu
+
+Chủ dự án chọn thứ tự. Đề xuất theo giá trị:
+
+1. **Ghi hạn mới lên Jira thật** (phần còn lại của 1.2): modal xác nhận "hạn cũ → hạn mới", báo kết quả từng dòng, ghi activity log — **L**.
+2. **Ctrl/⌘+K và phím tắt** — M.
+3. **Biểu đồ giờ log theo ngày** bằng ECharts (Apache-2.0); nhắc khi chưa đủ 8h — M.
+4. **Hiệu năng**: chỉ nạp Kendo/Tabulator ở trang cần; cache dài cho `/vendor`; cân nhắc thay widget Kendo bằng flatpickr (MIT) và Tom Select (Apache-2.0) nếu muốn bỏ hẳn Kendo — M.
+5. **Dọn mã**: tách CSS theo module, tách `Components/Index.cshtml` thành partial, thêm stylelint — M.
+6. **Chạy script kiểm tra (0.6) tự động trên mỗi PR** — M.
+
+### 10.11 Những việc quyết định không làm
+
+| Việc | Lý do |
+|---|---|
+| Nạp `@progress/kendo-drawing` | Phần mềm thương mại |
+| Dùng ColorPicker của Kendo | Phụ thuộc kendo-drawing; dùng `<input type="color">` thay thế |
+| Sửa mẹo `::first-letter` của sidebar | Sidebar được làm lại ở GĐ3 |
+| Giữ widget thời tiết trên topbar | Không phục vụ công việc; hỏi quyền vị trí không cần thiết |
+| Sao chép icon, logo, màu hay CSS của Linear | Rủi ro bản quyền và nhận diện thương hiệu; chỉ học nguyên tắc |
+
+### 10.12 Rủi ro và cách giảm
+
+| Rủi ro | Cách giảm |
+|---|---|
+| Giai đoạn chuyển tiếp có trang cũ lẫn trang mới | Đổi khung app và token cho cả app cùng lúc (GĐ3), để trang cũ ít nhất cũng cùng màu, chữ và khung |
+| Ghi đè giao diện Kendo/Tabulator dễ vỡ khi nâng phiên bản | Bảng mẫu component (3.6) và ảnh mốc (0.6) để phát hiện ngay |
+| Không kiểm tra được trang Jira nếu không có tài khoản thật | Dữ liệu Jira giả ở Development (0.7); chủ dự án kiểm tra lần cuối trên Jira thật |
+| Tài khoản cũ không nhận prompt mẫu mới | Nút "Khôi phục prompt mẫu" (5.10), hoặc chấp nhận và ghi rõ trong tài liệu |
+| AI làm lệch chuẩn ở các bản sửa sau | Chuẩn trong `AGENTS.md` (GĐ0) cộng script kiểm tra trong định nghĩa "hoàn thành" |
+| Phạm vi phình to | Mỗi việc một PR; GĐ6 chỉ bắt đầu khi GĐ5 xong |
+
+### 10.13 Bảng chuyển đổi từ kế hoạch cũ (mục 8)
+
+| Mã cũ | Vị trí mới | Thay đổi |
+|---|---|---|
+| 1.1 | GĐ1 #3 | Chỉ dùng biến rỗng, không nạp gói thương mại |
+| 1.2 | GĐ1 #1 + GĐ6 #1 | Tách: đổi tên ngay, ghi thật lên Jira để sau |
+| 1.3 | GĐ3 (3.5) | Không sửa riêng, gộp vào khung app |
+| 1.4 | GĐ1 #10 (logic) + GĐ3 (giao diện) | Tách |
+| 1.5 | GĐ3 (3.5) | Gộp vào khung app; có ngoại lệ nếu GĐ3 bị lùi |
+| 1.6–1.12 | GĐ1 | Giữ, sắp lại theo mức nghiêm trọng |
+| 1.13 | GĐ1 #11 | Giữ |
+| 2.1–2.7 | GĐ2 (quyết định) + GĐ3 (xây) | Thêm bước chốt quyết định trước khi xây |
+| 2.8 | GĐ4 (4.1, 4.2) | Giữ |
+| 2.9 | **GĐ0** | **Đưa lên đầu tiên**; riêng tính năng trang Prompt chuyển sang 5.10 |
+| 3.1–3.13 | GĐ4 + GĐ5 | Phần dùng chung tách sang GĐ4; Đăng nhập/Đăng ký và tài khoản chuyển vào 4.2 |
+| 4.1–4.3, 4.5 | GĐ6 | Giữ |
+| 4.4 | **GĐ0 (0.6)** + GĐ6 #6 | **Đưa lên đầu** để có ảnh mốc; chạy tự động trên PR để sau |
