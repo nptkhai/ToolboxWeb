@@ -32,4 +32,9 @@ Open the URL printed by `dotnet run`. Register a user, then the app opens the da
 - `ViewModels/`: form and page models.
 - `Views/`: Razor UI.
 - `Content/`: CSS, JavaScript, images, and frontend libraries.
-- `docs/`: architecture and prompt guidance for maintainers.
+- `docs/`: architecture and prompt guidance for maintainers. `docs/UI_UX_REVIEW.md` holds the UI/UX review and the agreed roadmap.
+- `tests/ui/`: Playwright UI check (console errors, overflow, labels, small text, screenshots). See `tests/ui/README.md`.
+
+## Third-party licenses
+
+See `THIRD-PARTY-NOTICES.md`, and the license policy in `AGENTS.md`. Commercial or trial-licensed packages, such as `@progress/kendo-drawing` or Aspose, are not allowed.

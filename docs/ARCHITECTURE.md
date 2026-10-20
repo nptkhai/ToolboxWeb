@@ -24,7 +24,7 @@ Controllers stay thin. Services own business rules, user isolation, and activity
 - `Domain/`: contains `ApplicationUser`, `Note`, `ChecklistItem`, `FocusSession`, `QuickLink`, `PromptTemplate`, `ActivityLog`.
 - `Data/`: contains `ApplicationDbContext`, seed data, and design-time DbContext factory.
 - `Migrations/`: contains EF Core migration history for SQLite schema changes.
-- `Infrastructure/Excel/`: contains the shared Excel export abstraction. The current implementation emits CSV-compatible bytes and can be replaced by an Aspose-backed implementation later.
+- `Infrastructure/Excel/`: contains the shared Excel export abstraction. The current implementation emits CSV-compatible bytes. Despite the class name `AsposeExcelReportService`, it has no Aspose dependency; Aspose is commercial and must not be added (see the license policy in `AGENTS.md`). A real `.xlsx` writer, if needed, must use an allowed license.
 - `Content/`: configured as web root in `Program.cs` with `WebRootPath = "Content"`.
 
 ## Storage Rules

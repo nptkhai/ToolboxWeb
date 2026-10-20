@@ -1,0 +1,13 @@
+{
+  "name": "toolboxweb-ui-check",
+  "private": true,
+  "description": "Playwright UI check for ToolboxWeb: console errors, overflow, labels, small text and screenshots.",
+  "scripts": {
+    "check": "playwright test",
+    "baseline": "playwright test --update-snapshots",
+    "summary": "node summary.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

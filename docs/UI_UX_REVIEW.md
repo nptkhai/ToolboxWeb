@@ -891,3 +891,34 @@ Chủ dự án chọn thứ tự. Đề xuất theo giá trị:
 | 3.1–3.13 | GĐ4 + GĐ5 | Phần dùng chung tách sang GĐ4; Đăng nhập/Đăng ký và tài khoản chuyển vào 4.2 |
 | 4.1–4.3, 4.5 | GĐ6 | Giữ |
 | 4.4 | **GĐ0 (0.6)** + GĐ6 #6 | **Đưa lên đầu** để có ảnh mốc; chạy tự động trên PR để sau |
+
+### 10.14 Trạng thái thực hiện
+
+#### Giai đoạn 0 – đã làm xong (20/10/2026), chờ chủ dự án duyệt
+
+| # | Việc | Kết quả |
+|---|---|---|
+| 0.1 | Chính sách giấy phép | Mục "Third-Party License Policy" trong `AGENTS.md`: 3 mức (được phép / cần duyệt / cấm), bắt buộc đọc `LICENSE` của cả gói phụ thuộc |
+| 0.2 | `THIRD-PARTY-NOTICES.md` | Liệt kê 13 tài nguyên giao diện, 8 gói NuGet trực tiếp; đã kiểm tra **138 gói NuGet** trong cây phụ thuộc |
+| 0.3 | Quy chuẩn UI | Mục "UI Standard" trong `AGENTS.md`. Đường dẫn CodeGraph `D:\...` được **giữ lại** nhưng ghi rõ là riêng máy của chủ dự án, vì kỹ năng CodeGraph trên máy đó vẫn dùng |
+| 0.4 | Định nghĩa "hoàn thành" | Mục "Definition Of Done" trong `AGENTS.md` |
+| 0.5 | Đồng bộ prompt | `docs/FEATURE_PROMPTS.md` và `docs/MAINTENANCE_PROMPTS.md` là nguồn chính, dùng biến `{{ten_bien}}`, có đoạn ngữ cảnh và định dạng đầu ra; 6 prompt tạo sẵn (vi/en) đã khớp; thêm 2 prompt chỉ có trong tài liệu (đánh giá UX, kiểm tra giấy phép). Tài khoản cũ **không** tự nhận bản mới |
+| 0.6 | Script kiểm tra và ảnh mốc | `tests/ui/`: 22 trang × 3 kiểu màn hình = 66 lượt; cơ chế "chỉ được giảm"; ảnh mốc đã tạo, chạy lại 2 lần đều ổn định |
+| 0.7 | Dữ liệu Jira giả | `Infrastructure/Jira/FakeJiraClient.cs`, bật bằng `Jira__UseFakeData=true`, **chỉ có tác dụng ở Development**; đã thử đăng nhập Jira và chụp đủ 4 màn hình Jira |
+
+Ghi chú khác:
+- `docs/kendo-self-host.md` đã ghi cách dùng biến rỗng thay cho `@progress/kendo-drawing`.
+- `docs/ARCHITECTURE.md` đã bỏ ý "thay bằng Aspose sau này", vì Aspose là phần mềm thương mại.
+
+#### Phát hiện mới trong Giai đoạn 0
+
+1. **Giấy phép NuGet: chủ dự án cần quyết** (chi tiết trong `THIRD-PARTY-NOTICES.md`, mục "Open decisions"):
+   - `Microsoft.SqlServer.DacFx` (trang So sánh DB) dùng *Microsoft Software License Terms*: miễn phí, nhưng không phải giấy phép mã nguồn mở.
+   - `Microsoft.SqlServer.Types` 170.1000.7 (DacFx bắt buộc kéo theo) đi kèm file giấy phép **pre-release**: *"You may not test the software in a live operating environment…"*.
+   - `Microsoft.Data.SqlClient.SNI.runtime` dùng giấy phép riêng của Microsoft, và là thành phần bắt buộc để kết nối SQL Server trên Windows.
+2. **Jira Dashboard tràn ngang ở 1440px** (688px; trên mobile 1.474px). Thanh công cụ và hàng thẻ số liệu không co lại theo khung. Ảnh chụp của chủ dự án ở 1712px không thấy lỗi này vì màn hình đủ rộng. **Bổ sung vào GĐ1** (mức "chặn chức năng" trên màn hình laptop phổ biến).
+3. **Kendo Demo tràn ngang trên mobile** (210px). Để vào GĐ5 (trang Dev).
+4. **Ảnh mốc (số lỗi hiện có, theo trang):**
+   - Lỗi console `parseColor`: 8 trang. Hết ở GĐ1 (việc 1.1).
+   - Ô nhập không có label: Prompt 6, Liên kết nhanh 4, Công việc 3, Hồ sơ 2, Jira Sắp xếp 5, Jira Dashboard 1, Kanban 1.
+   - Chữ nhỏ hơn 12px: mọi trang có ít nhất 1 (ngày trên topbar 10,88px); Kanban Jira có **69**.
