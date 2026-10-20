@@ -209,7 +209,7 @@ DEV (chỉ hiện ở môi trường Development hoặc theo role)
 - Phụ đề **không đọc được** trên nền.
 - **Hộp lỗi đỏ khắp nơi** ("kendoTextBox / kendoListView chưa có trong bundle"), có 2 hộp lỗi lạc hẳn ra ngoài panel ở cuối trang.
 - Bảng chính chỉ có header và một dòng lỗi.
-- **Nguyên nhân thật không nằm ở trang này.** Bundle `kendo.ui.core.min.js` cần thêm thư viện `@progress/kendo-drawing` (biến toàn cục `_progress_kendo_drawing`) nhưng thư viện này không được nạp. Bundle dừng ở module màu (byte ~1.227.548), nên các widget đứng sau điểm đó (TextBox ở ~1.251.900, ListView ~1.310.070, Window ~1.507.757) không bao giờ được đăng ký. Khi thử bổ sung biến này, trang chạy đầy đủ: ô tìm nhanh, bảng ListView có nhãn trạng thái và thanh tiến độ, phân trang, nút "Chi tiết"; không còn lỗi console.
+- **Nguyên nhân thật không nằm ở trang này.** Bundle `kendo.ui.core.min.js` cần thêm thư viện `@progress/kendo-drawing` (biến toàn cục `_progress_kendo_drawing`) nhưng thư viện này không được nạp (và cũng không nên nạp, vì đây là phần mềm thương mại). Bundle dừng ở module màu (byte ~1.227.548), nên các widget đứng sau điểm đó (TextBox ở ~1.251.900, ListView ~1.310.070, Window ~1.507.757) không bao giờ được đăng ký. Khi thử bổ sung biến này, trang chạy đầy đủ: ô tìm nhanh, bảng ListView có nhãn trạng thái và thanh tiến độ, phân trang, nút "Chi tiết"; không còn lỗi console.
 - **Đề xuất:** sửa lỗi nạp Kendo (mục 8, việc 1.1) thay vì xóa trang; sau đó vẫn chuyển trang này sang nhóm Dev.
 
 ### 3.11 Tabulator Demo: 6/10
@@ -422,7 +422,7 @@ Trả lời: (1) thay đổi chính, (2) file sửa, (3) ảnh hưởng responsi
 | 1 | Sửa sidebar thu gọn mất menu; thêm menu trượt cho mobile | Toàn app |
 | 2 | Thêm trạng thái active cho menu và `aria-current` | Toàn app |
 | 3 | Làm lại trang Đăng ký; sửa label đè chữ ở Đăng ký và trang Email | Identity |
-| 4 | Sửa lỗi nạp Kendo (thiếu `@progress/kendo-drawing`), rồi chuyển Kendo Demo và Component Hub sang nhóm Dev | Dev, Jira, DB |
+| 4 | Sửa lỗi nạp Kendo (thêm biến rỗng `_progress_kendo_drawing`, không nạp gói thương mại), rồi chuyển Kendo Demo và Component Hub sang nhóm Dev | Dev, Jira, DB |
 | 5 | Sửa lỗi JS `parseColor` (chính là việc 4) | 7 trang |
 | 6 | Thêm xác nhận khi xóa (Công việc, Liên kết nhanh, Prompt) | Cá nhân |
 | 7 | Trang Access denied: dịch sang tiếng Việt, giải thích lý do, thêm nút hành động | Identity |
@@ -506,9 +506,10 @@ Thứ tự giai đoạn là thứ tự nên làm. Trong mỗi giai đoạn, vi�
 - **Vấn đề:** lỗi `Cannot read properties of undefined (reading 'parseColor')` trên 7 trang. Kendo Demo và Component Hub hiện hộp lỗi "chưa có trong bundle". Widget Window/TextBox/ListView không dùng được ở bất kỳ đâu.
 - **Nguyên nhân / vị trí:** `Content/vendor/kendo/js/kendo.ui.core.min.js` là bản UMD, cần thư viện `@progress/kendo-drawing` dưới tên biến toàn cục `_progress_kendo_drawing`. App không nạp thư viện này, nên bundle ném lỗi tại `kendo.deepExtend(kendo,{parseColor:t.parseColor…})` (byte ~1.227.548). Các widget đứng sau điểm này không được đăng ký: TextBox ~1.251.900, ListView ~1.310.070, Window ~1.507.757. Các widget đứng trước vẫn chạy: DatePicker, ComboBox, MultiSelect, AutoComplete, NumericTextBox, Notification.
 - **Cách xử lý:**
-  1. Tạo một partial duy nhất `Views/Shared/_KendoScripts.cshtml`, gồm: file UMD của `@progress/kendo-drawing` (đúng phiên bản mà `kendo-ui-core@2026.2.520` khai báo trong dependencies), `kendo.ui.core.min.js`, rồi culture và messages vi-VN. Thay mọi chỗ đang nạp core bằng partial này: `_Layout.cshtml`, `Components/Index.cshtml`, `DemoKendo/Index.cshtml`, `Jira/Dashboard.cshtml`, `Jira/Worklist.cshtml`, `SchemaCompare/Index.cshtml`, `SqlProfiler/Index.cshtml`, và `loadScriptOnce` trong `site.js` (khoảng dòng 666). Kiểm tra file UMD của kendo-drawing gán đúng `window._progress_kendo_drawing`; nếu tên khác thì gán lại trước khi nạp core.
-  2. Nếu cần sửa nóng trong lúc chờ: đặt `<script>window._progress_kendo_drawing = window._progress_kendo_drawing || {};</script>` ngay trước core. Cách này **đã được kiểm chứng**: hết lỗi, `kendoTextBox`, `kendoListView`, `kendoWindow` đều có, trang Kendo Demo chạy đầy đủ. Đổi lại, các tính năng màu và vẽ (ColorPicker) sẽ không chạy.
-  3. Cập nhật `docs/kendo-self-host.md` (thêm kendo-drawing vào danh sách asset) và các nhãn "Usable now / Not in current Kendo bundle" trong Component Hub.
+  > **Đính chính 20/10/2026:** `@progress/kendo-drawing` **là phần mềm thương mại**. File `LICENSE.md` của gói ghi: *"This is commercial software… If you do not own a commercial license, this file shall be governed by the trial license terms"*. Vì ToolboxWeb không dùng thư viện có ràng buộc giấy phép thương mại, **không nạp gói này**. Chỉ dùng cách 1 bên dưới.
+  1. Tạo một partial duy nhất `Views/Shared/_KendoScripts.cshtml`, gồm: một dòng `<script>window._progress_kendo_drawing = window._progress_kendo_drawing || {};</script>` (chỉ là một biến rỗng do mình tự viết, không chứa mã của bên thứ ba), rồi `kendo.ui.core.min.js` (Apache-2.0), culture và messages vi-VN. Thay mọi chỗ đang nạp core bằng partial này: `_Layout.cshtml`, `Components/Index.cshtml`, `DemoKendo/Index.cshtml`, `Jira/Dashboard.cshtml`, `Jira/Worklist.cshtml`, `SchemaCompare/Index.cshtml`, `SqlProfiler/Index.cshtml`, và `loadScriptOnce` trong `site.js` (khoảng dòng 666). Cách này **đã được kiểm chứng**: hết lỗi, `kendoTextBox`, `kendoListView`, `kendoWindow` đều có, trang Kendo Demo chạy đầy đủ.
+  2. Những gì cần kendo-drawing (ColorPicker, xuất PDF, vẽ) sẽ không chạy. Đánh dấu chúng là "Không dùng – phụ thuộc thư viện thương mại" trong Component Hub; nếu cần chọn màu thì dùng `<input type="color">` (đúng như danh sách control ưu tiên trong `AGENTS.md`).
+  3. Cập nhật `docs/kendo-self-host.md`: ghi rõ không dùng `@progress/kendo-drawing` vì lý do giấy phép, mô tả biến rỗng thay thế, và sửa các nhãn "Usable now / Not in current Kendo bundle" trong Component Hub.
 - **Kiểm tra:** console sạch trên 7 trang; `jQuery.fn.kendoTextBox`, `kendoListView` và `kendoWindow` đều tồn tại; Kendo Demo không còn hộp đỏ.
 
 #### 1.2 Jira: nút "Lưu đề xuất" và kéo thả không lưu gì — **M (đổi tên) / L (ghi thật lên Jira)**
@@ -688,7 +689,8 @@ Sau khi đối chiếu lại mã nguồn, các nhận định sau của bản đ
 |---|---|---|
 | Hình nền chỉ cao 900px, các trang dài lộ dải navy | Nền dùng `position: fixed`, luôn phủ khung nhìn khi cuộn. Dải navy chỉ xuất hiện do cách chụp ảnh toàn trang | 2.3 |
 | Trang Quản lý tài khoản có 2 mục cùng được tô sáng | Chỉ một mục `active`; các mục khác nền trong suốt nên trông như được chọn khi nằm trên vùng sáng của hình nền | 3.15 |
-| Kendo Demo hỏng vì thiếu widget, đề xuất xóa trang | Các widget có trong bundle; bundle dừng do thiếu `@progress/kendo-drawing`. Đề xuất đổi thành sửa lỗi nạp | 2.6, 3.9, 3.10, 8 (1.1) |
+| Kendo Demo hỏng vì thiếu widget, đề xuất xóa trang | Các widget có trong bundle; bundle dừng do thiếu biến `_progress_kendo_drawing`. Đề xuất đổi thành sửa lỗi nạp | 2.6, 3.9, 3.10, 8 (1.1) |
 | "Lưu đề xuất" ghi thật vào Jira mà không xác nhận | Nút chỉ đổi dữ liệu trên trình duyệt, không ghi lên Jira; vấn đề là tên nút gây hiểu nhầm | 4.5, 8 (1.2) |
 | Mobile không có cách ẩn sidebar | Có nút ☰ để ẩn, nhưng sidebar mặc định mở và trạng thái lưu chung với desktop | 2.1 |
 | Avatar Jira vỡ do URL Jira cần đăng nhập | Ảnh lấy từ file upload trong hồ sơ; nguyên nhân cụ thể cần kiểm tra trên máy thật | 2.2, 8 (1.8) |
+| Việc 1.1 khuyên nạp thêm `@progress/kendo-drawing` | Gói này là phần mềm thương mại của Progress, trái với nguyên tắc không dùng thư viện có ràng buộc giấy phép. Chỉ dùng biến rỗng tự viết | 8 (1.1) |
