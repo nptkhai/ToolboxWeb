@@ -13,28 +13,6 @@ namespace ToolboxWeb.Web.Controllers;
 [Authorize(Policy = "JiraOnly")]
 public class JiraController : Controller
 {
-    private static readonly string[] DoneStatusHints =
-    [
-        "done",
-        "closed",
-        "resolved",
-        "complete",
-        "completed",
-        "finished",
-        "deployed"
-    ];
-
-    private static readonly string[] DoingStatusHints =
-    [
-        "progress",
-        "analysis",
-        "review",
-        "doing",
-        "testing",
-        "qa",
-        "verify"
-    ];
-
     private const string MySubtasksBaseJql =
         "assignee = currentUser() AND issuetype in subTaskIssueTypes()";
 
@@ -820,27 +798,9 @@ public class JiraController : Controller
         return IsDoneStatus(row.Status);
     }
 
-    private static bool IsDoneStatus(string status)
-    {
-        if (string.IsNullOrWhiteSpace(status))
-        {
-            return false;
-        }
+    private static bool IsDoneStatus(string status) => JiraStatus.IsDone(status);
 
-        return DoneStatusHints.Any(hint => status.Contains(hint, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static string ResolveStatusTone(string status)
-    {
-        if (IsDoneStatus(status))
-        {
-            return "done";
-        }
-
-        return DoingStatusHints.Any(hint => status.Contains(hint, StringComparison.OrdinalIgnoreCase))
-            ? "doing"
-            : "todo";
-    }
+    private static string ResolveStatusTone(string status) => JiraStatus.Tone(status);
 
     private async Task<JiraSession?> GetSessionOrRedirectAsync()
     {

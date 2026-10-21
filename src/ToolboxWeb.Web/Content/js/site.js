@@ -582,19 +582,31 @@
             if (display) display.textContent = `${minutes}:${seconds}`;
         }
 
+        // The save button only turns on when a countdown has actually finished.
+        const saveButton = document.querySelector('[data-timer-save]');
+
+        function setSaveEnabled(enabled) {
+            if (saveButton) saveButton.disabled = !enabled;
+        }
+
         function resetFromInput() {
+            window.clearInterval(intervalId);
+            intervalId = null;
             remaining = Math.max(1, Number(minutesInput?.value || '25')) * 60;
+            setSaveEnabled(false);
             render();
         }
 
         timer.querySelector('[data-timer-start]')?.addEventListener('click', function () {
-            if (intervalId) return;
+            if (intervalId || remaining <= 0) return;
             intervalId = window.setInterval(function () {
                 remaining -= 1;
                 render();
                 if (remaining <= 0) {
                     window.clearInterval(intervalId);
                     intervalId = null;
+                    setSaveEnabled(true);
+                    window.Toolbox?.notify?.(timer.dataset.finishedMessage, 'success');
                 }
             }, 1000);
         });
@@ -663,6 +675,8 @@
                 if (typeof window.kendo === 'undefined' || !window.jQuery || !window.jQuery.fn.kendoNotification) {
                     loadStyleOnce('/vendor/kendo/icons/index.css');
                     loadStyleOnce('/vendor/kendo/theme/default-main.css');
+                    // Placeholder for the commercial kendo-drawing package; see Views/Shared/_KendoScripts.cshtml.
+                    window._progress_kendo_drawing = window._progress_kendo_drawing || {};
                     return loadScriptOnce('/vendor/kendo/js/kendo.ui.core.min.js');
                 }
             })

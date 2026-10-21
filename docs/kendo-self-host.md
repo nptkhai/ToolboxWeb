@@ -27,6 +27,8 @@ ToolboxWeb đang self-host Kendo UI Core miễn phí từ npm thay vì dùng Tel
   <script>window._progress_kendo_drawing = window._progress_kendo_drawing || {};</script>
   ```
 
+  Việc này đã nằm sẵn trong `Views/Shared/_KendoScripts.cshtml`. **Mọi trang nạp Kendo phải dùng partial này** (`<partial name="_KendoScripts" />`), không tự viết thẻ `<script>` tới `kendo.ui.core.min.js`. Partial chỉ render một lần cho mỗi request, nên layout và trang có thể cùng gọi mà Kendo không bị nạp hai lần. `site.js` cũng đặt biến này trước khi tự nạp Kendo để hiện thông báo.
+
   Không có biến này, bundle ném lỗi `Cannot read properties of undefined (reading 'parseColor')` và dừng giữa chừng, nên TextBox, ListView, Window… không được đăng ký. Có biến rỗng thì mọi widget Core chạy bình thường; riêng ColorPicker, xuất PDF và các tính năng vẽ thì không dùng được.
 
 ## Quy trình cập nhật

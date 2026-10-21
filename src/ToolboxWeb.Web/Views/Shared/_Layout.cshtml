@@ -138,12 +138,7 @@
     <script src="~/js/adaptive-background.js" asp-append-version="true"></script>
     @if (hasFlashNotification)
     {
-        <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
-        @if (currentCulture == "vi-VN")
-        {
-            <script src="~/vendor/kendo/cultures/kendo.culture.vi-VN.min.js" asp-append-version="true"></script>
-            <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
-        }
+        <partial name="_KendoScripts" />
     }
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

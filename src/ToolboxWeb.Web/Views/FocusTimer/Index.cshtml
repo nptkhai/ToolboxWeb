@@ -8,7 +8,7 @@
     <section class="panel span-6">
         <div class="panel-header"><h2>@T["FocusTimer.Timer"]</h2></div>
         <form asp-action="Complete" method="post" class="form-grid">
-            <div data-focus-timer data-minutes="@Model.DurationMinutes">
+            <div data-focus-timer data-minutes="@Model.DurationMinutes" data-finished-message="@T["FocusTimer.Finished"]">
                 <div class="timer-display" data-timer-display>25:00</div>
                 <div class="inline-actions justify-content-center mt-3">
                     <button class="btn btn-primary" type="button" data-timer-start>@T["Action.Start"]</button>
@@ -24,7 +24,9 @@
                 @T["FocusTimer.SessionNote"]
                 <textarea asp-for="Note" class="form-control" rows="3"></textarea>
             </label>
-            <button class="btn btn-primary" type="submit">@T["FocusTimer.SaveCompletedSession"]</button>
+            @* Enabled by site.js once the countdown reaches zero, so only finished sessions are saved. *@
+            <button class="btn btn-primary" type="submit" data-timer-save disabled aria-describedby="focus-save-hint">@T["FocusTimer.SaveCompletedSession"]</button>
+            <div class="form-text" id="focus-save-hint">@T["FocusTimer.SaveHint"]</div>
         </form>
     </section>
 

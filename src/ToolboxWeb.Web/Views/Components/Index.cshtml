@@ -105,7 +105,9 @@
         new { Name = "TextArea", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Phù hợp để đồng bộ visual với TextBox Kendo cho các trường nhập nhiều dòng.", "Useful when you want multiline input to visually match Kendo TextBox fields.") },
         new { Name = "ToggleButton", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Dùng cho bật/tắt state kiểu filter, highlight hoặc view mode.", "Works well for state toggles such as filters, highlight modes, or view modes.") },
         new { Name = "ToolBar", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Thích hợp cho cụm hành động dạng editor hoặc header thao tác dày nút.", "A strong fit for editor-like action groups or dense action headers.") },
-        new { Name = "Alert / Confirm / Prompt helpers", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Các helper popup có sẵn cho confirm ngắn, hỏi giá trị nhanh hoặc cảnh báo đơn giản.", "Built-in popup helpers for short confirmations, quick prompts, or simple alerts.") }
+        new { Name = "Alert / Confirm / Prompt helpers", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Các helper popup có sẵn cho confirm ngắn, hỏi giá trị nhanh hoặc cảnh báo đơn giản.", "Built-in popup helpers for short confirmations, quick prompts, or simple alerts.") },
+        new { Name = "Dialog", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Có trong bundle. ToolboxWeb dùng Bootstrap modal cho popup và xác nhận (xem danh sách control ưu tiên).", "Present in the bundle. ToolboxWeb uses Bootstrap modals for popups and confirmations (see the preferred controls).") },
+        new { Name = "ProgressBar", Library = "Kendo UI Core", Status = T["Components.StatusBundleOnly"].Value, Note = LocalText("Có trong bundle, chưa có demo trực tiếp. Có thể dùng thanh progress của Bootstrap cho trường hợp đơn giản.", "Present in the bundle, not live-demoed yet. A Bootstrap progress bar covers simple cases.") },
     };
 
     var assetOnlyCatalog = new[]
@@ -118,12 +120,10 @@
 
     var missingBundleCatalog = new[]
     {
-        new { Name = "Grid", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Không có trong Kendo UI Core bundle hiện tại, nên grid editable của hub dùng Tabulator.", "Not present in the current Kendo UI Core bundle, so the editable grid demo uses Tabulator instead.") },
-        new { Name = "Dialog", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Thay thế tạm thời bằng Window hoặc Bootstrap modal nếu cần luồng xác nhận riêng.", "Use Window or a Bootstrap modal as the current fallback for custom confirmation flows.") },
-        new { Name = "ProgressBar", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Có thể thay bằng thanh progress Bootstrap hoặc mini progress custom.", "Use a Bootstrap progress bar or a small custom progress strip instead.") },
-        new { Name = "ColorPicker", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Trang hub đang dùng native input type color để giữ flow nhập màu đơn giản.", "The hub uses a native color input as the simple fallback for color selection.") },
-        new { Name = "Scheduler", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Nếu cần scheduling nâng cao, nên tách riêng một màn demo hoặc dùng FullCalendar.", "For advanced scheduling, consider a dedicated screen or use FullCalendar instead.") },
-        new { Name = "Chart", Library = "Kendo UI", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Nên ưu tiên ECharts vì asset đã có sẵn trong source và linh hoạt hơn với dashboard.", "Prefer ECharts here because the assets are already present and it is flexible for dashboards.") }
+        new { Name = "Grid", Library = "Kendo UI (commercial)", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Không có trong Kendo UI Core bundle hiện tại, nên grid editable của hub dùng Tabulator.", "Not present in the current Kendo UI Core bundle, so the editable grid demo uses Tabulator instead.") },
+        new { Name = "ColorPicker", Library = "Kendo UI Core", Status = T["Components.StatusCommercialDependency"].Value, Note = LocalText("Có trong bundle nhưng cần gói thương mại @progress/kendo-drawing nên không dùng. Chọn màu bằng input type=color.", "Present in the bundle but needs the commercial @progress/kendo-drawing package, so it is not used. Use an input of type color for color selection.") },
+        new { Name = "Scheduler", Library = "Kendo UI (commercial)", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Nếu cần scheduling nâng cao, nên tách riêng một màn demo hoặc dùng FullCalendar.", "For advanced scheduling, consider a dedicated screen or use FullCalendar instead.") },
+        new { Name = "Chart", Library = "Kendo UI (commercial)", Status = T["Components.StatusMissingBundle"].Value, Note = LocalText("Nên ưu tiên ECharts vì asset đã có sẵn trong source và linh hoạt hơn với dashboard.", "Prefer ECharts here because the assets are already present and it is flexible for dashboards.") }
     };
 
     var componentText = new
@@ -1961,12 +1961,7 @@
 </script>
 
 @section Scripts {
-    <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
-    @if (currentCulture == "vi-VN")
-    {
-        <script src="~/vendor/kendo/cultures/kendo.culture.vi-VN.min.js" asp-append-version="true"></script>
-        <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
-    }
+    <partial name="_KendoScripts" />
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
     <script>
         (function ($) {

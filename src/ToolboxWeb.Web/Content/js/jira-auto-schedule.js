@@ -342,7 +342,7 @@
                     if (id === "status") {
                         const doingFirst = criteriaDirection.status === "doingFirst";
                         const rank = (row) => {
-                            const isDoing = /progress|analysis|review|doing|testing|qa|verify/i.test(row.status || "");
+                            const isDoing = /progress|develop|analysis|review|doing|testing|qa|verify/i.test(row.status || "");
                             return doingFirst ? (isDoing ? 0 : 1) : (isDoing ? 1 : 0);
                         };
                         cmp = rank(a) - rank(b);

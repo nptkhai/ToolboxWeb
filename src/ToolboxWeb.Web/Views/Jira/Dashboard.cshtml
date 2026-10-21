@@ -129,12 +129,7 @@
 <script id="jira-dashboard-config" type="application/json">@Html.Raw(dashboardConfigJson)</script>
 
 @section Scripts {
-    <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
-    @if (currentCulture == "vi-VN")
-    {
-        <script src="~/vendor/kendo/cultures/kendo.culture.vi-VN.min.js" asp-append-version="true"></script>
-        <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
-    }
+    <partial name="_KendoScripts" />
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
     <script src="~/js/jira-dashboard.js" asp-append-version="true"></script>
 }

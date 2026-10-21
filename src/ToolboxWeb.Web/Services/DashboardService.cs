@@ -52,19 +52,35 @@ public class DashboardService : IDashboardService
             .ToListAsync();
 
         var today = DateTimeExtensions.VietnamToday();
-        var checklist = (await _checklist.GetAsync(userId, 20))
-            .Where(x => x.Status == ChecklistStatus.Todo || x.DueDate?.Date == today)
+        var openTasks = (await _checklist.GetAsync(userId))
+            .Where(x => x.Status == ChecklistStatus.Todo)
+            .OrderBy(x => DueRank(x.DueDate, today))
+            .ThenBy(x => x.DueDate ?? DateTime.MaxValue)
+            .ThenByDescending(x => x.CreatedAt)
             .Take(8)
             .ToList();
 
         return new DashboardViewModel
         {
             RecentNotes = await _notes.GetAsync(userId, take: 6),
-            TodayChecklist = checklist,
+            OpenTasks = openTasks,
+            Today = today,
             QuickLinks = await _quickLinks.GetAsync(userId, 8),
             PromptTemplates = await _prompts.GetAsync(userId, 6),
             RecentFocusSessions = await _focusSessions.GetRecentAsync(userId, 5),
             RecentActivity = activity
         };
+    }
+
+    // 0 overdue, 1 due today, 2 upcoming, 3 no due date.
+    private static int DueRank(DateTime? dueDate, DateTime today)
+    {
+        if (dueDate is null)
+        {
+            return 3;
+        }
+
+        var due = dueDate.Value.Date;
+        return due < today ? 0 : due == today ? 1 : 2;
     }
 }

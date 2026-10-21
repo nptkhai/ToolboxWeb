@@ -1,0 +1,29 @@
+@*
+    The only place that loads Kendo UI Core. Set ViewData["KendoForceVietnamese"] = true before
+    rendering to load the vi-VN culture files even when the UI culture is English (Kendo demo page).
+    No @model on purpose: a partial without an explicit model receives the parent page's model.
+
+    Kendo UI Core (Apache-2.0) expects the global _progress_kendo_drawing from the
+    @progress/kendo-drawing package, which is commercial and must not be loaded (see
+    THIRD-PARTY-NOTICES.md). Without that global the bundle throws while loading and stops before
+    registering TextBox, ListView, Window and others. An empty placeholder lets it finish; features
+    that need drawing (ColorPicker, PDF export) stay unavailable.
+
+    Rendered at most once per request, so the layout and a page can both ask for it.
+*@
+@{
+    const string RenderedKey = "tbx.kendo-scripts";
+    var alreadyRendered = Context.Items.ContainsKey(RenderedKey);
+    Context.Items[RenderedKey] = true;
+    var includeVietnamese = ViewData["KendoForceVietnamese"] is true || CultureInfo.CurrentUICulture.Name == "vi-VN";
+}
+@if (!alreadyRendered)
+{
+    <script>window._progress_kendo_drawing = window._progress_kendo_drawing || {};</script>
+    <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
+    @if (includeVietnamese)
+    {
+        <script src="~/vendor/kendo/cultures/kendo.culture.vi-VN.min.js" asp-append-version="true"></script>
+        <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
+    }
+}
