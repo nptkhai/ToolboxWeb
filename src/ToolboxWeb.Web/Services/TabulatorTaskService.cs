@@ -223,7 +223,7 @@ public class TabulatorTaskService : ITabulatorTaskService
                 Budget = x.Budget,
                 DueDate = x.DueDate.HasValue ? x.DueDate.Value.ToString("yyyy-MM-dd") : null,
                 Note = x.Note,
-                UpdatedAt = (x.UpdatedAt ?? x.CreatedAt).ToString("dd/MM/yyyy HH:mm")
+                UpdatedAt = (x.UpdatedAt ?? x.CreatedAt).ToDisplayAppDateTime()
             })
             .ToListAsync();
     }

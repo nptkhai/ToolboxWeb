@@ -1,6 +1,8 @@
 @using System.Globalization
 @using System.Text.Json
 @using ToolboxWeb.Web.Constants
+@using ToolboxWeb.Web.Services
+@using ToolboxWeb.Web.ViewModels.Jira
 @model ToolboxWeb.Web.ViewModels.Jira.JiraWorklistPageViewModel
 @{
     ViewData["Title"] = T["Jira.Worklist.Title"];
@@ -38,15 +40,26 @@
     var boardConfigJson = JsonSerializer.Serialize(new
     {
         hint = T["Jira.TaskBoard.Hint"].Value,
-        jumpToday = T["Jira.TaskBoard.JumpToday"].Value,
         noTasks = T["Jira.TaskBoard.NoTasks"].Value,
         emptyState = T["Jira.TaskBoard.EmptyState"].Value,
         error = T["Jira.TaskBoard.Error"].Value,
         movedToast = T["Jira.TaskBoard.MovedToast"].Value,
         movedFrom = T["Jira.TaskBoard.MovedFrom"].Value,
-        weekPickerPlaceholder = T["Jira.Dashboard.Filter.WeekPlaceholder"].Value,
-        weekPickerOption = T["Jira.Dashboard.Filter.WeekOption"].Value
+        loadTitle = T["Jira.TaskBoard.LoadTitle"].Value,
+        cardHours = T["Jira.TaskBoard.CardHours"].Value
     }, jsonOptions);
+    var searchJqlBlock = new JiraJqlBlockViewModel
+    {
+        Id = "jira-search-jql",
+        Jql = Model.AppliedJql,
+        BrowseBaseUrl = Model.Session.BaseUrl
+    };
+    var boardPeriodPicker = new JiraPeriodPickerViewModel
+    {
+        IdPrefix = "jira-board-period",
+        Periods = ["week", "month"],
+        PeriodType = "week"
+    };
     var autoScheduleConfigJson = JsonSerializer.Serialize(new
     {
         error = T["Jira.AutoSchedule.Error"].Value,
@@ -61,6 +74,7 @@
         noDueWarning = T["Jira.AutoSchedule.NoDueWarning"].Value,
         startDateRequired = T["Jira.AutoSchedule.StartDateRequired"].Value,
         noProposalsToast = T["Jira.AutoSchedule.NoProposalsToast"].Value,
+        proposalsToast = T["Jira.AutoSchedule.ProposalsToast"].Value,
         criteria = new
         {
             dueDate = T["Jira.AutoSchedule.CriteriaDueDate"].Value,
@@ -192,16 +206,6 @@
                 </form>
             </section>
 
-            @if (!string.IsNullOrWhiteSpace(Model.AppliedJql))
-            {
-                <section class="panel jira-panel">
-                    <div class="panel-header">
-                        <h2>@T["Jira.Worklist.AppliedJql"]</h2>
-                    </div>
-                    <pre class="jira-jql-preview">@Model.AppliedJql</pre>
-                </section>
-            }
-
             <section class="panel jira-panel">
                 <div class="panel-header">
                     <div>
@@ -251,17 +255,17 @@
                                     <td class="jira-table-nowrap">
                                         @if (string.IsNullOrWhiteSpace(browseBase))
                                         {
-                                            <span class="jira-dashboard-mono">@issue.IssueKey</span>
+                                            <span class="jira-key">@issue.IssueKey</span>
                                         }
                                         else
                                         {
-                                            <a class="jira-dashboard-link jira-dashboard-mono" href="@($"{browseBase}/browse/{Uri.EscapeDataString(issue.IssueKey)}")" target="_blank" rel="noopener noreferrer">@issue.IssueKey</a>
+                                            <a class="jira-key" href="@($"{browseBase}/browse/{Uri.EscapeDataString(issue.IssueKey)}")" target="_blank" rel="noopener noreferrer">@issue.IssueKey</a>
                                         }
                                     </td>
                                     <td>@issue.Summary</td>
-                                    <td class="jira-table-nowrap text-center"><span class="badge jira-dashboard-status jira-dashboard-status--@ToolboxWeb.Web.Services.JiraStatus.Tone(issue.Status)">@issue.Status</span></td>
+                                    <td class="jira-table-nowrap text-center"><span class="tbx-pill @JiraStatus.PillClass(issue.Status)">@issue.Status</span></td>
                                     <td class="jira-table-nowrap text-center">@issue.Type</td>
-                                    <td class="jira-table-nowrap text-center">@(issue.DueDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    <td class="jira-table-nowrap text-center">@issue.DueDate.ToDisplayDate()</td>
                                     @if (showParent)
                                     {
                                         <td>@(string.IsNullOrWhiteSpace(issue.Parent) ? "-" : $"{issue.Parent} - {issue.ParentSummary}")</td>
@@ -280,42 +284,19 @@
                         </table>
                     </div>
                 }
+
+                <partial name="_JiraJqlBlock" model="searchJqlBlock" />
             </section>
         </div>
 
         <div class="tab-pane fade" id="jira-tab-board-pane" role="tabpanel" aria-labelledby="jira-tab-board">
-            <div class="jira-dashboard-toolbar" data-jira-board-toolbar>
-                <div class="jira-dashboard-toolbar-label">
-                    <span class="jira-dashboard-toolbar-caption">@T["Jira.Dashboard.ToolbarLabel"]</span>
+            <div class="jira-toolbar" data-jira-board-toolbar>
+                <div class="jira-toolbar-range">
+                    <span class="jira-toolbar-caption">@T["Jira.Dashboard.ToolbarLabel"]</span>
                     <strong data-jira-board-range-label></strong>
                 </div>
 
-                <div class="jira-dashboard-toolbar-controls">
-                    <div class="jira-dashboard-period-tabs" data-jira-board-period-tabs>
-                        <button type="button" class="jira-dashboard-period-button is-active" data-period="week">@T["Jira.Dashboard.Filter.Week"]</button>
-                        <button type="button" class="jira-dashboard-period-button" data-period="month">@T["Jira.Dashboard.Filter.Month"]</button>
-                    </div>
-
-                    <div class="jira-dashboard-period-nav">
-                        <button type="button" class="jira-dashboard-nav-button" data-nav-step="-2" title="@T["Jira.Dashboard.Filter.NavBack2"]" aria-label="@T["Jira.Dashboard.Filter.NavBack2"]">&laquo;</button>
-                        <button type="button" class="jira-dashboard-nav-button" data-nav-step="-1" title="@T["Jira.Dashboard.Filter.NavBack1"]" aria-label="@T["Jira.Dashboard.Filter.NavBack1"]">&lsaquo;</button>
-
-                        <div class="jira-dashboard-period-input is-active" data-period-input="week">
-                            <input id="jira-board-week" class="form-control jira-dashboard-picker jira-dashboard-week-picker" type="text" autocomplete="off" />
-                        </div>
-                        <div class="jira-dashboard-period-input" data-period-input="month">
-                            <input id="jira-board-month" class="form-control jira-dashboard-picker" type="text" autocomplete="off" />
-                        </div>
-
-                        <button type="button" class="jira-dashboard-nav-button" data-nav-step="1" title="@T["Jira.Dashboard.Filter.NavForward1"]" aria-label="@T["Jira.Dashboard.Filter.NavForward1"]">&rsaquo;</button>
-                        <button type="button" class="jira-dashboard-nav-button" data-nav-step="2" title="@T["Jira.Dashboard.Filter.NavForward2"]" aria-label="@T["Jira.Dashboard.Filter.NavForward2"]">&raquo;</button>
-                    </div>
-
-                    <button type="button" class="jira-dashboard-nav-button jira-icon-button" data-jira-board-today title="@T["Jira.TaskBoard.JumpToday"]" aria-label="@T["Jira.TaskBoard.JumpToday"]">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/><polyline points="12 7 12 12 15.5 14"/></svg>
-                    </button>
-                    <button type="button" class="btn btn-primary jira-dashboard-search" data-jira-board-search>@T["Jira.Dashboard.Filter.Search"]</button>
-                </div>
+                <partial name="_JiraPeriodPicker" model="boardPeriodPicker" />
             </div>
 
             <div data-jira-board-alert></div>
@@ -395,7 +376,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">@T["Jira.AutoSchedule.ConfigTitle"]</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
                         </div>
                         <div class="modal-body">
                             <p class="jira-auto-config-summary" data-jira-auto-config-summary></p>
@@ -462,6 +443,7 @@
 @section Scripts {
     <partial name="_KendoScripts" />
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script src="~/js/jira-common.js" asp-append-version="true"></script>
     <script src="~/js/jira-pages.js" asp-append-version="true"></script>
     <script src="~/js/jira-task-board.js" asp-append-version="true"></script>
     <script src="~/js/jira-auto-schedule.js" asp-append-version="true"></script>

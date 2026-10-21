@@ -99,24 +99,11 @@
 
     // ----------------------------------------------------------- connections
 
+    // Source and target forms: Views/Shared/_SqlConnectionForm.cshtml, Content/js/sql-connection.js.
+    const connections = {};
+
     function readEndpoint(panel) {
-        const value = function (field) {
-            const node = panel.querySelector('[data-field="' + field + '"]');
-            if (!node) {
-                return '';
-            }
-
-            return node.type === 'checkbox' ? node.checked : node.value.trim();
-        };
-
-        return {
-            server: value('server'),
-            database: value('database'),
-            username: value('username'),
-            password: value('password'),
-            trustServerCertificate: value('trustServerCertificate'),
-            encrypt: true
-        };
+        return connections[panel.dataset.side].read();
     }
 
     function readStoredJson(storage, key) {
@@ -147,25 +134,7 @@
     }
 
     function setEndpointField(panel, field, value) {
-        const node = panel.querySelector('[data-field="' + field + '"]');
-        if (!node || value === null || value === undefined) {
-            return;
-        }
-
-        if (node.type === 'checkbox') {
-            node.checked = Boolean(value);
-            return;
-        }
-
-        if (field === 'database') {
-            const combo = databaseComboBox(panel);
-            if (combo) {
-                combo.value(String(value));
-                return;
-            }
-        }
-
-        node.value = String(value);
+        connections[panel.dataset.side].set(field, value);
     }
 
     function restoreConnections() {
@@ -200,60 +169,6 @@
             source: source.password,
             target: target.password
         });
-    }
-
-    function databaseComboBox(panel) {
-        const input = panel.querySelector('[data-field="database"]');
-        return input && window.jQuery ? window.jQuery(input).data('kendoComboBox') : null;
-    }
-
-    function initDatabasePicker(panel) {
-        const input = panel.querySelector('[data-field="database"]');
-        if (!input || !window.jQuery || !window.jQuery.fn.kendoComboBox) {
-            return;
-        }
-
-        window.jQuery(input).kendoComboBox({
-            dataSource: [],
-            filter: 'contains',
-            suggest: true,
-            clearButton: true,
-            change: persistConnections
-        });
-    }
-
-    async function testConnection(panel) {
-        const status = panel.querySelector('[data-role="status"]');
-        const button = panel.querySelector('[data-action="test"]');
-
-        persistConnections();
-        setStatus(status, messages.testing);
-        button.disabled = true;
-
-        try {
-            const result = await callJson(config.urls.testConnection, readEndpoint(panel));
-            if (!result.success) {
-                setStatus(status, result.message || messages.genericError, 'error');
-                return;
-            }
-
-            const combo = databaseComboBox(panel);
-            if (combo) {
-                const current = combo.value();
-                combo.setDataSource(result.data.databases || []);
-                if (current) {
-                    combo.value(current);
-                }
-            }
-
-            setStatus(status, messages.connected
-                .replace('{0}', result.data.serverVersion)
-                .replace('{1}', (result.data.databases || []).length), 'ok');
-        } catch (error) {
-            setStatus(status, messages.networkError, 'error');
-        } finally {
-            button.disabled = false;
-        }
     }
 
     // --------------------------------------------------------------- compare
@@ -1262,24 +1177,20 @@
 
     // ----------------------------------------------------------------- wiring
 
-    root.querySelectorAll('.sc-endpoint').forEach(initDatabasePicker);
-    restoreConnections();
-
-    root.querySelectorAll('.sc-endpoint').forEach(function (panel) {
-        panel.querySelectorAll('[data-field]').forEach(function (node) {
-            node.addEventListener(node.type === 'checkbox' ? 'change' : 'input', persistConnections);
-        });
-        panel.querySelector('[data-action="test"]').addEventListener('click', function () {
-            testConnection(panel);
+    root.querySelectorAll('[data-sql-connection]').forEach(function (panel) {
+        connections[panel.dataset.side] = window.ToolboxSqlConnection.init(panel, {
+            onChange: function () {
+                persistConnections();
+                renderCodePreview();
+            },
+            beforeTest: persistConnections
         });
     });
+    restoreConnections();
 
     bindDetailBack();
     ['sc-code-from', 'sc-code-to', 'sc-mapping-input'].forEach(function (id) {
         document.getElementById(id).addEventListener('input', renderCodePreview);
-    });
-    root.querySelectorAll('[data-side] [data-field="database"]').forEach(function (node) {
-        node.addEventListener('change', renderCodePreview);
     });
     renderCodePreview();
 

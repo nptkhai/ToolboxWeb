@@ -43,10 +43,10 @@
                 var dueLabel = due is null
                     ? T["Common.NoDueDate"].Value
                     : isOverdue
-                        ? T["Dashboard.DueOverdue", due.Value.FormatLocalDate()].Value
+                        ? T["Dashboard.DueOverdue", due.Value.ToDisplayDate()].Value
                         : due == Model.Today
                             ? T["Dashboard.DueToday"].Value
-                            : due.Value.FormatLocalDate();
+                            : due.Value.ToDisplayDate();
                 <div class="item-row">
                     <div>
                         <div class="item-title">@item.Title</div>
@@ -112,7 +112,7 @@
                 <div class="item-row">
                     <div>
                         <div class="item-title">@T["Common.Minutes", session.DurationMinutes]</div>
-                        <div class="item-meta">@session.CompletedAt.FormatVietnamDateTime()</div>
+                        <div class="item-meta">@session.CompletedAt.ToDisplayAppDateTime()</div>
                     </div>
                 </div>
             }
@@ -133,7 +133,7 @@
                 <div class="item-row">
                     <div>
                         <div class="item-title">@activity.Summary</div>
-                        <div class="item-meta">@activity.ActionType.Localize(T) &middot; @activity.EntityType.Localize(T) &middot; @activity.CreatedAt.FormatVietnamDateTime()</div>
+                        <div class="item-meta">@activity.ActionType.Localize(T) &middot; @activity.EntityType.Localize(T) &middot; @activity.CreatedAt.ToDisplayAppDateTime()</div>
                     </div>
                 </div>
             }

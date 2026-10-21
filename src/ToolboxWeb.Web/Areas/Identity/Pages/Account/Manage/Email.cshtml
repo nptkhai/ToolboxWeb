@@ -1,0 +1,25 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.EmailModel
+@{
+    ViewData["Title"] = T["Profile.Nav.Email"];
+}
+
+<section class="tbx-panel tbx-panel-body account-section">
+    <dl class="account-facts">
+        <div>
+            <dt>@T["Account.Email.Current"]</dt>
+            <dd>@(string.IsNullOrWhiteSpace(Model.Email) ? "-" : Model.Email)</dd>
+        </div>
+        @if (Model.IsJiraUser && !string.IsNullOrWhiteSpace(Model.JiraUsername))
+        {
+            <div>
+                <dt>@T["Login.Jira.Username"]</dt>
+                <dd>@Model.JiraUsername</dd>
+            </div>
+        }
+    </dl>
+    <p class="account-note">
+        <tbx-icon name="info" />
+        <span>@(Model.IsJiraUser ? T["Account.Email.JiraNote"] : T["Account.Email.CannotChange"])</span>
+    </p>
+</section>

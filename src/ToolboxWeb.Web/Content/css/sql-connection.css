@@ -1,0 +1,142 @@
+/* SQL Server connection form shared by Schema compare and SQL capture
+   (Views/Shared/_SqlConnectionForm.cshtml, Content/js/sql-connection.js). */
+
+/* align-content: when a grid row stretches the card (source and target side by side), the
+   extra height stays at the bottom instead of spreading the fields apart. */
+.sqlconn {
+    align-content: start;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-4);
+}
+
+.sqlconn--plain {
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+
+.sqlconn-head {
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: space-between;
+    padding-bottom: var(--space-3);
+}
+
+.sqlconn-title {
+    align-items: center;
+    color: var(--text);
+    display: flex;
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    gap: var(--space-2);
+}
+
+/* Pages color the dot and tag per role (schema-compare.css: source / target). */
+.sqlconn-dot {
+    background: var(--muted);
+    border-radius: 50%;
+    flex: none;
+    height: 10px;
+    width: 10px;
+}
+
+.sqlconn-tag {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-chip);
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    padding: 2px var(--space-3);
+}
+
+.sqlconn-grid {
+    display: grid;
+    gap: var(--space-2) var(--space-3);
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+    .sqlconn-grid > * {
+        min-width: 0;
+    }
+
+    .sqlconn-grid .k-combobox {
+        width: 100%;
+    }
+
+.sqlconn-foot {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    justify-content: space-between;
+}
+
+    .sqlconn-foot .form-check {
+        margin: 0;
+    }
+
+    .sqlconn-foot .btn {
+        align-items: center;
+        display: inline-flex;
+        gap: var(--space-1);
+    }
+
+/* Test result. A symbol as well as a color, so it still reads without color. */
+.sqlconn-status {
+    border-radius: var(--radius-control);
+    font-size: var(--text-sm);
+    line-height: 1.45;
+    margin: 0;
+}
+
+    .sqlconn-status:empty {
+        display: none;
+    }
+
+    .sqlconn-status:not(:empty) {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .sqlconn-status.ok {
+        background: var(--success-tint);
+        border-color: transparent;
+        color: var(--success);
+    }
+
+    .sqlconn-status.error {
+        background: var(--danger-tint);
+        border-color: transparent;
+        color: var(--danger);
+    }
+
+    .sqlconn-status.ok::before,
+    .sqlconn-status.error::before {
+        font-weight: var(--weight-semibold);
+        margin-right: var(--space-2);
+    }
+
+    .sqlconn-status.ok::before {
+        content: "\2713";
+    }
+
+    .sqlconn-status.error::before {
+        content: "\26A0";
+    }
+
+.sqlconn-note {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    margin: 0;
+}

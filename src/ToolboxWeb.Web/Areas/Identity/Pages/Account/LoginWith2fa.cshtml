@@ -1,0 +1,40 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.LoginWith2faModel
+@{
+    ViewData["Title"] = T["Profile.Nav.TwoFactor"];
+    ViewData["ContentAreaClass"] = "content-area--login";
+}
+
+<div class="auth-login-page">
+    <div class="auth-login-shell">
+        <div class="auth-login-panel auth-login-panel--compact">
+            <div class="auth-login-panel-head">
+                <h2>@T["Profile.Nav.TwoFactor"]</h2>
+            </div>
+            <p class="auth-login-text">@T["Login.TwoFactor.Text"]</p>
+
+            <form method="post" asp-route-returnUrl="@Model.ReturnUrl" asp-route-rememberMe="@Model.RememberMe" class="auth-login-form" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <div class="auth-login-input auth-login-input--floating">
+                    <input class="form-control" asp-for="Input.TwoFactorCode" autocomplete="one-time-code" inputmode="numeric" placeholder=" " aria-required="true" autofocus />
+                    <label class="form-label" asp-for="Input.TwoFactorCode">@T["Account.Field.VerificationCode"]</label>
+                    <span class="tbx-field-error" asp-validation-for="Input.TwoFactorCode"></span>
+                </div>
+                <label class="form-check auth-login-check">
+                    <input class="form-check-input" asp-for="Input.RememberMachine" />
+                    <span class="form-check-label">@T["Login.TwoFactor.RememberMachine"]</span>
+                </label>
+                <button type="submit" class="btn btn-primary auth-login-submit">@T["Login.Title"]</button>
+            </form>
+
+            <div class="auth-login-links">
+                <a asp-page="./LoginWithRecoveryCode" asp-route-returnUrl="@Model.ReturnUrl">@T["Login.TwoFactor.UseRecoveryCode"]</a>
+                <a asp-page="./Login">@T["Login.BackToSignIn"]</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

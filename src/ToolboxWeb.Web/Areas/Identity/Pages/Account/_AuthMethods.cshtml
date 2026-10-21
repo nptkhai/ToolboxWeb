@@ -1,0 +1,25 @@
+@using ToolboxWeb.Web.Areas.Identity.Pages.Account
+@model AuthMethod
+@*
+    Switch at the top of the sign-in card. On the sign-in page, Toolbox and Jira switch panels in
+    place (login-page.js); Register is its own page. On the other pages every item is a link.
+*@
+@{
+    var onLoginPage = Model is AuthMethod.Local or AuthMethod.Jira;
+    var returnUrl = Context.Request.Query["returnUrl"].ToString();
+    string? Active(AuthMethod method) => method == Model ? "is-active" : null;
+    string Pressed(AuthMethod method) => method == Model ? "true" : "false";
+}
+<div class="auth-login-methods" role="group" aria-label="@T["Login.MethodsLabel"]">
+    @if (onLoginPage)
+    {
+        <button type="button" class="auth-login-method @Active(AuthMethod.Local)" data-login-switch="local" aria-pressed="@Pressed(AuthMethod.Local)">@T["Login.Local.ShortTitle"]</button>
+        <button type="button" class="auth-login-method @Active(AuthMethod.Jira)" data-login-switch="jira" aria-pressed="@Pressed(AuthMethod.Jira)">@T["Login.Jira.ShortTitle"]</button>
+    }
+    else
+    {
+        <a class="auth-login-method" asp-page="./Login" asp-route-returnUrl="@(string.IsNullOrEmpty(returnUrl) ? null : returnUrl)">@T["Login.Local.ShortTitle"]</a>
+        <a class="auth-login-method" asp-page="./Login" asp-route-mode="jira" asp-route-returnUrl="@(string.IsNullOrEmpty(returnUrl) ? null : returnUrl)">@T["Login.Jira.ShortTitle"]</a>
+    }
+    <a class="auth-login-method @Active(AuthMethod.Register)" aria-current="@(Model == AuthMethod.Register ? "page" : null)" asp-page="./Register" asp-route-returnUrl="@(string.IsNullOrEmpty(returnUrl) ? null : returnUrl)">@T["Auth.Register"]</a>
+</div>

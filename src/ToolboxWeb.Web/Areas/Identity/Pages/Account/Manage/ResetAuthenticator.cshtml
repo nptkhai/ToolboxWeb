@@ -1,0 +1,16 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.ResetAuthenticatorModel
+@{
+    ViewData["Title"] = T["Account.TwoFactor.ResetApp"];
+}
+
+<section class="tbx-panel tbx-panel-body account-section">
+    <div class="alert alert-warning" role="alert">@T["Account.TwoFactor.ResetWarning"]</div>
+    <form method="post" class="account-actions">
+        <button type="submit" class="btn btn-danger"
+                data-confirm="@T["Account.TwoFactor.ResetConfirm"]"
+                data-confirm-title="@T["Account.TwoFactor.ResetApp"]"
+                data-confirm-ok="@T["Account.TwoFactor.ResetApp"]">@T["Account.TwoFactor.ResetApp"]</button>
+        <a class="btn btn-outline-secondary" asp-page="./TwoFactorAuthentication">@T["Account.Cancel"]</a>
+    </form>
+</section>

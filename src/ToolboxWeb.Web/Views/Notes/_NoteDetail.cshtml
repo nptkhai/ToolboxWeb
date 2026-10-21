@@ -36,7 +36,7 @@
     <span class="nv-badge">@format.Badge</span>
     <span class="nv-meta">
         @T["Notes.UpdatedLabel"]
-        <time datetime="@note.UpdatedUtc.ToString("o")" title="@note.UpdatedUtc.FormatVietnamDateTime()" data-relative>@note.UpdatedUtc.FormatVietnamDateTime()</time>
+        <time datetime="@note.UpdatedUtc.ToString("o")" title="@note.UpdatedUtc.ToDisplayAppDateTime()" data-relative>@note.UpdatedUtc.ToDisplayAppDateTime()</time>
     </span>
     <span class="nv-spacer"></span>
 
@@ -144,7 +144,7 @@
                             <span class="nv-child-sub">@childSub</span>
                         }
                     </span>
-                    <time datetime="@child.UpdatedUtc.ToString("o")" title="@child.UpdatedUtc.FormatVietnamDateTime()" data-relative>@child.UpdatedUtc.FormatVietnamDateTime()</time>
+                    <time datetime="@child.UpdatedUtc.ToString("o")" title="@child.UpdatedUtc.ToDisplayAppDateTime()" data-relative>@child.UpdatedUtc.ToDisplayAppDateTime()</time>
                 </summary>
 
                 <form method="post" asp-action="Update" class="nv-child-form" data-dirty-track>

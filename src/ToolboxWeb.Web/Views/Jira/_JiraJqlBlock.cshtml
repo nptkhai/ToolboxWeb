@@ -1,0 +1,21 @@
+@model ToolboxWeb.Web.ViewModels.Jira.JiraJqlBlockViewModel
+@* Collapsed JQL of the current result, with copy and open-in-Jira. ToolboxJira.jql.update refreshes it. *@
+<details class="jira-jql" data-jira-jql-block data-browse-base="@Model.BrowseBaseUrl" hidden="@string.IsNullOrWhiteSpace(Model.Jql)">
+    <summary class="jira-jql-summary">
+        <tbx-icon name="chevron-right" class="jira-jql-chevron" />
+        <span>@T["Jira.Jql.Title"]</span>
+    </summary>
+    <div class="jira-jql-body">
+        <code class="jira-jql-code" id="@Model.Id" data-jira-jql-code>@Model.Jql</code>
+        <div class="jira-jql-actions">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="#@Model.Id" data-copied-text="@T["Jira.Jql.Copied"]">
+                <tbx-icon name="copy" />
+                <span data-copy-label>@T["Jira.Jql.Copy"]</span>
+            </button>
+            <a class="btn btn-sm btn-outline-secondary" data-jira-jql-open href="@(string.IsNullOrEmpty(Model.SearchUrl) ? "#" : Model.SearchUrl)" target="_blank" rel="noopener noreferrer" hidden="@string.IsNullOrEmpty(Model.SearchUrl)">
+                <tbx-icon name="external-link" />
+                <span>@T["Jira.Jql.Open"]</span>
+            </a>
+        </div>
+    </div>
+</details>

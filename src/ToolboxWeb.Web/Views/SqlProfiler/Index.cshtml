@@ -14,11 +14,17 @@
         ["Error"] = T["SqlProfiler.Kind.Error"].Value
     };
 
+    var connectionForm = new SqlConnectionFormViewModel
+    {
+        IdPrefix = "sp",
+        Plain = true,
+        TestUrl = Url.Action("TestConnection", "SqlProfiler") ?? string.Empty,
+        ShowHostAllowlistNotice = Model.HostAllowlistEnabled
+    };
     var configJson = JsonSerializer.Serialize(new
     {
         urls = new
         {
-            testConnection = Url.Action("TestConnection", "SqlProfiler"),
             start = Url.Action("StartCapture", "SqlProfiler"),
             events = Url.Action("Events", "SqlProfiler"),
             stop = Url.Action("StopCapture", "SqlProfiler"),
@@ -52,7 +58,7 @@
         },
         messages = new
         {
-            testing = T["SchemaCompare.Message.Testing"].Value,
+            testing = T["SqlConnection.Testing"].Value,
             connected = T["SqlProfiler.Message.Connected"].Value,
             noCapturePermission = T["SqlProfiler.Message.NoCapturePermission"].Value,
             azureNotSupported = T["SqlProfiler.Message.AzureNotSupported"].Value,
@@ -68,7 +74,7 @@
             summary = T["SqlProfiler.Message.Summary"].Value,
             copied = T["SchemaCompare.Message.Copied"].Value,
             copyFailed = T["SchemaCompare.Message.CopyFailed"].Value,
-            networkError = T["SchemaCompare.Error.Network"].Value,
+            networkError = T["SqlConnection.NetworkError"].Value,
             genericError = T["SqlProfiler.Error.StartFailed"].Value,
             loadingDefinition = T["SqlProfiler.Message.LoadingDefinition"].Value,
             planCacheNote = T["SqlProfiler.Message.PlanCacheNote"].Value
@@ -79,6 +85,7 @@
 @section Styles {
     <link rel="stylesheet" href="~/vendor/tabulator/css/tabulator.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sql-connection.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/sql-profiler.css" asp-append-version="true" />
 }
 
@@ -90,41 +97,7 @@
             <h2>@T["SqlProfiler.Connection"]</h2>
             <span class="muted">@T["SqlProfiler.Intro"]</span>
         </div>
-        <div class="form-grid">
-            <div class="sp-conn-grid">
-                <div>
-                    <label class="form-label" for="sp-server">@T["SchemaCompare.Field.Server"]</label>
-                    <input class="form-control" id="sp-server" data-field="server" autocomplete="off"
-                           placeholder="@T["SchemaCompare.Field.ServerPlaceholder"]" />
-                </div>
-                <div>
-                    <label class="form-label" for="sp-username">@T["SchemaCompare.Field.Username"]</label>
-                    <input class="form-control" id="sp-username" data-field="username" autocomplete="off" />
-                </div>
-                <div>
-                    <label class="form-label" for="sp-password">@T["SchemaCompare.Field.Password"]</label>
-                    <input class="form-control" id="sp-password" data-field="password" type="password" autocomplete="new-password" />
-                </div>
-                <div>
-                    <label class="form-label" for="sp-database">@T["SchemaCompare.Field.Database"]</label>
-                    <input id="sp-database" data-field="database" />
-                </div>
-            </div>
-            <div class="inline-actions">
-                <div class="form-check">
-                    <input class="form-check-input" id="sp-trust" data-field="trustServerCertificate" type="checkbox" checked />
-                    <label class="form-check-label" for="sp-trust">@T["SchemaCompare.Field.TrustServerCertificate"]</label>
-                </div>
-                <button class="btn btn-outline-secondary btn-sm" type="button" id="sp-test">
-                    @T["SchemaCompare.Action.TestConnection"]
-                </button>
-            </div>
-        </div>
-        <div class="sp-status" data-role="conn-status" role="status" aria-live="polite"></div>
-        @if (Model.HostAllowlistEnabled)
-        {
-            <p class="muted"><small>@T["SchemaCompare.HostAllowlistNotice"]</small></p>
-        }
+        <partial name="_SqlConnectionForm" model="connectionForm" />
     </section>
 
     <section class="panel">
@@ -249,5 +222,6 @@
 @section Scripts {
     <partial name="_KendoScripts" />
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script src="~/js/sql-connection.js" asp-append-version="true"></script>
     <script src="~/js/sql-profiler.js" asp-append-version="true"></script>
 }

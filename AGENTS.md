@@ -65,6 +65,10 @@
 - Before changing any page inside `Account/Manage`, inspect the folder-level `_Layout.cshtml`, `_ViewStart.cshtml`, nav behavior, and whether package pages in the same folder will inherit the same wrapper.
 - If you introduce a custom manage page layout, make it folder-wide so tab switches do not jump between different wrappers or duplicate navigation blocks.
 - When you add profile or account UI that reads user data, make sure it degrades safely if the current runtime database has not yet picked up the newest schema.
+- Every Identity page the app shows is a local page under `Areas/Identity/Pages/Account/` (sign-in, register, two-factor sign-in, recovery code, lockout, and all `Manage/` pages), written in localization keys. Do not fall back to the package's English pages. Manage pages derive from `Manage/ManagePageModel` and render inside `Manage/_Layout.cshtml`.
+- Jira accounts have no ToolboxWeb password: the password and two-factor tabs are hidden for them.
+- No email sender is configured, so there is no "forgot password" and the email cannot be changed. Do not add flows that depend on sending email until a sender exists.
+- Deleting an account goes through `IAccountService.DeleteAccountAsync`, which also deletes every user-owned row and the profile images. A new user-owned table must be added there.
 
 ## Third-Party License Policy
 
@@ -92,6 +96,8 @@
 - If a Kendo widget is missing from the current bundle, use a catalog note or fallback pattern instead of initializing it blindly.
 - Shared frontend controls must be instance-scoped. Do not rely on global IDs or one-off selectors when the same control can appear multiple times on one screen.
 - For reusable upload-like controls, keep JavaScript queries relative to the control root and require unique `InputName` and removed-state field names per instance so add, update, and delete flows do not leak across controls.
+- SQL Server connection forms use `Views/Shared/_SqlConnectionForm.cshtml` with `SqlConnectionFormViewModel` and `Content/js/sql-connection.js` (`ToolboxSqlConnection.init(panel, options)`; `read`, `set`, `test`, `setStatus`). Pages add their own rules through `onTested`, `onChange`, and `beforeTest` instead of copying the form.
+- Jira screens share `Content/js/jira-common.js` (`window.ToolboxJira`): ISO period dates, status pills (`statusPill`; server side `JiraStatus.PillClass`), Tabulator defaults and formatters (`grid.options`, `grid.formatters`), the period picker (`Views/Jira/_JiraPeriodPicker.cshtml` + `periodPicker`), the filter chip bar (`chipBar`) and the JQL block (`Views/Jira/_JiraJqlBlock.cshtml` + `jql.update`). New Jira screens use these instead of copying date, status, or picker code. Load it after `format.js` and before the page script.
 
 ## Preferred Controls
 
@@ -128,7 +134,7 @@
   - Calm empty states and subtle motion.
   - Keyboard-friendly.
   - Concrete values were approved on 2026-10-21 and are listed under "Design Tokens" below. The reasons are in `docs/DESIGN_DECISIONS.md`.
-- Reference screen: `Views/Notes/Index.cshtml` (toolbar + search + primary action + empty state + modal confirm). New or reworked list screens follow its structure.
+- Reference screen: `Views/Notes/Index.cshtml` (toolbar + search + primary action + empty state + modal confirm). New or reworked list screens follow its structure. The reusable form of that structure is the list page template in `docs/LIST_PAGE_TEMPLATE.md` (`_ListToolbar`, `_FilterChips`, `.tbx-list` rows, `_EmptyState`, a `data-list-modal` form, `Content/js/list-page.js`); the to-do list is its first user.
 - Rules that apply now:
   - **Colors:** do not add new hex, rgb, or hsl color literals in CSS or inline styles. Reuse the CSS variables in `:root`. If a needed color does not exist, add one variable to `:root` (light and dark) instead of a literal.
   - **One primary button style** across the app. Destructive actions use the danger style.
@@ -139,7 +145,8 @@
   - **Readability:** text never sits directly on the decorative background; it sits on a surface. Minimum font size is 12px. Body text contrast is at least 4.5:1 in light and dark themes.
   - **Navigation:** the current page is marked in the sidebar with an active class and `aria-current="page"`.
   - **Language:** user-facing text comes from localization keys in both `vi-VN.json` and `en-US.json`. Do not mix Vietnamese and English inside one label. Keep developer jargon (source, bundle, input file, grid) out of user-facing text.
-  - **Numbers and dates** follow the current UI culture (`17,5` in `vi-VN`). Use one date format per culture across the app.
+  - **Numbers and dates** follow the current UI culture (`17,5` in `vi-VN`). Use one date format per culture across the app: `DisplayFormatExtensions` (`ToDisplayDate`, `ToDisplayAppDateTime`, `ToDisplayNumber`, `ToDisplayHours`) on the server and `Toolbox.format` (`Content/js/format.js`) in the browser. "Today" and stored UTC times go through `AppClock` (`App:TimeZone`), never `DateTime.Today`/`DateTime.Now` for anything the user sees.
+  - **Terms:** Jira and DB vocabulary follows `docs/GLOSSARY.md` (which Jira words stay as they are, which are translated).
   - **Third-party widgets:** Kendo and Tabulator widgets must look like native app controls. Style them through `Content/css/vendor-sync.css` using the shared variables, not per page.
   - **Responsive:** every changed screen works at 1440px and 390px wide, with no horizontal page scroll, in light and dark themes.
 

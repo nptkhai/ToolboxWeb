@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using ToolboxWeb.Web.ViewModels.Jira;
+using ToolboxWeb.Web.Extensions;
 
 namespace ToolboxWeb.Web.Infrastructure.Jira;
 
@@ -264,7 +265,7 @@ public sealed class JiraClient : IJiraClient
         return string.Join(", ", worklogs
             .Where(x => x.Started != DateTime.MinValue)
             .GroupBy(x => x.Started.Date)
-            .Select(g => g.Key.ToString("dd/MM/yyyy") + " (" + string.Join(", ", g.Select(x => x.TimeSpent)) + ")"));
+            .Select(g => g.Key.ToDisplayDate() + " (" + string.Join(", ", g.Select(x => x.TimeSpent)) + ")"));
     }
 
     public void Dispose()

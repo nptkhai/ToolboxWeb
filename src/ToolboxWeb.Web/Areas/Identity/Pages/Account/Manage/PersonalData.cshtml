@@ -1,0 +1,21 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.PersonalDataModel
+@{
+    ViewData["Title"] = T["Profile.Nav.PersonalData"];
+}
+
+<section class="tbx-panel tbx-panel-body account-section" aria-labelledby="download-title">
+    <h2 class="account-section-title" id="download-title"><tbx-icon name="download" />@T["Account.PersonalData.DownloadTitle"]</h2>
+    <p class="account-lead">@T["Account.PersonalData.DownloadText"]</p>
+    <form method="post" asp-page-handler="Download" class="account-actions">
+        <button type="submit" class="btn btn-outline-secondary"><tbx-icon name="download" />@T["Account.PersonalData.Download"]</button>
+    </form>
+</section>
+
+<section class="tbx-panel tbx-panel-body account-section account-section--danger" aria-labelledby="delete-title">
+    <h2 class="account-section-title" id="delete-title"><tbx-icon name="user-x" />@T["Account.Delete.Title"]</h2>
+    <p class="account-lead">@T["Account.Delete.Summary"]</p>
+    <div class="account-actions">
+        <a class="btn btn-outline-danger" asp-page="./DeletePersonalData">@T["Account.Delete.Title"]</a>
+    </div>
+</section>

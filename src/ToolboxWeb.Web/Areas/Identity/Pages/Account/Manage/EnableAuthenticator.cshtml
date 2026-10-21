@@ -1,0 +1,36 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.EnableAuthenticatorModel
+@{
+    ViewData["Title"] = T["Account.TwoFactor.AppTitle"];
+}
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<section class="tbx-panel tbx-panel-body account-section">
+    <ol class="account-steps">
+        <li>@T["Account.TwoFactor.Step1"]</li>
+        <li>
+            @T["Account.TwoFactor.Step2"]
+            <kbd class="account-key">@Model.SharedKey</kbd>
+            <span class="tbx-field-hint d-block">@T["Account.TwoFactor.KeyHint"]</span>
+        </li>
+        <li>
+            @T["Account.TwoFactor.Step3"]
+            <form method="post" class="account-form account-form--inline">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" asp-for="Input.Code">@T["Account.Field.VerificationCode"]</label>
+                    <input class="form-control" asp-for="Input.Code" autocomplete="one-time-code" inputmode="numeric" placeholder="123456" aria-required="true" />
+                    <span class="tbx-field-error" asp-validation-for="Input.Code"></span>
+                </div>
+                <div class="account-actions">
+                    <button type="submit" class="btn btn-primary">@T["Account.TwoFactor.Verify"]</button>
+                    <a class="btn btn-outline-secondary" asp-page="./TwoFactorAuthentication">@T["Account.Cancel"]</a>
+                </div>
+            </form>
+        </li>
+    </ol>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

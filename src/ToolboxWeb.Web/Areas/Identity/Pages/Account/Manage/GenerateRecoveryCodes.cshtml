@@ -1,0 +1,17 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.GenerateRecoveryCodesModel
+@{
+    ViewData["Title"] = T["Account.TwoFactor.GenerateCodes"];
+}
+
+<section class="tbx-panel tbx-panel-body account-section">
+    <div class="alert alert-warning" role="alert">@T["Account.TwoFactor.GenerateWarning"]</div>
+    <form method="post" class="account-actions">
+        <button type="submit" class="btn btn-primary"
+                data-confirm="@T["Account.TwoFactor.GenerateConfirm"]"
+                data-confirm-title="@T["Account.TwoFactor.GenerateCodes"]"
+                data-confirm-ok="@T["Account.TwoFactor.GenerateCodes"]"
+                data-confirm-tone="primary">@T["Account.TwoFactor.GenerateCodes"]</button>
+        <a class="btn btn-outline-secondary" asp-page="./TwoFactorAuthentication">@T["Account.Cancel"]</a>
+    </form>
+</section>

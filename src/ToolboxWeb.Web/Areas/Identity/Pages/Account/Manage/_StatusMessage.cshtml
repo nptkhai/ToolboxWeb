@@ -1,0 +1,6 @@
+@model string?
+@* One-line result of the last action on an account page (TempData StatusMessage). *@
+@if (!string.IsNullOrWhiteSpace(Model))
+{
+    <div class="alert alert-success" role="status">@Model</div>
+}

@@ -4,6 +4,7 @@ using ToolboxWeb.Web;
 using ToolboxWeb.Web.Data;
 using ToolboxWeb.Web.Enums;
 using ToolboxWeb.Web.Extensions;
+using ToolboxWeb.Web.Infrastructure.Time;
 using ToolboxWeb.Web.ViewModels;
 
 namespace ToolboxWeb.Web.Services;
@@ -51,7 +52,7 @@ public class DashboardService : IDashboardService
             .Take(12)
             .ToListAsync();
 
-        var today = DateTimeExtensions.VietnamToday();
+        var today = AppClock.Today;
         var openTasks = (await _checklist.GetAsync(userId))
             .Where(x => x.Status == ChecklistStatus.Todo)
             .OrderBy(x => DueRank(x.DueDate, today))

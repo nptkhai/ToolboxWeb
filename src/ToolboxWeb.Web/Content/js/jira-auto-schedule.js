@@ -1,67 +1,12 @@
 (function (window, document) {
     "use strict";
 
-    const WEEKDAY_NAMES_VI = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-
-    function parseJsonScript(id, fallback) {
-        const el = document.getElementById(id);
-        if (!el) {
-            return fallback;
-        }
-
-        try {
-            return JSON.parse(el.textContent || "");
-        } catch {
-            return fallback;
-        }
-    }
-
-    function pad2(value) {
-        return String(value).padStart(2, "0");
-    }
-
-    function startOfDay(date) {
-        const result = new Date(date);
-        result.setHours(0, 0, 0, 0);
-        return result;
-    }
-
-    function addDays(date, amount) {
-        const result = new Date(date);
-        result.setDate(result.getDate() + amount);
-        return result;
-    }
-
-    function toDateInputValue(date) {
-        return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-    }
-
-    function fmtFull(date) {
-        return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
-    }
-
-    function parseIsoDate(value) {
-        if (!value) {
-            return null;
-        }
-
-        const normalized = String(value).split("T")[0];
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
-            return null;
-        }
-
-        const [year, month, day] = normalized.split("-").map(Number);
-        return new Date(year, month - 1, day);
-    }
-
-    function escapeHtml(value) {
-        return String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-    }
+    const jira = window.ToolboxJira;
+    const { escapeHtml, parseJsonScript, grid } = jira;
+    const { startOfDay, addDays, parseIsoDate } = jira.dates;
+    const toDateInputValue = jira.dates.formatIsoDate;
+    const LOCALE = window.Toolbox?.format?.locale || document.documentElement.lang || "vi-VN";
+    const WEEKDAY_NAME = new Intl.DateTimeFormat(LOCALE, { weekday: "long" });
 
     function format(template, ...args) {
         return args.reduce((text, value, index) => text.replace(`{${index}}`, value), template || "");
@@ -71,16 +16,6 @@
         if (window.Toolbox && typeof window.Toolbox.notify === "function") {
             window.Toolbox.notify(message, type || "info");
         }
-    }
-
-    function statusFormatter(cell) {
-        const row = cell.getRow().getData();
-        return `<span class="badge jira-dashboard-status jira-dashboard-status--${escapeHtml(row.statusTone)}">${escapeHtml(row.status)}</span>`;
-    }
-
-    function dueDateFormatter(cell) {
-        const parsed = parseIsoDate(cell.getValue());
-        return parsed ? fmtFull(parsed) : "-";
     }
 
     function dueDateEditor(cell, onRendered, success, cancel) {
@@ -109,10 +44,6 @@
         });
 
         return input;
-    }
-
-    function estimateFormatter(cell) {
-        return `${Number(cell.getValue() || 0)}h`;
     }
 
     function createModule() {
@@ -243,19 +174,6 @@
             notify(format(autoConfig.dueEditedToast || "Updated {0}", row.subTaskKey), "info");
         }
 
-        function subTaskKeyFormatter(cell) {
-            const key = cell.getValue();
-            const text = escapeHtml(key || "-");
-            const baseUrl = (config.browseBaseUrl || "").replace(/\/+$/, "");
-
-            if (!baseUrl || !key) {
-                return `<span class="jira-dashboard-mono">${text}</span>`;
-            }
-
-            const href = `${baseUrl}/browse/${encodeURIComponent(key)}`;
-            return `<a class="jira-dashboard-link jira-dashboard-mono" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-        }
-
         function buildSearchTable() {
             const host = document.getElementById("jira-auto-search-grid");
             if (!host || !window.Tabulator) {
@@ -263,44 +181,36 @@
             }
 
             const columns = config.columns || {};
-            searchTable = new window.Tabulator(host, {
+            searchTable = new window.Tabulator(host, grid.options({
                 data: [],
-                layout: "fitColumns",
                 height: "60vh",
-                reactiveData: false,
-                placeholder: autoConfig.resultEmpty || "",
+                placeholder: autoConfig.resultEmpty,
                 rowFormatter: (row) => {
                     row.getElement().classList.toggle("is-edited", editedKeys.has(row.getData().subTaskKey));
                 },
-                columnDefaults: {
-                    resizable: false,
-                    tooltip: true
-                },
                 columns: [
-                    { title: columns.index || "#", field: "index", width: 48, minWidth: 44, hozAlign: "right" },
-                    { title: columns.subTaskKey || "Key", field: "subTaskKey", width: 150, minWidth: 130, formatter: subTaskKeyFormatter },
-                    { title: columns.subTaskSummary || "Summary", field: "subTaskSummary", widthGrow: 2, minWidth: 200 },
-                    { title: columns.status || "Status", field: "status", width: 130, minWidth: 110, hozAlign: "center", formatter: statusFormatter },
+                    { title: columns.index || "#", field: "index", width: 56 },
+                    { title: columns.subTaskKey || "Key", field: "subTaskKey", width: 140, formatter: grid.formatters.issueKey(config.browseBaseUrl) },
+                    { title: columns.subTaskSummary || "Summary", field: "subTaskSummary", hozAlign: "left", widthGrow: 2, minWidth: 200, formatter: grid.formatters.text },
+                    { title: columns.status || "Status", field: "status", width: 140, formatter: grid.formatters.status },
                     {
                         title: columns.dueDate || "Due date",
                         field: "dueDate",
                         width: 140,
-                        minWidth: 130,
-                        hozAlign: "center",
-                        formatter: dueDateFormatter,
+                        formatter: grid.formatters.dueDate,
                         editor: dueDateEditor,
                         cellEdited: onDueDateEdited
                     },
-                    { title: columns.estimate || "Estimate", field: "estimateHours", width: 130, minWidth: 110, hozAlign: "center", formatter: estimateFormatter }
+                    { title: columns.estimate || "Estimate", field: "estimateHours", width: 120, hozAlign: "right", formatter: grid.formatters.hours }
                 ]
-            });
+            }));
         }
 
         function groupHeader(value, count, data) {
             const parsed = parseIsoDate(value);
-            const label = parsed ? `${WEEKDAY_NAMES_VI[parsed.getDay()]}, ${fmtFull(parsed)}` : value;
+            const label = parsed ? `${WEEKDAY_NAME.format(parsed)}, ${jira.displayDate(parsed)}` : escapeHtml(value);
             const totalHours = data.reduce((sum, row) => sum + Number(row.estimateHours || 0), 0);
-            return `${label} <span class="jira-auto-day-group-sum">· ${format(autoConfig.groupSummary || "{0} task · {1}h", count, totalHours.toFixed(1))}</span>`;
+            return `${label} <span class="jira-auto-day-group-sum">· ${format(autoConfig.groupSummary || "{0} · {1}h", count, window.Toolbox.format.number(totalHours, 1))}</span>`;
         }
 
         function buildResultTable() {
@@ -310,25 +220,19 @@
             }
 
             const columns = config.columns || {};
-            resultTable = new window.Tabulator(host, {
+            resultTable = new window.Tabulator(host, grid.options({
                 data: [],
-                layout: "fitColumns",
                 height: "60vh",
-                reactiveData: false,
-                placeholder: autoConfig.resultEmpty || "",
+                placeholder: autoConfig.resultEmpty,
                 groupBy: "newDateKey",
                 groupHeader,
-                columnDefaults: {
-                    resizable: false,
-                    tooltip: true
-                },
                 columns: [
-                    { title: columns.subTaskKey || "Key", field: "subTaskKey", width: 150, minWidth: 130, formatter: subTaskKeyFormatter },
-                    { title: columns.subTaskSummary || "Summary", field: "subTaskSummary", widthGrow: 2, minWidth: 200 },
-                    { title: columns.status || "Status", field: "status", width: 130, minWidth: 110, hozAlign: "center", formatter: statusFormatter },
-                    { title: columns.estimate || "Estimate", field: "estimateHours", width: 130, minWidth: 110, hozAlign: "center", formatter: estimateFormatter }
+                    { title: columns.subTaskKey || "Key", field: "subTaskKey", width: 140, formatter: grid.formatters.issueKey(config.browseBaseUrl) },
+                    { title: columns.subTaskSummary || "Summary", field: "subTaskSummary", hozAlign: "left", widthGrow: 2, minWidth: 200, formatter: grid.formatters.text },
+                    { title: columns.status || "Status", field: "status", width: 140, formatter: grid.formatters.status },
+                    { title: columns.estimate || "Estimate", field: "estimateHours", width: 120, hozAlign: "right", formatter: grid.formatters.hours }
                 ]
-            });
+            }));
         }
 
         function buildComparator() {
@@ -522,7 +426,7 @@
             });
 
             renderResultGrid();
-            notify(format("Đã tạo đề xuất cho {0} task.", proposals.length), "success");
+            notify(format(autoConfig.proposalsToast || "{0}", proposals.length), "success");
         }
 
         function renderResultGrid() {
@@ -593,7 +497,7 @@
                     const pct = Number(event.target.value) || 0;
                     const preview = document.querySelector("[data-jira-auto-cap-percent-preview]");
                     if (preview) {
-                        preview.textContent = ((8 * pct) / 100).toFixed(1);
+                        preview.textContent = window.Toolbox.format.number((8 * pct) / 100, 1);
                     }
                 });
 

@@ -1,0 +1,33 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.DeletePersonalDataModel
+@{
+    ViewData["Title"] = T["Account.Delete.Title"];
+}
+
+<section class="tbx-panel tbx-panel-body account-section account-section--danger">
+    <div class="alert alert-danger" role="alert">
+        <strong>@T["Account.Delete.Warning"]</strong>
+        <span class="d-block">@T["Account.Delete.WhatIsDeleted"]</span>
+    </div>
+    <form method="post" class="account-form">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        @if (Model.RequirePassword)
+        {
+            <div class="tbx-field">
+                <label class="tbx-field-label" asp-for="Input.Password">@T["Account.Field.CurrentPassword"]</label>
+                <div class="tbx-password">
+                    <input class="form-control" asp-for="Input.Password" autocomplete="current-password" aria-required="true" />
+                    <partial name="_PasswordToggle" />
+                </div>
+                <span class="tbx-field-error" asp-validation-for="Input.Password"></span>
+            </div>
+        }
+        <div class="account-actions">
+            <button type="submit" class="btn btn-danger"
+                    data-confirm="@T["Account.Delete.Confirm", Model.AccountName]"
+                    data-confirm-title="@T["Account.Delete.Title"]"
+                    data-confirm-ok="@T["Account.Delete.Submit"]">@T["Account.Delete.Submit"]</button>
+            <a class="btn btn-outline-secondary" asp-page="./PersonalData">@T["Account.Cancel"]</a>
+        </div>
+    </form>
+</section>

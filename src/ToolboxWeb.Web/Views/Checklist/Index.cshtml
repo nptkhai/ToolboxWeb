@@ -1,47 +1,173 @@
+@using ToolboxWeb.Web.Constants
 @model ChecklistIndexViewModel
+@*
+    List page template (docs/LIST_PAGE_TEMPLATE.md): toolbar with totals, search and the primary
+    action; filter chips; a dense list; the form in a modal; calm empty states.
+*@
 @{
     ViewData["Title"] = T["Checklist.Title"];
+
+    string ListUrl(string? filter, string? search) => Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml, new
+    {
+        filter = filter == ChecklistFilters.All ? null : filter,
+        search = string.IsNullOrWhiteSpace(search) ? null : search
+    }) ?? "/checklist.html";
+
+    var toolbar = new ListToolbarViewModel
+    {
+        Summary = T["Checklist.Summary", Model.Counts.Todo, Model.Counts.Overdue].Value,
+        SearchAction = ListUrl(null, null),
+        SearchValue = Model.Search,
+        SearchLabel = T["Checklist.SearchLabel"].Value,
+        SearchKeep = new Dictionary<string, string?> { ["filter"] = Model.Filter == ChecklistFilters.All ? null : Model.Filter },
+        PrimaryText = T["Checklist.New"].Value,
+        PrimaryModal = "#todo-create"
+    };
+
+    var chips = new FilterChipsViewModel
+    {
+        Label = T["Checklist.Filter.Label"].Value,
+        Chips =
+        [
+            new(T["Checklist.Filter.All"].Value, ListUrl(ChecklistFilters.All, Model.Search), Model.Counts.All, Model.Filter == ChecklistFilters.All),
+            new(T["Checklist.Filter.Todo"].Value, ListUrl(ChecklistFilters.Todo, Model.Search), Model.Counts.Todo, Model.Filter == ChecklistFilters.Todo),
+            new(T["Checklist.Filter.Overdue"].Value, ListUrl(ChecklistFilters.Overdue, Model.Search), Model.Counts.Overdue, Model.Filter == ChecklistFilters.Overdue),
+            new(T["Checklist.Filter.Done"].Value, ListUrl(ChecklistFilters.Done, Model.Search), Model.Counts.Done, Model.Filter == ChecklistFilters.Done)
+        ]
+    };
+
+    var emptyState = new EmptyStateViewModel(T["Checklist.Empty"].Value, "list-checks")
+    {
+        ActionText = T["Checklist.New"].Value,
+        ActionTarget = "#todo-create"
+    };
+
+    var dueIso = Model.Form.DueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    // The create action binds the form without a prefix, so its errors sit under "Title".
+    var titleError = ViewData.ModelState["Title"]?.Errors.FirstOrDefault()?.ErrorMessage;
 }
 
-<div class="tool-grid">
-    <section class="panel span-4">
-        <div class="panel-header"><h2>@T["Checklist.CreateTask"]</h2></div>
-        <form asp-action="Create" method="post" class="form-grid">
-            <input asp-for="Form.Title" name="Title" class="form-control" placeholder="@T["Checklist.TaskTitlePlaceholder"]" />
-            <span asp-validation-for="Form.Title" class="text-danger"></span>
-            <textarea asp-for="Form.Description" name="Description" class="form-control" rows="4" placeholder="@T["Checklist.TaskDescriptionPlaceholder"]"></textarea>
-            <input asp-for="Form.DueDate" name="DueDate" class="form-control" />
-            <button class="btn btn-primary" type="submit">@T["Action.Create"]</button>
-        </form>
-    </section>
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+}
 
-    <section class="panel span-8">
-        <div class="panel-header"><h2>@T["Checklist.Tasks"]</h2></div>
-        <div class="stack">
-            @foreach (var item in Model.Items)
-            {
-                <div class="item-row @(item.Status == ChecklistStatus.Done ? "done" : "")">
-                    <div>
-                        <div class="item-title">@item.Title</div>
-                        <div class="item-meta">@item.Status.Localize(T) &middot; @(item.DueDate?.FormatLocalDate() ?? T["Common.NoDueDate"].Value)</div>
-                        <div>@item.Description</div>
-                    </div>
-                    <div class="inline-actions">
-                        <form asp-action="Toggle" method="post">
+<div class="tbx-list-page" data-list-page>
+    <partial name="_ListToolbar" model="toolbar" />
+
+    @if (!Model.HasAnyItems)
+    {
+        <partial name="_EmptyState" model="emptyState" />
+    }
+    else
+    {
+        <partial name="_FilterChips" model="chips" />
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="tbx-empty" role="status">
+                <span class="tbx-empty-icon"><tbx-icon name="search" size="20" /></span>
+                <p class="tbx-empty-text">@T["Checklist.NoMatch"]</p>
+                <a class="btn btn-outline-secondary btn-sm" href="@ListUrl(null, null)"><tbx-icon name="x" />@T["Checklist.ClearFilter"]</a>
+            </div>
+        }
+        else
+        {
+            <ul class="tbx-list" aria-label="@T["Checklist.Title"]">
+                @foreach (var item in Model.Items)
+                {
+                    var done = item.Status == ChecklistStatus.Done;
+                    var overdue = !done && item.DueDate is not null && item.DueDate.Value.Date < Model.Today;
+                    var dueToday = !done && item.DueDate?.Date == Model.Today;
+                    <li class="tbx-row tbx-row--two-line todo-row @(done ? "is-done" : null)">
+                        <form asp-action="Toggle" method="post" class="todo-toggle">
                             <input type="hidden" name="id" value="@item.Id" />
-                            <button class="btn btn-sm btn-outline-secondary" type="submit">@T["Action.Toggle"]</button>
+                            <input type="hidden" name="filter" value="@Model.Filter" />
+                            <input type="hidden" name="search" value="@Model.Search" />
+                            <button type="submit" class="tbx-row-check" role="checkbox" aria-checked="@(done ? "true" : "false")"
+                                    aria-label="@(done ? T["Checklist.MarkTodo", item.Title] : T["Checklist.MarkDone", item.Title])">
+                                <tbx-icon name="check" />
+                            </button>
                         </form>
-                        <form asp-action="Delete" method="post">
+
+                        <div class="tbx-row-main">
+                            <span class="tbx-row-title">@item.Title</span>
+                            @if (!string.IsNullOrWhiteSpace(item.Description))
+                            {
+                                <span class="tbx-row-sub">@item.Description</span>
+                            }
+                        </div>
+
+                        @if (item.DueDate is not null)
+                        {
+                            if (overdue)
+                            {
+                                <span class="tbx-pill is-danger">@T["Checklist.OverdueOn", item.DueDate.ToDisplayDate()]</span>
+                            }
+                            else if (dueToday)
+                            {
+                                <span class="tbx-pill is-warning">@T["Checklist.DueToday"]</span>
+                            }
+                            else
+                            {
+                                <span class="tbx-row-meta">@item.DueDate.ToDisplayDate()</span>
+                            }
+                        }
+
+                        <form asp-action="Delete" method="post" class="tbx-row-actions">
                             <input type="hidden" name="id" value="@item.Id" />
-                            <button class="btn btn-sm btn-outline-danger" type="submit" data-confirm="@T["Confirm.DeleteMessage", item.Title]" data-confirm-title="@T["Confirm.DeleteTitle"]" data-confirm-ok="@T["Action.Delete"]">@T["Action.Delete"]</button>
+                            <input type="hidden" name="filter" value="@Model.Filter" />
+                            <input type="hidden" name="search" value="@Model.Search" />
+                            <button class="btn btn-sm tbx-icon-button is-danger" type="submit" title="@T["Action.Delete"]"
+                                    data-confirm="@T["Confirm.DeleteMessage", item.Title]" data-confirm-title="@T["Confirm.DeleteTitle"]" data-confirm-ok="@T["Action.Delete"]">
+                                <tbx-icon name="trash-2" label="@T["Checklist.DeleteItem", item.Title]" />
+                            </button>
                         </form>
-                    </div>
+                    </li>
+                }
+            </ul>
+        }
+
+        <p class="tbx-shortcuts">@T["Checklist.Shortcuts"]</p>
+    }
+</div>
+
+<div class="modal fade" id="todo-create" data-list-modal tabindex="-1" aria-labelledby="todo-create-title" aria-hidden="true" data-open-on-load="@(Model.OpenCreateForm ? "true" : "false")">
+    <div class="modal-dialog modal-dialog-centered">
+        <form asp-action="Create" method="post" class="modal-content" novalidate>
+            <input type="hidden" name="filter" value="@Model.Filter" />
+            <input type="hidden" name="search" value="@Model.Search" />
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="todo-create-title">@T["Checklist.New"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body tbx-form-grid">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="todo-title">@T["Checklist.Field.Title"]<span class="tbx-required" aria-hidden="true">*</span></label>
+                    <input class="form-control" id="todo-title" name="Title" value="@Model.Form.Title" maxlength="180" autocomplete="off"
+                           placeholder="@T["Checklist.Field.TitleExample"]" aria-describedby="todo-title-error" aria-invalid="@(titleError is null ? null : "true")" required />
+                    <span class="tbx-field-error" id="todo-title-error">@titleError</span>
                 </div>
-            }
-        </div>
-    </section>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="todo-description">@T["Checklist.Field.Description"]</label>
+                    <textarea class="form-control" id="todo-description" name="Description" rows="3" maxlength="1000" aria-describedby="todo-description-hint">@Model.Form.Description</textarea>
+                    <span class="tbx-field-hint" id="todo-description-hint">@T["Checklist.Field.Optional"]</span>
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="todo-due">@T["Checklist.Field.DueDate"]</label>
+                    <input class="form-control" id="todo-due" autocomplete="off" data-date-picker="#todo-due-value" aria-describedby="todo-due-hint" />
+                    <input type="hidden" id="todo-due-value" name="DueDate" value="@dueIso" />
+                    <span class="tbx-field-hint" id="todo-due-hint">@T["Checklist.Field.Optional"]</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary">@T["Checklist.Add"]</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <partial name="_KendoScripts" />
+    <script src="~/js/list-page.js" asp-append-version="true"></script>
 }

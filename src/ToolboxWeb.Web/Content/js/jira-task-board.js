@@ -1,112 +1,33 @@
-(function (window, document, $) {
+(function (window, document) {
     "use strict";
 
-    const DAY_MS = 24 * 60 * 60 * 1000;
-    const WEEKDAY_NAMES_VI = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-    const WEEKDAY_HEADER_VI = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+    // Weekday names and short dates follow the UI culture (format.js); Vietnamese keeps the
+    // usual short headers T2…CN, which Intl does not produce.
+    const LOCALE = window.Toolbox?.format?.locale || document.documentElement.lang || "vi-VN";
+    const VIETNAMESE = LOCALE.toLowerCase().startsWith("vi");
+    const WEEKDAY_NAMES = Array.from({ length: 7 }, (_, index) =>
+        new Intl.DateTimeFormat(LOCALE, { weekday: "long" }).format(new Date(2026, 0, 4 + index)));
+    const WEEKDAY_HEADERS = VIETNAMESE
+        ? ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
+        : Array.from({ length: 7 }, (_, index) =>
+            new Intl.DateTimeFormat(LOCALE, { weekday: "short" }).format(new Date(2026, 0, 5 + index)));
+    // Intl gives "19-10" for vi-VN; the app's Vietnamese date format uses slashes.
+    const SHORT_DATE = VIETNAMESE
+        ? { format: (date) => `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}` }
+        : new Intl.DateTimeFormat(LOCALE, { day: "2-digit", month: "2-digit" });
 
-    function parseJsonScript(id, fallback) {
-        const el = document.getElementById(id);
-        if (!el) {
-            return fallback;
-        }
-
-        try {
-            return JSON.parse(el.textContent || "");
-        } catch {
-            return fallback;
-        }
+    function fmtHours(value) {
+        return window.Toolbox?.format?.hours(value) ?? `${value}h`;
     }
 
-    function pad2(value) {
-        return String(value).padStart(2, "0");
-    }
-
-    function startOfDay(date) {
-        const result = new Date(date);
-        result.setHours(0, 0, 0, 0);
-        return result;
-    }
-
-    function addDays(date, amount) {
-        const result = new Date(date);
-        result.setDate(result.getDate() + amount);
-        return result;
-    }
-
-    function toDateInputValue(date) {
-        return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-    }
+    const jira = window.ToolboxJira;
+    const { escapeHtml, parseJsonScript } = jira;
+    const { startOfDay, addDays, sameDay, parseIsoDate } = jira.dates;
+    const toDateInputValue = jira.dates.formatIsoDate;
+    const getIsoWeekMonday = jira.dates.isoWeekMonday;
 
     function fmtShort(date) {
-        return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}`;
-    }
-
-    function sameDay(a, b) {
-        return toDateInputValue(a) === toDateInputValue(b);
-    }
-
-    function parseIsoDate(value) {
-        if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-            return null;
-        }
-
-        const [year, month, day] = value.split("-").map(Number);
-        return new Date(year, month - 1, day);
-    }
-
-    function parseIsoMonth(value) {
-        if (!value || !/^\d{4}-\d{2}$/.test(value)) {
-            return null;
-        }
-
-        const [year, month] = value.split("-").map(Number);
-        return new Date(year, month - 1, 1);
-    }
-
-    function formatIsoMonth(date) {
-        return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
-    }
-
-    function getIsoWeekMonday(date) {
-        const normalized = startOfDay(date);
-        const day = normalized.getDay() || 7;
-        normalized.setDate(normalized.getDate() + 1 - day);
-        return normalized;
-    }
-
-    function parseIsoWeek(value) {
-        const match = /^(\d{4})-W(\d{2})$/.exec(value || "");
-        if (!match) {
-            return null;
-        }
-
-        const year = Number(match[1]);
-        const week = Number(match[2]);
-        const januaryFourth = new Date(year, 0, 4);
-        const januaryFourthDay = januaryFourth.getDay() || 7;
-        const firstMonday = new Date(year, 0, 4 - januaryFourthDay + 1);
-        firstMonday.setDate(firstMonday.getDate() + (week - 1) * 7);
-        return firstMonday;
-    }
-
-    function formatIsoWeek(date) {
-        const monday = getIsoWeekMonday(date);
-        const thursday = addDays(monday, 3);
-        const januaryFourth = new Date(thursday.getFullYear(), 0, 4);
-        const januaryFourthDay = januaryFourth.getDay() || 7;
-        const firstWeekMonday = addDays(januaryFourth, 1 - januaryFourthDay);
-        const week = 1 + Math.round((thursday - addDays(firstWeekMonday, 3)) / (7 * DAY_MS));
-        return `${thursday.getFullYear()}-W${pad2(week)}`;
-    }
-
-    function escapeHtml(value) {
-        return String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
+        return SHORT_DATE.format(date);
     }
 
     function notify(message, type) {
@@ -120,23 +41,14 @@
         let toolbar = null;
         let alertHost = null;
         let rangeLabelEl = null;
-        let periodButtons = [];
-        let inputWraps = [];
-        let navButtons = [];
-        let inputs = {};
-        let widgets = { week: null, month: null };
+        let picker = null;
         let config = {};
         let boardConfig = {};
         let rows = [];
         // subTaskKey -> due date before it was dragged; these moves exist only in the browser.
         let moved = new Map();
-        // Markup of the period inputs before Kendo wrapped them. Kendo's destroy() leaves its
-        // wrapper behind, so re-entering the tab used to stack an extra clear button each time.
-        let pristinePickerHtml = null;
         let periodType = "week";
         let referenceDate = null;
-        let syncingPickers = false;
-        let weekOptionsCenterYear = new Date().getFullYear();
         let boundHandlers = [];
 
         function reportUnsaved() {
@@ -172,174 +84,9 @@
                 : "";
         }
 
-        function formatWeekOption(week, year) {
-            return (boardConfig.weekPickerOption || "Week {0}, {1}")
-                .replace("{0}", String(week))
-                .replace("{1}", String(year));
-        }
-
-        function buildWeekOptions(centerYear) {
-            const options = [];
-            for (let year = centerYear - 3; year <= centerYear + 3; year += 1) {
-                for (let week = 1; week <= 53; week += 1) {
-                    const value = `${year}-W${pad2(week)}`;
-                    const weekStart = parseIsoWeek(value);
-                    if (!weekStart || !formatIsoWeek(weekStart).startsWith(`${year}-W`)) {
-                        continue;
-                    }
-
-                    const weekEnd = addDays(weekStart, 6);
-                    options.push({
-                        value,
-                        text: formatWeekOption(week, year),
-                        range: `${pad2(weekStart.getDate())}/${pad2(weekStart.getMonth() + 1)} - ${pad2(weekEnd.getDate())}/${pad2(weekEnd.getMonth() + 1)}/${weekEnd.getFullYear()}`
-                    });
-                }
-            }
-
-            return options;
-        }
-
-        function ensureWeekOptionForDate(date) {
-            if (!widgets.week) {
-                return;
-            }
-
-            const year = date.getFullYear();
-            if (Math.abs(year - weekOptionsCenterYear) > 2) {
-                weekOptionsCenterYear = year;
-                widgets.week.dataSource.data(buildWeekOptions(weekOptionsCenterYear));
-            }
-        }
-
-        function applyReferenceDate(date) {
-            if (!(date instanceof Date) || Number.isNaN(date.getTime()) || syncingPickers) {
-                return;
-            }
-
-            referenceDate = date;
-            syncingPickers = true;
-
-            try {
-                const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-
-                if (widgets.week) {
-                    ensureWeekOptionForDate(date);
-                    widgets.week.value(formatIsoWeek(date));
-                } else if (inputs.week) {
-                    inputs.week.value = formatIsoWeek(date);
-                }
-
-                if (widgets.month) {
-                    widgets.month.value(monthStart);
-                } else if (inputs.month) {
-                    inputs.month.value = formatIsoMonth(monthStart);
-                }
-            } finally {
-                syncingPickers = false;
-            }
-        }
-
-        function shiftReferenceDate(steps) {
-            if (!referenceDate) {
-                return;
-            }
-
-            const next = new Date(referenceDate);
-            if (periodType === "month") {
-                next.setMonth(next.getMonth() + steps);
-            } else {
-                next.setDate(next.getDate() + steps * 7);
-            }
-
-            applyReferenceDate(next);
-        }
-
-        function initNativeFallback() {
-            if (inputs.week) {
-                inputs.week.type = "week";
-                inputs.week.addEventListener("change", () => {
-                    const parsed = parseIsoWeek(inputs.week.value);
-                    if (parsed) {
-                        applyReferenceDate(parsed);
-                    }
-                });
-            }
-
-            if (inputs.month) {
-                inputs.month.type = "month";
-                inputs.month.addEventListener("change", () => applyReferenceDate(parseIsoMonth(inputs.month.value)));
-            }
-        }
-
-        function initKendoPickers() {
-            if (!(window.kendo && $ && $.fn && typeof $.fn.kendoDatePicker === "function")) {
-                initNativeFallback();
-                return;
-            }
-
-            if (config.currentCulture === "vi-VN" && typeof window.kendo.culture === "function") {
-                window.kendo.culture("vi-VN");
-            }
-
-            const popupOptions = { appendTo: $(document.body), collision: "fit flip" };
-
-            weekOptionsCenterYear = new Date().getFullYear();
-            widgets.week = $(inputs.week).kendoComboBox({
-                dataSource: buildWeekOptions(weekOptionsCenterYear),
-                dataTextField: "text",
-                dataValueField: "value",
-                filter: "contains",
-                placeholder: boardConfig.weekPickerPlaceholder || "Select week",
-                suggest: true,
-                template: "<div class='jira-dashboard-week-option'><strong>#: text #</strong><span>#: range #</span></div>"
-            }).data("kendoComboBox");
-            widgets.week.bind("change", () => {
-                const parsed = parseIsoWeek(widgets.week.value());
-                if (parsed) {
-                    applyReferenceDate(parsed);
-                }
-            });
-
-            widgets.month = $(inputs.month).kendoDatePicker({
-                format: "MM/yyyy",
-                start: "year",
-                depth: "year",
-                popup: popupOptions
-            }).data("kendoDatePicker");
-            widgets.month.bind("change", () => applyReferenceDate(widgets.month.value()));
-        }
-
-        function resolvePeriodValue() {
-            if (periodType === "month") {
-                return widgets.month ? formatIsoMonth(widgets.month.value()) : (inputs.month?.value || "");
-            }
-
-            if (widgets.week) {
-                const selected = widgets.week.value();
-                return /^\d{4}-W\d{2}$/.test(selected || "") ? selected : "";
-            }
-
-            return inputs.week?.value || "";
-        }
-
-        function setActivePeriod(nextPeriod) {
-            periodType = nextPeriod;
-            periodButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.period === nextPeriod));
-            inputWraps.forEach((wrap) => wrap.classList.toggle("is-active", wrap.dataset.periodInput === nextPeriod));
-        }
-
         function issueLinkHtml(issueKey) {
-            const text = escapeHtml(issueKey || "-");
-            const baseUrl = (config.browseBaseUrl || "").replace(/\/+$/, "");
-
-            if (!baseUrl || !issueKey) {
-                return `<span class="jira-board-card-key">${text}</span>`;
-            }
-
-            const href = `${baseUrl}/browse/${encodeURIComponent(issueKey)}`;
             // draggable="false" so grabbing the key still drags the card, not the link itself
-            return `<a class="jira-board-card-key jira-dashboard-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" draggable="false">${text}</a>`;
+            return jira.issueLink(issueKey, config.browseBaseUrl, "jira-board-card-key");
         }
 
         function isDoneRow(row) {
@@ -358,6 +105,12 @@
             return { doneHours, openHours, totalHours: doneHours + openHours };
         }
 
+        function loadTitle(doneHours, openHours) {
+            return (boardConfig.loadTitle || "{0} + {1}")
+                .replace("{0}", fmtHours(doneHours))
+                .replace("{1}", fmtHours(openHours));
+        }
+
         function loadBarHtml(dayRows) {
             const capacity = boardConfig.dayCapacityHours || 8;
             const { doneHours, openHours, totalHours } = summariseDay(dayRows);
@@ -367,7 +120,7 @@
             const donePct = (doneHours / scale) * 100;
             const openPct = (openHours / scale) * 100;
 
-            return `<span class="jira-board-load-bar" title="${doneHours.toFixed(1)}h done + ${openHours.toFixed(1)}h todo">
+            return `<span class="jira-board-load-bar" title="${escapeHtml(loadTitle(doneHours, openHours))}">
                 <span class="jira-board-load-fill jira-board-load-fill--done" style="width:${donePct}%"></span>
                 <span class="jira-board-load-fill jira-board-load-fill--open" style="width:${openPct}%"></span>
             </span>`;
@@ -387,10 +140,10 @@
                 </div>
                 <div class="jira-board-card-title">${escapeHtml(row.subTaskSummary)}</div>
                 <div class="jira-board-card-bottom">
-                    <span class="badge jira-dashboard-status jira-dashboard-status--${escapeHtml(row.statusTone)}">${escapeHtml(row.status)}</span>
+                    ${jira.statusPill(row.status, row.statusTone)}
                     <span class="jira-board-card-due ${overdue ? "jira-board-overdue" : ""}">${dueLabel}</span>
                 </div>
-                <div class="jira-board-card-hours">Est: ${Number(row.estimateHours || 0)}h · Log: ${Number(row.loggedHours || 0)}h</div>
+                <div class="jira-board-card-hours">${escapeHtml(jira.template(boardConfig.cardHours || "{0} · {1}", fmtHours(row.estimateHours || 0), fmtHours(row.loggedHours || 0)))}</div>
                 ${movedFrom}
             </div>`;
         }
@@ -414,11 +167,11 @@
 
                 return `<div class="jira-board-day-col ${isToday ? "is-today" : ""}" data-date="${dateStr}">
                     <div class="jira-board-day-head">
-                        <span class="jira-board-day-label">${WEEKDAY_NAMES_VI[day.getDay()]}, ${fmtShort(day)}${isToday ? " ★" : ""}</span>
+                        <span class="jira-board-day-label">${WEEKDAY_NAMES[day.getDay()]}, ${fmtShort(day)}${isToday ? " ★" : ""}</span>
                         <span class="jira-board-day-count">${dayRows.length}</span>
                     </div>
                     <div class="jira-board-day-load">
-                        <span>${totalHours.toFixed(1)}h/${capacity}h</span>
+                        <span>${fmtHours(totalHours)}/${fmtHours(capacity)}</span>
                         ${loadBarHtml(dayRows)}
                     </div>
                     <div class="jira-board-day-body" data-date="${dateStr}">
@@ -510,7 +263,7 @@
             }
 
             const today = startOfDay(new Date());
-            const header = WEEKDAY_HEADER_VI.map((label) => `<span>${label}</span>`).join("");
+            const header = WEEKDAY_HEADERS.map((label) => `<span>${label}</span>`).join("");
 
             const cells = days.map((day) => {
                 const inMonth = day.getMonth() === monthIndex;
@@ -522,12 +275,12 @@
                 const dayRows = rows.filter((row) => row.dueDate && sameDay(new Date(row.dueDate), day));
                 const { doneHours, openHours, totalHours } = summariseDay(dayRows);
                 const isToday = sameDay(day, today);
-                const loadTitle = `${doneHours.toFixed(1)}h done + ${openHours.toFixed(1)}h todo`;
+                const loadText = loadTitle(doneHours, openHours);
 
                 return `<div class="jira-cal-cell ${isToday ? "is-today" : ""}" data-date="${dateStr}">
                     <div class="jira-cal-cell-head">
                         <span class="jira-cal-daynum">${day.getDate()}${isToday ? " •" : ""}</span>
-                        ${dayRows.length ? `<span class="jira-cal-load" title="${loadTitle}">${totalHours.toFixed(1)}h</span>` : ""}
+                        ${dayRows.length ? `<span class="jira-cal-load" title="${escapeHtml(loadText)}">${fmtHours(totalHours)}</span>` : ""}
                     </div>
                     <div class="jira-cal-cards" data-date="${dateStr}">
                         ${dayRows.map(calCardHtml).join("")}
@@ -569,18 +322,21 @@
                 rangeLabelEl.textContent = filter.rangeLabel || "";
             }
 
-            const derivedDate = filter.periodType === "month"
-                ? parseIsoMonth(filter.monthValue)
-                : parseIsoWeek(filter.weekValue);
-
+            const type = filter.periodType === "month" ? "month" : "week";
+            const value = type === "month" ? filter.monthValue : filter.weekValue;
+            const derivedDate = jira.dates.parsePeriod(type, value);
             if (derivedDate) {
-                applyReferenceDate(derivedDate);
+                periodType = type;
+                referenceDate = derivedDate;
+                picker?.apply(type, value);
             }
         }
 
         async function fetchAndRender() {
-            const periodValue = resolvePeriodValue();
-            const params = new URLSearchParams({ periodType, periodValue });
+            const state = picker.state();
+            periodType = state.periodType;
+            referenceDate = state.date;
+            const params = new URLSearchParams({ periodType: state.periodType, periodValue: state.periodValue });
 
             try {
                 const response = await fetch(`${config.taskBoardApiUrl}?${params.toString()}`, {
@@ -613,18 +369,9 @@
             }
         }
 
-        // Always reset the filter to the period that contains today (current week / current month)
-        // and reload, then bring today into view.
-        async function jumpToToday() {
-            if (!(await confirmReload())) {
-                return;
-            }
-
-            applyReferenceDate(new Date());
-            fetchAndRender().then(() => {
-                root?.querySelector(".jira-board-day-col.is-today, .jira-cal-cell.is-today")
-                    ?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-            });
+        function scrollToToday() {
+            root?.querySelector(".jira-board-day-col.is-today, .jira-cal-cell.is-today")
+                ?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
         }
 
         return {
@@ -638,61 +385,26 @@
                     return;
                 }
 
-                periodButtons = Array.from(toolbar.querySelectorAll("[data-period]"));
-                inputWraps = Array.from(toolbar.querySelectorAll("[data-period-input]"));
-                if (!pristinePickerHtml) {
-                    pristinePickerHtml = inputWraps.map((wrap) => wrap.innerHTML);
-                }
-                navButtons = Array.from(toolbar.querySelectorAll("[data-nav-step]"));
-                inputs = {
-                    week: document.getElementById("jira-board-week"),
-                    month: document.getElementById("jira-board-month")
-                };
-                widgets = { week: null, month: null };
-
                 config = parseJsonScript("jira-worklist-config", {});
                 boardConfig = parseJsonScript("jira-task-board-config", {});
-                periodType = "week";
                 rows = [];
 
-                setActivePeriod("week");
-                initKendoPickers();
-                referenceDate = new Date();
-                applyReferenceDate(referenceDate);
-
-                periodButtons.forEach((button) => {
-                    on(button, "click", () => setActivePeriod(button.dataset.period));
-                });
-
-                navButtons.forEach((button) => {
-                    on(button, "click", () => {
-                        const steps = Number(button.dataset.navStep || "0");
-                        if (steps) {
-                            shiftReferenceDate(steps);
+                // Every period change reloads; moves that are not in Jira yet are confirmed first.
+                picker = jira.periodPicker(toolbar.querySelector("[data-jira-period]"), {
+                    beforeChange: confirmReload,
+                    onChange: (state) => fetchAndRender().then(() => {
+                        if (state.reason === "today") {
+                            scrollToToday();
                         }
-                    });
+                    })
                 });
-
-                const searchButton = document.querySelector("[data-jira-board-search]");
-                on(searchButton, "click", async () => {
-                    if (await confirmReload()) {
-                        fetchAndRender();
-                    }
-                });
-
-                const todayButton = document.querySelector("[data-jira-board-today]");
-                on(todayButton, "click", jumpToToday);
 
                 fetchAndRender();
             },
             destroy() {
                 offAll();
-                if (widgets.week) { widgets.week.destroy(); }
-                if (widgets.month) { widgets.month.destroy(); }
-                widgets = { week: null, month: null };
-                if (pristinePickerHtml) {
-                    inputWraps.forEach((wrap, index) => { wrap.innerHTML = pristinePickerHtml[index]; });
-                }
+                picker?.destroy();
+                picker = null;
                 if (root) {
                     root.innerHTML = "";
                 }
@@ -715,4 +427,4 @@
     }
 
     window.ToolboxJiraTaskBoard = createModule();
-})(window, document, window.jQuery);
+})(window, document);

@@ -25,10 +25,12 @@ async function register(page, baseURL) {
 
 async function seedSampleData(page, baseURL) {
   await page.goto(`${baseURL}/checklist.html`);
-  if (await page.locator('.item-row').count() === 0) {
+  if (await page.locator('.tbx-list .tbx-row').count() === 0) {
+    // The to-do form sits in a modal (list page template).
     for (const title of ['Review PR schema compare', 'Chuẩn bị báo cáo tuần', 'Fix bug login Jira']) {
-      await page.fill('input[name="Title"]', title);
-      await Promise.all([page.waitForLoadState('networkidle'), page.click('form[action*="Create"] button[type="submit"]')]);
+      await page.click('[data-list-new]');
+      await page.fill('#todo-title', title);
+      await Promise.all([page.waitForNavigation(), page.click('#todo-create button[type="submit"]')]);
     }
   }
   await page.goto(`${baseURL}/quick-links.html`);

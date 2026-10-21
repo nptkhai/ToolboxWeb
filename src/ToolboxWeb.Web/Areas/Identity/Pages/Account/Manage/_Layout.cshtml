@@ -1,34 +1,41 @@
+@inject ToolboxWeb.Web.Services.ICurrentUserService CurrentUser
 @{
     Layout = "/Views/Shared/_Layout.cshtml";
 
-    var currentPath = Context.Request.Path.Value ?? string.Empty;
-
-    bool IsActive(string path)
+    // Sub-pages mark their parent tab (for example EnableAuthenticator under two-factor).
+    var page = (ViewContext.RouteData.Values["page"] as string ?? string.Empty).Replace("/Account/Manage/", string.Empty);
+    var section = page switch
     {
-        return currentPath.Equals(path, StringComparison.OrdinalIgnoreCase);
-    }
+        "Email" => "email",
+        "ChangePassword" or "SetPassword" => "password",
+        "TwoFactorAuthentication" or "EnableAuthenticator" or "Disable2fa" or "GenerateRecoveryCodes"
+            or "ShowRecoveryCodes" or "ResetAuthenticator" => "two-factor",
+        "PersonalData" or "DeletePersonalData" => "personal-data",
+        _ => "profile"
+    };
+    // Jira accounts sign in with their Jira password, so there is no ToolboxWeb password or 2FA.
+    var isJiraUser = CurrentUser.IsJiraUser;
+
+    string? Active(string key) => key == section ? "active" : null;
+    string? Current(string key) => key == section ? "page" : null;
 }
 
-<div class="identity-manage-shell">
-    <div class="identity-manage-head">
-        <div>
-            <h2>@T["Profile.PageTitle"]</h2>
-            <p>@T["Profile.PageDescription"]</p>
-        </div>
-    </div>
+<div class="account-layout">
+    <nav class="account-nav" aria-label="@T["Account.NavLabel"]">
+        <ul>
+            <li><a class="@Active("profile")" aria-current="@Current("profile")" asp-page="./Index"><tbx-icon name="user" />@T["Profile.Nav.Profile"]</a></li>
+            <li><a class="@Active("email")" aria-current="@Current("email")" asp-page="./Email"><tbx-icon name="mail" />@T["Profile.Nav.Email"]</a></li>
+            @if (!isJiraUser)
+            {
+                <li><a class="@Active("password")" aria-current="@Current("password")" asp-page="./ChangePassword"><tbx-icon name="key-round" />@T["Profile.Nav.Password"]</a></li>
+                <li><a class="@Active("two-factor")" aria-current="@Current("two-factor")" asp-page="./TwoFactorAuthentication"><tbx-icon name="shield-check" />@T["Profile.Nav.TwoFactor"]</a></li>
+            }
+            <li><a class="@Active("personal-data")" aria-current="@Current("personal-data")" asp-page="./PersonalData"><tbx-icon name="file-text" />@T["Profile.Nav.PersonalData"]</a></li>
+        </ul>
+    </nav>
 
-    <div class="identity-manage-grid">
-        <aside class="identity-manage-nav">
-            <a class="@(IsActive("/Identity/Account/Manage") ? "active" : null)" asp-page="./Index">@T["Profile.Nav.Profile"]</a>
-            <a class="@(IsActive("/Identity/Account/Manage/Email") ? "active" : null)" asp-page="./Email">@T["Profile.Nav.Email"]</a>
-            <a class="@(IsActive("/Identity/Account/Manage/ChangePassword") ? "active" : null)" asp-page="./ChangePassword">@T["Profile.Nav.Password"]</a>
-            <a class="@(IsActive("/Identity/Account/Manage/TwoFactorAuthentication") ? "active" : null)" asp-page="./TwoFactorAuthentication">@T["Profile.Nav.TwoFactor"]</a>
-            <a class="@(IsActive("/Identity/Account/Manage/PersonalData") ? "active" : null)" asp-page="./PersonalData">@T["Profile.Nav.PersonalData"]</a>
-        </aside>
-
-        <section class="identity-manage-panel">
-            @RenderBody()
-        </section>
+    <div class="account-content">
+        @RenderBody()
     </div>
 </div>
 

@@ -4,6 +4,7 @@ using ToolboxWeb.Web;
 using ToolboxWeb.Web.Data;
 using ToolboxWeb.Web.Domain;
 using ToolboxWeb.Web.Enums;
+using ToolboxWeb.Web.Infrastructure.Time;
 using ToolboxWeb.Web.ViewModels;
 
 namespace ToolboxWeb.Web.Services;
@@ -11,6 +12,7 @@ namespace ToolboxWeb.Web.Services;
 public interface IChecklistService
 {
     Task<IReadOnlyList<ChecklistItem>> GetAsync(string userId, int take = 100);
+    Task<ChecklistListResult> GetListAsync(string userId, string? filter, string? search, int take = 200);
     Task<int> CreateAsync(string userId, ChecklistItemFormViewModel model);
     Task<bool> ToggleAsync(string userId, int id);
     Task<bool> DeleteAsync(string userId, int id);
@@ -38,6 +40,52 @@ public class ChecklistService : IChecklistService
             .ThenByDescending(x => x.CreatedAt)
             .Take(take)
             .ToListAsync();
+    }
+
+    /// <summary>
+    /// The list page: items for one filter chip (all, todo, overdue, done) and search text, plus
+    /// the count behind every chip for the same search. Overdue means not done and due before today
+    /// in the app time zone.
+    /// </summary>
+    public async Task<ChecklistListResult> GetListAsync(string userId, string? filter, string? search, int take = 200)
+    {
+        var today = AppClock.Today;
+        var activeFilter = ChecklistFilters.Normalize(filter);
+        var term = search?.Trim();
+
+        var query = _db.ChecklistItems.Where(x => x.UserId == userId && x.Status != ChecklistStatus.Archived);
+        var hasAny = await query.AnyAsync();
+
+        if (!string.IsNullOrEmpty(term))
+        {
+            var pattern = $"%{term}%";
+            query = query.Where(x => EF.Functions.Like(x.Title, pattern) || (x.Description != null && EF.Functions.Like(x.Description, pattern)));
+        }
+
+        var counts = new ChecklistCounts
+        {
+            All = await query.CountAsync(),
+            Todo = await query.CountAsync(x => x.Status == ChecklistStatus.Todo),
+            Overdue = await query.CountAsync(x => x.Status == ChecklistStatus.Todo && x.DueDate != null && x.DueDate < today),
+            Done = await query.CountAsync(x => x.Status == ChecklistStatus.Done)
+        };
+
+        query = activeFilter switch
+        {
+            ChecklistFilters.Todo => query.Where(x => x.Status == ChecklistStatus.Todo),
+            ChecklistFilters.Overdue => query.Where(x => x.Status == ChecklistStatus.Todo && x.DueDate != null && x.DueDate < today),
+            ChecklistFilters.Done => query.Where(x => x.Status == ChecklistStatus.Done),
+            _ => query
+        };
+
+        var items = await query
+            .OrderBy(x => x.Status)
+            .ThenBy(x => x.DueDate ?? DateTime.MaxValue)
+            .ThenByDescending(x => x.CreatedAt)
+            .Take(take)
+            .ToListAsync();
+
+        return new ChecklistListResult(items, counts, hasAny, activeFilter, term);
     }
 
     public async Task<int> CreateAsync(string userId, ChecklistItemFormViewModel model)

@@ -1,0 +1,47 @@
+@page
+@using ToolboxWeb.Web.Areas.Identity.Pages.Account
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = T["Auth.Register"];
+    ViewData["ContentAreaClass"] = "content-area--login";
+}
+
+<div class="auth-login-page">
+    <div class="auth-login-shell">
+        <div class="auth-login-panel auth-login-panel--compact">
+            <div class="auth-login-panel-head">
+                <h2>@T["Auth.Register"]</h2>
+            </div>
+
+            <partial name="_AuthMethods" model="AuthMethod.Register" />
+            <p class="auth-login-hint">@T["Register.Hint"]</p>
+
+            <form method="post" asp-route-returnUrl="@Model.ReturnUrl" class="auth-login-form" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <div class="auth-login-input auth-login-input--floating">
+                    <input class="form-control" asp-for="Input.Email" autocomplete="username" placeholder=" " aria-required="true" />
+                    <label class="form-label" asp-for="Input.Email">@T["Login.Local.Email"]</label>
+                    <span class="tbx-field-error" asp-validation-for="Input.Email"></span>
+                </div>
+                <div class="auth-login-input auth-login-input--floating tbx-password">
+                    <input class="form-control" asp-for="Input.Password" autocomplete="new-password" placeholder=" " aria-required="true" aria-describedby="register-password-hint" />
+                    <label class="form-label" asp-for="Input.Password">@T["Login.Local.Password"]</label>
+                    <partial name="_PasswordToggle" />
+                    <span class="tbx-field-hint" id="register-password-hint">@T["Account.Password.Rules"]</span>
+                    <span class="tbx-field-error" asp-validation-for="Input.Password"></span>
+                </div>
+                <div class="auth-login-input auth-login-input--floating tbx-password">
+                    <input class="form-control" asp-for="Input.ConfirmPassword" autocomplete="new-password" placeholder=" " />
+                    <label class="form-label" asp-for="Input.ConfirmPassword">@T["Account.Field.ConfirmPassword"]</label>
+                    <partial name="_PasswordToggle" />
+                    <span class="tbx-field-error" asp-validation-for="Input.ConfirmPassword"></span>
+                </div>
+                <button type="submit" class="btn btn-primary auth-login-submit">@T["Register.Submit"]</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
