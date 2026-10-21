@@ -1,0 +1,33 @@
+@model ListToolbarViewModel
+@* Toolbar of the list page template (docs/LIST_PAGE_TEMPLATE.md): totals, search, primary action.
+   Keyboard: "/" focuses the search box, "N" opens the primary modal (Content/js/list-page.js). *@
+<header class="tbx-toolbar tbx-list-toolbar">
+    @if (!string.IsNullOrEmpty(Model.Summary))
+    {
+        <p class="tbx-toolbar-summary">@Model.Summary</p>
+    }
+
+    @if (Model.SearchAction is not null)
+    {
+        <form class="tbx-search" method="get" action="@Model.SearchAction" role="search">
+            @foreach (var keep in Model.SearchKeep.Where(x => !string.IsNullOrEmpty(x.Value)))
+            {
+                <input type="hidden" name="@keep.Key" value="@keep.Value" />
+            }
+            <tbx-icon name="search" />
+            <input class="form-control" type="search" name="search" value="@Model.SearchValue"
+                   placeholder="@Model.SearchLabel" aria-label="@Model.SearchLabel"
+                   autocomplete="off" data-list-search />
+        </form>
+    }
+
+    <span class="tbx-toolbar-spacer"></span>
+
+    @if (!string.IsNullOrEmpty(Model.PrimaryText) && !string.IsNullOrEmpty(Model.PrimaryModal))
+    {
+        <button class="btn btn-primary tbx-toolbar-primary" type="button" data-bs-toggle="modal" data-bs-target="@Model.PrimaryModal" data-list-new>
+            <tbx-icon name="@Model.PrimaryIcon" />
+            <span>@Model.PrimaryText</span>
+        </button>
+    }
+</header>

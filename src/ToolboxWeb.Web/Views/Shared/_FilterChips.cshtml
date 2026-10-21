@@ -1,0 +1,15 @@
+@model FilterChipsViewModel
+@* Filter chips of the list page template. Each chip is a link, so the filter lives in the URL
+   and survives a reload; the active one carries aria-current. *@
+<nav class="tbx-filter-chips" aria-label="@Model.Label">
+    @foreach (var chip in Model.Chips)
+    {
+        <a class="tbx-chip @(chip.Active ? "is-selected" : null)" href="@chip.Href" aria-current="@(chip.Active ? "page" : null)">
+            <span>@chip.Text</span>
+            @if (chip.Count is not null)
+            {
+                <span class="tbx-chip-count">@(((double)chip.Count.Value).ToDisplayNumber(0))</span>
+            }
+        </a>
+    }
+</nav>

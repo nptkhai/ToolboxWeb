@@ -134,7 +134,7 @@
   - Calm empty states and subtle motion.
   - Keyboard-friendly.
   - Concrete values were approved on 2026-10-21 and are listed under "Design Tokens" below. The reasons are in `docs/DESIGN_DECISIONS.md`.
-- Reference screen: `Views/Notes/Index.cshtml` (toolbar + search + primary action + empty state + modal confirm). New or reworked list screens follow its structure.
+- Reference screen: `Views/Notes/Index.cshtml` (toolbar + search + primary action + empty state + modal confirm). New or reworked list screens follow its structure. The reusable form of that structure is the list page template in `docs/LIST_PAGE_TEMPLATE.md` (`_ListToolbar`, `_FilterChips`, `.tbx-list` rows, `_EmptyState`, a `data-list-modal` form, `Content/js/list-page.js`); the to-do list is its first user.
 - Rules that apply now:
   - **Colors:** do not add new hex, rgb, or hsl color literals in CSS or inline styles. Reuse the CSS variables in `:root`. If a needed color does not exist, add one variable to `:root` (light and dark) instead of a literal.
   - **One primary button style** across the app. Destructive actions use the danger style.

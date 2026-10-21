@@ -820,6 +820,7 @@ Làm theo đúng thứ tự, vì mỗi bước dùng kết quả của bước t
 | 4.2 | Identity: `_AuthLayout`; Đăng nhập, Đăng ký (tab), Access denied, các trang Manage được scaffold và dịch; menu tài khoản có nền đặc | 2.8, 3.5, 3.10 | Đăng nhập, tài khoản |
 | 4.3 | Module Jira dùng chung: bộ chọn kỳ, cấu hình bảng mặc định, bảng màu trạng thái, khối JQL thu gọn, thanh chip lọc | 2.4 | 4 màn hình Jira |
 | 4.4 | Form kết nối SQL dùng chung | 2.4 | So sánh DB, Bắt SQL |
+| 4.5 | Mẫu trang danh sách | Lấy từ trang Ghi chú, mô tả ở `docs/LIST_PAGE_TEMPLATE.md`: `_ListToolbar` (số liệu, ô tìm kiếm, nút chính), `_FilterChips` (chip là liên kết, có số đếm), dòng `.tbx-list`/`.tbx-row` (checkbox ở đầu dòng, dòng mô tả phụ, nút xóa hiện khi rê chuột), form trong modal, `_EmptyState`, `Content/js/list-page.js` (phím `/` và `N`, mở lại form khi nhập sai, Kendo DatePicker gửi ngày dạng ISO). **Áp dụng cho Việc cần làm:** thanh công cụ + tìm kiếm, chip Tất cả / Cần làm / Quá hạn / Đã xong, đánh dấu xong bằng checkbox (giữ nguyên bộ lọc), nhãn "Quá hạn · 20/10/2026" và "Hạn hôm nay", form "Thêm việc" trong modal có label, thông báo lỗi tiếng Việt/Anh và Kendo DatePicker theo định dạng ngôn ngữ, trạng thái trống khi chưa có việc và khi không khớp bộ lọc, xóa có hộp xác nhận nêu tên việc. "Quá hạn" và "hôm nay" tính theo múi giờ của app. **Chưa làm:** Liên kết nhanh và Prompt (để GĐ5 theo cùng mẫu); sửa nội dung một việc (trang chưa từng có chức năng này) |
 | 4.5 | **Mẫu trang danh sách** (toolbar, tìm kiếm, chip lọc, danh sách, form trong modal, trạng thái trống), lấy từ trang Ghi chú | 2.4 | Việc cần làm, Liên kết nhanh, Prompt |
 
 ### 10.9 Giai đoạn 5 – Từng màn hình
@@ -1025,7 +1026,7 @@ Chủ dự án đã duyệt khung app và cho làm tiếp 3.6.
 - Đã kiểm tra: 1440/390px, sáng/tối, không lỗi console, không tràn ngang. Phần thời tiết kiểm tra bằng phản hồi giả của Open-Meteo vì môi trường thử nghiệm chặn mạng ra ngoài; chưa thử với Open-Meteo thật.
 - **Bổ sung theo yêu cầu (21/10/2026):** thanh trên cùng bên trong app cũng có đồng hồ và thời tiết (dưới 900px ẩn ngày, dưới 600px chỉ còn giờ); hình nền thời tiết bên trong vẫn tắt mặc định. Bỏ công tắc "Hiện thời tiết theo vị trí" trong Hồ sơ vì thời tiết giờ luôn hiện. Avatar có ảnh thì hiện thêm chữ viết tắt tên bên cạnh. `tests/ui`: chỉ số không đổi (lỗi console 0, tràn ngang 0, thiếu label 54, chữ nhỏ 210); ảnh mốc đã tạo lại.
 
-#### Giai đoạn 4 – đang làm
+#### Giai đoạn 4 – đã làm xong (21/10/2026)
 
 | # | Việc | Kết quả |
 |---|---|---|

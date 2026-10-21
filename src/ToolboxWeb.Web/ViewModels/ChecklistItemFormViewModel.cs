@@ -6,10 +6,10 @@ public class ChecklistItemFormViewModel
 {
     public int? Id { get; set; }
 
-    [Required, StringLength(180)]
+    [Required(ErrorMessage = "Validation.Required"), StringLength(180, ErrorMessage = "Validation.MaxLength")]
     public string Title { get; set; } = string.Empty;
 
-    [StringLength(1000)]
+    [StringLength(1000, ErrorMessage = "Validation.MaxLength")]
     public string? Description { get; set; }
 
     [DataType(DataType.Date)]

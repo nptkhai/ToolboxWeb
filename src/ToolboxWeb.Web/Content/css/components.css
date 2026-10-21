@@ -432,6 +432,182 @@ kbd.tbx-kbd {
     padding: 1px 5px;
 }
 
+/* ---------------------------------------------------------------- list page template */
+/* docs/LIST_PAGE_TEMPLATE.md: _ListToolbar, _FilterChips, .tbx-list rows, _EmptyState and a form
+   in a modal. First used by the to-do list. */
+.tbx-list-page {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.tbx-list-toolbar {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+}
+
+.tbx-toolbar-summary {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin: 0;
+}
+
+.tbx-toolbar-primary {
+    align-items: center;
+    display: inline-flex;
+    gap: var(--space-1);
+}
+
+.tbx-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+    .tbx-filter-chips .tbx-chip {
+        text-decoration: none;
+    }
+
+.tbx-chip-count {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.tbx-chip.is-selected .tbx-chip-count {
+    color: inherit;
+}
+
+/* A row with a second line (description) under the title. */
+.tbx-row--two-line {
+    padding-bottom: var(--space-2);
+    padding-top: var(--space-2);
+}
+
+.tbx-row-main {
+    display: grid;
+    flex: 1 1 auto;
+    gap: 2px;
+    min-width: 0;
+}
+
+    .tbx-row-main .tbx-row-title {
+        flex: none;
+    }
+
+.tbx-row-sub {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Checkbox at the start of a row: a real button (role="checkbox") that submits its form. */
+.tbx-row-check {
+    align-items: center;
+    background: var(--surface);
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--radius-pill);
+    color: transparent;
+    display: inline-flex;
+    flex: none;
+    height: 18px;
+    justify-content: center;
+    padding: 0;
+    transition: background-color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+    width: 18px;
+}
+
+    .tbx-row-check .tbx-icon {
+        height: 12px;
+        width: 12px;
+    }
+
+    .tbx-row-check:hover {
+        border-color: var(--accent);
+    }
+
+    .tbx-row-check:focus-visible {
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
+
+    .tbx-row-check[aria-checked="true"] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--on-accent);
+    }
+
+/* Row actions stay reachable by keyboard and on touch screens; on a mouse they appear on hover. */
+.tbx-row-actions {
+    display: flex;
+    flex: none;
+    gap: var(--space-1);
+}
+
+@media (hover: hover) {
+    .tbx-row .tbx-row-actions {
+        opacity: 0;
+        transition: opacity var(--duration) var(--ease);
+    }
+
+    .tbx-row:hover .tbx-row-actions,
+    .tbx-row:focus-within .tbx-row-actions {
+        opacity: 1;
+    }
+}
+
+.tbx-icon-button.btn {
+    align-items: center;
+    color: var(--muted);
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
+    padding: 0;
+    width: 28px;
+}
+
+    .tbx-icon-button.btn:hover {
+        background: var(--hover);
+        color: var(--text);
+    }
+
+    .tbx-icon-button.btn.is-danger:hover {
+        color: var(--danger);
+    }
+
+/* A finished item stays readable but steps back. */
+.tbx-row.is-done .tbx-row-title {
+    color: var(--muted);
+    text-decoration: line-through;
+}
+
+@media (max-width: 600px) {
+    .tbx-list-toolbar .tbx-search {
+        flex-basis: 100%;
+        max-width: none;
+    }
+
+    /* No keyboard to speak of on a phone. */
+    .tbx-shortcuts {
+        display: none;
+    }
+}
+
+/* Holder that list-page.js moves the page's dialogs into, at the end of <body>. */
+.tbx-modal-host {
+    display: contents;
+}
+
+.tbx-shortcuts {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    margin: 0;
+}
+
 /* ---------------------------------------------------------------- utilities */
 .tbx-visually-hidden {
     border: 0;
