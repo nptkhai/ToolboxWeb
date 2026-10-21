@@ -1,0 +1,22 @@
+@* Clock and weather in the header before sign-in. adaptive-background.js fills them in;
+   the weather needs the browser location and falls back to "unavailable" without it. *@
+<div class="topbar-environment"
+     data-environment-summary
+     data-weather-loading="@T["Environment.Weather.Loading"]"
+     data-weather-unavailable="@T["Environment.Weather.Unavailable"]"
+     data-weather-clear="@T["Environment.Weather.Clear"]"
+     data-weather-cloudy="@T["Environment.Weather.Cloudy"]"
+     data-weather-fog="@T["Environment.Weather.Fog"]"
+     data-weather-rain="@T["Environment.Weather.Rain"]"
+     data-weather-snow="@T["Environment.Weather.Snow"]"
+     data-weather-storm="@T["Environment.Weather.Storm"]"
+     aria-live="polite">
+    <div class="topbar-clock">
+        <time class="topbar-clock-time" data-current-time datetime="">--:--</time>
+        <span class="topbar-clock-date" data-current-date></span>
+    </div>
+    <div class="topbar-weather">
+        <span class="topbar-weather-indicator" aria-hidden="true"></span>
+        <span class="topbar-weather-text" data-current-weather>@T["Environment.Weather.Loading"]</span>
+    </div>
+</div>

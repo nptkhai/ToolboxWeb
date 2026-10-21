@@ -188,8 +188,8 @@ Approved by the owner on 2026-10-21 (`docs/DESIGN_DECISIONS.md`). They live in `
 - **App shell:**
   - Sidebar groups JIRA / CÁ NHÂN / CÔNG CỤ DB / DEV. DEV shows only in Development or for an authorized role.
   - 48px header with breadcrumb and page actions. Theme, language and sign-out live in the avatar menu.
-  - No weather widget. Location is requested only when the user turns it on.
-  - The animated background is an opt-in setting, off by default.
+  - Pages before sign-in (sign-in, register): no sidebar; the header shows the brand, clock, weather, language and theme; the animated weather background is always on (owner decision 2026-10-21, `DESIGN_DECISIONS.md` 2.H).
+  - Inside the app: no clock or weather widget; the animated background is an opt-in setting, off by default, and location is requested only when the user turns weather on.
   - First visit follows the OS light/dark preference; after that the user's choice is remembered.
 - **Time and formats:** one `App:TimeZone` setting (default `Asia/Ho_Chi_Minh`), used by the server and the client clock. Formats follow the UI culture (`vi-VN`: `dd/MM/yyyy`, `HH:mm`, `17,5`).
 

@@ -9,11 +9,17 @@
         return;
     }
 
-    // The animated background is opt-in and off by default (docs/DESIGN_DECISIONS.md 2.H).
-    // Weather needs the browser location, so it has its own switch; without it the sky only
-    // follows the time of day and the season. Both switches live on the account page.
+    // Before sign-in the background, clock and weather are always on (owner decision,
+    // docs/DESIGN_DECISIONS.md 2.H). Inside the app the background is opt-in and off by default;
+    // weather needs the browser location, so it has its own switch. Both switches live on the
+    // account page; without weather the sky only follows the time of day and the season.
     const ENABLED_KEY = 'toolbox.background';
     const WEATHER_KEY = 'toolbox.background.weather';
+    const authPage = document.documentElement.dataset.backgroundMode === 'auth';
+    const environmentSummary = document.querySelector('[data-environment-summary]');
+    const currentTimeElement = environmentSummary?.querySelector('[data-current-time]');
+    const currentDateElement = environmentSummary?.querySelector('[data-current-date]');
+    const currentWeatherElement = environmentSummary?.querySelector('[data-current-weather]');
 
     const CACHE_KEY = 'toolbox.adaptive-background.weather.v1';
     const CACHE_TTL = 60 * 60 * 1000;
@@ -27,6 +33,14 @@
         } catch {
             return false;
         }
+    }
+
+    function backgroundEnabled() {
+        return authPage || readSetting(ENABLED_KEY);
+    }
+
+    function weatherEnabled() {
+        return authPage || readSetting(WEATHER_KEY);
     }
 
     const TIMES = {
@@ -176,6 +190,56 @@
         particlesHost.appendChild(particles);
     }
 
+    function getLocale() {
+        return document.documentElement.lang || 'vi-VN';
+    }
+
+    function updateClock() {
+        if (!currentTimeElement || !currentDateElement) {
+            return;
+        }
+
+        const now = new Date();
+        currentTimeElement.textContent = new Intl.DateTimeFormat(getLocale(), {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).format(now);
+        currentTimeElement.dateTime = now.toISOString();
+        currentDateElement.textContent = new Intl.DateTimeFormat(getLocale(), {
+            weekday: 'short',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        }).format(now);
+    }
+
+    function updateWeatherSummary(kind, unavailable) {
+        if (!environmentSummary || !currentWeatherElement) {
+            return;
+        }
+
+        if (!state.weather) {
+            environmentSummary.dataset.weatherKind = unavailable ? 'unavailable' : 'loading';
+            currentWeatherElement.textContent = unavailable
+                ? environmentSummary.dataset.weatherUnavailable
+                : environmentSummary.dataset.weatherLoading;
+            return;
+        }
+
+        const labelKey = `weather${kind.charAt(0).toUpperCase()}${kind.slice(1)}`;
+        const weatherLabel = environmentSummary.dataset[labelKey] || kind;
+        const temperature = Number(state.weather.temperature_2m);
+        const temperatureText = Number.isFinite(temperature)
+            ? `${new Intl.NumberFormat(getLocale(), { maximumFractionDigits: 1 }).format(temperature)}°C`
+            : '';
+
+        environmentSummary.dataset.weatherKind = kind;
+        currentWeatherElement.textContent = temperatureText
+            ? `${temperatureText} · ${weatherLabel}`
+            : weatherLabel;
+    }
+
     function render() {
         const now = new Date();
         const timeKey = getTimeBucket(now);
@@ -201,6 +265,7 @@
         document.body.dataset.adaptiveWeather = kind;
 
         createParticles(kind);
+        updateWeatherSummary(kind, false);
         state.lastThemeKey = `${timeKey}-${seasonKey}-${state.weather?.weather_code ?? 'none'}`;
     }
 
@@ -258,7 +323,7 @@
     }
 
     async function updateWeather() {
-        if (!readSetting(WEATHER_KEY)) {
+        if (!weatherEnabled()) {
             return;
         }
 
@@ -283,6 +348,9 @@
         } catch (error) {
             console.warn('[Adaptive background]', error);
             state.savedAt = state.savedAt || Date.now();
+            if (!state.weather) {
+                updateWeatherSummary('clear', true);
+            }
         } finally {
             scheduleRefresh();
         }
@@ -295,7 +363,7 @@
 
         state.started = true;
         createScene();
-        const cached = readSetting(WEATHER_KEY) ? readCache() : null;
+        const cached = weatherEnabled() ? readCache() : null;
         if (cached) {
             state.coords = cached.coords;
             state.weather = cached.weather;
@@ -304,7 +372,7 @@
 
         render();
         // Without the weather switch: time of day only, no location request, no network call.
-        if (readSetting(WEATHER_KEY)) {
+        if (weatherEnabled()) {
             if (!cached || Date.now() - cached.savedAt >= CACHE_TTL) {
                 updateWeather();
             } else {
@@ -350,7 +418,7 @@
 
     // The account page switches the background on or off without a reload.
     document.addEventListener('toolbox:background-changed', function () {
-        const enabled = readSetting(ENABLED_KEY);
+        const enabled = backgroundEnabled();
         document.documentElement.dataset.background = enabled ? 'on' : 'off';
         if (!enabled) {
             return;
@@ -358,7 +426,7 @@
 
         if (!state.started) {
             initialize();
-        } else if (readSetting(WEATHER_KEY)) {
+        } else if (weatherEnabled()) {
             updateWeather();
         } else {
             state.weather = null;
@@ -366,7 +434,12 @@
         }
     });
 
-    if (readSetting(ENABLED_KEY)) {
+    if (currentTimeElement) {
+        updateClock();
+        window.setInterval(updateClock, 1000);
+    }
+
+    if (backgroundEnabled()) {
         initialize();
     }
 })();

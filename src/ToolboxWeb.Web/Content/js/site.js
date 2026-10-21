@@ -125,6 +125,13 @@
             applyTheme();
         });
     });
+    // Before sign-in there is no avatar menu: one button flips between light and dark.
+    document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            store('toolbox.theme', root.dataset.theme === 'dark' ? 'light' : 'dark');
+            applyTheme();
+        });
+    });
     systemDark.addEventListener('change', applyTheme);
     applyTheme();
 

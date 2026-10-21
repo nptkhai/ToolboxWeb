@@ -1017,3 +1017,10 @@ Chủ dự án đã duyệt khung app và cho làm tiếp 3.6.
 - Role `Developer` chưa có tác dụng vì ASP.NET Identity của app chưa bật roles; hiện tại ngoài Development không ai mở được trang dev.
 - Nội dung các thẻ demo cũ vẫn dùng chuỗi song ngữ viết thẳng trong view (`LocalText`), chưa chuyển sang khóa ngôn ngữ. Trang Kendo Demo và Tabulator Demo chưa đổi (để ở 5.13).
 
+#### Điều chỉnh sau khi chủ dự án xem khung app (21/10/2026)
+
+Ở 3.5, đồng hồ, thời tiết và hình nền bị tắt trên **mọi** trang, kể cả trang đăng nhập; đồng hồ bị bỏ hẳn. Như vậy là áp dụng quá tay. Chủ dự án chốt lại:
+- **Trước khi đăng nhập** (Đăng nhập, Đăng ký): không còn sidebar trống; thanh trên cùng có logo, đồng hồ + ngày, thời tiết, đổi ngôn ngữ VI/EN, đổi sáng/tối, và nút Đăng ký hoặc Đăng nhập (bỏ nút trùng với trang đang mở). Hình nền thời tiết luôn bật. Trên màn hình dưới 600px chỉ hiện giờ, ẩn ô thời tiết để không tràn.
+- **Bên trong sau khi đăng nhập:** giữ như 3.5.
+- Đã kiểm tra: 1440/390px, sáng/tối, không lỗi console, không tràn ngang. Phần thời tiết kiểm tra bằng phản hồi giả của Open-Meteo vì môi trường thử nghiệm chặn mạng ra ngoài; chưa thử với Open-Meteo thật.
+
