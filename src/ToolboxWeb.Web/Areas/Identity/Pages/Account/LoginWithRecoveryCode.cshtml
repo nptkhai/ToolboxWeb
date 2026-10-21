@@ -1,0 +1,35 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.LoginWithRecoveryCodeModel
+@{
+    ViewData["Title"] = T["Login.RecoveryCode.Title"];
+    ViewData["ContentAreaClass"] = "content-area--login";
+}
+
+<div class="auth-login-page">
+    <div class="auth-login-shell">
+        <div class="auth-login-panel auth-login-panel--compact">
+            <div class="auth-login-panel-head">
+                <h2>@T["Login.RecoveryCode.Title"]</h2>
+            </div>
+            <p class="auth-login-text">@T["Login.RecoveryCode.Text"]</p>
+
+            <form method="post" asp-route-returnUrl="@Model.ReturnUrl" class="auth-login-form" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <div class="auth-login-input auth-login-input--floating">
+                    <input class="form-control" asp-for="Input.RecoveryCode" autocomplete="off" placeholder=" " aria-required="true" autofocus />
+                    <label class="form-label" asp-for="Input.RecoveryCode">@T["Account.Field.RecoveryCode"]</label>
+                    <span class="tbx-field-error" asp-validation-for="Input.RecoveryCode"></span>
+                </div>
+                <button type="submit" class="btn btn-primary auth-login-submit">@T["Login.Title"]</button>
+            </form>
+
+            <div class="auth-login-links">
+                <a asp-page="./Login">@T["Login.BackToSignIn"]</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

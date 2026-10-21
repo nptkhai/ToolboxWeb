@@ -78,6 +78,12 @@ public class LoginModel : PageModel
             return LocalRedirect(ResolveReturnUrl(returnUrl, preferJiraDashboard: false));
         }
 
+        // Accounts with two-factor authentication continue with a code from the authenticator app.
+        if (result.RequiresTwoFactor)
+        {
+            return RedirectToPage("./LoginWith2fa", new { returnUrl, rememberMe = LocalInput.RememberMe });
+        }
+
         if (result.IsLockedOut)
         {
             LocalErrorMessage = _localizer["Login.Local.LockedOut"].Value;

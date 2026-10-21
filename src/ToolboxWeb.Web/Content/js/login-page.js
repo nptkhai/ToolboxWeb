@@ -16,7 +16,7 @@
     buttons.forEach((button) => {
       const active = button.dataset.loginSwitch === nextMode;
       button.classList.toggle('is-active', active);
-      button.setAttribute('aria-selected', active ? 'true' : 'false');
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   }
 

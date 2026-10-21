@@ -13,7 +13,7 @@ Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expr
 | jQuery Validation | 1.21.0 | MIT | `lib/jquery-validation/` | In use |
 | jQuery Validation Unobtrusive | 4.0.0 | Apache-2.0 | `lib/jquery-validation-unobtrusive/` | In use |
 | Bootstrap Icons (subset) | — | MIT | `vendor/bootstrap-icons/` | In use |
-| Lucide (`lucide-static`, 43-icon sprite built by `tools/lucide/build-sprite.py`) | 1.60.0 | ISC (icons derived from Feather: MIT) | `vendor/lucide/` (with `LICENSE`) | In use (app icons) |
+| Lucide (`lucide-static`; sprite of the icons listed in `tools/lucide/icons.txt`, built by `tools/lucide/build-sprite.py`) | 1.60.0 | ISC (icons derived from Feather: MIT) | `vendor/lucide/` (with `LICENSE`) | In use (app icons) |
 | Kendo UI Core (`kendo-ui-core`) | 2026.2.520 | Apache-2.0 | `vendor/kendo/js/`, `cultures/`, `messages/` | In use (Core widgets only) |
 | Kendo Theme Default (`@progress/kendo-theme-default`) | 14.1.0 | Apache-2.0 | `vendor/kendo/theme/` | In use |
 | Kendo Font Icons (`@progress/kendo-font-icons`) | 5.1.0 | Apache-2.0 | `vendor/kendo/icons/` | In use |
@@ -30,7 +30,7 @@ Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expr
 |---|---|---|---|
 | Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore | 9.0.6 | MIT | In use |
 | Microsoft.AspNetCore.Identity.EntityFrameworkCore | 9.0.6 | MIT | In use |
-| Microsoft.AspNetCore.Identity.UI | 9.0.6 | MIT | In use |
+| Microsoft.AspNetCore.Identity.UI | 9.0.6 | MIT | In use. The pages under `Areas/Identity/Pages/Account/` (register, two-factor, manage) are adapted from its source (dotnet/aspnetcore, `src/Identity/UI`, MIT) and rewritten with localization keys |
 | Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation | 9.0.6 | MIT | In use (Development) |
 | Microsoft.EntityFrameworkCore.Sqlite | 9.0.6 | MIT | In use |
 | Microsoft.EntityFrameworkCore.Tools | 9.0.6 | MIT | Design-time |

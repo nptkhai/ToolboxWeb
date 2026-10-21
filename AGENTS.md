@@ -65,6 +65,10 @@
 - Before changing any page inside `Account/Manage`, inspect the folder-level `_Layout.cshtml`, `_ViewStart.cshtml`, nav behavior, and whether package pages in the same folder will inherit the same wrapper.
 - If you introduce a custom manage page layout, make it folder-wide so tab switches do not jump between different wrappers or duplicate navigation blocks.
 - When you add profile or account UI that reads user data, make sure it degrades safely if the current runtime database has not yet picked up the newest schema.
+- Every Identity page the app shows is a local page under `Areas/Identity/Pages/Account/` (sign-in, register, two-factor sign-in, recovery code, lockout, and all `Manage/` pages), written in localization keys. Do not fall back to the package's English pages. Manage pages derive from `Manage/ManagePageModel` and render inside `Manage/_Layout.cshtml`.
+- Jira accounts have no ToolboxWeb password: the password and two-factor tabs are hidden for them.
+- No email sender is configured, so there is no "forgot password" and the email cannot be changed. Do not add flows that depend on sending email until a sender exists.
+- Deleting an account goes through `IAccountService.DeleteAccountAsync`, which also deletes every user-owned row and the profile images. A new user-owned table must be added there.
 
 ## Third-Party License Policy
 

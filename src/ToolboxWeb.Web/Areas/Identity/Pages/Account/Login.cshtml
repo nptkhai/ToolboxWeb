@@ -1,4 +1,5 @@
 @page
+@using ToolboxWeb.Web.Areas.Identity.Pages.Account
 @model ToolboxWeb.Web.Areas.Identity.Pages.Account.LoginModel
 @{
     ViewData["Title"] = T["Login.Title"];
@@ -13,29 +14,12 @@
                 <h2>@T["Login.Title"]</h2>
             </div>
 
-            <div class="auth-login-methods" role="tablist">
-                <button type="button"
-                        class="auth-login-method @(isJiraMode ? null : "is-active")"
-                        data-login-switch="local"
-                        role="tab"
-                        aria-selected="@((!isJiraMode).ToString().ToLowerInvariant())">
-                    <span>@T["Login.Local.ShortTitle"]</span>
-                </button>
-                <button type="button"
-                        class="auth-login-method @(isJiraMode ? "is-active" : null)"
-                        data-login-switch="jira"
-                        role="tab"
-                        aria-selected="@(isJiraMode.ToString().ToLowerInvariant())">
-                    <span>@T["Login.Jira.ShortTitle"]</span>
-                </button>
-            </div>
+            <partial name="_AuthMethods" model="isJiraMode ? AuthMethod.Jira : AuthMethod.Local" />
 
             <div class="auth-login-viewport">
                 <div class="auth-login-track">
                     <section class="auth-login-form-panel" data-login-panel="local">
-                        <div class="auth-login-form-head">
-                            <h3>@T["Login.Local.Title"]</h3>
-                        </div>
+                        <p class="auth-login-hint">@T["Login.Local.Title"]</p>
 
                         @if (!string.IsNullOrWhiteSpace(Model.LocalErrorMessage))
                         {
@@ -54,7 +38,7 @@
                                        placeholder=" " />
                                 <label class="form-label" for="local-email">@T["Login.Local.Email"]</label>
                             </div>
-                            <div class="auth-login-input auth-login-input--floating">
+                            <div class="auth-login-input auth-login-input--floating tbx-password">
                                 <input id="local-password"
                                        class="form-control"
                                        asp-for="LocalInput.Password"
@@ -62,6 +46,7 @@
                                        autocomplete="current-password"
                                        placeholder=" " />
                                 <label class="form-label" for="local-password">@T["Login.Local.Password"]</label>
+                                <partial name="_PasswordToggle" />
                             </div>
                             <label class="form-check auth-login-check">
                                 <input class="form-check-input" asp-for="LocalInput.RememberMe" />
@@ -72,9 +57,7 @@
                     </section>
 
                     <section class="auth-login-form-panel" data-login-panel="jira">
-                        <div class="auth-login-form-head">
-                            <h3>@T["Login.Jira.Title"]</h3>
-                        </div>
+                        <p class="auth-login-hint">@T["Login.Jira.Title"]</p>
 
                         @if (!string.IsNullOrWhiteSpace(Model.JiraErrorMessage))
                         {
@@ -102,7 +85,7 @@
                                        placeholder=" " />
                                 <label class="form-label" for="jira-username">@T["Login.Jira.Username"]</label>
                             </div>
-                            <div class="auth-login-input auth-login-input--floating">
+                            <div class="auth-login-input auth-login-input--floating tbx-password">
                                 <input id="jira-password"
                                        class="form-control"
                                        asp-for="JiraInput.Password"
@@ -110,6 +93,7 @@
                                        autocomplete="current-password"
                                        placeholder=" " />
                                 <label class="form-label" for="jira-password">@T["Login.Jira.Password"]</label>
+                                <partial name="_PasswordToggle" />
                             </div>
                             <button type="submit" class="btn btn-primary auth-login-submit">@T["Login.Jira.Submit"]</button>
                         </form>

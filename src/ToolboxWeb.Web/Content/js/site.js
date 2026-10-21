@@ -135,6 +135,22 @@
     systemDark.addEventListener('change', applyTheme);
     applyTheme();
 
+    // Show/hide password: a [data-password-toggle] button inside a .tbx-password wrapper
+    // (Views/Shared/_PasswordToggle.cshtml) flips the input between password and text.
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-password-toggle]');
+        const input = button?.closest('.tbx-password')?.querySelector('input');
+        if (!input) {
+            return;
+        }
+
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        button.setAttribute('aria-pressed', String(show));
+        button.setAttribute('aria-label', show ? button.dataset.labelHide : button.dataset.labelShow);
+        input.focus();
+    });
+
     // Display settings on the account page (stored per browser).
     document.querySelectorAll('[data-display-setting]').forEach(function (input) {
         const key = input.getAttribute('data-display-setting');

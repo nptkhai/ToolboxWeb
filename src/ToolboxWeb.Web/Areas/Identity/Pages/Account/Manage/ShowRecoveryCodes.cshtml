@@ -1,0 +1,20 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.ShowRecoveryCodesModel
+@{
+    ViewData["Title"] = T["Account.TwoFactor.CodesTitle"];
+}
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<section class="tbx-panel tbx-panel-body account-section">
+    <div class="alert alert-warning" role="alert">@T["Account.TwoFactor.CodesWarning"]</div>
+    <ul class="account-codes">
+        @foreach (var code in Model.RecoveryCodes ?? [])
+        {
+            <li><code>@code</code></li>
+        }
+    </ul>
+    <div class="account-actions">
+        <a class="btn btn-primary" asp-page="./TwoFactorAuthentication">@T["Account.Done"]</a>
+    </div>
+</section>

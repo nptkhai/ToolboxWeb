@@ -1,0 +1,17 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.Disable2faModel
+@{
+    ViewData["Title"] = T["Account.TwoFactor.Disable"];
+}
+
+<section class="tbx-panel tbx-panel-body account-section">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+    <div class="alert alert-warning" role="alert">@T["Account.TwoFactor.DisableWarning"]</div>
+    <form method="post" class="account-actions">
+        <button type="submit" class="btn btn-danger"
+                data-confirm="@T["Account.TwoFactor.DisableConfirm"]"
+                data-confirm-title="@T["Account.TwoFactor.Disable"]"
+                data-confirm-ok="@T["Account.TwoFactor.Disable"]">@T["Account.TwoFactor.Disable"]</button>
+        <a class="btn btn-outline-secondary" asp-page="./TwoFactorAuthentication">@T["Account.Cancel"]</a>
+    </form>
+</section>

@@ -1,4 +1,5 @@
 @using ToolboxWeb.Web.Constants
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnvironment
 @{
     var colorTokens = new[]
     {
@@ -10,14 +11,16 @@
     var typeScale = new[] { ("--text-xs", "12px"), ("--text-sm", "13px"), ("--text-md", "14px"), ("--text-lg", "16px"), ("--text-xl", "20px"), ("--text-2xl", "24px") };
     var spaceScale = new[] { ("--space-1", "4px"), ("--space-2", "8px"), ("--space-3", "12px"), ("--space-4", "16px"), ("--space-5", "24px"), ("--space-6", "32px") };
     var radiusScale = new[] { ("--radius-pill", "4px"), ("--radius-control", "6px"), ("--radius-panel", "8px"), ("--radius-chip", "999px") };
-    var iconNames = new[]
+    // Every icon in the sprite, so this list cannot drift from tools/lucide/icons.txt.
+    var spriteFile = HostEnvironment.WebRootFileProvider.GetFileInfo("vendor/lucide/lucide-sprite.svg");
+    var iconNames = new List<string>();
+    if (spriteFile.Exists)
     {
-        "activity", "blocks", "calendar", "check", "chevron-down", "chevron-right", "circle-alert", "circle-check",
-        "clock", "copy", "database", "ellipsis", "external-link", "file-text", "gauge", "git-compare", "image",
-        "inbox", "info", "kanban", "languages", "layout-dashboard", "link", "list-checks", "loader-circle",
-        "log-out", "menu", "message-square-text", "monitor", "moon", "panel-left", "pencil", "plus", "refresh-cw",
-        "search", "settings", "sticky-note", "sun", "timer", "trash-2", "triangle-alert", "user", "x"
-    };
+        using var reader = new StreamReader(spriteFile.CreateReadStream());
+        iconNames = System.Text.RegularExpressions.Regex.Matches(reader.ReadToEnd(), "<symbol id=\"([a-z0-9-]+)\"")
+            .Select(match => match.Groups[1].Value)
+            .ToList();
+    }
     var today = DateTime.Today;
     var checklistHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html";
     var emptySample = new EmptyStateViewModel(T["Components.Foundations.EmptySample"].Value, "list-checks")

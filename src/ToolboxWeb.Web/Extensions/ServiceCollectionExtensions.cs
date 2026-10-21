@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ITabulatorTaskService, TabulatorTaskService>();
         services.AddScoped<IUserProfileService, UserProfileService>();
+        services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IExcelReportService, AsposeExcelReportService>();
         services.AddSingleton<IJiraClientFactory, JiraClientFactory>();
         services.AddSingleton<IJiraSessionStore, JiraSessionStore>();

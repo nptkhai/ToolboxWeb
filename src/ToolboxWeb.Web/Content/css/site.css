@@ -1199,11 +1199,6 @@ a {
         object-fit: contain;
     }
 
-.identity-manage-shell {
-    display: grid;
-    gap: 18px;
-}
-
 .auth-login-page {
     align-items: center;
     display: flex;
@@ -1263,21 +1258,36 @@ a {
     border-radius: var(--radius-control);
     display: grid;
     gap: 6px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
     padding: 6px;
 }
 
 .auth-login-method {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    text-align: center;
     background: transparent;
     border: 0;
     border-radius: var(--radius-pill);
     color: var(--login-text-secondary);
-    font-size: .95rem;
-    font-weight: 700;
-    min-height: 46px;
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    min-height: 40px;
     padding: 10px 16px;
     transition: background-color .24s ease, color .24s ease, transform .24s ease, box-shadow .24s ease;
 }
+
+    .auth-login-method:hover {
+        color: var(--text);
+        text-decoration: none;
+    }
+
+    .auth-login-method:focus-visible {
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
 
     .auth-login-method.is-active {
         background: var(--surface);
@@ -1317,25 +1327,38 @@ a {
     opacity: 1;
 }
 
-.auth-login-form-head {
-    display: grid;
-    gap: 8px;
-    justify-items: center;
+/* Floating sign-in inputs: the show/hide button sits on the input line (16px label space +
+   50px input), not at the bottom of the block, which can also hold a hint and an error line. */
+.auth-login-input.tbx-password .tbx-password-toggle {
+    bottom: auto;
+    top: 25px;
+}
+
+.auth-login-input:has(.tbx-field-error) {
+    gap: var(--space-1);
+}
+
+/* One line under the switch that says which account this panel is for. */
+.auth-login-hint {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin: 0;
     text-align: center;
 }
 
-    .auth-login-form-head h3 {
-        margin: 0;
-        color: var(--login-text-primary);
-        font-size: 1.55rem;
-    }
+/* Short text blocks on the smaller auth cards (two-factor code, recovery code, lockout). */
+.auth-login-text {
+    color: var(--muted);
+    margin: 0;
+    text-align: center;
+}
 
-    .auth-login-form-head p {
-        color: var(--login-text-secondary);
-        font-size: .95rem;
-        line-height: 1.65;
-        margin: 0;
-    }
+.auth-login-links {
+    display: grid;
+    font-size: var(--text-sm);
+    gap: var(--space-1);
+    justify-items: center;
+}
 
 .auth-login-form {
     display: grid;
@@ -2027,90 +2050,186 @@ a {
     }
 }
 
-.identity-manage-head h2 {
-    margin: 0 0 6px;
-}
-
-.identity-manage-head p {
-    color: var(--muted);
-    margin: 0;
-    max-width: 860px;
-}
-
-.identity-manage-grid {
+/* ---------------------------------------------------------------- account pages
+   Manage/_Layout: a solid nav list on the left, sections as panels on the right. */
+.account-layout {
+    align-items: start;
     display: grid;
-    gap: 18px;
-    grid-template-columns: 240px minmax(0, 1fr);
+    gap: var(--space-4);
+    grid-template-columns: 220px minmax(0, 1fr);
 }
 
-.identity-manage-nav {
-    display: grid;
-    gap: 8px;
-}
-
-    .identity-manage-nav a {
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        color: var(--text);
-        font-weight: 600;
-        padding: 10px 12px;
-    }
-
-        .identity-manage-nav a:hover,
-        .identity-manage-nav a.active {
-            background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-            border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
-            text-decoration: none;
-        }
-
-.identity-manage-panel,
-.identity-profile-card {
+.account-nav ul {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 16px;
-}
-
-.identity-manage-panel {
-    padding: 20px;
-}
-
-.identity-profile-card {
+    border-radius: var(--radius-panel);
     display: grid;
-    gap: 18px;
-    padding: 20px;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    padding: var(--space-1);
 }
 
-.identity-display-card {
-    margin-top: var(--space-4);
+.account-nav a {
+    align-items: center;
+    border-radius: var(--radius-control);
+    color: var(--muted);
+    display: flex;
+    font-weight: var(--weight-medium);
+    gap: var(--space-2);
+    min-height: var(--row-height);
+    padding: 0 var(--space-3);
 }
 
-.identity-display-options {
+    .account-nav a:hover {
+        background: var(--hover);
+        color: var(--text);
+        text-decoration: none;
+    }
+
+    .account-nav a.active {
+        background: var(--accent-tint);
+        color: var(--accent-strong);
+    }
+
+    .account-nav a:focus-visible {
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
+
+.account-content {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.account-section {
     display: grid;
     gap: var(--space-3);
 }
 
-    .identity-display-options .form-check-label {
+.account-section--danger {
+    border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+}
+
+.account-section-head {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--space-3);
+    justify-content: space-between;
+}
+
+.account-section-title {
+    align-items: center;
+    display: flex;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    gap: var(--space-2);
+    margin: 0;
+}
+
+    .account-section-title .tbx-icon {
+        color: var(--muted);
+    }
+
+.account-lead {
+    color: var(--muted);
+    margin: 0;
+    max-width: 72ch;
+}
+
+.account-note {
+    align-items: flex-start;
+    background: var(--surface-2);
+    border-radius: var(--radius-control);
+    color: var(--text);
+    display: flex;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-3);
+}
+
+    .account-note .tbx-icon {
+        color: var(--accent);
+        margin-top: 3px;
+    }
+
+.account-facts {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    margin: 0;
+}
+
+    .account-facts dt {
+        color: var(--muted);
+        font-size: var(--text-sm);
         font-weight: var(--weight-medium);
     }
 
-.identity-profile-kicker {
-    color: var(--muted);
-    display: inline-block;
-    font-size: .8rem;
-    font-weight: 750;
-    letter-spacing: .02em;
-    margin-bottom: 6px;
-    text-transform: uppercase;
+    .account-facts dd {
+        margin: 2px 0 0;
+        overflow-wrap: anywhere;
+    }
+
+.account-form {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 420px;
 }
 
-.identity-profile-copy h3 {
-    margin: 0 0 6px;
+.account-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
 }
 
-.identity-profile-copy p {
-    color: var(--muted);
+.account-steps {
+    display: grid;
+    gap: var(--space-4);
     margin: 0;
-    max-width: 760px;
+    padding-left: var(--space-5);
+}
+
+    .account-steps li {
+        display: grid;
+        gap: var(--space-2);
+    }
+
+.account-key {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    color: var(--text);
+    font-size: var(--text-lg);
+    justify-self: start;
+    letter-spacing: .04em;
+    padding: var(--space-2) var(--space-3);
+}
+
+.account-codes {
+    display: grid;
+    gap: var(--space-2);
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .account-codes code {
+        background: var(--surface-2);
+        border-radius: var(--radius-pill);
+        color: var(--text);
+        display: block;
+        font-size: var(--text-md);
+        padding: var(--space-2);
+        text-align: center;
+    }
+
+/* Smaller sign-in cards: register, two-factor code, recovery code, lockout. */
+.auth-login-panel.auth-login-panel--compact {
+    min-height: 0;
 }
 
 .identity-profile-form {
@@ -2151,7 +2270,7 @@ a {
             padding: 0;
         }
 
-    .identity-manage-grid,
+    .account-layout,
     .identity-profile-form {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -2169,9 +2288,7 @@ a {
         padding: 18px 16px 32px;
     }
 
-    .auth-login-methods {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+
 
     .auth-login-viewport {
         min-height: 370px;

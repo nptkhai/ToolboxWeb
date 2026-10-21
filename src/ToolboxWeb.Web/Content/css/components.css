@@ -258,6 +258,50 @@
     }
 }
 
+/* ---------------------------------------------------------------- password with show/hide */
+.tbx-password {
+    position: relative;
+}
+
+    /* Room for the toggle; outranks the shared .form-control padding in vendor-sync.css. */
+    .content-area .tbx-password .form-control:not(.k-input-inner):not(.k-input) {
+        padding-right: 40px;
+    }
+
+.tbx-password-toggle {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-control);
+    bottom: 3px;
+    color: var(--muted);
+    display: inline-flex;
+    height: 32px;
+    justify-content: center;
+    position: absolute;
+    right: 3px;
+    width: 32px;
+}
+
+    .tbx-password-toggle:hover {
+        background: var(--hover);
+        color: var(--text);
+    }
+
+    .tbx-password-toggle:focus-visible {
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
+
+    .tbx-password-toggle .is-hide,
+    .tbx-password-toggle[aria-pressed="true"] .is-show {
+        display: none;
+    }
+
+    .tbx-password-toggle[aria-pressed="true"] .is-hide {
+        display: inline-block;
+    }
+
 /* ---------------------------------------------------------------- side panel */
 /* Bootstrap offcanvas with the app's surface, used for detail and edit panels. */
 .offcanvas.tbx-sidepanel {

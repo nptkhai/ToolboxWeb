@@ -1,0 +1,59 @@
+@page
+@model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.TwoFactorAuthenticationModel
+@{
+    ViewData["Title"] = T["Profile.Nav.TwoFactor"];
+}
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<section class="tbx-panel tbx-panel-body account-section">
+    <div class="account-section-head">
+        <p class="account-lead">@T["Account.TwoFactor.Intro"]</p>
+        @if (Model.Is2faEnabled)
+        {
+            <span class="tbx-pill is-success">@T["Account.TwoFactor.On"]</span>
+        }
+        else
+        {
+            <span class="tbx-pill is-neutral">@T["Account.TwoFactor.Off"]</span>
+        }
+    </div>
+
+    @if (Model.Is2faEnabled)
+    {
+        @if (Model.RecoveryCodesLeft == 0)
+        {
+            <div class="alert alert-danger" role="alert">@T["Account.TwoFactor.NoCodesLeft"] <a asp-page="./GenerateRecoveryCodes">@T["Account.TwoFactor.GenerateCodes"]</a></div>
+        }
+        else if (Model.RecoveryCodesLeft <= 3)
+        {
+            <div class="alert alert-warning" role="alert">@T["Account.TwoFactor.FewCodesLeft", Model.RecoveryCodesLeft] <a asp-page="./GenerateRecoveryCodes">@T["Account.TwoFactor.GenerateCodes"]</a></div>
+        }
+
+        <div class="account-actions">
+            <a class="btn btn-outline-secondary" asp-page="./GenerateRecoveryCodes">@T["Account.TwoFactor.GenerateCodes"]</a>
+            @if (Model.IsMachineRemembered)
+            {
+                <form method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-secondary">@T["Account.TwoFactor.ForgetBrowser"]</button>
+                </form>
+            }
+            <a class="btn btn-outline-danger" asp-page="./Disable2fa">@T["Account.TwoFactor.Disable"]</a>
+        </div>
+    }
+</section>
+
+<section class="tbx-panel tbx-panel-body account-section" aria-labelledby="authenticator-title">
+    <h2 class="account-section-title" id="authenticator-title"><tbx-icon name="smartphone" />@T["Account.TwoFactor.AppTitle"]</h2>
+    <div class="account-actions">
+        @if (!Model.HasAuthenticator)
+        {
+            <a class="btn btn-primary" asp-page="./EnableAuthenticator">@T["Account.TwoFactor.AddApp"]</a>
+        }
+        else
+        {
+            <a class="btn btn-outline-secondary" asp-page="./EnableAuthenticator">@T["Account.TwoFactor.SetUpApp"]</a>
+            <a class="btn btn-outline-danger" asp-page="./ResetAuthenticator">@T["Account.TwoFactor.ResetApp"]</a>
+        }
+    </div>
+</section>

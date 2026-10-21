@@ -1,22 +1,14 @@
 @page
 @model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.IndexModel
 @{
-    ViewData["Title"] = T["Profile.PageTitle"];
+    ViewData["Title"] = T["Profile.Nav.Profile"];
 }
 
-@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
-{
-    <div class="alert alert-success" role="alert">@Model.StatusMessage</div>
-}
+<partial name="_StatusMessage" model="Model.StatusMessage" />
 
-<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
-
-<div class="identity-profile-card">
-    <div class="identity-profile-copy">
-        <span class="identity-profile-kicker">@T["Profile.SectionKicker"]</span>
-        <h3>@T["Profile.SectionTitle"]</h3>
-        <p>@T["Profile.SectionDescription"]</p>
-    </div>
+<section class="tbx-panel tbx-panel-body account-section" aria-labelledby="profile-title">
+    <h2 class="account-section-title" id="profile-title"><tbx-icon name="user" />@T["Profile.SectionTitle"]</h2>
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
     <form method="post" enctype="multipart/form-data" class="identity-profile-form">
         <div class="identity-profile-avatar">
@@ -24,38 +16,33 @@
         </div>
 
         <div class="identity-profile-fields">
-            <div class="form-grid">
+            <dl class="account-facts">
                 <div>
-                    <label class="form-label">@T["Profile.UserNameLabel"]</label>
-                    <input class="form-control" type="text" value="@Model.Profile.UserName" readonly />
+                    <dt>@T["Profile.UserNameLabel"]</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(Model.Profile.UserName) ? "-" : Model.Profile.UserName)</dd>
                 </div>
                 <div>
-                    <label class="form-label">@T["Profile.EmailLabel"]</label>
-                    <input class="form-control" type="email" value="@Model.Profile.Email" readonly />
+                    <dt>@T["Profile.EmailLabel"]</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(Model.Profile.Email) ? "-" : Model.Profile.Email)</dd>
                 </div>
-            </div>
+            </dl>
 
-            <div class="helper">@T["Profile.FormHelper"]</div>
+            <p class="tbx-field-hint">@T["Profile.FormHelper"]</p>
 
-            <div class="inline-actions">
+            <div class="account-actions">
                 <button type="submit" class="btn btn-primary">@T["Profile.SaveButton"]</button>
-                <a asp-page="./PersonalData" class="btn btn-outline-secondary">@T["Profile.OpenPersonalData"]</a>
             </div>
         </div>
     </form>
-</div>
+</section>
 
-<section class="identity-profile-card identity-display-card" aria-labelledby="display-settings-title">
-    <div class="identity-profile-copy">
-        <h3 id="display-settings-title">@T["Profile.Display.Title"]</h3>
-        <p>@T["Profile.Display.Description"]</p>
-    </div>
-    <div class="identity-display-options">
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="display-background" data-display-setting="toolbox.background" aria-describedby="display-background-hint" />
-            <label class="form-check-label" for="display-background">@T["Profile.Display.Background"]</label>
-            <div class="tbx-field-hint" id="display-background-hint">@T["Profile.Display.BackgroundHint"]</div>
-        </div>
+<section class="tbx-panel tbx-panel-body account-section" aria-labelledby="display-settings-title">
+    <h2 class="account-section-title" id="display-settings-title"><tbx-icon name="monitor" />@T["Profile.Display.Title"]</h2>
+    <p class="account-lead">@T["Profile.Display.Description"]</p>
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" id="display-background" data-display-setting="toolbox.background" aria-describedby="display-background-hint" />
+        <label class="form-check-label" for="display-background">@T["Profile.Display.Background"]</label>
+        <div class="tbx-field-hint" id="display-background-hint">@T["Profile.Display.BackgroundHint"]</div>
     </div>
 </section>
 

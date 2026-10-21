@@ -1,0 +1,19 @@
+@page
+@{
+    ViewData["Title"] = T["Login.Lockout.Title"];
+    ViewData["ContentAreaClass"] = "content-area--login";
+}
+
+<div class="auth-login-page">
+    <div class="auth-login-shell">
+        <div class="auth-login-panel auth-login-panel--compact">
+            <div class="auth-login-panel-head">
+                <h2>@T["Login.Lockout.Title"]</h2>
+            </div>
+            <p class="auth-login-text">@T["Login.Lockout.Text"]</p>
+            <div class="auth-login-links">
+                <a asp-page="./Login">@T["Login.BackToSignIn"]</a>
+            </div>
+        </div>
+    </div>
+</div>
