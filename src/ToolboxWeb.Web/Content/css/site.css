@@ -319,6 +319,7 @@ a {
 
 .account-avatar {
     align-items: center;
+    position: relative;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
     border-radius: 50%;
     color: #fff;
@@ -335,7 +336,9 @@ a {
     .account-avatar img {
         display: block;
         height: 100%;
+        inset: 0;
         object-fit: cover;
+        position: absolute;
         width: 100%;
     }
 

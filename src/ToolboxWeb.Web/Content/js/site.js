@@ -10,6 +10,16 @@
         localStorage.setItem('toolbox.sidebar', shell?.classList.contains('sidebar-collapsed') ? 'collapsed' : 'expanded');
     });
 
+    // A missing avatar file falls back to the initials rendered underneath the image.
+    document.querySelectorAll('img[data-avatar-image]').forEach(function (img) {
+        function dropImage() { img.remove(); }
+        if (img.complete && img.naturalWidth === 0) {
+            dropImage();
+        } else {
+            img.addEventListener('error', dropImage);
+        }
+    });
+
     document.querySelector('[data-theme-toggle]')?.addEventListener('click', function () {
         const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.dataset.theme = next;

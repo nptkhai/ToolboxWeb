@@ -53,7 +53,7 @@ public class UserProfileService : IUserProfileService
     {
         if (await HasAvatarColumnAsync())
         {
-            return await _userManager.Users
+            var profile = await _userManager.Users
                 .AsNoTracking()
                 .Where(x => x.Id == userId)
                 .Select(x => new UserProfileManageViewModel
@@ -65,6 +65,16 @@ public class UserProfileService : IUserProfileService
                     AvatarUrl = x.AvatarUrl
                 })
                 .SingleOrDefaultAsync();
+
+            // The database can point at a file that is gone (deleted, or Storage:UploadsPath moved).
+            // Return no avatar then, so the UI shows initials instead of a broken image.
+            if (profile?.AvatarUrl is not null
+                && (!TryResolveAvatarPath(profile.AvatarUrl, out var avatarPath) || !File.Exists(avatarPath)))
+            {
+                profile.AvatarUrl = null;
+            }
+
+            return profile;
         }
 
         return await _userManager.Users
@@ -267,31 +277,40 @@ public class UserProfileService : IUserProfileService
 
     private void DeleteAvatarIfManaged(string? avatarUrl)
     {
+        if (TryResolveAvatarPath(avatarUrl, out var absolutePath) && File.Exists(absolutePath))
+        {
+            File.Delete(absolutePath);
+        }
+    }
+
+    // Maps "/uploads/images/profile/..." to a file under the configured uploads directory.
+    // Returns false for anything outside the profile images folder.
+    private bool TryResolveAvatarPath(string? avatarUrl, out string absolutePath)
+    {
+        absolutePath = string.Empty;
         if (string.IsNullOrWhiteSpace(avatarUrl))
         {
-            return;
+            return false;
         }
 
         var relativePath = avatarUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
         var uploadsPrefix = $"uploads{Path.DirectorySeparatorChar}";
         if (!relativePath.StartsWith(uploadsPrefix, StringComparison.OrdinalIgnoreCase))
         {
-            return;
+            return false;
         }
 
         var relativeUploadPath = relativePath[uploadsPrefix.Length..];
         var expectedRoot = Path.GetFullPath(Path.Combine(_storagePaths.UploadsPath, "images", "profile"));
         var expectedRootPrefix = Path.TrimEndingDirectorySeparator(expectedRoot) + Path.DirectorySeparatorChar;
-        var absolutePath = Path.GetFullPath(Path.Combine(_storagePaths.UploadsPath, relativeUploadPath));
+        var candidate = Path.GetFullPath(Path.Combine(_storagePaths.UploadsPath, relativeUploadPath));
 
-        if (!absolutePath.StartsWith(expectedRootPrefix, StringComparison.OrdinalIgnoreCase))
+        if (!candidate.StartsWith(expectedRootPrefix, StringComparison.OrdinalIgnoreCase))
         {
-            return;
+            return false;
         }
 
-        if (File.Exists(absolutePath))
-        {
-            File.Delete(absolutePath);
-        }
+        absolutePath = candidate;
+        return true;
     }
 }

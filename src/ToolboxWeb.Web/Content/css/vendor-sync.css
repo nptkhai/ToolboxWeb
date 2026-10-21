@@ -122,6 +122,23 @@
     min-height: calc(var(--ui-control-height) + 10px);
 }
 
+/* The generic .form-control rule above outranks Bootstrap's floating-label rules, which made the
+   label overlap the placeholder and the value (Register, Manage/Email). Restore them here. */
+.content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input) {
+    padding: 1rem .9rem;
+}
+
+    .content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input):focus,
+    .content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input):not(:placeholder-shown),
+    .content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input):-webkit-autofill {
+        padding-bottom: .625rem;
+        padding-top: 1.625rem;
+    }
+
+    .content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input)::placeholder {
+        color: transparent;
+    }
+
 .content-area .form-floating > label {
     color: var(--ui-control-muted);
 }
