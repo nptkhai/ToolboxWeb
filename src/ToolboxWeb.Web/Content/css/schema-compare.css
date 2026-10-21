@@ -164,7 +164,6 @@
 /* Grid and flex items default to min-width:auto, so a single input at its intrinsic size can
    push the whole page sideways on a phone. */
 .sc-page > *,
-.sc-page .sc-field-grid > *,
 .sc-page .sc-endpoints > *,
 .sc-page .sc-progress-grid > *,
 .sc-page .sc-result-layout > * {
@@ -254,120 +253,25 @@
     grid-template-columns: minmax(0, 1fr);
 }
 
-.sc-endpoint {
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: var(--sc-radius);
-    display: flex;
-    flex-direction: column;
-    gap: var(--sc-3);
-    padding: var(--sc-4);
-}
-
-.sc-ep-head {
-    align-items: center;
-    border-bottom: 1px solid var(--line);
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--sc-2);
-    justify-content: space-between;
-    padding-bottom: var(--sc-3);
-}
-
-.sc-ep-role {
-    align-items: center;
-    display: flex;
-    font-size: .95rem;
-    font-weight: 700;
-    gap: var(--sc-2);
-}
-
-.sc-role-dot {
-    border-radius: 50%;
-    flex: none;
-    height: 10px;
-    width: 10px;
-}
-
-.sc-endpoint[data-side="source"] .sc-role-dot {
+/* The two connection forms (_SqlConnectionForm) carry the role colors of the whole page. */
+.sqlconn[data-side="source"] .sqlconn-dot {
     background: var(--accent);
 }
 
-.sc-endpoint[data-side="target"] .sc-role-dot {
+.sqlconn[data-side="target"] .sqlconn-dot {
     background: var(--accent-2);
 }
 
-.sc-ep-tag {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--muted);
-    font-size: .74rem;
-    font-weight: 600;
-    padding: var(--sc-1) var(--sc-3);
-}
-
-.sc-endpoint[data-side="source"] .sc-ep-tag {
+.sqlconn[data-side="source"] .sqlconn-tag {
     background: color-mix(in srgb, var(--accent) 12%, var(--surface));
     border-color: color-mix(in srgb, var(--accent) 34%, transparent);
-    color: var(--accent);
+    color: var(--accent-strong);
 }
 
-.sc-endpoint[data-side="target"] .sc-ep-tag {
+.sqlconn[data-side="target"] .sqlconn-tag {
     background: color-mix(in srgb, var(--accent-2) 14%, var(--surface));
     border-color: color-mix(in srgb, var(--accent-2) 34%, transparent);
     color: var(--accent-2);
-}
-
-.sc-field-grid {
-    display: grid;
-    gap: var(--sc-3);
-    grid-template-columns: minmax(0, 1fr);
-}
-
-.sc-ep-foot {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--sc-3);
-    justify-content: space-between;
-}
-
-/* Connection result. Carries an icon as well as a colour so it still reads without colour. */
-.sc-status {
-    border-radius: var(--sc-radius-sm);
-    font-size: .82rem;
-    line-height: 1.45;
-    margin: 0;
-    min-height: 0;
-    padding: 0;
-}
-
-.sc-status:not(:empty) {
-    padding: var(--sc-2) var(--sc-3);
-}
-
-.sc-status:not(:empty)::before {
-    font-weight: 700;
-    margin-right: var(--sc-2);
-}
-
-.sc-status.ok {
-    background: var(--sc-add-bg);
-    color: var(--sc-add);
-}
-
-.sc-status.ok::before {
-    content: "\2713";
-}
-
-.sc-status.error {
-    background: var(--sc-del-bg);
-    color: var(--sc-del);
-}
-
-.sc-status.error::before {
-    content: "\26A0";
 }
 
 /* ---------------------------------------------------------------- scope chips */
@@ -1378,10 +1282,6 @@
         padding: var(--sc-6);
     }
 
-    .sc-field-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .sc-check-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1450,7 +1350,6 @@
 
     /* A server name or a mapping line is never 1600px long; capping the inputs keeps
        the label and its value close enough to read as a pair. */
-    .sc-endpoint .form-control,
     .sc-mapping-input {
         max-width: 720px;
     }

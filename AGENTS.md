@@ -96,6 +96,7 @@
 - If a Kendo widget is missing from the current bundle, use a catalog note or fallback pattern instead of initializing it blindly.
 - Shared frontend controls must be instance-scoped. Do not rely on global IDs or one-off selectors when the same control can appear multiple times on one screen.
 - For reusable upload-like controls, keep JavaScript queries relative to the control root and require unique `InputName` and removed-state field names per instance so add, update, and delete flows do not leak across controls.
+- SQL Server connection forms use `Views/Shared/_SqlConnectionForm.cshtml` with `SqlConnectionFormViewModel` and `Content/js/sql-connection.js` (`ToolboxSqlConnection.init(panel, options)`; `read`, `set`, `test`, `setStatus`). Pages add their own rules through `onTested`, `onChange`, and `beforeTest` instead of copying the form.
 - Jira screens share `Content/js/jira-common.js` (`window.ToolboxJira`): ISO period dates, status pills (`statusPill`; server side `JiraStatus.PillClass`), Tabulator defaults and formatters (`grid.options`, `grid.formatters`), the period picker (`Views/Jira/_JiraPeriodPicker.cshtml` + `periodPicker`), the filter chip bar (`chipBar`) and the JQL block (`Views/Jira/_JiraJqlBlock.cshtml` + `jql.update`). New Jira screens use these instead of copying date, status, or picker code. Load it after `format.js` and before the page script.
 
 ## Preferred Controls

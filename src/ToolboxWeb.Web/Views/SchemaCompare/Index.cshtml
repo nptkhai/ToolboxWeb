@@ -21,11 +21,11 @@
         ["OnlyInTarget"] = T["SchemaCompare.Line.OnlyInTarget"].Value
     };
 
+    var testConnectionUrl = Url.Action("TestConnection", "SchemaCompare") ?? string.Empty;
     var configJson = JsonSerializer.Serialize(new
     {
         urls = new
         {
-            testConnection = Url.Action("TestConnection", "SchemaCompare"),
             start = Url.Action("StartCompare", "SchemaCompare"),
             progress = Url.Action("Progress", "SchemaCompare"),
             toggle = Url.Action("ToggleInclude", "SchemaCompare"),
@@ -46,8 +46,6 @@
         },
         messages = new
         {
-            testing = T["SchemaCompare.Message.Testing"].Value,
-            connected = T["SchemaCompare.Message.Connected"].Value,
             comparing = T["SchemaCompare.Message.Comparing"].Value,
             genericError = T["SchemaCompare.Error.CompareFailed"].Value,
             networkError = T["SchemaCompare.Error.Network"].Value,
@@ -94,6 +92,7 @@
 @section Styles {
     <link rel="stylesheet" href="~/vendor/tabulator/css/tabulator.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sql-connection.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/schema-compare.css" asp-append-version="true" />
 }
 
@@ -118,47 +117,7 @@
                     new { Key = "target", Title = T["SchemaCompare.Target"].Value, Hint = T["SchemaCompare.TargetHint"].Value }
                 })
                 {
-                    <section class="sc-endpoint" data-side="@side.Key">
-                        <header class="sc-ep-head">
-                            <span class="sc-ep-role">
-                                <span class="sc-role-dot" aria-hidden="true"></span>
-                                @side.Title
-                            </span>
-                            <span class="sc-ep-tag">@side.Hint</span>
-                        </header>
-
-                        <div class="sc-field-grid">
-                            <div class="sc-field">
-                                <label class="form-label" for="@(side.Key)-server">@T["SchemaCompare.Field.Server"]</label>
-                                <input class="form-control" id="@(side.Key)-server" data-field="server" autocomplete="off"
-                                       placeholder="@T["SchemaCompare.Field.ServerPlaceholder"]" />
-                            </div>
-                            <div class="sc-field">
-                                <label class="form-label" for="@(side.Key)-database">@T["SchemaCompare.Field.Database"]</label>
-                                <input id="@(side.Key)-database" data-field="database" />
-                            </div>
-                            <div class="sc-field">
-                                <label class="form-label" for="@(side.Key)-username">@T["SchemaCompare.Field.Username"]</label>
-                                <input class="form-control" id="@(side.Key)-username" data-field="username" autocomplete="off" />
-                            </div>
-                            <div class="sc-field">
-                                <label class="form-label" for="@(side.Key)-password">@T["SchemaCompare.Field.Password"]</label>
-                                <input class="form-control" id="@(side.Key)-password" data-field="password" type="password" autocomplete="new-password" />
-                            </div>
-                        </div>
-
-                        <div class="sc-ep-foot">
-                            <label class="sc-check" for="@(side.Key)-trust">
-                                <input class="form-check-input" id="@(side.Key)-trust" data-field="trustServerCertificate" type="checkbox" checked />
-                                <span>@T["SchemaCompare.Field.TrustServerCertificate"]</span>
-                            </label>
-                            <button class="sc-btn sc-btn-ghost" type="button" data-action="test">
-                                @T["SchemaCompare.Action.TestConnection"]
-                            </button>
-                        </div>
-
-                        <p class="sc-status" data-role="status" role="status" aria-live="polite"></p>
-                    </section>
+                    <partial name="_SqlConnectionForm" model="new SqlConnectionFormViewModel { IdPrefix = side.Key, Side = side.Key, Title = side.Title, Tag = side.Hint, TestUrl = testConnectionUrl }" />
                 }
             </div>
         </li>
@@ -287,7 +246,7 @@
 
     @if (Model.HostAllowlistEnabled)
     {
-        <p class="sc-note">@T["SchemaCompare.HostAllowlistNotice"]</p>
+        <p class="sc-note">@T["SqlConnection.HostAllowlistNotice"]</p>
     }
 
     <section class="sc-results" id="sc-results" hidden>
@@ -448,5 +407,6 @@
 @section Scripts {
     <partial name="_KendoScripts" />
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script src="~/js/sql-connection.js" asp-append-version="true"></script>
     <script src="~/js/schema-compare.js" asp-append-version="true"></script>
 }

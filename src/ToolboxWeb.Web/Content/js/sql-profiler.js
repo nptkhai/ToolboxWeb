@@ -86,85 +86,40 @@
         return h + ':' + m + ':' + s;
     }
 
-    function readConnection() {
-        const value = function (field) {
-            const node = root.querySelector('[data-field="' + field + '"]');
-            if (!node) {
-                return '';
+    // The connection form: Views/Shared/_SqlConnectionForm.cshtml, Content/js/sql-connection.js.
+    const connection = window.ToolboxSqlConnection.init(root.querySelector('[data-sql-connection]'), {
+        // Connecting is not enough to capture; say why Start stays disabled.
+        onTested: function (data) {
+            state.canCapture = data.canCapture;
+            document.getElementById('sp-start').disabled = !data.canCapture;
+            if (data.isAzure) {
+                return { text: messages.azureNotSupported, tone: 'error' };
             }
 
-            return node.type === 'checkbox' ? node.checked : node.value.trim();
-        };
+            if (!data.canCapture) {
+                return { text: messages.noCapturePermission, tone: 'error' };
+            }
 
-        return {
-            server: value('server'),
-            database: value('database'),
-            username: value('username'),
-            password: value('password'),
-            trustServerCertificate: value('trustServerCertificate'),
-            encrypt: true
-        };
+            return {
+                text: messages.connected
+                    .replace('{0}', data.serverVersion)
+                    .replace('{1}', (data.databases || []).length),
+                tone: 'ok'
+            };
+        }
+    });
+    const connStatus = connection.panel.querySelector('[data-sqlconn-status]');
+
+    function readConnection() {
+        return connection.read();
     }
 
     // ---------------------------------------------------------- connection
 
-    function initDatabasePicker() {
-        const input = document.getElementById('sp-database');
-        if (!input || !window.jQuery || !window.jQuery.fn.kendoComboBox) {
-            return;
-        }
-
-        window.jQuery(input).kendoComboBox({ dataSource: [], filter: 'contains', suggest: true, clearButton: true });
-    }
-
-    async function testConnection() {
-        const status = root.querySelector('[data-role="conn-status"]');
-        const button = document.getElementById('sp-test');
-
-        setStatus(status, messages.testing);
-        button.disabled = true;
-
-        try {
-            const result = await callJson(config.urls.testConnection, readConnection());
-            if (!result.success) {
-                setStatus(status, result.message || messages.genericError, 'error');
-                return;
-            }
-
-            const data = result.data;
-            state.canCapture = data.canCapture;
-
-            const combo = window.jQuery ? window.jQuery('#sp-database').data('kendoComboBox') : null;
-            if (combo) {
-                const current = combo.value();
-                combo.setDataSource(data.databases || []);
-                if (current) {
-                    combo.value(current);
-                }
-            }
-
-            if (data.isAzure) {
-                setStatus(status, messages.azureNotSupported, 'error');
-            } else if (!data.canCapture) {
-                setStatus(status, messages.noCapturePermission, 'error');
-            } else {
-                setStatus(status, messages.connected
-                    .replace('{0}', data.serverVersion)
-                    .replace('{1}', (data.databases || []).length), 'ok');
-            }
-
-            document.getElementById('sp-start').disabled = !data.canCapture;
-        } catch (error) {
-            setStatus(status, messages.networkError, 'error');
-        } finally {
-            button.disabled = false;
-        }
-    }
-
     // ------------------------------------------------------------- capture
 
     async function startCapture() {
-        const status = root.querySelector('[data-role="conn-status"]');
+        const status = connStatus;
         const connection = readConnection();
 
         if (!connection.server || !connection.username) {
@@ -234,7 +189,7 @@
             state.running = false;
             document.getElementById('sp-live').hidden = true;
             document.getElementById('sp-start').disabled = !state.canCapture;
-            setStatus(root.querySelector('[data-role="conn-status"]'), messages.stopped, 'ok');
+            setStatus(connStatus, messages.stopped, 'ok');
         }
     }
 
@@ -282,7 +237,7 @@
                     document.getElementById('sp-live').hidden = true;
                     document.getElementById('sp-stop').disabled = true;
                     document.getElementById('sp-start').disabled = !state.canCapture;
-                    setStatus(root.querySelector('[data-role="conn-status"]'), messages.autoStop, 'error');
+                    setStatus(connStatus, messages.autoStop, 'error');
                     return;
                 }
             }
@@ -525,10 +480,8 @@
 
     // ------------------------------------------------------------- wiring
 
-    initDatabasePicker();
     document.getElementById('sp-start').disabled = true;
 
-    document.getElementById('sp-test').addEventListener('click', testConnection);
     document.getElementById('sp-start').addEventListener('click', startCapture);
     document.getElementById('sp-stop').addEventListener('click', stopCapture);
     document.getElementById('sp-refresh-recent').addEventListener('click', refreshRecent);

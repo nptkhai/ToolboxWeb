@@ -1,0 +1,71 @@
+@model SqlConnectionFormViewModel
+@* SQL Server connection form shared by Schema compare and SQL capture. The fields keep their
+   data-field names; Content/js/sql-connection.js reads them, fills the database list after
+   a successful test, and reports the result in the status line. *@
+@{
+    var id = Model.IdPrefix;
+}
+<section class="sqlconn @(Model.Plain ? "sqlconn--plain" : null)" data-sql-connection data-side="@Model.Side"
+         data-test-url="@Model.TestUrl"
+         data-msg-testing="@T["SqlConnection.Testing"]"
+         data-msg-connected="@T["SqlConnection.Connected"]"
+         data-msg-network="@T["SqlConnection.NetworkError"]">
+    @if (!string.IsNullOrWhiteSpace(Model.Title))
+    {
+        <header class="sqlconn-head">
+            <span class="sqlconn-title">
+                <span class="sqlconn-dot" aria-hidden="true"></span>
+                @Model.Title
+            </span>
+            @if (!string.IsNullOrWhiteSpace(Model.Tag))
+            {
+                <span class="sqlconn-tag">@Model.Tag</span>
+            }
+        </header>
+    }
+
+    <div class="sqlconn-grid">
+        <div class="tbx-field">
+            <label class="tbx-field-label" for="@id-server">@T["SqlConnection.Server"]</label>
+            <input class="form-control" id="@id-server" data-field="server" autocomplete="off"
+                   placeholder="@T["SqlConnection.ServerPlaceholder"]" />
+            <span class="tbx-field-hint"></span>
+        </div>
+        <div class="tbx-field">
+            <label class="tbx-field-label" for="@id-username">@T["SqlConnection.Username"]</label>
+            <input class="form-control" id="@id-username" data-field="username" autocomplete="off" />
+            <span class="tbx-field-hint"></span>
+        </div>
+        <div class="tbx-field">
+            <label class="tbx-field-label" for="@id-password">@T["SqlConnection.Password"]</label>
+            <div class="tbx-password">
+                <input class="form-control" id="@id-password" data-field="password" type="password" autocomplete="new-password" />
+                <partial name="_PasswordToggle" />
+            </div>
+            <span class="tbx-field-hint"></span>
+        </div>
+        <div class="tbx-field">
+            <label class="tbx-field-label" for="@id-database">@T["SqlConnection.Database"]</label>
+            <input class="form-control" id="@id-database" data-field="database" autocomplete="off" />
+            <span class="tbx-field-hint">@T["SqlConnection.DatabaseHint"]</span>
+        </div>
+    </div>
+
+    <div class="sqlconn-foot">
+        <div class="form-check">
+            <input class="form-check-input" id="@id-trust" data-field="trustServerCertificate" type="checkbox" checked />
+            <label class="form-check-label" for="@id-trust">@T["SqlConnection.TrustServerCertificate"]</label>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-sqlconn-test>
+            <tbx-icon name="database" />
+            <span>@T["SqlConnection.Test"]</span>
+        </button>
+    </div>
+
+    <p class="sqlconn-status" data-sqlconn-status role="status" aria-live="polite"></p>
+
+    @if (Model.ShowHostAllowlistNotice)
+    {
+        <p class="sqlconn-note">@T["SqlConnection.HostAllowlistNotice"]</p>
+    }
+</section>
