@@ -464,6 +464,10 @@ a {
     margin: 0;
 }
 
+    .account-dropdown form.account-segmented {
+        margin: 0 var(--space-2) var(--space-2);
+    }
+
 .account-dropdown-label {
     color: var(--muted);
     font-size: var(--text-xs);
