@@ -22,7 +22,7 @@
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
 }
 <!DOCTYPE html>
-<html lang="@CultureInfo.CurrentUICulture.Name" data-background-mode="@(isAuthenticated ? "app" : "auth")">
+<html lang="@CultureInfo.CurrentUICulture.Name" data-background-mode="@(isAuthenticated ? "app" : "auth")" data-time-zone="@ToolboxWeb.Web.Infrastructure.Time.AppClock.TimeZoneId">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -63,6 +63,7 @@
             if (sidebar === 'collapsed') document.documentElement.dataset.sidebar = 'collapsed';
         })();
     </script>
+    <script src="~/js/format.js" asp-append-version="true"></script>
 </head>
 <body>
     <partial name="_AdaptiveBackground" />

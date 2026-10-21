@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using ToolboxWeb.Web.ViewModels.Jira;
+using ToolboxWeb.Web.Extensions;
+using ToolboxWeb.Web.Infrastructure.Time;
 
 namespace ToolboxWeb.Web.Infrastructure.Jira;
 
@@ -61,7 +63,7 @@ public sealed partial class FakeJiraClient : IJiraClient
 
     public Task<List<JiraIssue>> SearchIssuesAsync(string jql, bool includeWorklogs = true, CancellationToken cancellationToken = default)
     {
-        var issues = BuildSampleIssues(DateTime.Today);
+        var issues = BuildSampleIssues(AppClock.Today);
 
         // A real Jira filters by JQL. Approximate the two filters the screens rely on so that
         // switching period or tab changes the result: subtask-only queries and a date range.
@@ -139,7 +141,7 @@ public sealed partial class FakeJiraClient : IJiraClient
             }
 
             issue.LoggedDates = string.Join(", ", issue.Worklogs
-                .Select(x => x.Started.ToString("dd/MM", CultureInfo.InvariantCulture))
+                .Select(x => x.Started.ToDisplayDate())
                 .Distinct());
         }
 
@@ -158,7 +160,7 @@ public sealed partial class FakeJiraClient : IJiraClient
             Estimate = estimate,
             TimeToLog = string.Empty,
             DueDate = dueDate,
-            CreateDate = (dueDate ?? DateTime.Today).AddDays(-7),
+            CreateDate = (dueDate ?? AppClock.Today).AddDays(-7),
             Type = SubTaskType,
             Worklogs = worklogs.ToList()
         };

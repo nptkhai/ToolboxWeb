@@ -44,6 +44,7 @@
         error = T["Jira.TaskBoard.Error"].Value,
         movedToast = T["Jira.TaskBoard.MovedToast"].Value,
         movedFrom = T["Jira.TaskBoard.MovedFrom"].Value,
+        loadTitle = T["Jira.TaskBoard.LoadTitle"].Value,
         weekPickerPlaceholder = T["Jira.Dashboard.Filter.WeekPlaceholder"].Value,
         weekPickerOption = T["Jira.Dashboard.Filter.WeekOption"].Value
     }, jsonOptions);
@@ -261,7 +262,7 @@
                                     <td>@issue.Summary</td>
                                     <td class="jira-table-nowrap text-center"><span class="badge jira-dashboard-status jira-dashboard-status--@ToolboxWeb.Web.Services.JiraStatus.Tone(issue.Status)">@issue.Status</span></td>
                                     <td class="jira-table-nowrap text-center">@issue.Type</td>
-                                    <td class="jira-table-nowrap text-center">@(issue.DueDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    <td class="jira-table-nowrap text-center">@issue.DueDate.ToDisplayDate()</td>
                                     @if (showParent)
                                     {
                                         <td>@(string.IsNullOrWhiteSpace(issue.Parent) ? "-" : $"{issue.Parent} - {issue.ParentSummary}")</td>
@@ -395,7 +396,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">@T["Jira.AutoSchedule.ConfigTitle"]</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
                         </div>
                         <div class="modal-body">
                             <p class="jira-auto-config-summary" data-jira-auto-config-summary></p>

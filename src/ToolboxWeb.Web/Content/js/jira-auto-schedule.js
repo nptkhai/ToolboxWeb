@@ -300,7 +300,7 @@
             const parsed = parseIsoDate(value);
             const label = parsed ? `${WEEKDAY_NAMES_VI[parsed.getDay()]}, ${fmtFull(parsed)}` : value;
             const totalHours = data.reduce((sum, row) => sum + Number(row.estimateHours || 0), 0);
-            return `${label} <span class="jira-auto-day-group-sum">· ${format(autoConfig.groupSummary || "{0} task · {1}h", count, totalHours.toFixed(1))}</span>`;
+            return `${label} <span class="jira-auto-day-group-sum">· ${format(autoConfig.groupSummary || "{0} · {1}h", count, window.Toolbox.format.number(totalHours, 1))}</span>`;
         }
 
         function buildResultTable() {
@@ -593,7 +593,7 @@
                     const pct = Number(event.target.value) || 0;
                     const preview = document.querySelector("[data-jira-auto-cap-percent-preview]");
                     if (preview) {
-                        preview.textContent = ((8 * pct) / 100).toFixed(1);
+                        preview.textContent = window.Toolbox.format.number((8 * pct) / 100, 1);
                     }
                 });
 

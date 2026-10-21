@@ -391,7 +391,7 @@
         };
 
         widgets.day = $(inputs.day).kendoDatePicker({
-            format: "dd/MM/yyyy",
+            format: window.Toolbox?.format?.datePattern || "dd/MM/yyyy",
             value: parseIsoDate(inputs.day.value),
             popup: popupOptions
         }).data("kendoDatePicker");

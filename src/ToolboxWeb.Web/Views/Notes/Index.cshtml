@@ -140,7 +140,7 @@
                                         <span class="nv-item-preview">@item.Preview</span>
                                     }
                                     <span class="nv-item-foot">
-                                        <time datetime="@item.UpdatedUtc.ToString("o")" title="@item.UpdatedUtc.FormatVietnamDateTime()" data-relative>@item.UpdatedUtc.FormatVietnamDateTime()</time>
+                                        <time datetime="@item.UpdatedUtc.ToString("o")" title="@item.UpdatedUtc.ToDisplayAppDateTime()" data-relative>@item.UpdatedUtc.ToDisplayAppDateTime()</time>
                                         @if (item.MatchedInChild)
                                         {
                                             <span class="nv-match-note">@T["Notes.MatchedInChild"]</span>

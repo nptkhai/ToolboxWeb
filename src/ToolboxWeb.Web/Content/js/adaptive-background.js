@@ -189,28 +189,17 @@
         particlesHost.appendChild(particles);
     }
 
-    function getLocale() {
-        return document.documentElement.lang || 'vi-VN';
-    }
-
     function updateClock() {
         if (!currentTimeElement || !currentDateElement) {
             return;
         }
 
+        // App time zone (App:TimeZone), formatted per UI culture by format.js.
         const now = new Date();
-        currentTimeElement.textContent = new Intl.DateTimeFormat(getLocale(), {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        }).format(now);
+        const format = window.Toolbox.format;
+        currentTimeElement.textContent = format.time(now);
         currentTimeElement.dateTime = now.toISOString();
-        currentDateElement.textContent = new Intl.DateTimeFormat(getLocale(), {
-            weekday: 'short',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).format(now);
+        currentDateElement.textContent = format.weekdayDate(now);
     }
 
     function updateWeatherSummary(kind, unavailable) {
@@ -230,7 +219,7 @@
         const weatherLabel = environmentSummary.dataset[labelKey] || kind;
         const temperature = Number(state.weather.temperature_2m);
         const temperatureText = Number.isFinite(temperature)
-            ? `${new Intl.NumberFormat(getLocale(), { maximumFractionDigits: 1 }).format(temperature)}°C`
+            ? `${window.Toolbox.format.number(temperature, 1)}°C`
             : '';
 
         environmentSummary.dataset.weatherKind = kind;

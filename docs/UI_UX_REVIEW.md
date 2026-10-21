@@ -1025,3 +1025,9 @@ Chủ dự án đã duyệt khung app và cho làm tiếp 3.6.
 - Đã kiểm tra: 1440/390px, sáng/tối, không lỗi console, không tràn ngang. Phần thời tiết kiểm tra bằng phản hồi giả của Open-Meteo vì môi trường thử nghiệm chặn mạng ra ngoài; chưa thử với Open-Meteo thật.
 - **Bổ sung theo yêu cầu (21/10/2026):** thanh trên cùng bên trong app cũng có đồng hồ và thời tiết (dưới 900px ẩn ngày, dưới 600px chỉ còn giờ); hình nền thời tiết bên trong vẫn tắt mặc định. Bỏ công tắc "Hiện thời tiết theo vị trí" trong Hồ sơ vì thời tiết giờ luôn hiện. Avatar có ảnh thì hiện thêm chữ viết tắt tên bên cạnh. `tests/ui`: chỉ số không đổi (lỗi console 0, tràn ngang 0, thiếu label 54, chữ nhỏ 210); ảnh mốc đã tạo lại.
 
+#### Giai đoạn 4 – đang làm
+
+| # | Việc | Kết quả |
+|---|---|---|
+| 4.1 | Bản địa hóa và định dạng | **Múi giờ:** cấu hình `App:TimeZone` (mặc định `Asia/Ho_Chi_Minh`, `Infrastructure/Time/AppClock.cs`); "hôm nay" và giờ lưu dạng UTC ở server đều đi qua đó; đồng hồ trên trình duyệt dùng cùng múi giờ (thử với trình duyệt đặt múi giờ New York vẫn hiện giờ Việt Nam). **Định dạng:** `DisplayFormatExtensions` ở server và `Toolbox.format` (`format.js`) ở trình duyệt: `19/10/2026`, `15:19`, `18,5`, `6,5h` (vi) và `10/19/2026`, `3:19 PM`, `18.5` (en). Đã áp dụng cho Jira (ngày hạn, khoảng kỳ, số giờ, bảng Kanban), Tổng quan, Việc cần làm, Ghi chú, Hẹn giờ, Bắt SQL, Tabulator Demo. Bảng Kanban hết tên thứ viết cứng tiếng Việt và hết chữ "done/todo" tiếng Anh. **Thuật ngữ:** `docs/GLOSSARY.md` (giữ nguyên issue, subtask, JQL, log; Việt hóa phần còn lại); sửa 55 nhãn Jira, tab Hồ sơ và đăng nhập. **Quét ngôn ngữ** từng trang ở cả VI/EN: chỉ còn các trang tài khoản lấy sẵn từ thư viện Identity (Email, Đổi mật khẩu, Xác thực hai lớp, Dữ liệu cá nhân, Đăng ký) — xử lý ở 4.2 |
+

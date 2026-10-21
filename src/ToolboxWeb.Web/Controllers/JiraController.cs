@@ -7,6 +7,8 @@ using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Infrastructure.Jira;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels.Jira;
+using ToolboxWeb.Web.Extensions;
+using ToolboxWeb.Web.Infrastructure.Time;
 
 namespace ToolboxWeb.Web.Controllers;
 
@@ -55,8 +57,8 @@ public class JiraController : Controller
         return View("Worklist", await BuildWorklistPageModelAsync(session, new JiraSearchRequest
         {
             Assignee = "currentUser()",
-            FromDate = DateTime.Today,
-            ToDate = DateTime.Today
+            FromDate = AppClock.Today,
+            ToDate = AppClock.Today
         }));
     }
 
@@ -330,12 +332,12 @@ public class JiraController : Controller
                 StatusTone = ResolveStatusTone(status),
                 DueDate = issue.DueDate,
                 CreateDate = issue.CreateDate,
-                DueDateText = issue.DueDate?.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture) ?? "-",
+                DueDateText = issue.DueDate.ToDisplayDate(),
                 EstimateTimeText = FormatHours(estimateHours),
                 LoggedTimeText = FormatHours(loggedHours),
                 EstimateHours = estimateHours,
                 LoggedHours = loggedHours,
-                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < DateTime.Today && !isDone
+                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < AppClock.Today && !isDone
             };
         }).ToArray();
     }
@@ -452,10 +454,10 @@ public class JiraController : Controller
     private string BuildRangeLabel(string periodType, DateTime rangeStart, DateTime rangeEnd)
     {
         return periodType == "day"
-            ? _localizer["Jira.Dashboard.RangeDay", rangeStart.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)].Value
+            ? _localizer["Jira.Dashboard.RangeDay", rangeStart.ToDisplayDate()].Value
             : _localizer["Jira.Dashboard.RangePeriod",
-                rangeStart.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
-                rangeEnd.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)].Value;
+                rangeStart.ToDisplayDate(),
+                rangeEnd.ToDisplayDate()].Value;
     }
 
     private IReadOnlyList<JiraDashboardStatViewModel> BuildDashboardStats(IReadOnlyList<JiraDashboardRowViewModel> rows)
@@ -542,12 +544,12 @@ public class JiraController : Controller
                 StatusTone = ResolveStatusTone(status),
                 DueDate = issue.DueDate,
                 CreateDate = issue.CreateDate,
-                DueDateText = issue.DueDate?.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) ?? "-",
+                DueDateText = issue.DueDate.ToDisplayDate(),
                 EstimateTimeText = FormatHours(estimateHours),
                 LoggedTimeText = FormatHours(loggedHours),
                 EstimateHours = estimateHours,
                 LoggedHours = loggedHours,
-                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < DateTime.Today && !isDone
+                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < AppClock.Today && !isDone
             };
         }).ToArray();
     }
@@ -623,7 +625,7 @@ public class JiraController : Controller
 
     private static (DateTime Start, DateTime End, string PeriodValue) ResolveRange(string periodType, string? requestedValue)
     {
-        var today = DateTime.Today;
+        var today = AppClock.Today;
 
         if (periodType == "day")
         {
@@ -787,11 +789,11 @@ public class JiraController : Controller
     {
         if (hours <= 0)
         {
-            return dashWhenZero ? "-" : 0m.ToString("0.##", CultureInfo.CurrentCulture);
+            return dashWhenZero ? "-" : 0m.ToDisplayNumber();
         }
 
         // Follows the UI culture: 17,5 in vi-VN, 17.5 in en-US.
-        return hours.ToString("0.##", CultureInfo.CurrentCulture);
+        return hours.ToDisplayNumber();
     }
 
     private static bool IsDoneStatus(JiraDashboardRowViewModel row)

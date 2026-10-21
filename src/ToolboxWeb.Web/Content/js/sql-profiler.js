@@ -307,9 +307,9 @@
             host.innerHTML = messages.summary
                 .replace('{0}', '<strong>' + summary.totalCalls + '</strong>')
                 .replace('{1}', '<strong>' + summary.distinctObjects + '</strong>')
-                .replace('{2}', '<strong>' + summary.totalDurationMs.toFixed(0) + '</strong>')
+                .replace('{2}', '<strong>' + window.Toolbox.format.number(summary.totalDurationMs, 0) + '</strong>')
                 .replace('{3}', '<strong>' + escapeHtml(summary.slowestObject) + '</strong>')
-                .replace('{4}', '<strong>' + summary.slowestMs.toFixed(0) + '</strong>')
+                .replace('{4}', '<strong>' + window.Toolbox.format.number(summary.slowestMs, 0) + '</strong>')
                 .replace('{5}', '<strong>' + summary.errorCount + '</strong>');
         }
 
@@ -371,12 +371,12 @@
                 {
                     title: config.columns.duration, field: 'durationMs', width: 120,
                     hozAlign: 'right', headerHozAlign: 'center',
-                    formatter: function (cell) { return cell.getValue().toFixed(1); }
+                    formatter: function (cell) { return window.Toolbox.format.number(cell.getValue(), 1); }
                 },
                 {
                     title: config.columns.cpu, field: 'cpuMs', width: 100,
                     hozAlign: 'right', headerHozAlign: 'center',
-                    formatter: function (cell) { return cell.getValue().toFixed(1); }
+                    formatter: function (cell) { return window.Toolbox.format.number(cell.getValue(), 1); }
                 },
                 { title: config.columns.reads, field: 'logicalReads', width: 100, hozAlign: 'right', headerHozAlign: 'center' }
             ]
@@ -434,12 +434,12 @@
                 {
                     title: config.columns.average, field: 'averageMs', width: 110,
                     hozAlign: 'right', headerHozAlign: 'center',
-                    formatter: function (cell) { return cell.getValue().toFixed(1); }
+                    formatter: function (cell) { return window.Toolbox.format.number(cell.getValue(), 1); }
                 },
                 {
                     title: config.columns.total, field: 'totalMs', width: 110,
                     hozAlign: 'right', headerHozAlign: 'center',
-                    formatter: function (cell) { return cell.getValue().toFixed(1); }
+                    formatter: function (cell) { return window.Toolbox.format.number(cell.getValue(), 1); }
                 },
                 { title: config.columns.reads, field: 'totalLogicalReads', width: 120, hozAlign: 'right', headerHozAlign: 'center' }
             ]

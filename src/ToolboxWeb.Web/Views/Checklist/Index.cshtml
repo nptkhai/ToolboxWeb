@@ -23,7 +23,7 @@
                 <div class="item-row @(item.Status == ChecklistStatus.Done ? "done" : "")">
                     <div>
                         <div class="item-title">@item.Title</div>
-                        <div class="item-meta">@item.Status.Localize(T) &middot; @(item.DueDate?.FormatLocalDate() ?? T["Common.NoDueDate"].Value)</div>
+                        <div class="item-meta">@item.Status.Localize(T) &middot; @(item.DueDate?.ToDisplayDate() ?? T["Common.NoDueDate"].Value)</div>
                         <div>@item.Description</div>
                     </div>
                     <div class="inline-actions">

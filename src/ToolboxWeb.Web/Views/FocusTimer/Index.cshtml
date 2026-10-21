@@ -38,7 +38,7 @@
                 <div class="item-row">
                     <div>
                         <div class="item-title">@T["Common.Minutes", session.DurationMinutes]</div>
-                        <div class="item-meta">@session.CompletedAt.FormatVietnamDateTime()</div>
+                        <div class="item-meta">@session.CompletedAt.ToDisplayAppDateTime()</div>
                         <div>@session.Note</div>
                     </div>
                 </div>

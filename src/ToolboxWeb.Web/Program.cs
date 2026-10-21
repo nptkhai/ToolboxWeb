@@ -17,6 +17,7 @@ using ToolboxWeb.Web.Infrastructure.DacFx;
 using ToolboxWeb.Web.Infrastructure.Jira;
 using ToolboxWeb.Web.Infrastructure.Logging;
 using ToolboxWeb.Web.Infrastructure.Storage;
+using ToolboxWeb.Web.Infrastructure.Time;
 using ToolboxWeb.Web.Localization;
 using ToolboxWeb.Web.ViewModels.Jira;
 
@@ -56,6 +57,8 @@ var sqliteConnection = new SqliteConnectionStringBuilder(connectionString)
 builder.Services.AddLocalization();
 builder.Services.AddSingleton<JsonLocalizationStore>();
 builder.Services.Replace(ServiceDescriptor.Singleton<IStringLocalizerFactory, JsonStringLocalizerFactory>());
+// One display time zone for server dates and the client clock (App:TimeZone, IANA id).
+AppClock.Configure(builder.Configuration["App:TimeZone"]);
 builder.Services.Configure<JiraOptions>(builder.Configuration.GetSection("Jira"));
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {

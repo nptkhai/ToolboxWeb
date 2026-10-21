@@ -2,8 +2,24 @@
     "use strict";
 
     const DAY_MS = 24 * 60 * 60 * 1000;
-    const WEEKDAY_NAMES_VI = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-    const WEEKDAY_HEADER_VI = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+    // Weekday names and short dates follow the UI culture (format.js); Vietnamese keeps the
+    // usual short headers T2…CN, which Intl does not produce.
+    const LOCALE = window.Toolbox?.format?.locale || document.documentElement.lang || "vi-VN";
+    const VIETNAMESE = LOCALE.toLowerCase().startsWith("vi");
+    const WEEKDAY_NAMES = Array.from({ length: 7 }, (_, index) =>
+        new Intl.DateTimeFormat(LOCALE, { weekday: "long" }).format(new Date(2026, 0, 4 + index)));
+    const WEEKDAY_HEADERS = VIETNAMESE
+        ? ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
+        : Array.from({ length: 7 }, (_, index) =>
+            new Intl.DateTimeFormat(LOCALE, { weekday: "short" }).format(new Date(2026, 0, 5 + index)));
+    // Intl gives "19-10" for vi-VN; the app's Vietnamese date format uses slashes.
+    const SHORT_DATE = VIETNAMESE
+        ? { format: (date) => `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}` }
+        : new Intl.DateTimeFormat(LOCALE, { day: "2-digit", month: "2-digit" });
+
+    function fmtHours(value) {
+        return window.Toolbox?.format?.hours(value) ?? `${value}h`;
+    }
 
     function parseJsonScript(id, fallback) {
         const el = document.getElementById(id);
@@ -39,7 +55,7 @@
     }
 
     function fmtShort(date) {
-        return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}`;
+        return SHORT_DATE.format(date);
     }
 
     function sameDay(a, b) {
@@ -358,6 +374,12 @@
             return { doneHours, openHours, totalHours: doneHours + openHours };
         }
 
+        function loadTitle(doneHours, openHours) {
+            return (boardConfig.loadTitle || "{0} + {1}")
+                .replace("{0}", fmtHours(doneHours))
+                .replace("{1}", fmtHours(openHours));
+        }
+
         function loadBarHtml(dayRows) {
             const capacity = boardConfig.dayCapacityHours || 8;
             const { doneHours, openHours, totalHours } = summariseDay(dayRows);
@@ -367,7 +389,7 @@
             const donePct = (doneHours / scale) * 100;
             const openPct = (openHours / scale) * 100;
 
-            return `<span class="jira-board-load-bar" title="${doneHours.toFixed(1)}h done + ${openHours.toFixed(1)}h todo">
+            return `<span class="jira-board-load-bar" title="${escapeHtml(loadTitle(doneHours, openHours))}">
                 <span class="jira-board-load-fill jira-board-load-fill--done" style="width:${donePct}%"></span>
                 <span class="jira-board-load-fill jira-board-load-fill--open" style="width:${openPct}%"></span>
             </span>`;
@@ -414,11 +436,11 @@
 
                 return `<div class="jira-board-day-col ${isToday ? "is-today" : ""}" data-date="${dateStr}">
                     <div class="jira-board-day-head">
-                        <span class="jira-board-day-label">${WEEKDAY_NAMES_VI[day.getDay()]}, ${fmtShort(day)}${isToday ? " ★" : ""}</span>
+                        <span class="jira-board-day-label">${WEEKDAY_NAMES[day.getDay()]}, ${fmtShort(day)}${isToday ? " ★" : ""}</span>
                         <span class="jira-board-day-count">${dayRows.length}</span>
                     </div>
                     <div class="jira-board-day-load">
-                        <span>${totalHours.toFixed(1)}h/${capacity}h</span>
+                        <span>${fmtHours(totalHours)}/${fmtHours(capacity)}</span>
                         ${loadBarHtml(dayRows)}
                     </div>
                     <div class="jira-board-day-body" data-date="${dateStr}">
@@ -510,7 +532,7 @@
             }
 
             const today = startOfDay(new Date());
-            const header = WEEKDAY_HEADER_VI.map((label) => `<span>${label}</span>`).join("");
+            const header = WEEKDAY_HEADERS.map((label) => `<span>${label}</span>`).join("");
 
             const cells = days.map((day) => {
                 const inMonth = day.getMonth() === monthIndex;
@@ -522,12 +544,12 @@
                 const dayRows = rows.filter((row) => row.dueDate && sameDay(new Date(row.dueDate), day));
                 const { doneHours, openHours, totalHours } = summariseDay(dayRows);
                 const isToday = sameDay(day, today);
-                const loadTitle = `${doneHours.toFixed(1)}h done + ${openHours.toFixed(1)}h todo`;
+                const loadText = loadTitle(doneHours, openHours);
 
                 return `<div class="jira-cal-cell ${isToday ? "is-today" : ""}" data-date="${dateStr}">
                     <div class="jira-cal-cell-head">
                         <span class="jira-cal-daynum">${day.getDate()}${isToday ? " •" : ""}</span>
-                        ${dayRows.length ? `<span class="jira-cal-load" title="${loadTitle}">${totalHours.toFixed(1)}h</span>` : ""}
+                        ${dayRows.length ? `<span class="jira-cal-load" title="${escapeHtml(loadText)}">${fmtHours(totalHours)}</span>` : ""}
                     </div>
                     <div class="jira-cal-cards" data-date="${dateStr}">
                         ${dayRows.map(calCardHtml).join("")}

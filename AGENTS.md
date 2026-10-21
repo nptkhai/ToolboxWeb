@@ -139,7 +139,8 @@
   - **Readability:** text never sits directly on the decorative background; it sits on a surface. Minimum font size is 12px. Body text contrast is at least 4.5:1 in light and dark themes.
   - **Navigation:** the current page is marked in the sidebar with an active class and `aria-current="page"`.
   - **Language:** user-facing text comes from localization keys in both `vi-VN.json` and `en-US.json`. Do not mix Vietnamese and English inside one label. Keep developer jargon (source, bundle, input file, grid) out of user-facing text.
-  - **Numbers and dates** follow the current UI culture (`17,5` in `vi-VN`). Use one date format per culture across the app.
+  - **Numbers and dates** follow the current UI culture (`17,5` in `vi-VN`). Use one date format per culture across the app: `DisplayFormatExtensions` (`ToDisplayDate`, `ToDisplayAppDateTime`, `ToDisplayNumber`, `ToDisplayHours`) on the server and `Toolbox.format` (`Content/js/format.js`) in the browser. "Today" and stored UTC times go through `AppClock` (`App:TimeZone`), never `DateTime.Today`/`DateTime.Now` for anything the user sees.
+  - **Terms:** Jira and DB vocabulary follows `docs/GLOSSARY.md` (which Jira words stay as they are, which are translated).
   - **Third-party widgets:** Kendo and Tabulator widgets must look like native app controls. Style them through `Content/css/vendor-sync.css` using the shared variables, not per page.
   - **Responsive:** every changed screen works at 1440px and 390px wide, with no horizontal page scroll, in light and dark themes.
 
