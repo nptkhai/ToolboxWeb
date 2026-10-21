@@ -108,7 +108,9 @@ public class JiraController : Controller
         return Json(JiraApiResponse<object>.Ok(new
         {
             model.Filter,
-            model.Stats,
+            model.Summary,
+            model.LogBarUnit,
+            model.LogBars,
             model.Rows,
             model.AppliedJql,
             model.ErrorMessage
@@ -337,7 +339,8 @@ public class JiraController : Controller
                 LoggedTimeText = FormatHours(loggedHours),
                 EstimateHours = estimateHours,
                 LoggedHours = loggedHours,
-                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < AppClock.Today && !isDone
+                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < AppClock.Today && !isDone,
+                DaysOverdue = JiraDashboardMetrics.DaysOverdue(issue.DueDate, isDone, AppClock.Today)
             };
         }).ToArray();
     }
@@ -351,12 +354,20 @@ public class JiraController : Controller
 
         string? errorMessage = null;
         IReadOnlyList<JiraIssue> issues = [];
+        IReadOnlyList<JiraDashboardRowViewModel>? previousRows = null;
+        var today = AppClock.Today;
 
         var appliedJql = BuildDashboardJql(rangeStart, rangeEnd);
+        var (previousStart, previousEnd) = JiraDashboardMetrics.PreviousRange(periodType, rangeStart);
+
+        // The previous period only feeds the "compared with last period" lines; if it fails the
+        // cards simply leave the comparison out.
+        var currentTask = session.Client.SearchIssuesAsync(appliedJql, includeWorklogs: true);
+        var previousTask = session.Client.SearchIssuesAsync(BuildDashboardJql(previousStart, previousEnd), includeWorklogs: true);
 
         try
         {
-            issues = await session.Client.SearchIssuesAsync(appliedJql, includeWorklogs: true);
+            issues = await currentTask;
         }
         catch (Exception ex)
         {
@@ -368,6 +379,15 @@ public class JiraController : Controller
                 _localizer["Jira.InvalidRequest"].Value);
         }
 
+        try
+        {
+            previousRows = MapDashboardRows(await previousTask, previousStart, previousEnd, session.Username);
+        }
+        catch (Exception)
+        {
+            previousRows = null;
+        }
+
         var mappedRows = MapDashboardRows(issues, rangeStart, rangeEnd, session.Username);
         var sortedRows = SortDashboardRows(mappedRows, sort, direction)
             .Select((row, index) => CopyRowWithIndex(row, index + 1))
@@ -377,7 +397,9 @@ public class JiraController : Controller
         {
             Session = BuildSessionSummary(session),
             Filter = BuildDashboardFilter(periodType, periodValue, sort, direction, rangeStart, rangeEnd),
-            Stats = BuildDashboardStats(mappedRows),
+            Summary = JiraDashboardMetrics.BuildSummary(mappedRows, rangeStart, rangeEnd, today, errorMessage is null ? previousRows : null),
+            LogBarUnit = periodType == "year" ? "month" : "day",
+            LogBars = JiraDashboardMetrics.BuildLogBars(issues, periodType, rangeStart, rangeEnd, today, session.Username),
             Rows = sortedRows,
             AppliedJql = appliedJql,
             ErrorMessage = errorMessage
@@ -460,64 +482,6 @@ public class JiraController : Controller
                 rangeEnd.ToDisplayDate()].Value;
     }
 
-    private IReadOnlyList<JiraDashboardStatViewModel> BuildDashboardStats(IReadOnlyList<JiraDashboardRowViewModel> rows)
-    {
-        var issueCount = rows.Select(x => string.IsNullOrWhiteSpace(x.IssueKey) ? x.SubTaskKey : x.IssueKey)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Count();
-        var subTaskCount = rows.Count;
-        var doneCount = rows.Count(IsDoneStatus);
-        var openCount = subTaskCount - doneCount;
-        var estimateHours = rows.Sum(x => x.EstimateHours);
-        var loggedHours = rows.Sum(x => x.LoggedHours);
-
-        return
-        [
-            new JiraDashboardStatViewModel
-            {
-                Label = _localizer["Jira.Dashboard.Stats.Issues.Label"].Value,
-                Value = issueCount.ToString(CultureInfo.InvariantCulture),
-                Hint = _localizer["Jira.Dashboard.Stats.Issues.Hint"].Value,
-                AccentClass = "blue"
-            },
-            new JiraDashboardStatViewModel
-            {
-                Label = _localizer["Jira.Dashboard.Stats.Subtasks.Label"].Value,
-                Value = subTaskCount.ToString(CultureInfo.InvariantCulture),
-                Hint = _localizer["Jira.Dashboard.Stats.Subtasks.Hint"].Value,
-                AccentClass = "neutral"
-            },
-            new JiraDashboardStatViewModel
-            {
-                Label = _localizer["Jira.Dashboard.Stats.Done.Label"].Value,
-                Value = doneCount.ToString(CultureInfo.InvariantCulture),
-                Hint = _localizer["Jira.Dashboard.Stats.Done.Hint"].Value,
-                AccentClass = "mint"
-            },
-            new JiraDashboardStatViewModel
-            {
-                Label = _localizer["Jira.Dashboard.Stats.Open.Label"].Value,
-                Value = openCount.ToString(CultureInfo.InvariantCulture),
-                Hint = _localizer["Jira.Dashboard.Stats.Open.Hint"].Value,
-                AccentClass = "amber"
-            },
-            new JiraDashboardStatViewModel
-            {
-                Label = _localizer["Jira.Dashboard.Stats.Estimate.Label"].Value,
-                Value = FormatHours(estimateHours, dashWhenZero: false),
-                Hint = _localizer["Jira.Dashboard.Stats.Estimate.Hint"].Value,
-                AccentClass = "rose"
-            },
-            new JiraDashboardStatViewModel
-            {
-                Label = _localizer["Jira.Dashboard.Stats.Logged.Label"].Value,
-                Value = FormatHours(loggedHours, dashWhenZero: false),
-                Hint = _localizer["Jira.Dashboard.Stats.Logged.Hint"].Value,
-                AccentClass = "violet"
-            }
-        ];
-    }
-
     private static IReadOnlyList<JiraDashboardRowViewModel> MapDashboardRows(
         IReadOnlyList<JiraIssue> issues,
         DateTime rangeStart,
@@ -530,7 +494,8 @@ public class JiraController : Controller
             var status = issue.Status ?? string.Empty;
             var project = DeriveProject(subTaskKey);
             var estimateHours = ParseHours(issue.Estimate);
-            var loggedHours = CalculateLoggedHours(issue.Worklogs, rangeStart, rangeEnd, currentUsername);
+            var loggedHours = JiraDashboardMetrics.OwnWorklogs(issue.Worklogs, rangeStart, rangeEnd, currentUsername)
+                .Sum(x => ParseHours(x.TimeSpent));
             var isDone = IsDoneStatus(status);
 
             return new JiraDashboardRowViewModel
@@ -549,7 +514,8 @@ public class JiraController : Controller
                 LoggedTimeText = FormatHours(loggedHours),
                 EstimateHours = estimateHours,
                 LoggedHours = loggedHours,
-                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < AppClock.Today && !isDone
+                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < AppClock.Today && !isDone,
+                DaysOverdue = JiraDashboardMetrics.DaysOverdue(issue.DueDate, isDone, AppClock.Today)
             };
         }).ToArray();
     }
@@ -612,7 +578,8 @@ public class JiraController : Controller
             LoggedTimeText = row.LoggedTimeText,
             EstimateHours = row.EstimateHours,
             LoggedHours = row.LoggedHours,
-            IsOverdue = row.IsOverdue
+            IsOverdue = row.IsOverdue,
+            DaysOverdue = row.DaysOverdue
         };
     }
 
@@ -722,68 +689,7 @@ public class JiraController : Controller
         return dashIndex > 0 ? subTaskKey[..dashIndex] : subTaskKey;
     }
 
-    private static decimal ParseHours(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return 0;
-        }
-
-        var total = 0m;
-        foreach (Match match in Regex.Matches(value, @"(?<amount>\d+(?:[.,]\d+)?)\s*(?<unit>[wdhm])", RegexOptions.IgnoreCase))
-        {
-            if (!decimal.TryParse(
-                    match.Groups["amount"].Value.Replace(',', '.'),
-                    NumberStyles.AllowDecimalPoint,
-                    CultureInfo.InvariantCulture,
-                    out var amount))
-            {
-                continue;
-            }
-
-            total += match.Groups["unit"].Value.ToLowerInvariant() switch
-            {
-                "w" => amount * 40m,
-                "d" => amount * 8m,
-                "h" => amount,
-                "m" => amount / 60m,
-                _ => 0m
-            };
-        }
-
-        return total;
-    }
-
-    private static decimal CalculateLoggedHours(
-        IReadOnlyList<WorklogEntry>? worklogs,
-        DateTime rangeStart,
-        DateTime rangeEnd,
-        string currentUsername)
-    {
-        if (worklogs is null || worklogs.Count == 0)
-        {
-            return 0;
-        }
-
-        var normalizedCurrentUser = NormalizeUserKey(currentUsername);
-        var ownedWorklogs = worklogs
-            .Where(x => x.Started != DateTime.MinValue)
-            .Where(x => x.Started.Date >= rangeStart.Date && x.Started.Date <= rangeEnd.Date)
-            .Where(x =>
-            {
-                var author = NormalizeUserKey(x.AuthorName);
-                return string.IsNullOrWhiteSpace(normalizedCurrentUser)
-                    || string.IsNullOrWhiteSpace(author)
-                    || string.Equals(author, normalizedCurrentUser, StringComparison.OrdinalIgnoreCase);
-            });
-
-        return ownedWorklogs.Sum(x => ParseHours(x.TimeSpent));
-    }
-
-    private static string NormalizeUserKey(string? value)
-    {
-        return value?.Trim().ToLowerInvariant() ?? string.Empty;
-    }
+    private static decimal ParseHours(string? value) => JiraDashboardMetrics.ParseHours(value);
 
     private static string FormatHours(decimal hours, bool dashWhenZero = true)
     {

@@ -1003,6 +1003,54 @@ body > .k-animation-container .k-calendar .k-calendar-view,
                 color: var(--text);
             }
 
+    /* Sort arrows only on the sorted column, or while a sortable header is hovered or focused;
+       arrows on every column read as if every column were sorted. */
+    .content-area .tabulator .tabulator-col[aria-sort="none"] .tabulator-col-sorter {
+        opacity: 0;
+        transition: opacity var(--duration) var(--ease);
+    }
+
+    .content-area .tabulator .tabulator-col[aria-sort="none"]:hover .tabulator-col-sorter,
+    .content-area .tabulator .tabulator-col[aria-sort="none"]:focus-visible .tabulator-col-sorter {
+        opacity: 1;
+    }
+
+    /* Rows that open on a phone to show the columns that did not fit (responsiveLayout: "collapse"). */
+    .content-area .tabulator .tabulator-responsive-collapse {
+        border-top: 1px solid var(--line);
+        color: var(--text);
+        font-size: var(--text-sm);
+        padding: var(--space-2) var(--space-3);
+    }
+
+        .content-area .tabulator .tabulator-responsive-collapse table td {
+            padding: 2px var(--space-3) 2px 0;
+            vertical-align: middle;
+        }
+
+            .content-area .tabulator .tabulator-responsive-collapse table td strong {
+                color: var(--muted);
+                font-weight: var(--weight-medium);
+            }
+
+    .content-area .tabulator .tabulator-row .tabulator-cell.tbx-collapse-cell {
+        padding: 0;
+    }
+
+    .content-area .tabulator .tabulator-responsive-collapse-toggle {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-pill);
+        color: var(--text);
+        font-weight: var(--weight-semibold);
+        height: 22px;
+        width: 22px;
+    }
+
+        .content-area .tabulator .tabulator-responsive-collapse-toggle svg {
+            stroke: var(--text);
+        }
+
     .content-area .tabulator .tabulator-col .tabulator-col-content {
         padding: var(--space-2) var(--space-3);
     }

@@ -19,7 +19,7 @@ Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expr
 | Kendo Font Icons (`@progress/kendo-font-icons`) | 5.1.0 | Apache-2.0 | `vendor/kendo/icons/` | In use |
 | Inter (`@fontsource/inter`, latin, latin-ext, vietnamese; 400/500/600/700) | 5.3.0 | OFL-1.1 | `vendor/fonts/inter/` (with `LICENSE`) | In use (app font) |
 | Tabulator (`tabulator-tables`) | 6.3.1 | MIT | `vendor/tabulator/` | In use |
-| Apache ECharts | 5.6.0 | Apache-2.0 | `vendor/echarts/` | Asset only, not wired |
+| Apache ECharts (`echarts`, `dist/echarts.min.js` from the npm package). The bundle includes ZRender 5.6.1 (BSD-3-Clause) and tslib 2.3.0 (0BSD), and embeds parts of d3 (BSD-3-Clause) | 5.6.0 | Apache-2.0 | `vendor/echarts/` (with `LICENSE`, `NOTICE`, `licenses/LICENSE-d3`) | In use (Jira Dashboard chart, through `js/charts.js`). The file shipped before 2026-10-21 was 5.5.1 although listed as 5.6.0; it was replaced with the official 5.6.0 build |
 | FullCalendar Standard Bundle | 6.1.15 | MIT | `vendor/fullcalendar/` | Asset only, not wired. Premium plugins are commercial and must not be added |
 | Quill | 2.0.2 | BSD-3-Clause | `vendor/quill/` | Asset only, not wired |
 | SheetJS Community Edition | 0.20.2 | Apache-2.0 | `vendor/sheetjs/` | Asset only, not wired |

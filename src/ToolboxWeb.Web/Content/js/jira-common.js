@@ -191,6 +191,14 @@
         return fmt() ? fmt().date(date) : dates.formatIsoDate(date);
     }
 
+    /** Day and month only, in the UI culture's order: 19/10 (vi), 10/19 (en). */
+    function shortDate(date) {
+        const locale = fmt()?.locale || document.documentElement.lang || "vi-VN";
+        return locale.toLowerCase().startsWith("vi")
+            ? `${dates.pad2(date.getDate())}/${dates.pad2(date.getMonth() + 1)}`
+            : new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit" }).format(date);
+    }
+
     function displayHours(value) {
         return fmt() ? fmt().hours(value) : `${Number(value) || 0}h`;
     }
@@ -321,6 +329,7 @@
         const widgets = {};
         const inputs = {};
         const weekOptionText = root.dataset.weekOption || "{0}/{1}";
+        const weekShortText = root.dataset.weekShort || "{0} · {1}";
         let weekCenterYear = null;
         let syncing = false;
         let timer = null;
@@ -352,10 +361,14 @@
                         continue;
                     }
 
+                    const end = dates.addDays(start, 6);
                     result.push({
                         value,
-                        text: template(weekOptionText, week, year),
-                        range: `${displayDate(start)} – ${displayDate(dates.addDays(start, 6))}`
+                        // The box shows the dates too ("Tuần 43 · 19/10 – 25/10"), so the page
+                        // needs no separate "from … to …" line.
+                        text: template(weekShortText, week, `${shortDate(start)} – ${shortDate(end)}`),
+                        title: template(weekOptionText, week, year),
+                        range: `${displayDate(start)} – ${displayDate(end)}`
                     });
                 }
             }
@@ -476,7 +489,7 @@
                     suggest: true,
                     clearButton: false,
                     placeholder: root.dataset.weekPlaceholder || "",
-                    template: "<div class='jira-period-week-option'><strong>#: text #</strong><span>#: range #</span></div>",
+                    template: "<div class='jira-period-week-option'><strong>#: title #</strong><span>#: range #</span></div>",
                     popup
                 }).data("kendoComboBox");
             }
@@ -635,6 +648,7 @@
         parseJsonScript,
         dates,
         displayDate,
+        shortDate,
         displayHours,
         statusPill,
         browseUrl,

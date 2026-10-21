@@ -1478,8 +1478,7 @@ a {
     grid-template-columns: minmax(0, 1fr);
 }
 
-.jira-dashboard-table-card,
-.jira-dashboard-stat-card {
+.jira-dashboard-table-card {
     background: var(--jira-panel);
     border: 1px solid var(--jira-border);
     border-radius: 18px;
@@ -1488,70 +1487,6 @@ a {
 
 .jira-dashboard-alert {
     margin-bottom: 0;
-}
-
-.jira-dashboard-stats {
-    display: grid;
-    gap: 14px;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-
-.jira-dashboard-stat-card {
-    display: grid;
-    gap: 8px;
-    overflow: hidden;
-    padding: 16px 18px;
-    position: relative;
-}
-
-    .jira-dashboard-stat-card::before {
-        background: var(--jira-accent, var(--jira-blue));
-        content: "";
-        height: 3px;
-        inset: 0 0 auto;
-        position: absolute;
-    }
-
-.jira-dashboard-stat-card--blue {
-    --jira-accent: var(--jira-blue);
-}
-
-.jira-dashboard-stat-card--neutral {
-    --jira-accent: color-mix(in srgb, var(--jira-text-dim) 60%, var(--accent) 40%);
-}
-
-.jira-dashboard-stat-card--mint {
-    --jira-accent: var(--jira-mint);
-}
-
-.jira-dashboard-stat-card--amber {
-    --jira-accent: var(--jira-amber);
-}
-
-.jira-dashboard-stat-card--rose {
-    --jira-accent: var(--jira-rose);
-}
-
-.jira-dashboard-stat-card--violet {
-    --jira-accent: #8b5cf6;
-}
-
-.jira-dashboard-stat-label {
-    color: var(--jira-text-dim);
-    font-size: .82rem;
-    font-weight: 700;
-    line-height: 1.35;
-}
-
-.jira-dashboard-stat-value {
-    color: var(--jira-text);
-    font-size: clamp(1.7rem, 3vw, 2.2rem);
-    line-height: 1;
-}
-
-.jira-dashboard-stat-hint {
-    color: var(--jira-text-faint);
-    font-size: .78rem;
 }
 
 .jira-dashboard-table-card {
@@ -1861,6 +1796,202 @@ a.jira-key {
     }
 }
 
+/* ---------------------------------------------------------------- Jira Dashboard (5.1)
+   Four cards, the hours-logged chart and the subtask table grouped by parent issue. Color is
+   only used where a card has something to say (over the estimate, short of hours, overdue). */
+/* The alert slot takes no row (and no grid gap) while it is empty. */
+.jira-dashboard-shell > [data-jira-alert-host]:empty {
+    display: none;
+}
+
+.jira-kpis {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.jira-kpi {
+    align-content: start;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-3) var(--space-4);
+}
+
+.jira-kpi-skeleton {
+    height: 72px;
+}
+
+.jira-kpi-label {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+}
+
+.jira-kpi-value {
+    color: var(--text);
+    font-size: var(--text-2xl);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-semibold);
+    line-height: 1.1;
+}
+
+.jira-kpi.is-danger .jira-kpi-value {
+    color: var(--danger);
+}
+
+.jira-kpi-detail {
+    color: var(--muted);
+    font-size: var(--text-sm);
+}
+
+.jira-kpi-note {
+    color: var(--muted);
+    font-size: var(--text-xs);
+}
+
+    .jira-kpi-note.is-warning {
+        color: var(--warning);
+        font-weight: var(--weight-medium);
+    }
+
+    .jira-kpi-note.is-success {
+        color: var(--success);
+        font-weight: var(--weight-medium);
+    }
+
+.jira-meter {
+    background: var(--surface-2);
+    border-radius: var(--radius-chip);
+    height: 6px;
+    overflow: hidden;
+}
+
+    .jira-meter > span {
+        background: var(--accent-brand);
+        border-radius: inherit;
+        display: block;
+        height: 100%;
+        transition: width var(--duration) var(--ease);
+    }
+
+    .jira-meter.is-warning > span {
+        background: var(--warning);
+    }
+
+    .jira-meter.is-success > span {
+        background: var(--success);
+    }
+
+.jira-chart-panel,
+.jira-table-panel {
+    padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.jira-panel-head {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+    .jira-panel-head h2 {
+        font-size: var(--text-lg);
+        font-weight: var(--weight-semibold);
+        margin: 0;
+    }
+
+.jira-panel-sub {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin: 2px 0 0;
+}
+
+.jira-chart {
+    height: 220px;
+    transition: opacity var(--duration) var(--ease);
+    width: 100%;
+}
+
+    .jira-chart.is-busy {
+        opacity: .6;
+    }
+
+/* Group rows of the subtask table: parent key, parent summary, totals. */
+.jira-table-panel .tabulator-row.tabulator-group {
+    align-items: center;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: var(--space-2);
+    min-height: var(--row-height);
+    padding: 0 var(--space-3);
+}
+
+    .jira-table-panel .tabulator-row.tabulator-group:hover {
+        background: var(--hover);
+    }
+
+/* Tabulator colors group-row spans red and spaces them by 10px; the group row is ours. */
+.jira-table-panel .tabulator-row.tabulator-group span {
+    color: inherit;
+    margin-left: 0;
+}
+
+.jira-group-key {
+    flex: none;
+}
+
+.jira-table-panel .tabulator-row.tabulator-group .jira-group-title {
+    color: var(--text);
+    font-weight: var(--weight-medium);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.jira-table-panel .tabulator-row.tabulator-group .jira-group-meta {
+    color: var(--muted);
+    flex: none;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-regular);
+    margin-left: auto;
+}
+
+.jira-late {
+    color: var(--danger);
+    font-size: var(--text-xs);
+    margin-left: var(--space-2);
+}
+
+.jira-unestimated {
+    color: var(--warning);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+}
+
+@media (max-width: 1200px) {
+    .jira-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .jira-kpis {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .jira-table-panel .tabulator-row.tabulator-group .jira-group-meta {
+        display: none;
+    }
+}
+
 .jira-shell {
     display: grid;
     gap: 18px;
@@ -1923,9 +2054,6 @@ a.jira-key {
     }
 
     /* Let the Day/Week/Month/Year switch share the row instead of overflowing it. */
-    .jira-dashboard-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
 }
 
 /* ---------------------------------------------------------------- account pages
@@ -2170,10 +2298,6 @@ a.jira-key {
 
     .auth-login-viewport {
         min-height: 370px;
-    }
-
-    .jira-dashboard-stats {
-        grid-template-columns: minmax(0, 1fr);
     }
 
     .jira-dashboard-table-card {
