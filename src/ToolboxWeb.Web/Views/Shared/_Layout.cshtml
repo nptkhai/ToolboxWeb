@@ -201,9 +201,9 @@
                     <h1 class="topbar-title@(isAuthenticated ? null : " tbx-visually-hidden")">@pageTitle</h1>
                 </nav>
                 <div class="topbar-actions">
+                    <partial name="_EnvironmentSummary" />
                     @if (!isAuthenticated)
                     {
-                        <partial name="_EnvironmentSummary" />
                         <form asp-area="" asp-controller="Culture" asp-action="Set" method="post" class="guest-language" role="group" aria-label="@T["Account.Language"]">
                             <input type="hidden" name="returnUrl" value="@($"{Context.Request.Path}{Context.Request.QueryString}")" />
                             <button type="submit" name="culture" value="vi-VN" lang="vi" title="@T["Language.Vietnamese"]" aria-pressed="@(CultureInfo.CurrentUICulture.Name == "vi-VN" ? "true" : "false")">VI</button>

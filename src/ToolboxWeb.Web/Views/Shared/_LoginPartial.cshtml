@@ -56,6 +56,8 @@
                     <img src="@Url.Content(avatarUrl)" alt="" data-avatar-image />
                 }
             </span>
+            @* With a photo, the initials also show beside it; without one they are already in the circle. *@
+            <span class="account-initials" aria-hidden="true">@initials</span>
             <tbx-icon name="chevron-down" class="account-trigger-caret" size="14" />
         </button>
         <div class="dropdown-menu dropdown-menu-end account-dropdown">

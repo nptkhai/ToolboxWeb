@@ -570,6 +570,19 @@ a {
         width: 100%;
     }
 
+/* Initials next to the profile photo. When there is no photo (or it failed to load and
+   site.js removed it), the initials are already inside the circle, so the label hides. */
+.account-initials {
+    color: var(--text);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    margin-left: var(--space-1);
+}
+
+.account-avatar:not(:has(img)) + .account-initials {
+    display: none;
+}
+
 .account-dropdown {
     min-width: 288px;
 }

@@ -141,18 +141,8 @@
         input.checked = read(key) === 'on';
         input.addEventListener('change', function () {
             store(key, input.checked ? 'on' : null);
-            document.querySelectorAll('[data-display-requires="' + key + '"]').forEach(function (dependent) {
-                dependent.disabled = !input.checked;
-                if (!input.checked && dependent.checked) {
-                    dependent.checked = false;
-                    store(dependent.getAttribute('data-display-setting'), null);
-                }
-            });
             document.dispatchEvent(new CustomEvent('toolbox:background-changed'));
         });
-    });
-    document.querySelectorAll('[data-display-requires]').forEach(function (dependent) {
-        dependent.disabled = read(dependent.getAttribute('data-display-requires')) !== 'on';
     });
 
     document.querySelectorAll('[data-copy-target]').forEach(function (button) {

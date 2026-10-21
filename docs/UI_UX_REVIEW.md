@@ -1023,4 +1023,5 @@ Chủ dự án đã duyệt khung app và cho làm tiếp 3.6.
 - **Trước khi đăng nhập** (Đăng nhập, Đăng ký): không còn sidebar trống; thanh trên cùng có logo, đồng hồ + ngày, thời tiết, đổi ngôn ngữ VI/EN, đổi sáng/tối, và nút Đăng ký hoặc Đăng nhập (bỏ nút trùng với trang đang mở). Hình nền thời tiết luôn bật. Trên màn hình dưới 600px chỉ hiện giờ, ẩn ô thời tiết để không tràn.
 - **Bên trong sau khi đăng nhập:** giữ như 3.5.
 - Đã kiểm tra: 1440/390px, sáng/tối, không lỗi console, không tràn ngang. Phần thời tiết kiểm tra bằng phản hồi giả của Open-Meteo vì môi trường thử nghiệm chặn mạng ra ngoài; chưa thử với Open-Meteo thật.
+- **Bổ sung theo yêu cầu (21/10/2026):** thanh trên cùng bên trong app cũng có đồng hồ và thời tiết (dưới 900px ẩn ngày, dưới 600px chỉ còn giờ); hình nền thời tiết bên trong vẫn tắt mặc định. Bỏ công tắc "Hiện thời tiết theo vị trí" trong Hồ sơ vì thời tiết giờ luôn hiện. Avatar có ảnh thì hiện thêm chữ viết tắt tên bên cạnh. `tests/ui`: chỉ số không đổi (lỗi console 0, tràn ngang 0, thiếu label 54, chữ nhỏ 210); ảnh mốc đã tạo lại.
 
