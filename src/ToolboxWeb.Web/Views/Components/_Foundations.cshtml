@@ -1,0 +1,266 @@
+@using ToolboxWeb.Web.Constants
+@{
+    var colorTokens = new[]
+    {
+        "--accent-brand", "--accent", "--accent-strong", "--on-accent",
+        "--bg", "--surface", "--surface-2", "--line", "--text", "--muted",
+        "--success", "--warning", "--danger",
+        "--accent-tint", "--success-tint", "--warning-tint", "--danger-tint"
+    };
+    var typeScale = new[] { ("--text-xs", "12px"), ("--text-sm", "13px"), ("--text-md", "14px"), ("--text-lg", "16px"), ("--text-xl", "20px"), ("--text-2xl", "24px") };
+    var spaceScale = new[] { ("--space-1", "4px"), ("--space-2", "8px"), ("--space-3", "12px"), ("--space-4", "16px"), ("--space-5", "24px"), ("--space-6", "32px") };
+    var radiusScale = new[] { ("--radius-pill", "4px"), ("--radius-control", "6px"), ("--radius-panel", "8px"), ("--radius-chip", "999px") };
+    var iconNames = new[]
+    {
+        "activity", "blocks", "calendar", "check", "chevron-down", "chevron-right", "circle-alert", "circle-check",
+        "clock", "copy", "database", "ellipsis", "external-link", "file-text", "gauge", "git-compare", "image",
+        "inbox", "info", "kanban", "languages", "layout-dashboard", "link", "list-checks", "loader-circle",
+        "log-out", "menu", "message-square-text", "monitor", "moon", "panel-left", "pencil", "plus", "refresh-cw",
+        "search", "settings", "sticky-note", "sun", "timer", "trash-2", "triangle-alert", "user", "x"
+    };
+    var today = DateTime.Today;
+    var checklistHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html";
+    var emptySample = new EmptyStateViewModel(T["Components.Foundations.EmptySample"].Value, "list-checks")
+    {
+        ActionText = T["Components.Foundations.EmptyAction"].Value,
+        ActionHref = checklistHref
+    };
+}
+<div class="component-family-head">
+    <h3>@T["Components.Sections.Foundations"]</h3>
+    <p>@T["Components.FoundationsIntro"]</p>
+</div>
+
+<div class="component-card-grid" data-foundations>
+    <article class="component-card component-card-wide">
+        <div class="component-card-head">
+            <h4>@T["Components.Foundations.Colors"]</h4>
+            <tbx-component-status key="tokens" />
+        </div>
+        <p class="component-note">@T["Components.Foundations.ColorsNote"]</p>
+        <ul class="foundation-swatches">
+            @foreach (var token in colorTokens)
+            {
+                <li>
+                    <span class="foundation-swatch" style="background: var(@token)"></span>
+                    <code>@token</code>
+                </li>
+            }
+        </ul>
+    </article>
+
+    <article class="component-card">
+        <div class="component-card-head">
+            <h4>@T["Components.Foundations.Type"]</h4>
+            <tbx-component-status key="font" />
+        </div>
+        <ul class="foundation-type">
+            @foreach (var (token, size) in typeScale)
+            {
+                <li>
+                    <span style="font-size: var(@token)">@T["Components.Foundations.TypeSample"]</span>
+                    <code>@token · @size</code>
+                </li>
+            }
+        </ul>
+    </article>
+
+    <article class="component-card">
+        <div class="component-card-head">
+            <h4>@T["Components.Foundations.Spacing"]</h4>
+            <tbx-component-status key="tokens" />
+        </div>
+        <ul class="foundation-spacing">
+            @foreach (var (token, size) in spaceScale)
+            {
+                <li>
+                    <span class="foundation-space-bar" style="width: var(@token)"></span>
+                    <code>@token · @size</code>
+                </li>
+            }
+        </ul>
+        <ul class="foundation-radius">
+            @foreach (var (token, size) in radiusScale)
+            {
+                <li>
+                    <span class="foundation-radius-box" style="border-radius: var(@token)"></span>
+                    <code>@token · @size</code>
+                </li>
+            }
+        </ul>
+    </article>
+
+    <article class="component-card component-card-wide">
+        <div class="component-card-head">
+            <h4>@T["Components.Foundations.Buttons"]</h4>
+            <tbx-component-status key="buttons" />
+        </div>
+        <p class="component-note">@T["Components.Foundations.ButtonsNote"]</p>
+        <div class="foundation-row">
+            <button type="button" class="btn btn-primary"><tbx-icon name="plus" />@T["Components.Foundations.ButtonPrimary"]</button>
+            <button type="button" class="btn btn-outline-secondary">@T["Components.Foundations.ButtonSecondary"]</button>
+            <button type="button" class="btn btn-outline-primary">@T["Components.Foundations.ButtonOutline"]</button>
+            <button type="button" class="btn btn-danger"><tbx-icon name="trash-2" />@T["Components.Foundations.ButtonDanger"]</button>
+            <button type="button" class="btn btn-outline-danger">@T["Components.Foundations.ButtonDanger"]</button>
+            <button type="button" class="btn btn-link">@T["Components.Foundations.ButtonLink"]</button>
+            <button type="button" class="btn btn-primary" disabled><tbx-icon name="loader-circle" class="tbx-spin" />@T["Components.Foundations.ButtonDisabled"]</button>
+        </div>
+        <div class="foundation-row">
+            <button type="button" class="btn btn-sm btn-primary">@T["Components.Foundations.ButtonPrimary"]</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">@T["Components.Foundations.ButtonSecondary"]</button>
+            <button type="button" class="icon-button" aria-label="@T["Components.Foundations.ButtonLink"]"><tbx-icon name="ellipsis" /></button>
+        </div>
+    </article>
+
+    <article class="component-card">
+        <div class="component-card-head">
+            <h4>@T["Components.Foundations.Field"]</h4>
+            <tbx-component-status key="field" />
+        </div>
+        <div class="tbx-form-grid">
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="foundation-field-name">@T["Components.Foundations.FieldLabel"]<span class="tbx-required" aria-hidden="true">*</span></label>
+                <input id="foundation-field-name" class="form-control" type="text" required maxlength="160" placeholder="@T["Components.Foundations.FieldPlaceholder"]" aria-describedby="foundation-field-name-hint" />
+                <div class="tbx-field-hint" id="foundation-field-name-hint">@T["Components.Foundations.FieldHint"]</div>
+            </div>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="foundation-field-due">@T["Components.Foundations.FieldErrorLabel"]</label>
+                <input id="foundation-field-due" class="form-control is-invalid" type="text" value="@today.AddDays(-3).ToString("d")" aria-invalid="true" aria-describedby="foundation-field-due-error" />
+                <div class="tbx-field-error" id="foundation-field-due-error">@T["Components.Foundations.FieldError"]</div>
+            </div>
+        </div>
+    </article>
+
+    <article class="component-card">
+        <div class="component-card-head">
+            <h4>@T["Components.Foundations.Pills"]</h4>
+            <tbx-component-status key="pill" />
+        </div>
+        <div class="foundation-row">
+            <span class="tbx-pill is-neutral">@T["Components.Foundations.PillTodo"]</span>
+            <span class="tbx-pill is-accent">@T["Components.Foundations.PillDoing"]</span>
+            <span class="tbx-pill is-warning">@T["Components.Foundations.PillWaiting"]</span>
+            <span class="tbx-pill is-danger">@T["Components.Foundations.PillOverdue"]</span>
+            <span class="tbx-pill is-success">@T["Components.Foundations.PillDone"]</span>
+        </div>
+
+        <div class="component-card-head foundation-subhead">
+            <h4>@T["Components.Foundations.Chips"]</h4>
+            <tbx-component-status key="chip" />
+        </div>
+        <div class="foundation-row" role="group" aria-label="@T["Components.Foundations.Chips"]" data-foundation-chips>
+            <button type="button" class="tbx-chip" aria-pressed="true">@T["Components.Foundations.ChipAll"]</button>
+            <button type="button" class="tbx-chip" aria-pressed="false">@T["Components.Foundations.ChipToday"]</button>
+            <button type="button" class="tbx-chip" aria-pressed="false">@T["Components.Foundations.PillOverdue"]</button>
+            <button type="button" class="tbx-chip" aria-pressed="false">@T["Components.Foundations.PillDone"]</button>
+        </div>
+    </article>
+
+    <article class="component-card">
+        <div class="component-card-head">
+            <h4>@T["Components.Foundations.Rows"]</h4>
+            <tbx-component-status key="list-row" />
+        </div>
+        <ul class="tbx-list">
+            <li class="tbx-row">
+                <tbx-icon name="circle-alert" class="foundation-row-icon is-danger" />
+                <span class="tbx-row-title">@T["Components.Foundations.RowSample1"]</span>
+                <span class="tbx-pill is-danger">@T["Components.Foundations.PillOverdue"]</span>
+                <span class="tbx-row-meta">@today.AddDays(-2).ToString("d")</span>
+            </li>
+            <li class="tbx-row is-selected" aria-selected="true">
+                <tbx-icon name="clock" class="foundation-row-icon" />
+                <span class="tbx-row-title">@T["Components.Foundations.RowSample2"]</span>
+                <span class="tbx-pill is-accent">@T["Components.Foundations.PillDoing"]</span>
+                <span class="tbx-row-meta">@today.ToString("d")</span>
+            </li>
+            <li class="tbx-row">
+                <tbx-icon name="circle-check" class="foundation-row-icon is-success" />
+                <span class="tbx-row-title">@T["Components.Foundations.RowSample3"]</span>
+                <span class="tbx-pill is-success">@T["Components.Foundations.PillDone"]</span>
+                <span class="tbx-row-meta">@today.AddDays(5).ToString("d")</span>
+            </li>
+        </ul>
+    </article>
+
+    <article class="component-card component-card-wide">
+        <div class="component-card-head">
+            <h4>@T["Components.Foundations.States"]</h4>
+            <tbx-component-status key="states" />
+        </div>
+        <div class="foundation-states">
+            <div class="tbx-panel">
+                <partial name="_EmptyState" model="emptySample" />
+            </div>
+            <div class="tbx-error-state" role="alert">
+                <tbx-icon name="triangle-alert" />
+                <div>
+                    <p class="mb-2">@T["Components.Foundations.ErrorSample"]</p>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"><tbx-icon name="refresh-cw" />@T["Components.Foundations.Retry"]</button>
+                </div>
+            </div>
+            <div class="tbx-panel tbx-panel-body" role="status">
+                <span class="tbx-visually-hidden">@T["Components.Foundations.Loading"]</span>
+                <span class="tbx-skeleton" style="width: 70%"></span>
+                <span class="tbx-skeleton" style="width: 90%"></span>
+                <span class="tbx-skeleton" style="width: 55%"></span>
+            </div>
+        </div>
+    </article>
+
+    <article class="component-card">
+        <div class="component-card-head">
+            <h4>@T["Components.Foundations.Feedback"]</h4>
+            <tbx-component-status key="confirm" />
+        </div>
+        <div class="foundation-row">
+            <button type="button" class="btn btn-outline-secondary" data-foundation-toast data-message="@T["Components.Foundations.ToastMessage"]">@T["Components.Foundations.ToastButton"]</button>
+            <button type="button" class="btn btn-outline-danger" data-foundation-confirm
+                    data-title="@T["Components.Foundations.ConfirmTitle"]"
+                    data-message="@T["Components.Foundations.ConfirmMessage"]"
+                    data-ok="@T["Components.Foundations.ButtonDanger"]"
+                    data-done="@T["Components.Foundations.ConfirmDone"]">
+                <tbx-icon name="trash-2" />@T["Components.Foundations.ConfirmButton"]
+            </button>
+        </div>
+
+        <div class="component-card-head foundation-subhead">
+            <h4>@T["Components.Foundations.SidePanel"]</h4>
+            <tbx-component-status key="side-panel" />
+        </div>
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="offcanvas" data-bs-target="#foundation-sidepanel" aria-controls="foundation-sidepanel">@T["Components.Foundations.SidePanelButton"]</button>
+    </article>
+
+    <article class="component-card component-card-wide">
+        <div class="component-card-head">
+            <h4>@T["Components.Foundations.Icons"]</h4>
+            <tbx-component-status key="icons" />
+        </div>
+        <p class="component-note">@T["Components.Foundations.IconsNote"]</p>
+        <ul class="foundation-icons">
+            @foreach (var icon in iconNames)
+            {
+                <li title="@icon"><tbx-icon name="@icon" size="20" /><code>@icon</code></li>
+            }
+        </ul>
+    </article>
+</div>
+
+<div class="offcanvas offcanvas-end tbx-sidepanel" tabindex="-1" id="foundation-sidepanel" aria-labelledby="foundation-sidepanel-title">
+    <div class="offcanvas-header">
+        <h2 class="offcanvas-title" id="foundation-sidepanel-title">@T["Components.Foundations.SidePanelTitle"]</h2>
+        <button type="button" class="icon-button" data-bs-dismiss="offcanvas" aria-label="@T["Components.Foundations.Close"]"><tbx-icon name="x" /></button>
+    </div>
+    <div class="offcanvas-body">
+        <p>@T["Components.Foundations.SidePanelBody"]</p>
+        <div class="tbx-field">
+            <label class="tbx-field-label" for="foundation-sidepanel-name">@T["Components.Foundations.FieldLabel"]</label>
+            <input id="foundation-sidepanel-name" class="form-control" type="text" value="@T["Components.Foundations.RowSample2"]" />
+            <div class="tbx-field-hint">@T["Components.Foundations.FieldHint"]</div>
+        </div>
+    </div>
+    <div class="tbx-sidepanel-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">@T["Components.Foundations.Close"]</button>
+    </div>
+</div>
+

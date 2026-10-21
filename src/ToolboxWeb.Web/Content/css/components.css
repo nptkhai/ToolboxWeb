@@ -1,0 +1,407 @@
+/*
+ * Base components built on tokens.css. New and reworked screens use these classes instead of
+ * per-page copies. Live examples will be in the Component Hub style guide (roadmap 3.6).
+ */
+
+/* Icon: <tbx-icon name="search" /> renders an <svg class="tbx-icon"> from the Lucide sprite. */
+.tbx-icon {
+    display: inline-block;
+    flex: 0 0 auto;
+    vertical-align: -0.125em;
+}
+
+/* ---------------------------------------------------------------- panel */
+.tbx-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow);
+    color: var(--text);
+}
+
+.tbx-panel-header {
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: var(--space-3);
+    justify-content: space-between;
+    min-height: var(--header-height);
+    padding: 0 var(--space-4);
+}
+
+.tbx-panel-title {
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    margin: 0;
+}
+
+.tbx-panel-body {
+    padding: var(--space-4);
+}
+
+/* ---------------------------------------------------------------- toolbar */
+/* Reference structure (Notes): search on the left, filters, primary action on the right. */
+.tbx-toolbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.tbx-toolbar-spacer {
+    flex: 1 1 auto;
+}
+
+.tbx-search {
+    align-items: center;
+    display: flex;
+    flex: 1 1 240px;
+    max-width: 360px;
+    position: relative;
+}
+
+    .tbx-search .tbx-icon {
+        color: var(--muted);
+        left: var(--space-3);
+        pointer-events: none;
+        position: absolute;
+    }
+
+    /* Outranks the shared .form-control padding in vendor-sync.css. */
+    .content-area .tbx-search .form-control:not(.k-input-inner):not(.k-input) {
+        padding-left: calc(var(--space-3) + 16px + var(--space-2));
+    }
+
+/* ---------------------------------------------------------------- list rows */
+.tbx-list {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    list-style: none;
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+}
+
+.tbx-row {
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    color: var(--text);
+    display: flex;
+    font-size: var(--text-md);
+    gap: var(--space-3);
+    min-height: var(--row-height);
+    padding: 0 var(--space-3);
+    transition: background-color var(--duration) var(--ease);
+}
+
+    .tbx-row:last-child {
+        border-bottom: 0;
+    }
+
+    .tbx-row:hover,
+    .tbx-row:focus-within {
+        background: var(--surface-2);
+    }
+
+    .tbx-row.is-selected,
+    .tbx-row[aria-selected="true"] {
+        background: var(--accent-tint);
+    }
+
+    a.tbx-row {
+        text-decoration: none;
+    }
+
+.tbx-row-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tbx-row-meta {
+    color: var(--muted);
+    flex: 0 0 auto;
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.tbx-list.is-comfortable .tbx-row {
+    min-height: var(--row-height-comfortable);
+}
+
+/* ---------------------------------------------------------------- status pill */
+/* Color is never the only clue: the pill always carries a word. */
+.tbx-pill {
+    --tbx-tone: var(--muted);
+    align-items: center;
+    background: color-mix(in srgb, var(--tbx-tone) 12%, var(--surface));
+    border-radius: var(--radius-pill);
+    color: var(--tbx-tone);
+    display: inline-flex;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    gap: var(--space-1);
+    line-height: 1;
+    padding: 4px 6px;
+    white-space: nowrap;
+}
+
+    .tbx-pill::before {
+        background: currentColor;
+        border-radius: 50%;
+        content: "";
+        height: 6px;
+        width: 6px;
+    }
+
+    .tbx-pill.is-accent {
+        --tbx-tone: var(--accent-strong);
+    }
+
+    .tbx-pill.is-success {
+        --tbx-tone: var(--success);
+    }
+
+    .tbx-pill.is-warning {
+        --tbx-tone: var(--warning);
+    }
+
+    .tbx-pill.is-danger {
+        --tbx-tone: var(--danger);
+    }
+
+/* The neutral tone reads the text color so it stays above 4.5:1 on the tint. */
+.tbx-pill.is-neutral {
+    --tbx-tone: var(--muted);
+    color: var(--text);
+}
+
+/* ---------------------------------------------------------------- chip */
+.tbx-chip {
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-chip);
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: var(--text-sm);
+    gap: var(--space-1);
+    min-height: 28px;
+    padding: 0 var(--space-3);
+    transition: var(--ui-transition);
+}
+
+    .tbx-chip:hover {
+        background: var(--surface-2);
+    }
+
+    .tbx-chip.is-selected,
+    .tbx-chip[aria-pressed="true"] {
+        background: var(--accent-tint);
+        border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+        color: var(--accent-strong);
+    }
+
+    .tbx-chip:focus-visible {
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
+
+/* ---------------------------------------------------------------- form field */
+/* Label above, control, then a hint or the validation message in a reserved line. */
+.tbx-field {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.tbx-field-label {
+    color: var(--text);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+}
+
+    .tbx-field-label .tbx-required {
+        color: var(--danger);
+        margin-left: 2px;
+    }
+
+.tbx-field-hint,
+.tbx-field-error {
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    min-height: calc(var(--text-xs) * 1.4);
+}
+
+.tbx-field-hint {
+    color: var(--muted);
+}
+
+.tbx-field-error,
+.tbx-field .field-validation-error {
+    color: var(--danger);
+}
+
+.tbx-form-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 600px) {
+    .tbx-form-grid.is-two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ---------------------------------------------------------------- side panel */
+/* Bootstrap offcanvas with the app's surface, used for detail and edit panels. */
+.offcanvas.tbx-sidepanel {
+    --bs-offcanvas-bg: var(--surface);
+    --bs-offcanvas-color: var(--text);
+    --bs-offcanvas-border-color: var(--line);
+    --bs-offcanvas-width: min(480px, 100vw);
+    --bs-offcanvas-padding-x: var(--space-4);
+    --bs-offcanvas-padding-y: var(--space-3);
+    box-shadow: var(--shadow-popup);
+}
+
+    .offcanvas.tbx-sidepanel .offcanvas-header {
+        border-bottom: 1px solid var(--line);
+        gap: var(--space-2);
+        justify-content: space-between;
+        min-height: var(--header-height);
+    }
+
+    .offcanvas.tbx-sidepanel .offcanvas-title {
+        font-size: var(--text-lg);
+        font-weight: var(--weight-semibold);
+    }
+
+    .offcanvas.tbx-sidepanel .tbx-sidepanel-footer {
+        border-top: 1px solid var(--line);
+        display: flex;
+        gap: var(--space-2);
+        justify-content: flex-end;
+        padding: var(--space-3) var(--space-4);
+    }
+
+.offcanvas-backdrop {
+    --bs-backdrop-bg: var(--text);
+    --bs-backdrop-opacity: .4;
+}
+
+/* ---------------------------------------------------------------- states */
+.tbx-empty {
+    align-items: center;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    justify-content: center;
+    padding: var(--space-6) var(--space-4);
+    text-align: center;
+}
+
+.tbx-empty-icon {
+    align-items: center;
+    background: var(--surface-2);
+    border-radius: var(--radius-panel);
+    color: var(--muted);
+    display: inline-flex;
+    height: 40px;
+    justify-content: center;
+    width: 40px;
+}
+
+.tbx-empty-text {
+    font-size: var(--text-md);
+    margin: 0;
+    max-width: 42ch;
+}
+
+.tbx-error-state {
+    align-items: flex-start;
+    background: var(--danger-tint);
+    border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--line));
+    border-radius: var(--radius-panel);
+    color: var(--text);
+    display: flex;
+    font-size: var(--text-md);
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+}
+
+    .tbx-error-state .tbx-icon {
+        color: var(--danger);
+        margin-top: 2px;
+    }
+
+.tbx-skeleton {
+    animation: tbx-skeleton 1.4s ease-in-out infinite;
+    background: var(--surface-2);
+    border-radius: var(--radius-pill);
+    display: block;
+    height: 12px;
+}
+
+    .tbx-skeleton + .tbx-skeleton {
+        margin-top: var(--space-2);
+    }
+
+@keyframes tbx-skeleton {
+    50% {
+        opacity: .5;
+    }
+}
+
+.tbx-spin {
+    animation: tbx-spin .8s linear infinite;
+}
+
+@keyframes tbx-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tbx-skeleton,
+    .tbx-spin {
+        animation: none;
+    }
+}
+
+/* ---------------------------------------------------------------- keyboard hint */
+kbd.tbx-kbd {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    box-shadow: none;
+    color: var(--muted);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    padding: 1px 5px;
+}
+
+/* ---------------------------------------------------------------- utilities */
+.tbx-visually-hidden {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.tbx-num {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}

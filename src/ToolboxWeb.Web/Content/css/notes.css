@@ -15,16 +15,16 @@
    ============================================================================ */
 
 :is(.nv-page, .nv-modal) {
-    --nv-1: 4px;
-    --nv-2: 8px;
-    --nv-3: 12px;
-    --nv-4: 16px;
-    --nv-6: 24px;
-    --nv-8: 32px;
-    --nv-radius: 12px;
-    --nv-radius-sm: 8px;
-    --nv-mono: Consolas, "Cascadia Mono", "Courier New", monospace;
-    --nv-ok: #0f7a4d;
+    --nv-1: var(--space-1);
+    --nv-2: var(--space-2);
+    --nv-3: var(--space-3);
+    --nv-4: var(--space-4);
+    --nv-6: var(--space-5);
+    --nv-8: var(--space-6);
+    --nv-radius: var(--radius-panel);
+    --nv-radius-sm: var(--radius-control);
+    --nv-mono: var(--font-mono);
+    --nv-ok: var(--success);
     --nv-danger: var(--danger);
 
     /* One colour per format; the dot, badge and tints all derive from it. */
@@ -39,17 +39,16 @@
     --nv-c-mix: #15803d;
 
     /* One colour per checklist state. Each state also has a name, so colour is never the only clue. */
-    --nv-st-todo: #64748b;
-    --nv-st-doing: #2563eb;
+    --nv-st-todo: var(--muted);
+    --nv-st-doing: var(--accent);
     --nv-st-review: #9333ea;
-    --nv-st-wait: #b45309;
+    --nv-st-wait: var(--warning);
     --nv-st-high: #ea580c;
-    --nv-st-done: #15803d;
-    --nv-st-drop: #dc2626;
+    --nv-st-done: var(--success);
+    --nv-st-drop: var(--danger);
 }
 
 :root[data-theme="dark"] :is(.nv-page, .nv-modal) {
-    --nv-ok: #5be3a4;
     --nv-c-txt: #94a3b8;
     --nv-c-js: #facc15;
     --nv-c-css: #60a5fa;
@@ -60,13 +59,8 @@
     --nv-c-chk: #f472b6;
     --nv-c-mix: #4ade80;
 
-    --nv-st-todo: #94a3b8;
-    --nv-st-doing: #60a5fa;
     --nv-st-review: #c084fc;
-    --nv-st-wait: #fbbf24;
     --nv-st-high: #fb923c;
-    --nv-st-done: #4ade80;
-    --nv-st-drop: #f87171;
 }
 
 :is(.nv-page, .nv-modal) .nv-fmt-txt { --nv-fmt: var(--nv-c-txt); }
@@ -135,22 +129,13 @@
 :is(.nv-page, .nv-modal) .nv-btn-primary {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 :is(.nv-page, .nv-modal) .nv-btn-primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--accent) 84%, #000);
-    color: #fff;
-}
-
-/* Dark-mode --accent is a light blue: white text on it is barely legible. */
-:root[data-theme="dark"] :is(.nv-page, .nv-modal) .nv-btn-primary,
-:root[data-theme="dark"] :is(.nv-page, .nv-modal) .nv-btn-primary:hover:not(:disabled) {
-    color: #0b1220;
-}
-
-:root[data-theme="dark"] :is(.nv-page, .nv-modal) .nv-btn-primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--accent) 82%, #fff);
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+    color: var(--on-accent);
 }
 
 :is(.nv-page, .nv-modal) .nv-btn-ghost {
@@ -188,12 +173,12 @@
 :is(.nv-page, .nv-modal) .nv-btn-danger-solid {
     background: var(--nv-danger);
     border-color: var(--nv-danger);
-    color: #fff;
+    color: var(--on-danger);
 }
 
 :is(.nv-page, .nv-modal) .nv-btn-danger-solid:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--nv-danger) 84%, #000);
-    color: #fff;
+    background: color-mix(in srgb, var(--nv-danger) 88%, var(--text));
+    color: var(--on-danger);
 }
 
 :is(.nv-page, .nv-modal) .nv-label {

@@ -1,4 +1,5 @@
 @using Microsoft.AspNetCore.Identity
+@using System.Globalization
 @using System.Linq
 @using ToolboxWeb.Web.Domain
 @using ToolboxWeb.Web.Services
@@ -39,30 +40,62 @@
         ? await UserProfileService.GetProfileAsync(userId)
         : null;
     var accountLabel = CurrentUser.DisplayName ?? profile?.DisplayName ?? profile?.Email ?? profile?.UserName ?? User.Identity?.Name ?? T["Auth.ManageAccount"].Value;
+    var accountDetail = profile?.Email is { Length: > 0 } email && !string.Equals(email, accountLabel, StringComparison.OrdinalIgnoreCase) ? email : null;
     var avatarUrl = profile?.AvatarUrl;
     var initials = BuildInitials(accountLabel);
+    var currentCulture = CultureInfo.CurrentUICulture.Name;
+    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
 
-    <div class="account-menu">
-        <a class="account-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="@T["Auth.ManageAccount"]">
+    <div class="dropdown account-menu">
+        <button class="account-trigger" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" aria-label="@T["Account.Menu"]: @accountLabel">
             @* Initials are always rendered underneath; site.js removes the image if it fails to load. *@
             <span class="account-avatar">
                 <span aria-hidden="true">@initials</span>
                 @if (!string.IsNullOrWhiteSpace(avatarUrl))
                 {
-                    <img src="@Url.Content(avatarUrl)" alt="@T["Profile.AvatarAlt"]" data-avatar-image />
+                    <img src="@Url.Content(avatarUrl)" alt="" data-avatar-image />
                 }
             </span>
-            <span class="account-name">@accountLabel</span>
-        </a>
-        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-            <button type="submit">@T["Auth.Logout"]</button>
-        </form>
+            <tbx-icon name="chevron-down" class="account-trigger-caret" size="14" />
+        </button>
+        <div class="dropdown-menu dropdown-menu-end account-dropdown">
+            <div class="account-dropdown-head">
+                <span class="account-dropdown-name">@accountLabel</span>
+                @if (accountDetail is not null)
+                {
+                    <span class="account-dropdown-detail">@accountDetail</span>
+                }
+            </div>
+            <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">
+                <tbx-icon name="user" />@T["Auth.ManageAccount"]
+            </a>
+            <div class="dropdown-divider"></div>
+
+            <p class="account-dropdown-label" id="account-theme-label">@T["Account.Theme"]</p>
+            <div class="account-segmented" role="group" aria-labelledby="account-theme-label" data-theme-options>
+                <button type="button" data-theme-set="light" aria-pressed="false"><tbx-icon name="sun" />@T["Account.Theme.Light"]</button>
+                <button type="button" data-theme-set="dark" aria-pressed="false"><tbx-icon name="moon" />@T["Account.Theme.Dark"]</button>
+                <button type="button" data-theme-set="system" aria-pressed="false"><tbx-icon name="monitor" />@T["Account.Theme.System"]</button>
+            </div>
+
+            <p class="account-dropdown-label" id="account-language-label">@T["Account.Language"]</p>
+            <form asp-area="" asp-controller="Culture" asp-action="Set" method="post" class="account-segmented" role="group" aria-labelledby="account-language-label">
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <button type="submit" name="culture" value="vi-VN" lang="vi" aria-pressed="@(currentCulture == "vi-VN" ? "true" : "false")">@T["Language.Vietnamese"]</button>
+                <button type="submit" name="culture" value="en-US" lang="en" aria-pressed="@(currentCulture == "en-US" ? "true" : "false")">@T["Language.English"]</button>
+            </form>
+
+            <div class="dropdown-divider"></div>
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                <button type="submit" class="dropdown-item"><tbx-icon name="log-out" />@T["Auth.Logout"]</button>
+            </form>
+        </div>
     </div>
 }
 else
 {
-    <div class="account-menu">
-        <a asp-area="Identity" asp-page="/Account/Register">@T["Auth.Register"]</a>
-        <a asp-area="Identity" asp-page="/Account/Login">@T["Auth.Login"]</a>
+    <div class="account-menu account-menu--guest">
+        <a class="btn btn-sm btn-outline-secondary" asp-area="Identity" asp-page="/Account/Register">@T["Auth.Register"]</a>
+        <a class="btn btn-sm btn-primary" asp-area="Identity" asp-page="/Account/Login">@T["Auth.Login"]</a>
     </div>
 }

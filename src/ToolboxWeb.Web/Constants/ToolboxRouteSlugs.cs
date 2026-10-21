@@ -63,6 +63,7 @@ public static class ToolboxRouteSlugs
 
     public static class ComponentsTabs
     {
+        public const string Foundations = "foundations";
         public const string TextInput = "text-input";
         public const string Selection = "selection";
         public const string DateTimeNumeric = "date-time-numeric";
@@ -71,10 +72,11 @@ public static class ToolboxRouteSlugs
         public const string NavigationLayout = "navigation-layout";
         public const string Catalog = "catalog";
 
-        public const string Default = TextInput;
+        public const string Default = Foundations;
 
         public static readonly string[] All =
         [
+            Foundations,
             TextInput,
             Selection,
             DateTimeNumeric,

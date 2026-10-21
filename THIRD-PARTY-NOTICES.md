@@ -2,7 +2,7 @@
 
 ToolboxWeb uses the third-party components listed below. Their copyright and license notices remain with the original files. The policy for adding or upgrading components is in `AGENTS.md` under "Third-Party License Policy".
 
-Last verified: 2026-10-20, by reading each package's `LICENSE` file or SPDX expression.
+Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expression.
 
 ## Client-side assets (shipped under `src/ToolboxWeb.Web/Content/`)
 
@@ -13,9 +13,11 @@ Last verified: 2026-10-20, by reading each package's `LICENSE` file or SPDX expr
 | jQuery Validation | 1.21.0 | MIT | `lib/jquery-validation/` | In use |
 | jQuery Validation Unobtrusive | 4.0.0 | Apache-2.0 | `lib/jquery-validation-unobtrusive/` | In use |
 | Bootstrap Icons (subset) | — | MIT | `vendor/bootstrap-icons/` | In use |
+| Lucide (`lucide-static`, 43-icon sprite built by `tools/lucide/build-sprite.py`) | 1.60.0 | ISC (icons derived from Feather: MIT) | `vendor/lucide/` (with `LICENSE`) | In use (app icons) |
 | Kendo UI Core (`kendo-ui-core`) | 2026.2.520 | Apache-2.0 | `vendor/kendo/js/`, `cultures/`, `messages/` | In use (Core widgets only) |
 | Kendo Theme Default (`@progress/kendo-theme-default`) | 14.1.0 | Apache-2.0 | `vendor/kendo/theme/` | In use |
 | Kendo Font Icons (`@progress/kendo-font-icons`) | 5.1.0 | Apache-2.0 | `vendor/kendo/icons/` | In use |
+| Inter (`@fontsource/inter`, latin, latin-ext, vietnamese; 400/500/600/700) | 5.3.0 | OFL-1.1 | `vendor/fonts/inter/` (with `LICENSE`) | In use (app font) |
 | Tabulator (`tabulator-tables`) | 6.3.1 | MIT | `vendor/tabulator/` | In use |
 | Apache ECharts | 5.6.0 | Apache-2.0 | `vendor/echarts/` | Asset only, not wired |
 | FullCalendar Standard Bundle | 6.1.15 | MIT | `vendor/fullcalendar/` | Asset only, not wired. Premium plugins are commercial and must not be added |

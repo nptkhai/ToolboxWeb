@@ -1,7 +1,9 @@
 @using System.Text.Json
 @using ToolboxWeb.Web.Constants
+@using Microsoft.Extensions.Hosting
 @using ToolboxWeb.Web.Services
 @inject ICurrentUserService CurrentUser
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnvironment
 @{
     var flashSuccessMessage = TempData["SuccessMessage"] as string;
     var flashErrorMessage = TempData["ErrorMessage"] as string;
@@ -21,12 +23,16 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0b1730" />
+    <meta name="color-scheme" content="light dark" />
     <title>@ViewData["Title"] - @T["App.Name"]</title>
     <script type="importmap"></script>
+    <link rel="preload" href="~/vendor/fonts/inter/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="~/vendor/fonts/inter/inter.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/adaptive-background.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
     @if (hasFlashNotification)
     {
         <link rel="stylesheet" href="~/vendor/kendo/icons/index.css" asp-append-version="true" />
@@ -35,9 +41,21 @@
     @await RenderSectionAsync("Styles", required: false)
     <link rel="stylesheet" href="~/css/vendor-sync.css" asp-append-version="true" />
     <script>
+        // First visit follows the OS preference; after the user picks a theme it is remembered.
         (function () {
-            const theme = localStorage.getItem('toolbox.theme') || 'light';
+            let theme = null;
+            try { theme = localStorage.getItem('toolbox.theme'); } catch (e) { }
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
             document.documentElement.dataset.theme = theme;
+            let background = null;
+            try { background = localStorage.getItem('toolbox.background'); } catch (e) { }
+            document.documentElement.dataset.background = background === 'on' ? 'on' : 'off';
+            // Applied before first paint so the sidebar does not jump on wide screens.
+            let sidebar = null;
+            try { sidebar = localStorage.getItem('toolbox.sidebar'); } catch (e) { }
+            if (sidebar === 'collapsed') document.documentElement.dataset.sidebar = 'collapsed';
         })();
     </script>
 </head>
@@ -49,8 +67,6 @@
         <script id="tbx-flash-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(flashNotifications))</script>
     }
     @{
-        var currentCulture = CultureInfo.CurrentUICulture.Name;
-        var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
         var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html";
         var jiraDashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html";
         var jiraWorklistHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraWorklistHtml) ?? "/jira-worklist.html";
@@ -58,82 +74,122 @@
         var checklistHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html";
         var focusTimerHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html";
         var quickLinksHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.QuickLinksHtml) ?? "/quick-links.html";
+        var promptTemplatesHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml) ?? "/prompt-templates.html";
         var componentsHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ComponentsHtml) ?? "/component.html";
         var schemaCompareHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SchemaCompareHtml) ?? "/schema-compare.html";
         var sqlProfilerHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SqlProfilerHtml) ?? "/sql-profiler.html";
         var brandHref = CurrentUser.IsJiraUser ? jiraDashboardHref : dashboardHref;
+        var isAuthenticated = User.Identity?.IsAuthenticated == true;
+        // The DEV group (component hub and demos) is a developer tool, not part of the product.
+        var showDevGroup = ToolboxWeb.Web.Infrastructure.Security.DevToolsAccess.IsAllowed(HostEnvironment, User);
 
         // Current sidebar item, by controller/action so it also holds after a POST round-trip
         // and on sub-routes such as /component/{tab}.html.
         var navController = ViewContext.RouteData.Values["controller"] as string ?? string.Empty;
         var navAction = ViewContext.RouteData.Values["action"] as string ?? string.Empty;
+        var navArea = ViewContext.RouteData.Values["area"] as string ?? string.Empty;
         bool IsNav(params string[] controllers) => controllers.Any(c => string.Equals(c, navController, StringComparison.OrdinalIgnoreCase));
         var jiraDashboardActive = IsNav("Jira") && string.Equals(navAction, "DashboardPage", StringComparison.OrdinalIgnoreCase);
         var jiraWorklistActive = IsNav("Jira") && !jiraDashboardActive;
-        string? NavClass(bool active) => active ? "active" : null;
-        string? NavCurrent(bool active) => active ? "page" : null;
+        var personalControllers = new[] { "Dashboard", "Notes", "Checklist", "FocusTimer", "QuickLinks", "PromptTemplates" };
+        var devControllers = new[] { "Components", "DemoKendo", "TabulatorDemo" };
+
+        // Breadcrumb: the sidebar group of the current page, then the page title.
+        string? breadcrumbGroup = null;
+        if (IsNav("Jira")) breadcrumbGroup = T["Nav.Group.Jira"].Value;
+        else if (IsNav(personalControllers)) breadcrumbGroup = T["Nav.Group.Personal"].Value;
+        else if (IsNav("SchemaCompare", "SqlProfiler")) breadcrumbGroup = T["Nav.Group.Database"].Value;
+        else if (IsNav(devControllers)) breadcrumbGroup = T["Nav.Group.Dev"].Value;
+        else if (string.Equals(navArea, "Identity", StringComparison.OrdinalIgnoreCase) && isAuthenticated) breadcrumbGroup = T["Nav.Group.Account"].Value;
+        var pageTitle = ViewData["Title"]?.ToString() ?? T["Dashboard.Title"].Value;
     }
-    <div class="app-shell">
-        <aside class="app-sidebar">
-            @if (User.Identity?.IsAuthenticated == true)
+    @functions {
+        // One sidebar link: icon + text. The text stays in the accessibility tree when the
+        // sidebar is collapsed to icons; site.js adds a title tooltip in that state.
+        private async Task NavItem(string href, string icon, string label, bool active)
+        {
+            <li>
+                <a href="@href" class="side-nav-link@(active ? " active" : null)" aria-current="@(active ? "page" : null)">
+                    <tbx-icon name="@icon" />
+                    <span class="nav-text">@label</span>
+                </a>
+            </li>
+        }
+    }
+    <div class="app-shell" data-shell>
+        <aside class="app-sidebar" id="app-sidebar">
+            <div class="sidebar-head">
+                <a class="brand" href="@(isAuthenticated ? brandHref : Url.Action("Index", "Home", new { area = "" }))">
+                    <span class="brand-mark" aria-hidden="true">TW</span>
+                    <span class="brand-name">@T["App.Name"]</span>
+                </a>
+                <button class="icon-button sidebar-close" type="button" data-sidebar-close aria-label="@T["Action.CloseMenu"]">
+                    <tbx-icon name="x" />
+                </button>
+            </div>
+            @if (isAuthenticated)
             {
-                <a class="brand" href="@brandHref">@T["App.Name"]</a>
-                <nav class="side-nav">
+                <nav class="side-nav" aria-label="@T["Nav.Label"]">
                     @if (CurrentUser.IsJiraUser)
                     {
-                        <a href="@jiraDashboardHref" class="@NavClass(jiraDashboardActive)" aria-current="@NavCurrent(jiraDashboardActive)">@T["Nav.JiraDashboard"]</a>
-                        <a href="@jiraWorklistHref" class="@NavClass(jiraWorklistActive)" aria-current="@NavCurrent(jiraWorklistActive)">@T["Nav.JiraWorklist"]</a>
+                        <div class="nav-group">
+                            <p class="nav-group-label" id="nav-group-jira">@T["Nav.Group.Jira"]</p>
+                            <ul aria-labelledby="nav-group-jira">
+                                @{ await NavItem(jiraDashboardHref, "gauge", T["Nav.JiraDashboard"].Value, jiraDashboardActive); }
+                                @{ await NavItem(jiraWorklistHref, "kanban", T["Nav.JiraWorklist"].Value, jiraWorklistActive); }
+                            </ul>
+                        </div>
                     }
-
-                    <a href="@dashboardHref" class="@NavClass(IsNav("Dashboard"))" aria-current="@NavCurrent(IsNav("Dashboard"))">@T["Nav.Dashboard"]</a>
-                    <a href="@notesHref" class="@NavClass(IsNav("Notes"))" aria-current="@NavCurrent(IsNav("Notes"))">@T["Nav.Notes"]</a>
-                    <a href="@checklistHref" class="@NavClass(IsNav("Checklist"))" aria-current="@NavCurrent(IsNav("Checklist"))">@T["Nav.Checklist"]</a>
-                    <a href="@focusTimerHref" class="@NavClass(IsNav("FocusTimer"))" aria-current="@NavCurrent(IsNav("FocusTimer"))">@T["Nav.FocusTimer"]</a>
-                    <a href="@quickLinksHref" class="@NavClass(IsNav("QuickLinks"))" aria-current="@NavCurrent(IsNav("QuickLinks"))">@T["Nav.QuickLinks"]</a>
-                    <a href="@schemaCompareHref" class="@NavClass(IsNav("SchemaCompare"))" aria-current="@NavCurrent(IsNav("SchemaCompare"))">@T["Nav.SchemaCompare"]</a>
-                    <a href="@sqlProfilerHref" class="@NavClass(IsNav("SqlProfiler"))" aria-current="@NavCurrent(IsNav("SqlProfiler"))">@T["Nav.SqlProfiler"]</a>
-                    <a href="@componentsHref" class="@NavClass(IsNav("Components", "DemoKendo", "TabulatorDemo"))" aria-current="@NavCurrent(IsNav("Components", "DemoKendo", "TabulatorDemo"))">@T["Nav.Components"]</a>
+                    <div class="nav-group">
+                        <p class="nav-group-label" id="nav-group-personal">@T["Nav.Group.Personal"]</p>
+                        <ul aria-labelledby="nav-group-personal">
+                            @{ await NavItem(dashboardHref, "layout-dashboard", T["Nav.Dashboard"].Value, IsNav("Dashboard")); }
+                            @{ await NavItem(notesHref, "sticky-note", T["Nav.Notes"].Value, IsNav("Notes")); }
+                            @{ await NavItem(checklistHref, "list-checks", T["Nav.Checklist"].Value, IsNav("Checklist")); }
+                            @{ await NavItem(focusTimerHref, "timer", T["Nav.FocusTimer"].Value, IsNav("FocusTimer")); }
+                            @{ await NavItem(quickLinksHref, "link", T["Nav.QuickLinks"].Value, IsNav("QuickLinks")); }
+                            @{ await NavItem(promptTemplatesHref, "message-square-text", T["Nav.PromptTemplates"].Value, IsNav("PromptTemplates")); }
+                        </ul>
+                    </div>
+                    <div class="nav-group">
+                        <p class="nav-group-label" id="nav-group-database">@T["Nav.Group.Database"]</p>
+                        <ul aria-labelledby="nav-group-database">
+                            @{ await NavItem(schemaCompareHref, "git-compare", T["Nav.SchemaCompare"].Value, IsNav("SchemaCompare")); }
+                            @{ await NavItem(sqlProfilerHref, "activity", T["Nav.SqlProfiler"].Value, IsNav("SqlProfiler")); }
+                        </ul>
+                    </div>
+                    @if (showDevGroup)
+                    {
+                        <div class="nav-group">
+                            <p class="nav-group-label" id="nav-group-dev">@T["Nav.Group.Dev"]</p>
+                            <ul aria-labelledby="nav-group-dev">
+                                @{ await NavItem(componentsHref, "blocks", T["Nav.Components"].Value, IsNav(devControllers)); }
+                            </ul>
+                        </div>
+                    }
                 </nav>
             }
-            else
-            {
-                <a class="brand" asp-controller="Home" asp-action="Index">@T["App.Name"]</a>
-            }
         </aside>
+        <div class="sidebar-scrim" data-sidebar-close aria-hidden="true"></div>
         <div class="app-main">
             <header class="topbar">
-                <button class="icon-button" type="button" data-sidebar-toggle aria-label="@T["Action.ToggleSidebar"]">&#9776;</button>
-                <div>
-                    <div class="page-kicker">@T["App.Tagline"]</div>
-                    <h1>@(ViewData["Title"] ?? T["Dashboard.Title"].Value)</h1>
-                </div>
-                <div class="topbar-environment"
-                     data-environment-summary
-                     data-weather-loading="@T["Environment.Weather.Loading"]"
-                     data-weather-unavailable="@T["Environment.Weather.Unavailable"]"
-                     data-weather-clear="@T["Environment.Weather.Clear"]"
-                     data-weather-cloudy="@T["Environment.Weather.Cloudy"]"
-                     data-weather-fog="@T["Environment.Weather.Fog"]"
-                     data-weather-rain="@T["Environment.Weather.Rain"]"
-                     data-weather-snow="@T["Environment.Weather.Snow"]"
-                     data-weather-storm="@T["Environment.Weather.Storm"]"
-                     aria-live="polite">
-                    <div class="topbar-clock">
-                        <time class="topbar-clock-time" data-current-time datetime="">--:--</time>
-                        <span class="topbar-clock-date" data-current-date>--/--/----</span>
-                    </div>
-                    <div class="topbar-weather">
-                        <span class="topbar-weather-indicator" aria-hidden="true"></span>
-                        <span class="topbar-weather-text" data-current-weather>@T["Environment.Weather.Loading"]</span>
-                    </div>
-                </div>
+                @if (isAuthenticated)
+                {
+                    <button class="icon-button" type="button" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="true" aria-label="@T["Action.ToggleSidebar"]">
+                        <tbx-icon name="panel-left" class="toggle-icon-wide" />
+                        <tbx-icon name="menu" class="toggle-icon-narrow" />
+                    </button>
+                }
+                <nav class="topbar-breadcrumb" aria-label="@T["Nav.Breadcrumb"]">
+                    @if (breadcrumbGroup is not null)
+                    {
+                        <span class="topbar-crumb">@breadcrumbGroup</span>
+                        <tbx-icon name="chevron-right" class="topbar-crumb-sep" />
+                    }
+                    <h1 class="topbar-title">@pageTitle</h1>
+                </nav>
                 <div class="topbar-actions">
-                    <button class="icon-button" type="button" data-theme-toggle aria-label="@T["Action.ToggleTheme"]">&#9681;</button>
-                    <form asp-controller="Culture" asp-action="Set" method="post" class="language-switcher">
-                        <input type="hidden" name="returnUrl" value="@returnUrl" />
-                        <button class="language-button @(currentCulture == "vi-VN" ? "active" : null)" type="submit" name="culture" value="vi-VN">@T["Language.VietnameseShort"]</button>
-                        <button class="language-button @(currentCulture == "en-US" ? "active" : null)" type="submit" name="culture" value="en-US">@T["Language.EnglishShort"]</button>
-                    </form>
+                    @await RenderSectionAsync("PageActions", required: false)
                     <partial name="_LoginPartial" />
                 </div>
             </header>

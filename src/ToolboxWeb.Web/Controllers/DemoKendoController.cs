@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToolboxWeb.Web.Constants;
+using ToolboxWeb.Web.Infrastructure.Security;
 
 namespace ToolboxWeb.Web.Controllers;
 
 [Authorize]
+[DevToolsOnly]
 public class DemoKendoController : Controller
 {
     [HttpGet("/" + ToolboxRouteSlugs.Pages.KendoDemo + "/{tab?}")]

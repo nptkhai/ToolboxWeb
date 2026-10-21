@@ -966,3 +966,54 @@ Ghi chú khác:
 | Chữ nhỏ hơn 12px | 276 | 276 (xử lý bằng thang cỡ chữ ở GĐ3) |
 
 Ảnh mốc đã được tạo lại theo giao diện sau Giai đoạn 1.
+
+#### Giai đoạn 3 (3.1–3.5) – đã làm xong (21/10/2026), **dừng chờ chủ dự án duyệt khung app**
+
+| # | Việc | Kết quả |
+|---|---|---|
+| 3.1 | `tokens.css` | Toàn bộ token đã duyệt (màu sáng/tối, cỡ chữ, khoảng cách, bo góc, kích thước) nằm trong `Content/css/tokens.css`, nạp đầu tiên. Biến cũ (`--ui-*`, `--jira-*`, `--nv-*`, `--sc-*`) trỏ về token. Lần đầu vào app theo chế độ sáng/tối của máy; sau đó nhớ lựa chọn |
+| 3.2 | Font Inter | Tự host từ `@fontsource/inter` 5.3.0 (OFL 1.1): latin, latin-ext, vietnamese; 400/500/600/700. Có `LICENSE` và dòng trong `THIRD-PARTY-NOTICES.md` |
+| 3.3 | Giao diện thư viện | Bootstrap (`--bs-*`, nút, tab, dropdown, modal, alert, bảng), Kendo (`--kendo-color-*`, nút, lịch, thông báo) và Tabulator (đầu bảng, dòng 36px, bỏ sọc ngựa vằn) đọc cùng token trong `vendor-sync.css`. **Một kiểu nút chính** trên toàn app, bỏ gradient. Thông báo (toast) thành thẻ nền đặc có vạch màu trạng thái |
+| 3.4 | Component nền | `components.css`: panel, toolbar + ô tìm kiếm, dòng danh sách, nhãn trạng thái, chip, ô form có chỗ dành sẵn cho lỗi, side panel, trạng thái trống / lỗi / đang tải. Icon Lucide 1.60.0 (ISC) dạng sprite 43 icon, dùng bằng thẻ `<tbx-icon>`. `_EmptyState` dùng chung |
+| 3.5 | Khung app | Sidebar 232px chia 4 nhóm có icon (JIRA / CÁ NHÂN / CÔNG CỤ DB / DEV); DEV chỉ hiện ở Development. Đổi tên "Công việc Jira", "Việc cần làm"; thêm "Không gian prompt". Thu gọn còn icon (nhớ lựa chọn, có tooltip); dưới 900px thành ngăn trượt (Esc để đóng, focus quay về nút mở). Header 48px có breadcrumb "Nhóm › Trang" và một tiêu đề trang. Menu avatar: hồ sơ, giao diện Sáng / Tối / Theo máy, ngôn ngữ, đăng xuất. **Bỏ** dòng chữ nhỏ trên topbar, đồng hồ và thời tiết. Hình nền động **mặc định tắt**, bật trong Hồ sơ tài khoản › Hiển thị; thời tiết là công tắc riêng và chỉ khi bật mới hỏi quyền vị trí |
+
+**Sửa thêm trong lúc làm:**
+- Kendo Demo hết tràn ngang trên mobile (lưới `1fr` → `minmax(0, 1fr)` ở bố cục chung `.tool-grid`), nên việc này không còn nằm ở 5.13.
+- **Lỗi Tabulator `verticalFillMode` đã tìm ra nguyên nhân:** trang Tabulator Demo và bản demo trong Component Hub gọi `setData` trước khi Tabulator dựng xong bảng. Sau khi đổi font và khung, lỗi xuất hiện 2/3 lần tải trang. Đã sửa bằng cách chờ sự kiện `tableBuilt`; 8/8 lần tải sau đó không lỗi.
+- Trang đăng nhập được thiết kế cho nền bầu trời, nên khi nền tắt thì chế độ tối gần như không đọc được. Đã chuyển khung đăng nhập sang nền đặc theo token; thiết kế lại đầy đủ vẫn để ở 4.2.
+
+**Kết quả bộ kiểm tra `tests/ui` (66 lượt):** chỉ còn khác biệt ảnh chụp, đúng như dự kiến vì cả app đổi giao diện; không trang nào có chỉ số xấu hơn mốc.
+
+| Chỉ số | Sau GĐ1 | Sau GĐ3 (3.1–3.5) |
+|---|---|---|
+| Lỗi console | 0 | **0** |
+| Tràn ngang (tổng px) | 167 | **0** |
+| Ô nhập thiếu label | 54 | 54 (sửa theo từng màn hình ở GĐ4–5) |
+| Chữ nhỏ hơn 12px | 276 | **210** (còn lại: thẻ Kanban Jira 68 × 3 và So sánh DB 2 × 3) |
+
+**Chưa kiểm tra:** Jira thật (mới dùng dữ liệu giả); Windows/IIS Express; Safari.
+
+**Ghi chú:**
+- Tùy chọn hình nền và thời tiết lưu trong trình duyệt (`localStorage`), không lưu vào tài khoản, nên không cần migration. Đổi máy thì phải bật lại.
+- Ở Production, nhóm DEV bị ẩn khỏi menu nhưng đường dẫn `/component.html` vẫn mở được. Việc chặn hẳn làm ở 3.6.
+- Thêm một token dẫn xuất `--on-danger` (chữ trên nút đỏ: trắng ở chế độ sáng, gần đen ở chế độ tối), vì `#F87171` không đủ tương phản với chữ trắng.
+- Các màn hình bên trong (Ghi chú, Việc cần làm, Jira…) mới chỉ được "đổi giọng" qua token và component chung. Bố cục từng màn hình làm ở GĐ4–5.
+
+Chủ dự án đã duyệt khung app và cho làm tiếp 3.6.
+
+#### Giai đoạn 3.6 – đã làm xong (21/10/2026)
+
+| Việc | Kết quả |
+|---|---|
+| Chỉ dành cho người phát triển | Component Hub, Kendo Demo, Tabulator Demo (kể cả API dữ liệu của Tabulator Demo) có `[DevToolsOnly]`: mở ở Development hoặc với role `Developer`, nơi khác trả **404**. Nhóm DEV trong sidebar dùng cùng điều kiện. Đã chạy thử bản Production: 5 đường dẫn dev đều 404, nhóm DEV không hiện, Tổng quan vẫn 200 |
+| Bảng mẫu component | Tab mặc định mới **Nền tảng**: màu (17 token), cỡ chữ, khoảng cách và bo góc, nút, ô nhập (gợi ý và lỗi), nhãn trạng thái, chip lọc, dòng danh sách, trạng thái trống / lỗi / đang tải, thông báo, modal xác nhận, panel bên, 43 icon |
+| Danh mục và giấy phép | Một bảng duy nhất 68 component, cột **Giấy phép**, tìm kiếm không dấu, lọc theo 4 trạng thái: *Dùng được* (27) / *Có sẵn, chưa dùng* (36) / *Không dùng – phụ thuộc thư viện thương mại* (2) / *Không có trong Kendo Core* (3). Có trạng thái trống khi không khớp bộ lọc |
+| Một nguồn dữ liệu | `ViewModels/ComponentCatalog.cs`; nhãn trên các thẻ demo (`<tbx-component-status>`) đọc cùng nguồn nên không thể lệch với bảng. Trang chỉ đổi nhãn thành "Không tải được" khi widget thật sự không khởi tạo được |
+| Dọn trang (3.13 cũ) | Bỏ tiêu đề trùng với topbar và 4 ô "Chế độ / Cách nhóm…"; bỏ 2 thẻ ẩn chứa chữ lỗi mã hóa; nút của demo Tabulator dùng kiểu nút chuẩn; CSS inline (có nhiều mã màu cứng) chuyển sang `component-hub.css` chỉ dùng token; tên tab và tên trang tiếng Việt ("Bảng mẫu component") |
+
+**Kiểm tra:** 8 tab × 1440/390px × sáng/tối: không lỗi console, không tràn ngang, không chữ nhỏ hơn 12px, mọi widget Kendo khởi tạo được. Đã thử tìm kiếm, lọc, bỏ lọc, toast, modal xác nhận, panel bên.
+
+**Còn lại / chưa làm:**
+- Role `Developer` chưa có tác dụng vì ASP.NET Identity của app chưa bật roles; hiện tại ngoài Development không ai mở được trang dev.
+- Nội dung các thẻ demo cũ vẫn dùng chuỗi song ngữ viết thẳng trong view (`LocalText`), chưa chuyển sang khóa ngôn ngữ. Trang Kendo Demo và Tabulator Demo chưa đổi (để ở 5.13).
+

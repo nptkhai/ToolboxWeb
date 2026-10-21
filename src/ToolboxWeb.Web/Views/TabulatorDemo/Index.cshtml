@@ -415,6 +415,9 @@
             };
 
             let table = null;
+            // Tabulator builds the table asynchronously; setData before that fails inside
+            // Tabulator ("verticalFillMode" of null) when the data request returns first.
+            let tableBuilt = Promise.resolve();
             let tempRowCounter = 0;
 
             function setFeedback(message, type) {
@@ -618,6 +621,7 @@
                     return;
                 }
 
+                await tableBuilt;
                 table.setData(payload);
                 clearPending();
                 if (showMessage) {
@@ -742,6 +746,7 @@
                     updateRowCount();
                 }
             });
+            tableBuilt = new Promise(function (resolve) { table.on("tableBuilt", resolve); });
 
             // Deleting is staged until "Save", so it needs no dialog, but it needs a selection.
             table.on("rowSelectionChanged", function (data) {

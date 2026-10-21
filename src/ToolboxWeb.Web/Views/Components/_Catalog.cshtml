@@ -1,0 +1,105 @@
+@using ToolboxWeb.Web.Constants
+@{
+    var entries = ComponentCatalog.Entries;
+    var statuses = Enum.GetValues<ComponentStatus>();
+
+    string FamilyLabel(string family) => family switch
+    {
+        ToolboxRouteSlugs.ComponentsTabs.Foundations => T["Components.Sections.Foundations"].Value,
+        ToolboxRouteSlugs.ComponentsTabs.TextInput => T["Components.Sections.TextInput"].Value,
+        ToolboxRouteSlugs.ComponentsTabs.Selection => T["Components.Sections.Selection"].Value,
+        ToolboxRouteSlugs.ComponentsTabs.DateTimeNumeric => T["Components.Sections.DateTimeNumeric"].Value,
+        ToolboxRouteSlugs.ComponentsTabs.GridData => T["Components.Sections.GridData"].Value,
+        ToolboxRouteSlugs.ComponentsTabs.FeedbackPopup => T["Components.Sections.FeedbackPopup"].Value,
+        _ => T["Components.Sections.NavigationLayout"].Value
+    };
+
+    string LicenseText(ComponentLibrary library) => library.Commercial
+        ? T["Components.Catalog.License.Commercial"].Value
+        : string.IsNullOrEmpty(library.License) ? T["Components.Catalog.License.Own"].Value : library.License;
+
+    string TabRoute(string tab) => Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ComponentsTabHtml, new { tab }) ?? $"/component/{tab}.html";
+}
+<div class="component-family-head">
+    <h3>@T["Components.Sections.Catalog"]</h3>
+    <p>@T["Components.CatalogIntro"]</p>
+</div>
+
+<div class="component-catalog" data-catalog>
+    <div class="tbx-toolbar component-catalog-toolbar">
+        <div class="tbx-field component-catalog-search">
+            <label class="tbx-field-label" for="component-catalog-search">@T["Components.Catalog.Search"]</label>
+            <div class="tbx-search">
+                <tbx-icon name="search" />
+                <input id="component-catalog-search" class="form-control" type="search" autocomplete="off" placeholder="@T["Components.Catalog.SearchPlaceholder"]" data-catalog-search />
+            </div>
+        </div>
+        <div class="tbx-field">
+            <span class="tbx-field-label" id="component-catalog-filter-label">@T["Components.Catalog.FilterLabel"]</span>
+            <div class="component-catalog-chips" role="group" aria-labelledby="component-catalog-filter-label">
+                <button type="button" class="tbx-chip" aria-pressed="true" data-catalog-status="all">
+                    @T["Components.Catalog.FilterAll"] <span class="component-chip-count">@entries.Count</span>
+                </button>
+                @foreach (var status in statuses)
+                {
+                    <button type="button" class="tbx-chip" aria-pressed="false" data-catalog-status="@ComponentCatalog.StatusSlug(status)">
+                        @T[ComponentCatalog.StatusLabelKey(status)] <span class="component-chip-count">@entries.Count(entry => entry.Status == status)</span>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <p class="component-catalog-count" aria-live="polite" data-catalog-count data-template="@T["Components.Catalog.Count"]">@string.Format(T["Components.Catalog.Count"].Value, entries.Count, entries.Count)</p>
+
+    <div class="tbx-panel component-catalog-table-wrap" data-catalog-table>
+        <table class="table component-catalog-table">
+            <thead>
+                <tr>
+                    <th scope="col">@T["Components.Catalog.Column.Name"]</th>
+                    <th scope="col">@T["Components.Catalog.Column.Family"]</th>
+                    <th scope="col">@T["Components.Catalog.Column.Library"]</th>
+                    <th scope="col">@T["Components.Catalog.Column.License"]</th>
+                    <th scope="col">@T["Components.Catalog.Column.Status"]</th>
+                    <th scope="col">@T["Components.Catalog.Column.Note"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in entries)
+                {
+                    var family = FamilyLabel(entry.Family);
+                    <tr data-catalog-row data-status="@ComponentCatalog.StatusSlug(entry.Status)" data-search="@($"{entry.Name} {entry.Library.Name} {family}".ToLowerInvariant())">
+                        <th scope="row">
+                            <span class="component-catalog-name">@entry.Name</span>
+                            @if (entry.HasDemo)
+                            {
+                                <a class="component-catalog-demo" href="@TabRoute(entry.Family)">@T["Components.Catalog.OpenDemo"]</a>
+                            }
+                        </th>
+                        <td>@family</td>
+                        <td>
+                            @entry.Library.Name
+                            @if (!string.IsNullOrEmpty(entry.Library.Version))
+                            {
+                                <span class="component-catalog-version">@entry.Library.Version</span>
+                            }
+                        </td>
+                        <td class="text-center">@LicenseText(entry.Library)</td>
+                        <td class="text-center">
+                            <span class="tbx-pill @ComponentCatalog.StatusTone(entry.Status)">@T[ComponentCatalog.StatusLabelKey(entry.Status)]</span>
+                        </td>
+                        <td class="component-catalog-note">@(entry.NoteKey is null ? string.Empty : T[entry.NoteKey].Value)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="tbx-panel" data-catalog-empty hidden>
+        <div class="tbx-empty" role="status">
+            <span class="tbx-empty-icon"><tbx-icon name="search" size="20" /></span>
+            <p class="tbx-empty-text">@T["Components.Catalog.Empty"]</p>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-catalog-clear>@T["Components.Catalog.ClearFilter"]</button>
+        </div>
+    </div>
+</div>
