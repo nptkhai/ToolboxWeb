@@ -1,7 +1,7 @@
 # Quyết định thiết kế ToolboxWeb
 
-> Trạng thái: **ĐỀ XUẤT – chờ chủ dự án duyệt** (Giai đoạn 2 trong lộ trình ở `docs/UI_UX_REVIEW.md`, mục 10.6).
-> Khi được duyệt: đổi trạng thái từng mục thành "Đã duyệt", ghi ngày, rồi điền giá trị vào `AGENTS.md` (mục UI Standard).
+> Trạng thái: **ĐÃ DUYỆT ngày 21/10/2026** (Giai đoạn 2 trong lộ trình ở `docs/UI_UX_REVIEW.md`, mục 10.6).
+> Chủ dự án duyệt toàn bộ đề xuất, **trừ màu nhấn**: chủ dự án chọn cặp màu riêng (xem 2.B). Các giá trị đã được ghi vào `AGENTS.md` (mục UI Standard).
 > Bản mẫu tương tác: https://claude.ai/artifact/DZ6V7aPhiwrhBLPF4bYD3u (riêng tư; chỉ chủ dự án mở được). Trên khung Jira Dashboard có công tắc đổi giao diện sáng/tối, màu nhấn, font và mật độ để so sánh trực tiếp.
 
 Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, lý do, và hệ quả khi triển khai ở Giai đoạn 3.
@@ -10,7 +10,7 @@ Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, l
 
 ## 2.A Hướng phong cách
 
-- **Đề xuất:** lấy cảm hứng từ các nguyên tắc của Linear:
+- **Đã chọn:** lấy cảm hứng từ các nguyên tắc của Linear:
   - nền trung tính, một màu nhấn duy nhất;
   - màu chỉ dùng cho trạng thái, mức ưu tiên và phản hồi;
   - danh sách gọn (dòng 36px), form rộng rãi;
@@ -18,19 +18,34 @@ Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, l
   - thao tác được bằng bàn phím.
 - **Không làm:** sao chép logo, tên, bộ icon, hình minh họa, màu thương hiệu hay CSS của Linear (xem chính sách giấy phép trong `AGENTS.md`).
 - **Lý do:** ToolboxWeb là công cụ làm việc dày thông tin; nhóm Jira bản chất là quản lý issue. Một ngôn ngữ thiết kế tiết chế chữa đúng bệnh lớn nhất hiện nay: mỗi trang một kiểu.
-- **Trạng thái:** Đề xuất.
+- **Trạng thái:** Đã duyệt 21/10/2026.
 
 ## 2.B Màu nhấn
 
-| Phương án | Sáng | Tối | Ghi chú |
-|---|---|---|---|
-| **Xanh dương (đề xuất)** | `#2563EB` (5,2:1) | `#6EA8FE` (7,4:1) | Giữ nhận diện hiện tại (`--accent` đang là `#2563eb`), người dùng không thấy lạ |
-| Xanh biển | `#0369A1` (5,9:1) | `#38BDF8` (8,3:1) | Trầm hơn, hợp công cụ DB |
-| Xanh ngọc | `#0F766E` (5,5:1) | `#2DD4BF` (9,5:1) | Khác biệt nhất, nhưng gần màu "hoàn tất" |
+**Chủ dự án chọn:** `#4B87BB` cho chế độ sáng và `#8ED3F2` cho chế độ tối, thay cho 3 phương án đề xuất (xanh dương `#2563EB`, xanh biển `#0369A1`, xanh ngọc `#0F766E`).
 
-- Số trong ngoặc là độ tương phản với nền bề mặt; cả ba đều đạt WCAG AA (≥ 4,5:1). Chữ trắng trên nút màu nhấn đạt 5,2 / 5,9 / 5,5.
-- Không dùng tông tím–chàm đặc trưng của Linear.
-- **Trạng thái:** Đề xuất xanh dương.
+Hai màu này chưa đủ tương phản để làm chữ trên nền sáng, nên chế độ sáng có thêm hai sắc độ đậm hơn **cùng tông màu**, chỉ dùng cho chữ và nút. Cách gán này được chủ dự án duyệt ngày 21/10/2026.
+
+| Token | Sáng | Tối | Dùng cho |
+|---|---|---|---|
+| `--accent-brand` | `#4B87BB` | `#8ED3F2` | Trang trí: biểu đồ, thanh tiến độ, logo, viền nhấn |
+| `--accent` | `#417BAD` | `#8ED3F2` | Nút chính, link, viền ô đang focus |
+| `--accent-strong` | `#3A6E9B` | `#9FDAF4` | Chữ trên nền nhạt pha từ màu nhấn (nhãn "Đang làm", menu đang chọn, chip đang chọn); hover của nút chính |
+| `--on-accent` | `#FFFFFF` | `#0E1014` | Chữ trên nút màu nhấn |
+
+Độ tương phản đã kiểm tra (WCAG, tối thiểu 4,5:1):
+
+| Cặp màu | Sáng | Tối |
+|---|---|---|
+| `--accent` trên nền trắng / `#15181E` | 4,5 | 10,8 |
+| `--on-accent` trên `--accent` (nút) | 4,5 | 11,6 |
+| `--accent-strong` trên nền nhạt 14% (nhãn) | 4,6 | – |
+| `--accent` trên nền nhạt 14% (nhãn, tối) | – | 8,0 |
+| `--on-accent` trên `--accent-strong` (hover) | 5,4 | 12,5 |
+
+Riêng `#4B87BB` (3,8:1 trên nền trắng) và `#8ED3F2` (1,65:1 trên nền trắng) **không được dùng làm màu chữ ở chế độ sáng**.
+
+- **Trạng thái:** Đã duyệt 21/10/2026.
 
 ## 2.C Bảng màu nền, chữ và trạng thái
 
@@ -48,7 +63,7 @@ Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, l
 
 - Nền nhạt của nhãn trạng thái là màu trạng thái pha 12–14% với nền (`color-mix`). Không thêm mã màu mới.
 - Các biến Jira hiện có (`--jira-blue`, `--jira-mint`…) sẽ gộp về bộ này ở Giai đoạn 3.
-- **Trạng thái:** Đề xuất.
+- **Trạng thái:** Đã duyệt 21/10/2026.
 
 ## 2.D Font
 
@@ -59,7 +74,7 @@ Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, l
 
 - Tải từ gói `@fontsource/inter` (OFL), đặt trong `Content/vendor/fonts/inter/`, ghi vào `THIRD-PARTY-NOTICES.md`. Không tải từ trang của Linear hay Google Fonts lúc chạy.
 - Bỏ khai báo `"Roboto"` hiện không được tải.
-- **Trạng thái:** Đề xuất Inter.
+- **Trạng thái:** Đã duyệt 21/10/2026 (Inter).
 
 ## 2.E Cỡ chữ, độ đậm, khoảng cách, bo góc, kích thước
 
@@ -83,7 +98,7 @@ Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, l
   - ô nhập trong form 38px; nút 34px;
   - header 48px; sidebar 232px.
 - **Điểm ngắt màn hình:** 600 / 900 / 1200px.
-- **Trạng thái:** Đề xuất.
+- **Trạng thái:** Đã duyệt 21/10/2026.
 
 ## 2.F Bộ icon
 
@@ -94,7 +109,7 @@ Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, l
 | Kendo font icons | Apache-2.0 | Đã có; chỉ nên dùng bên trong widget Kendo |
 
 - Bản mẫu đang dùng icon nét mảnh tự vẽ để minh họa; khi triển khai sẽ thay bằng bộ được chọn.
-- **Trạng thái:** Đề xuất Lucide.
+- **Trạng thái:** Đã duyệt 21/10/2026 (Lucide).
 
 ## 2.G Thư viện control
 
@@ -104,7 +119,7 @@ Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, l
   - Kendo UI Core, chỉ dùng DatePicker, ComboBox, MultiSelect, AutoComplete, NumericTextBox, Notification. Giao diện chỉnh qua `vendor-sync.css` theo token.
 - **Không dùng:** ColorPicker và mọi thứ cần `@progress/kendo-drawing`; các widget Kendo thương mại.
 - **Để dành, chỉ nối khi có màn hình cần:** ECharts (biểu đồ giờ log ở 5.1), FullCalendar, Quill, SheetJS.
-- **Trạng thái:** Đề xuất.
+- **Trạng thái:** Đã duyệt 21/10/2026.
 
 ## 2.H Khung app, mật độ và hình nền
 
@@ -117,7 +132,7 @@ Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, l
 - **Hình nền động:** thành tùy chọn trong trang tài khoản, **mặc định tắt**.
 - **Giao diện sáng/tối:** lần đầu theo cài đặt hệ điều hành, sau đó nhớ lựa chọn của người dùng.
 - **Mật độ mặc định:** Gọn (36px).
-- **Trạng thái:** Đề xuất.
+- **Trạng thái:** Đã duyệt 21/10/2026.
 
 ## 2.I Múi giờ và định dạng
 
@@ -126,7 +141,7 @@ Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, l
   - `vi-VN`: `dd/MM/yyyy`, `HH:mm`, số `17,5`;
   - `en-US`: `MM/dd/yyyy`, `h:mm tt`, số `17.5`;
   - giờ: `17,5h`.
-- **Trạng thái:** Đề xuất.
+- **Trạng thái:** Đã duyệt 21/10/2026.
 
 ## 2.J Bản mẫu tĩnh
 
@@ -134,12 +149,12 @@ Mỗi quyết định ghi: phương án đề xuất, các lựa chọn khác, l
   1. **Jira Dashboard (tương tác):** dữ liệu tuần 43 giống chế độ Jira giả. Có thẻ tiến độ 6/9, giờ log/ước tính 14,5h/15,5h, quá hạn, chưa ước tính; biểu đồ giờ log theo ngày so với 8h; danh sách nhóm theo issue cha; nút "Ẩn việc đã xong"; JQL thu gọn.
   2. **Trang danh sách + form (Việc cần làm):** ô tìm kiếm, chip lọc có số đếm, checkbox ở đầu dòng, form trong modal có label cho mọi ô, modal xác nhận xóa, trạng thái trống.
   3. **Bảng token:** màu (kèm độ tương phản), cỡ chữ, khoảng cách, bo góc, nút, ô nhập, nhãn trạng thái.
-- **Trạng thái:** Chờ chủ dự án xem.
+- **Trạng thái:** Đã xem và duyệt 21/10/2026. Bản mẫu đã được cập nhật theo màu nhấn đã chọn.
 
 ---
 
-## Sau khi duyệt
+## Bước tiếp theo
 
-1. Cập nhật trạng thái từng mục ở trên.
-2. Điền giá trị vào `AGENTS.md`, mục UI Standard: tên token, thang chữ, danh sách component dùng chung.
+1. ~~Cập nhật trạng thái từng mục ở trên.~~ Xong 21/10/2026.
+2. ~~Điền giá trị vào `AGENTS.md`, mục UI Standard.~~ Xong 21/10/2026. Danh sách component dùng chung sẽ được bổ sung khi làm xong ở Giai đoạn 3.
 3. Bắt đầu Giai đoạn 3 theo thứ tự ở `docs/UI_UX_REVIEW.md`, mục 10.7: `tokens.css` → font → giao diện thư viện bên thứ ba → component nền → khung app → bảng mẫu component.
