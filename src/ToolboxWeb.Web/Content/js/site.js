@@ -731,4 +731,88 @@
     }
 
     initFlashNotification();
+
+    // ------------------------------------------------------------------ confirmation dialog
+    // Toolbox.confirm({ title, message, okText, tone }) resolves true when the user confirms.
+    // tone is "danger" (default) or "primary". Falls back to window.confirm without Bootstrap.
+    const confirmModalElement = document.getElementById('tbx-confirm');
+    let resolveConfirm = null;
+
+    function settleConfirm(value) {
+        if (resolveConfirm) {
+            const resolve = resolveConfirm;
+            resolveConfirm = null;
+            resolve(value);
+        }
+    }
+
+    window.Toolbox.confirm = function (options) {
+        const settings = options || {};
+        if (!confirmModalElement || !window.bootstrap?.Modal) {
+            return Promise.resolve(window.confirm(settings.message || ''));
+        }
+
+        settleConfirm(false);
+        const titleEl = confirmModalElement.querySelector('[data-confirm-role="title"]');
+        const messageEl = confirmModalElement.querySelector('[data-confirm-role="message"]');
+        const okButton = confirmModalElement.querySelector('[data-confirm-role="ok"]');
+        titleEl.textContent = settings.title || titleEl.dataset.defaultText;
+        messageEl.textContent = settings.message || '';
+        okButton.textContent = settings.okText || okButton.dataset.defaultText || okButton.textContent;
+        okButton.classList.toggle('btn-danger', settings.tone !== 'primary');
+        okButton.classList.toggle('btn-primary', settings.tone === 'primary');
+
+        return new Promise(function (resolve) {
+            resolveConfirm = resolve;
+            window.bootstrap.Modal.getOrCreateInstance(confirmModalElement).show();
+        });
+    };
+
+    if (confirmModalElement) {
+        const titleDefault = confirmModalElement.querySelector('[data-confirm-role="title"]');
+        titleDefault.dataset.defaultText = titleDefault.textContent;
+        confirmModalElement.querySelector('[data-confirm-role="ok"]').addEventListener('click', function () {
+            settleConfirm(true);
+            window.bootstrap.Modal.getOrCreateInstance(confirmModalElement).hide();
+        });
+        confirmModalElement.addEventListener('hidden.bs.modal', function () {
+            settleConfirm(false);
+        });
+    }
+
+    // Declarative use: <button type="submit" data-confirm="Xóa “X”?" data-confirm-title="..."
+    // data-confirm-ok="Xóa">. The attribute may also sit on the <form>.
+    document.addEventListener('submit', function (event) {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement) || form.dataset.confirmed === 'true') {
+            return;
+        }
+
+        const source = event.submitter && event.submitter.hasAttribute('data-confirm')
+            ? event.submitter
+            : (form.hasAttribute('data-confirm') ? form : null);
+        if (!source) {
+            return;
+        }
+
+        event.preventDefault();
+        const submitter = event.submitter;
+        window.Toolbox.confirm({
+            title: source.dataset.confirmTitle,
+            message: source.dataset.confirm,
+            okText: source.dataset.confirmOk,
+            tone: source.dataset.confirmTone
+        }).then(function (confirmed) {
+            if (!confirmed) {
+                return;
+            }
+
+            form.dataset.confirmed = 'true';
+            if (submitter && typeof form.requestSubmit === 'function') {
+                form.requestSubmit(submitter);
+            } else {
+                form.submit();
+            }
+        });
+    });
 })();

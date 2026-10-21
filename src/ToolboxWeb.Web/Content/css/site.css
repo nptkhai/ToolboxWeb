@@ -393,6 +393,21 @@ a {
     display: none;
 }
 
+.tbx-confirm-modal .modal-content {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--text);
+}
+
+    .tbx-confirm-modal .modal-header,
+    .tbx-confirm-modal .modal-footer {
+        border-color: var(--line);
+    }
+
+:root[data-theme="dark"] .tbx-confirm-modal .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
 .tool-grid {
     display: grid;
     gap: 18px;

@@ -33,7 +33,7 @@
                     </div>
                     <form asp-action="Delete" method="post">
                         <input type="hidden" name="id" value="@link.Id" />
-                        <button class="btn btn-sm btn-outline-danger" type="submit">@T["Action.Delete"]</button>
+                        <button class="btn btn-sm btn-outline-danger" type="submit" data-confirm="@T["Confirm.DeleteMessage", link.Title]" data-confirm-title="@T["Confirm.DeleteTitle"]" data-confirm-ok="@T["Action.Delete"]">@T["Action.Delete"]</button>
                     </form>
                 </div>
             }
