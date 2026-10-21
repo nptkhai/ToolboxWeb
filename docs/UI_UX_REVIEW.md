@@ -954,3 +954,15 @@ Ghi chú khác:
 **Còn tồn tại, đã ghi nhận cho giai đoạn sau:**
 - Ở 1440px, bảng Jira Dashboard phải cuộn ngang mới thấy các cột Trạng thái, Hạn, Ước tính, Log. Gốc rễ là hai cột tóm tắt trùng nhau; xử lý ở 5.1 (nhóm theo issue cha).
 - Kendo Demo tràn ngang trên mobile; xử lý ở 5.13.
+- Lỗi chập chờn: trang Tabulator Demo trên mobile **một lần** báo lỗi console `Cannot read properties of null (reading 'verticalFillMode')` (lỗi nội bộ của Tabulator) trong một lượt chạy bộ kiểm tra đầy đủ. Chạy lại hơn 20 lần, cả trên code trước và sau thay đổi, đều không tái hiện được. Có thể là lỗi tranh chấp thời điểm của Tabulator khi khung nhìn đổi kích thước lúc chụp ảnh toàn trang. Cần theo dõi; nếu lặp lại thì điều tra ở 5.13.
+
+**Kết quả bộ kiểm tra `tests/ui` (66 lượt), trước và sau Giai đoạn 1:**
+
+| Chỉ số | Trước | Sau |
+|---|---|---|
+| Lỗi console | 24 | **0** |
+| Tràn ngang (tổng px) | 3.060 | **167** (chỉ còn Kendo Demo trên mobile) |
+| Ô nhập thiếu label | 66 | 54 |
+| Chữ nhỏ hơn 12px | 276 | 276 (xử lý bằng thang cỡ chữ ở GĐ3) |
+
+Ảnh mốc đã được tạo lại theo giao diện sau Giai đoạn 1.
