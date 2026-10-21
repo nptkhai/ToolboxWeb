@@ -206,17 +206,20 @@ Approved by the owner on 2026-10-21 (`docs/DESIGN_DECISIONS.md`). They live in `
 
 ## Components Hub Appendix
 
-- File: `src/ToolboxWeb.Web/Views/Components/Index.cshtml`
+- Files: `src/ToolboxWeb.Web/Views/Components/Index.cshtml`, `_Foundations.cshtml`, `_Catalog.cshtml`; styles in `Content/css/component-hub.css`, catalog filter in `Content/js/component-hub.js`.
+- The hub is the style guide for developers. It, `DemoKendo` and `TabulatorDemo` carry `[DevToolsOnly]`: open in Development or to the `Developer` role, 404 elsewhere. The sidebar DEV group uses the same check (`Infrastructure/Security/DevToolsAccess.cs`).
+- `ViewModels/ComponentCatalog.cs` is the single source for component status and license. The catalog tab and every demo card pill (`<tbx-component-status key="…" />`) read it. When you add a demo or change a component's status, update the catalog, not the markup. Statuses: Usable (preferred control set), Available (shipped but not adopted), CommercialDependency, NotInKendoCore.
 - The `Component` page is grouped by component family, not by library.
 - Add live demos only to the matching family tab. Do not place a demo in a nearby tab just because it reuses the same library.
 - Family mapping:
+  - `Foundations` (default tab): tokens, type, buttons, form field, pills, chips, list rows, empty/error/loading states, confirm, side panel, icons.
   - `Text Input`: text input, textarea, textbox-like inputs, autocomplete, combo box.
   - `Selection`: checkbox, select, dropdown list, multiselect, listbox, pick-list selection.
   - `Date, Time, Numeric`: date/time pickers, numeric input, slider, masked numeric/date-like input.
   - `Grid & Data List`: Tabulator grid, Kendo DataSource/ListView/Pager, list-data demos.
   - `Feedback & Popup`: alert, notification, validator, modal/window, tooltip, popup CRUD flows.
   - `Navigation & Layout`: menu, panelbar, splitter, layout and navigation demos.
-  - `Catalog`: inventory and status only, not live demos.
+  - `Catalog`: inventory, license and status only, not live demos.
 - The Bootstrap CRUD popup demo belongs under `Feedback & Popup`.
 - Its data target is the Tabulator demo inside `Grid & Data List`.
 - Keep visible trigger IDs unique so JavaScript does not bind to hidden or duplicate nodes.

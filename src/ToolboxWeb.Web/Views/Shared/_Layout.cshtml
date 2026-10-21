@@ -81,7 +81,7 @@
         var brandHref = CurrentUser.IsJiraUser ? jiraDashboardHref : dashboardHref;
         var isAuthenticated = User.Identity?.IsAuthenticated == true;
         // The DEV group (component hub and demos) is a developer tool, not part of the product.
-        var showDevGroup = HostEnvironment.IsDevelopment();
+        var showDevGroup = ToolboxWeb.Web.Infrastructure.Security.DevToolsAccess.IsAllowed(HostEnvironment, User);
 
         // Current sidebar item, by controller/action so it also holds after a POST round-trip
         // and on sub-routes such as /component/{tab}.html.
