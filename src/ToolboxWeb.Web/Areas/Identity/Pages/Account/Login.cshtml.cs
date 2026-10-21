@@ -45,7 +45,8 @@ public class LoginModel : PageModel
     public string? JiraErrorMessage { get; private set; }
     public string ActiveMode { get; private set; } = LocalMode;
 
-    public IActionResult OnGet(string? returnUrl = null)
+    // mode=jira opens the Jira tab first (used by the Access denied page).
+    public IActionResult OnGet(string? returnUrl = null, string? mode = null)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
@@ -55,7 +56,7 @@ public class LoginModel : PageModel
 
         ReturnUrl = NormalizeReturnUrl(returnUrl);
         JiraInput.BaseUrl = _jiraOptions.Value.DefaultBaseUrl;
-        ActiveMode = LocalMode;
+        ActiveMode = string.Equals(mode, JiraMode, StringComparison.OrdinalIgnoreCase) ? JiraMode : LocalMode;
         return Page();
     }
 

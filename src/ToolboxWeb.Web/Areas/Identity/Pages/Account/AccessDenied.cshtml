@@ -1,0 +1,32 @@
+@page
+@using ToolboxWeb.Web.Constants
+@inject ToolboxWeb.Web.Services.ICurrentUserService CurrentUser
+@*
+    Replaces the English page from Microsoft.AspNetCore.Identity.UI. The common case is a local
+    ToolboxWeb account opening a Jira screen, so that case gets its own explanation and a way to
+    switch to a Jira sign-in.
+*@
+@{
+    ViewData["Title"] = T["Auth.AccessDenied.Title"];
+    var requested = Request.Query["ReturnUrl"].ToString();
+    var safeRequested = Url.IsLocalUrl(requested) ? requested : string.Empty;
+    var isJiraPage = safeRequested.StartsWith("/jira-", StringComparison.OrdinalIgnoreCase);
+    var homeHref = CurrentUser.IsJiraUser
+        ? Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html"
+        : Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html";
+    var jiraLoginUrl = Url.Page("/Account/Login", new { area = "Identity", mode = "jira", returnUrl = safeRequested });
+}
+
+<section class="panel access-denied-panel">
+    <h2>@(isJiraPage ? T["Auth.AccessDenied.JiraHeading"] : T["Auth.AccessDenied.Heading"])</h2>
+    <p class="muted">@(isJiraPage ? T["Auth.AccessDenied.JiraMessage"] : T["Auth.AccessDenied.Message"])</p>
+    <div class="inline-actions">
+        @if (isJiraPage)
+        {
+            <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@jiraLoginUrl">
+                <button class="btn btn-primary" type="submit">@T["Auth.AccessDenied.SignInWithJira"]</button>
+            </form>
+        }
+        <a class="btn btn-outline-secondary" href="@homeHref">@T["Auth.AccessDenied.BackHome"]</a>
+    </div>
+</section>

@@ -7,10 +7,22 @@
     <section class="panel span-4">
         <div class="panel-header"><h2>@T["QuickLinks.AddLink"]</h2></div>
         <form asp-action="Create" method="post" class="form-grid">
-            <input asp-for="Form.Title" name="Title" class="form-control" placeholder="@T["QuickLinks.LinkTitlePlaceholder"]" />
-            <input asp-for="Form.Url" name="Url" class="form-control" placeholder="@T["QuickLinks.LinkUrlPlaceholder"]" />
-            <input asp-for="Form.GroupName" name="GroupName" class="form-control" placeholder="@T["QuickLinks.LinkGroupPlaceholder"]" />
-            <input asp-for="Form.SortOrder" name="SortOrder" class="form-control" placeholder="@T["QuickLinks.LinkSortOrderPlaceholder"]" />
+            <div class="d-grid gap-1">
+                <label class="form-label mb-0" for="ql-title">@T["QuickLinks.LabelTitle"]</label>
+                <input asp-for="Form.Title" id="ql-title" name="Title" class="form-control" placeholder="@T["QuickLinks.LinkTitlePlaceholder"]" />
+            </div>
+            <div class="d-grid gap-1">
+                <label class="form-label mb-0" for="ql-url">@T["QuickLinks.LabelUrl"]</label>
+                <input asp-for="Form.Url" id="ql-url" name="Url" class="form-control" placeholder="@T["QuickLinks.LinkUrlPlaceholder"]" />
+            </div>
+            <div class="d-grid gap-1">
+                <label class="form-label mb-0" for="ql-group">@T["QuickLinks.LabelGroup"]</label>
+                <input asp-for="Form.GroupName" id="ql-group" name="GroupName" class="form-control" placeholder="@T["QuickLinks.LinkGroupPlaceholder"]" />
+            </div>
+            <div class="d-grid gap-1">
+                <label class="form-label mb-0" for="ql-sort">@T["QuickLinks.LabelSortOrder"]</label>
+                <input asp-for="Form.SortOrder" id="ql-sort" name="SortOrder" class="form-control" placeholder="@T["QuickLinks.LinkSortOrderPlaceholder"]" />
+            </div>
             <button class="btn btn-primary" type="submit">@T["Action.Create"]</button>
         </form>
     </section>
@@ -26,7 +38,7 @@
                         <div class="item-meta">
                             @if (!string.IsNullOrWhiteSpace(link.GroupName))
                             {
-                                @link.GroupName <text>&middot; </text>
+                                @($"{link.GroupName} · ")
                             }
                             @link.Url
                         </div>

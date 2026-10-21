@@ -403,6 +403,18 @@ a {
     display: none;
 }
 
+.access-denied-panel {
+    display: grid;
+    gap: 12px;
+    max-width: 640px;
+}
+
+    .access-denied-panel h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
 .tbx-confirm-modal .modal-content {
     background: var(--surface);
     border: 1px solid var(--line);
