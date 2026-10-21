@@ -127,7 +127,7 @@
   - Dense lists, roomy forms.
   - Calm empty states and subtle motion.
   - Keyboard-friendly.
-  - Concrete values (tokens, font, icon set, accent color) are decided in roadmap stage 2. Once decided, they are recorded here and in `docs/DESIGN_DECISIONS.md`.
+  - Concrete values were approved on 2026-10-21 and are listed under "Design Tokens" below. The reasons are in `docs/DESIGN_DECISIONS.md`.
 - Reference screen: `Views/Notes/Index.cshtml` (toolbar + search + primary action + empty state + modal confirm). New or reworked list screens follow its structure.
 - Rules that apply now:
   - **Colors:** do not add new hex, rgb, or hsl color literals in CSS or inline styles. Reuse the CSS variables in `:root`. If a needed color does not exist, add one variable to `:root` (light and dark) instead of a literal.
@@ -142,6 +142,51 @@
   - **Numbers and dates** follow the current UI culture (`17,5` in `vi-VN`). Use one date format per culture across the app.
   - **Third-party widgets:** Kendo and Tabulator widgets must look like native app controls. Style them through `Content/css/vendor-sync.css` using the shared variables, not per page.
   - **Responsive:** every changed screen works at 1440px and 390px wide, with no horizontal page scroll, in light and dark themes.
+
+## Design Tokens
+
+Approved by the owner on 2026-10-21 (`docs/DESIGN_DECISIONS.md`). Roadmap stage 3 puts them in `Content/css/tokens.css`; until that file exists, do not introduce these names piecemeal in other stylesheets.
+
+- **Accent** (owner's choice). Use each token only for its listed purpose; the brand shades are too light for text in light mode.
+
+  | Token | Light | Dark | Use |
+  |---|---|---|---|
+  | `--accent-brand` | `#4B87BB` | `#8ED3F2` | decoration only: charts, progress bars, logo, accent borders |
+  | `--accent` | `#417BAD` | `#8ED3F2` | primary buttons, links, focus outline |
+  | `--accent-strong` | `#3A6E9B` | `#9FDAF4` | text on accent tints (status pills, active nav, selected chips); primary button hover |
+  | `--on-accent` | `#FFFFFF` | `#0E1014` | text on accent-filled buttons |
+
+- **Neutrals and status:**
+
+  | Token | Light | Dark |
+  |---|---|---|
+  | `--bg` | `#F7F8FA` | `#0E1014` |
+  | `--surface` | `#FFFFFF` | `#15181E` |
+  | `--surface-2` | `#F2F4F7` | `#1C2028` |
+  | `--line` | `#E3E6EB` | `#2A2F39` |
+  | `--text` | `#16181D` | `#E8EAEE` |
+  | `--muted` | `#5B6270` | `#A2A9B6` |
+  | `--success` | `#15803D` | `#4ADE80` |
+  | `--warning` | `#B45309` | `#FBBF24` |
+  | `--danger` | `#C62828` | `#F87171` |
+
+  Status tints are the status color mixed 12–14% into the surface with `color-mix()`, never a new literal.
+- **Type:** Inter, self-hosted from `@fontsource/inter` (SIL OFL 1.1), weights 400/500/600 (700 for the logo only).
+  - Sizes in rem: `--text-xs` 12px, `--text-sm` 13px, `--text-md` 14px, `--text-lg` 16px, `--text-xl` 20px, `--text-2xl` 24px.
+  - Nothing smaller than 12px.
+- **Spacing:** `--space-1…6` = 4/8/12/16/24/32px.
+- **Radius:** 4px (pills), 6px (buttons, inputs), 8px (panels), 999px (chips).
+- **Sizes:** list row 36px by default (44px in comfortable density), form input 38px, button 34px, header 48px, sidebar 232px.
+- **Breakpoints:** 600 / 900 / 1200px.
+- **Icons:** Lucide (ISC), only the icons actually used, as an SVG sprite under `Content/vendor/lucide/`. Kendo font icons only inside Kendo widgets.
+- **Controls:** Bootstrap, Tabulator, and Kendo UI Core limited to DatePicker, ComboBox, MultiSelect, AutoComplete, NumericTextBox, Notification. ECharts, FullCalendar, Quill and SheetJS are wired only when a screen needs them.
+- **App shell:**
+  - Sidebar groups JIRA / CÁ NHÂN / CÔNG CỤ DB / DEV. DEV shows only in Development or for an authorized role.
+  - 48px header with breadcrumb and page actions. Theme, language and sign-out live in the avatar menu.
+  - No weather widget. Location is requested only when the user turns it on.
+  - The animated background is an opt-in setting, off by default.
+  - First visit follows the OS light/dark preference; after that the user's choice is remembered.
+- **Time and formats:** one `App:TimeZone` setting (default `Asia/Ho_Chi_Minh`), used by the server and the client clock. Formats follow the UI culture (`vi-VN`: `dd/MM/yyyy`, `HH:mm`, `17,5`).
 
 ## Prompt And Documentation Sync
 
