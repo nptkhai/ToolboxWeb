@@ -13,7 +13,7 @@
 ## CodeGraph Rules
 
 - Repo-local rule: there is no `.codegraph` directory in the `ToolboxWeb` git root, so do not assume repo-local CodeGraph is available.
-- Workspace note: a shared CodeGraph directory may exist at the parent workspace level, currently `D:\Source_Toolbox\.codegraph`.
+- Workspace note (machine-specific): on the maintainer's Windows workstation, a shared CodeGraph directory may exist at the parent workspace level, currently `D:\Source_Toolbox\.codegraph`. Other machines, CI, and cloud sessions will not have it.
 - If CodeGraph tooling is available and usable, prefer it before broad manual searching.
 - If CodeGraph CLI or tools fail, for example with `unable to open database file`, fall back immediately to normal shell search and file reads.
 - Never block work on CodeGraph availability.
@@ -66,6 +66,22 @@
 - If you introduce a custom manage page layout, make it folder-wide so tab switches do not jump between different wrappers or duplicate navigation blocks.
 - When you add profile or account UI that reads user data, make sure it degrades safely if the current runtime database has not yet picked up the newest schema.
 
+## Third-Party License Policy
+
+- ToolboxWeb must not depend on commercial, trial, or paid-license code. This applies to everything that ships with the app: NuGet packages, files under `Content/lib/` and `Content/vendor/`, fonts, icons, and images.
+- License tiers:
+  - **Allowed:** MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, SIL OFL 1.1 (fonts only).
+  - **Owner approval required** (record the decision in `THIRD-PARTY-NOTICES.md` before merging): MPL-2.0, LGPL, any "free but proprietary" vendor license such as Microsoft Software License Terms, and any package whose license is a file instead of an SPDX expression.
+  - **Forbidden:** commercial or trial licenses (for example `@progress/kendo-drawing`, Kendo UI for jQuery commercial widgets, Telerik, DevExpress, Syncfusion, Aspose), GPL/AGPL for shipped code, and pre-release or preview license terms used outside development.
+- Before adding or upgrading any dependency:
+  - read the actual `LICENSE` file of the package, not only the registry summary;
+  - check its dependencies too. An Apache-2.0 package can still require a commercial package at runtime, as Kendo UI Core does with `@progress/kendo-drawing`;
+  - add or update the entry in `THIRD-PARTY-NOTICES.md` (name, version, license, location) in the same change.
+- Keep the copyright and license headers inside vendored `.min.js` and `.css` files.
+- Kendo UI Core needs the global `window._progress_kendo_drawing` to exist before `kendo.ui.core.min.js` loads. Provide an empty placeholder object written in this repo. Never load `@progress/kendo-drawing` itself. Kendo features that need it (ColorPicker, PDF export, drawing) are not available; use a native `<input type="color">` for color input.
+- Copying design ideas is fine. Copying another product's logo, name, icon set, illustrations, brand colors, or CSS and asset files is not. This applies to the Linear-inspired direction in the UI Standard below.
+- Dev-only tooling (for example Playwright under `tests/ui/`) does not ship with the app, but should still use allowed licenses. Ask before adding tooling that needs owner approval.
+
 ## Frontend Library Rules
 
 - Bootstrap is the default base UI layer.
@@ -103,6 +119,41 @@
 - Center-align the remaining body columns.
 - Preserve these conventions in Tabulator demos and in any new table or grid-like UI unless the screen has an explicit exception.
 
+## UI Standard
+
+- Review findings and the agreed roadmap live in `docs/UI_UX_REVIEW.md` (section 10 is the official order of work). Follow that order unless the owner says otherwise.
+- Design direction: inspired by Linear's principles, not a copy of it.
+  - Neutral surfaces with one accent color; color is reserved for status, priority, and feedback.
+  - Dense lists, roomy forms.
+  - Calm empty states and subtle motion.
+  - Keyboard-friendly.
+  - Concrete values (tokens, font, icon set, accent color) are decided in roadmap stage 2. Once decided, they are recorded here and in `docs/DESIGN_DECISIONS.md`.
+- Reference screen: `Views/Notes/Index.cshtml` (toolbar + search + primary action + empty state + modal confirm). New or reworked list screens follow its structure.
+- Rules that apply now:
+  - **Colors:** do not add new hex, rgb, or hsl color literals in CSS or inline styles. Reuse the CSS variables in `:root`. If a needed color does not exist, add one variable to `:root` (light and dark) instead of a literal.
+  - **One primary button style** across the app. Destructive actions use the danger style.
+  - **One page title per screen,** rendered by the layout topbar. Do not repeat it as an `<h1>` inside the content.
+  - **Forms:** every input, select, and textarea has a visible `<label>`. Placeholders are examples only, never the label. Reserve space for validation messages so the layout does not jump.
+  - **Confirmation:** every delete, and every write to an external system (Jira, SQL Server), asks for confirmation in a Bootstrap modal that names the item. Buttons must not say "Save" when nothing is persisted; say "Apply" and show an unsaved-changes state instead.
+  - **States:** every list or data area has an empty state (icon + one sentence + primary action when relevant), a loading state, and an error state.
+  - **Readability:** text never sits directly on the decorative background; it sits on a surface. Minimum font size is 12px. Body text contrast is at least 4.5:1 in light and dark themes.
+  - **Navigation:** the current page is marked in the sidebar with an active class and `aria-current="page"`.
+  - **Language:** user-facing text comes from localization keys in both `vi-VN.json` and `en-US.json`. Do not mix Vietnamese and English inside one label. Keep developer jargon (source, bundle, input file, grid) out of user-facing text.
+  - **Numbers and dates** follow the current UI culture (`17,5` in `vi-VN`). Use one date format per culture across the app.
+  - **Third-party widgets:** Kendo and Tabulator widgets must look like native app controls. Style them through `Content/css/vendor-sync.css` using the shared variables, not per page.
+  - **Responsive:** every changed screen works at 1440px and 390px wide, with no horizontal page scroll, in light and dark themes.
+
+## Prompt And Documentation Sync
+
+- Built-in prompt templates exist in three places that must stay in sync:
+  - `docs/FEATURE_PROMPTS.md` and `docs/MAINTENANCE_PROMPTS.md` (source of truth, English);
+  - `SeedPrompt.*` keys in `Localization/en-US.json`;
+  - `SeedPrompt.*` keys in `Localization/vi-VN.json`.
+- When changing one, update the others in the same change.
+- Prompt variables use the `{{variable_name}}` form, in English snake_case in every language. List the same names in `InputVariables`.
+- A seeded prompt's `Content` must be self-contained: include the stack context and the expected output format. The copy button copies only `Content`.
+- `Data/SeedData.cs` only inserts a seeded prompt when the user has no prompt in that category. Changing seed text therefore does not update existing users. Mention this in the change summary.
+
 ## Components Hub Appendix
 
 - File: `src/ToolboxWeb.Web/Views/Components/Index.cshtml`
@@ -127,7 +178,7 @@
 - Build verification artifacts must go to a temp path outside the repo, or the repo must ignore them first. Do not leave ad hoc verification output directories inside the working tree.
 - Route or UI change: check canonical route behavior, localization impact, and asset loading.
 - Kendo, Tabulator, or Components changes:
-  - verify the widget really exists in the local bundle before marking it usable,
+  - verify the widget really exists in the local bundle before marking it usable. A widget that is in the bundle but missing at runtime usually means the bundle stopped loading early; check the browser console first,
   - keep runtime behavior aligned with any "usable now" or bundle status labels,
   - confirm the demo sits in the correct component family tab,
   - confirm JavaScript bindings are not targeting duplicate IDs.
@@ -135,3 +186,17 @@
   - confirm only one manage navigation shell renders,
   - confirm tab switches inside `Account/Manage` do not fall back to a different embedded layout,
   - confirm schema-backed fields used by account pages exist in the actual runtime SQLite file.
+- UI change: run the UI check in `tests/ui/` (see `tests/ui/README.md`) against a locally running app, and compare the screenshots with the previous baseline.
+- Jira screens cannot be checked without a Jira account. In Development, start the app with `Jira__UseFakeData=true` and sign in on the Jira tab with any URL, username, and password to get sample data. The owner still does the final check against the real Jira.
+- License-affecting change: `THIRD-PARTY-NOTICES.md` is updated in the same change.
+
+## Definition Of Done
+
+A change is done only when all of these hold:
+
+- `dotnet build` succeeds with no new warnings.
+- For UI changes, the `tests/ui/` check reports no browser console errors and no horizontal overflow on the pages touched. New screenshots were reviewed against the baseline at 1440px and 390px, light and dark.
+- The UI Standard rules above hold for every screen touched.
+- Both `vi-VN.json` and `en-US.json` contain any new keys.
+- `THIRD-PARTY-NOTICES.md` is current if a dependency changed.
+- The change summary lists anything not verified. For example: "Jira screens checked with fake data only", or "existing users keep old seeded prompts".

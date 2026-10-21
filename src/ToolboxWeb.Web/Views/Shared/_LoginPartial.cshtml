@@ -44,14 +44,12 @@
 
     <div class="account-menu">
         <a class="account-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="@T["Auth.ManageAccount"]">
+            @* Initials are always rendered underneath; site.js removes the image if it fails to load. *@
             <span class="account-avatar">
+                <span aria-hidden="true">@initials</span>
                 @if (!string.IsNullOrWhiteSpace(avatarUrl))
                 {
-                    <img src="@Url.Content(avatarUrl)" alt="@T["Profile.AvatarAlt"]" />
-                }
-                else
-                {
-                    <span aria-hidden="true">@initials</span>
+                    <img src="@Url.Content(avatarUrl)" alt="@T["Profile.AvatarAlt"]" data-avatar-image />
                 }
             </span>
             <span class="account-name">@accountLabel</span>

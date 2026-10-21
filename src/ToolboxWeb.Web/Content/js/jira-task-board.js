@@ -128,11 +128,25 @@
         let config = {};
         let boardConfig = {};
         let rows = [];
+        // subTaskKey -> due date before it was dragged; these moves exist only in the browser.
+        let moved = new Map();
+        // Markup of the period inputs before Kendo wrapped them. Kendo's destroy() leaves its
+        // wrapper behind, so re-entering the tab used to stack an extra clear button each time.
+        let pristinePickerHtml = null;
         let periodType = "week";
         let referenceDate = null;
         let syncingPickers = false;
         let weekOptionsCenterYear = new Date().getFullYear();
         let boundHandlers = [];
+
+        function reportUnsaved() {
+            window.ToolboxJiraUnsaved?.set("board", moved.size);
+        }
+
+        // Reloading replaces the rows, so ask before throwing away moves that are not in Jira.
+        function confirmReload() {
+            return window.ToolboxJiraUnsaved ? window.ToolboxJiraUnsaved.confirmDiscard("board") : Promise.resolve(true);
+        }
 
         function on(el, event, handler) {
             if (!el) {
@@ -363,7 +377,10 @@
             const done = isDoneRow(row);
             const overdue = !done && row.dueDate && startOfDay(new Date(row.dueDate)) < startOfDay(new Date());
             const dueLabel = row.dueDate ? fmtShort(new Date(row.dueDate)) : "-";
-            return `<div class="jira-board-card ${done ? "is-done" : ""}" draggable="${done ? "false" : "true"}" data-key="${escapeHtml(row.subTaskKey)}" data-done="${done}">
+            const movedFrom = moved.has(row.subTaskKey)
+                ? `<div class="jira-board-card-moved">${escapeHtml((boardConfig.movedFrom || "{0}").replace("{0}", moved.get(row.subTaskKey) ? fmtShort(new Date(moved.get(row.subTaskKey))) : "-"))}</div>`
+                : "";
+            return `<div class="jira-board-card ${done ? "is-done" : ""} ${moved.has(row.subTaskKey) ? "is-moved" : ""}" draggable="${done ? "false" : "true"}" data-key="${escapeHtml(row.subTaskKey)}" data-done="${done}">
                 <div class="jira-board-card-top">
                     ${issueLinkHtml(row.subTaskKey)}
                     <span class="jira-board-card-project">${escapeHtml(row.project)}</span>
@@ -374,6 +391,7 @@
                     <span class="jira-board-card-due ${overdue ? "jira-board-overdue" : ""}">${dueLabel}</span>
                 </div>
                 <div class="jira-board-card-hours">Est: ${Number(row.estimateHours || 0)}h · Log: ${Number(row.loggedHours || 0)}h</div>
+                ${movedFrom}
             </div>`;
         }
 
@@ -444,11 +462,18 @@
                         return;
                     }
 
+                    const original = moved.has(key) ? moved.get(key) : (row.dueDate || null);
                     row.dueDate = `${targetDate}T00:00:00`;
+                    if (original && sameDay(new Date(original), parseIsoDate(targetDate))) {
+                        moved.delete(key);
+                    } else {
+                        moved.set(key, original);
+                    }
+                    reportUnsaved();
                     render();
                     notify(
                         (boardConfig.movedToast || "Moved {0} to {1}").replace("{0}", key).replace("{1}", targetDate),
-                        "success"
+                        "info"
                     );
                 });
             });
@@ -462,7 +487,7 @@
         function calCardHtml(row) {
             const done = isDoneRow(row);
             const label = `${escapeHtml(row.subTaskKey)} — ${escapeHtml(row.subTaskSummary)}`;
-            return `<div class="jira-cal-card ${done ? "is-done" : ""}" draggable="${done ? "false" : "true"}" data-key="${escapeHtml(row.subTaskKey)}" data-done="${done}" title="${label}">
+            return `<div class="jira-cal-card ${done ? "is-done" : ""} ${moved.has(row.subTaskKey) ? "is-moved" : ""}" draggable="${done ? "false" : "true"}" data-key="${escapeHtml(row.subTaskKey)}" data-done="${done}" title="${label}">
                 ${issueLinkHtml(row.subTaskKey)} ${escapeHtml(row.subTaskSummary)}
             </div>`;
         }
@@ -579,6 +604,8 @@
                 const data = payload.data || {};
                 renderAlert(data.errorMessage);
                 rows = Array.isArray(data.rows) ? data.rows.slice() : [];
+                moved = new Map();
+                reportUnsaved();
                 applyFilterResult(data.filter);
                 render();
             } catch {
@@ -588,7 +615,11 @@
 
         // Always reset the filter to the period that contains today (current week / current month)
         // and reload, then bring today into view.
-        function jumpToToday() {
+        async function jumpToToday() {
+            if (!(await confirmReload())) {
+                return;
+            }
+
             applyReferenceDate(new Date());
             fetchAndRender().then(() => {
                 root?.querySelector(".jira-board-day-col.is-today, .jira-cal-cell.is-today")
@@ -609,6 +640,9 @@
 
                 periodButtons = Array.from(toolbar.querySelectorAll("[data-period]"));
                 inputWraps = Array.from(toolbar.querySelectorAll("[data-period-input]"));
+                if (!pristinePickerHtml) {
+                    pristinePickerHtml = inputWraps.map((wrap) => wrap.innerHTML);
+                }
                 navButtons = Array.from(toolbar.querySelectorAll("[data-nav-step]"));
                 inputs = {
                     week: document.getElementById("jira-board-week"),
@@ -640,7 +674,11 @@
                 });
 
                 const searchButton = document.querySelector("[data-jira-board-search]");
-                on(searchButton, "click", fetchAndRender);
+                on(searchButton, "click", async () => {
+                    if (await confirmReload()) {
+                        fetchAndRender();
+                    }
+                });
 
                 const todayButton = document.querySelector("[data-jira-board-today]");
                 on(todayButton, "click", jumpToToday);
@@ -652,6 +690,9 @@
                 if (widgets.week) { widgets.week.destroy(); }
                 if (widgets.month) { widgets.month.destroy(); }
                 widgets = { week: null, month: null };
+                if (pristinePickerHtml) {
+                    inputWraps.forEach((wrap, index) => { wrap.innerHTML = pristinePickerHtml[index]; });
+                }
                 if (root) {
                     root.innerHTML = "";
                 }
@@ -662,6 +703,8 @@
                     rangeLabelEl.textContent = "";
                 }
                 rows = [];
+                moved = new Map();
+                reportUnsaved();
                 referenceDate = null;
                 root = null;
                 toolbar = null;

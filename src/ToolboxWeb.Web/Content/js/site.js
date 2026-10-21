@@ -10,6 +10,16 @@
         localStorage.setItem('toolbox.sidebar', shell?.classList.contains('sidebar-collapsed') ? 'collapsed' : 'expanded');
     });
 
+    // A missing avatar file falls back to the initials rendered underneath the image.
+    document.querySelectorAll('img[data-avatar-image]').forEach(function (img) {
+        function dropImage() { img.remove(); }
+        if (img.complete && img.naturalWidth === 0) {
+            dropImage();
+        } else {
+            img.addEventListener('error', dropImage);
+        }
+    });
+
     document.querySelector('[data-theme-toggle]')?.addEventListener('click', function () {
         const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.dataset.theme = next;
@@ -582,19 +592,31 @@
             if (display) display.textContent = `${minutes}:${seconds}`;
         }
 
+        // The save button only turns on when a countdown has actually finished.
+        const saveButton = document.querySelector('[data-timer-save]');
+
+        function setSaveEnabled(enabled) {
+            if (saveButton) saveButton.disabled = !enabled;
+        }
+
         function resetFromInput() {
+            window.clearInterval(intervalId);
+            intervalId = null;
             remaining = Math.max(1, Number(minutesInput?.value || '25')) * 60;
+            setSaveEnabled(false);
             render();
         }
 
         timer.querySelector('[data-timer-start]')?.addEventListener('click', function () {
-            if (intervalId) return;
+            if (intervalId || remaining <= 0) return;
             intervalId = window.setInterval(function () {
                 remaining -= 1;
                 render();
                 if (remaining <= 0) {
                     window.clearInterval(intervalId);
                     intervalId = null;
+                    setSaveEnabled(true);
+                    window.Toolbox?.notify?.(timer.dataset.finishedMessage, 'success');
                 }
             }, 1000);
         });
@@ -663,6 +685,8 @@
                 if (typeof window.kendo === 'undefined' || !window.jQuery || !window.jQuery.fn.kendoNotification) {
                     loadStyleOnce('/vendor/kendo/icons/index.css');
                     loadStyleOnce('/vendor/kendo/theme/default-main.css');
+                    // Placeholder for the commercial kendo-drawing package; see Views/Shared/_KendoScripts.cshtml.
+                    window._progress_kendo_drawing = window._progress_kendo_drawing || {};
                     return loadScriptOnce('/vendor/kendo/js/kendo.ui.core.min.js');
                 }
             })
@@ -731,4 +755,88 @@
     }
 
     initFlashNotification();
+
+    // ------------------------------------------------------------------ confirmation dialog
+    // Toolbox.confirm({ title, message, okText, tone }) resolves true when the user confirms.
+    // tone is "danger" (default) or "primary". Falls back to window.confirm without Bootstrap.
+    const confirmModalElement = document.getElementById('tbx-confirm');
+    let resolveConfirm = null;
+
+    function settleConfirm(value) {
+        if (resolveConfirm) {
+            const resolve = resolveConfirm;
+            resolveConfirm = null;
+            resolve(value);
+        }
+    }
+
+    window.Toolbox.confirm = function (options) {
+        const settings = options || {};
+        if (!confirmModalElement || !window.bootstrap?.Modal) {
+            return Promise.resolve(window.confirm(settings.message || ''));
+        }
+
+        settleConfirm(false);
+        const titleEl = confirmModalElement.querySelector('[data-confirm-role="title"]');
+        const messageEl = confirmModalElement.querySelector('[data-confirm-role="message"]');
+        const okButton = confirmModalElement.querySelector('[data-confirm-role="ok"]');
+        titleEl.textContent = settings.title || titleEl.dataset.defaultText;
+        messageEl.textContent = settings.message || '';
+        okButton.textContent = settings.okText || okButton.dataset.defaultText || okButton.textContent;
+        okButton.classList.toggle('btn-danger', settings.tone !== 'primary');
+        okButton.classList.toggle('btn-primary', settings.tone === 'primary');
+
+        return new Promise(function (resolve) {
+            resolveConfirm = resolve;
+            window.bootstrap.Modal.getOrCreateInstance(confirmModalElement).show();
+        });
+    };
+
+    if (confirmModalElement) {
+        const titleDefault = confirmModalElement.querySelector('[data-confirm-role="title"]');
+        titleDefault.dataset.defaultText = titleDefault.textContent;
+        confirmModalElement.querySelector('[data-confirm-role="ok"]').addEventListener('click', function () {
+            settleConfirm(true);
+            window.bootstrap.Modal.getOrCreateInstance(confirmModalElement).hide();
+        });
+        confirmModalElement.addEventListener('hidden.bs.modal', function () {
+            settleConfirm(false);
+        });
+    }
+
+    // Declarative use: <button type="submit" data-confirm="Xóa “X”?" data-confirm-title="..."
+    // data-confirm-ok="Xóa">. The attribute may also sit on the <form>.
+    document.addEventListener('submit', function (event) {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement) || form.dataset.confirmed === 'true') {
+            return;
+        }
+
+        const source = event.submitter && event.submitter.hasAttribute('data-confirm')
+            ? event.submitter
+            : (form.hasAttribute('data-confirm') ? form : null);
+        if (!source) {
+            return;
+        }
+
+        event.preventDefault();
+        const submitter = event.submitter;
+        window.Toolbox.confirm({
+            title: source.dataset.confirmTitle,
+            message: source.dataset.confirm,
+            okText: source.dataset.confirmOk,
+            tone: source.dataset.confirmTone
+        }).then(function (confirmed) {
+            if (!confirmed) {
+                return;
+            }
+
+            form.dataset.confirmed = 'true';
+            if (submitter && typeof form.requestSubmit === 'function') {
+                form.requestSubmit(submitter);
+            } else {
+                form.submit();
+            }
+        });
+    });
 })();

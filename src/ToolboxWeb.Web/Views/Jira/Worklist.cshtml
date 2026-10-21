@@ -14,6 +14,13 @@
         loginUrl = Url.Page("/Account/Login", new { area = "Identity" }),
         browseBaseUrl = Model.Session.BaseUrl?.TrimEnd('/'),
         dayCapacityHours = 8,
+        unsaved = new
+        {
+            message = T["Jira.Unsaved.Message"].Value,
+            leaveTitle = T["Jira.Unsaved.LeaveTitle"].Value,
+            leaveMessage = T["Jira.Unsaved.LeaveMessage"].Value,
+            leaveOk = T["Jira.Unsaved.LeaveOk"].Value
+        },
         columns = new
         {
             index = T["Jira.Table.Index"].Value,
@@ -36,6 +43,7 @@
         emptyState = T["Jira.TaskBoard.EmptyState"].Value,
         error = T["Jira.TaskBoard.Error"].Value,
         movedToast = T["Jira.TaskBoard.MovedToast"].Value,
+        movedFrom = T["Jira.TaskBoard.MovedFrom"].Value,
         weekPickerPlaceholder = T["Jira.Dashboard.Filter.WeekPlaceholder"].Value,
         weekPickerOption = T["Jira.Dashboard.Filter.WeekOption"].Value
     }, jsonOptions);
@@ -79,6 +87,11 @@
 
 <div class="jira-shell jira-dashboard-shell">
     <section class="jira-tabs-shell">
+    @* Due-date changes on the board and auto-schedule tabs are not written to Jira yet. *@
+    <div class="alert alert-warning jira-unsaved-bar d-none" role="status" data-jira-unsaved>
+        <span data-jira-unsaved-text></span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-jira-unsaved-discard>@T["Jira.Unsaved.Discard"]</button>
+    </div>
     <ul class="nav nav-tabs jira-page-tabs" id="jira-worklist-tabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="jira-tab-search" data-bs-toggle="tab" data-bs-target="#jira-tab-search-pane" type="button" role="tab" aria-controls="jira-tab-search-pane" aria-selected="true">@T["Jira.Worklist.Tabs.Search"]</button>
@@ -203,6 +216,11 @@
                 }
                 else
                 {
+                    var browseBase = Model.Session.BaseUrl?.TrimEnd('/');
+                    // Columns that are empty for every result only take space, so they are hidden.
+                    var showParent = Model.Issues.Any(x => !string.IsNullOrWhiteSpace(x.Parent));
+                    var showEstimate = Model.Issues.Any(x => !string.IsNullOrWhiteSpace(x.Estimate));
+                    var showLoggedDates = Model.Issues.Any(x => !string.IsNullOrWhiteSpace(x.LoggedDates));
                     <div class="table-responsive">
                         <table class="table table-sm align-middle jira-table">
                             <thead>
@@ -212,23 +230,50 @@
                                     <th>@T["Jira.Table.Status"]</th>
                                     <th>@T["Jira.Table.Type"]</th>
                                     <th>@T["Jira.Table.DueDate"]</th>
-                                    <th>@T["Jira.Table.Parent"]</th>
-                                    <th>@T["Jira.Table.Estimate"]</th>
-                                    <th>@T["Jira.Table.Logged"]</th>
+                                    @if (showParent)
+                                    {
+                                        <th>@T["Jira.Table.Parent"]</th>
+                                    }
+                                    @if (showEstimate)
+                                    {
+                                        <th>@T["Jira.Table.Estimate"]</th>
+                                    }
+                                    @if (showLoggedDates)
+                                    {
+                                        <th>@T["Jira.Table.LoggedDates"]</th>
+                                    }
                                 </tr>
                             </thead>
                             <tbody>
                             @foreach (var issue in Model.Issues)
                             {
                                 <tr>
-                                    <td>@issue.IssueKey</td>
+                                    <td class="jira-table-nowrap">
+                                        @if (string.IsNullOrWhiteSpace(browseBase))
+                                        {
+                                            <span class="jira-dashboard-mono">@issue.IssueKey</span>
+                                        }
+                                        else
+                                        {
+                                            <a class="jira-dashboard-link jira-dashboard-mono" href="@($"{browseBase}/browse/{Uri.EscapeDataString(issue.IssueKey)}")" target="_blank" rel="noopener noreferrer">@issue.IssueKey</a>
+                                        }
+                                    </td>
                                     <td>@issue.Summary</td>
-                                    <td>@issue.Status</td>
-                                    <td>@issue.Type</td>
-                                    <td>@(issue.DueDate?.ToString("dd/MM/yyyy") ?? "-")</td>
-                                    <td>@(string.IsNullOrWhiteSpace(issue.Parent) ? "-" : $"{issue.Parent} - {issue.ParentSummary}")</td>
-                                    <td>@(string.IsNullOrWhiteSpace(issue.Estimate) ? "-" : issue.Estimate)</td>
-                                    <td>@(string.IsNullOrWhiteSpace(issue.LoggedDates) ? "-" : issue.LoggedDates)</td>
+                                    <td class="jira-table-nowrap text-center"><span class="badge jira-dashboard-status jira-dashboard-status--@ToolboxWeb.Web.Services.JiraStatus.Tone(issue.Status)">@issue.Status</span></td>
+                                    <td class="jira-table-nowrap text-center">@issue.Type</td>
+                                    <td class="jira-table-nowrap text-center">@(issue.DueDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    @if (showParent)
+                                    {
+                                        <td>@(string.IsNullOrWhiteSpace(issue.Parent) ? "-" : $"{issue.Parent} - {issue.ParentSummary}")</td>
+                                    }
+                                    @if (showEstimate)
+                                    {
+                                        <td class="jira-table-nowrap text-end">@(string.IsNullOrWhiteSpace(issue.Estimate) ? "-" : issue.Estimate)</td>
+                                    }
+                                    @if (showLoggedDates)
+                                    {
+                                        <td>@(string.IsNullOrWhiteSpace(issue.LoggedDates) ? "-" : issue.LoggedDates)</td>
+                                    }
                                 </tr>
                             }
                             </tbody>
@@ -415,12 +460,7 @@
 <script id="jira-auto-schedule-config" type="application/json">@Html.Raw(autoScheduleConfigJson)</script>
 
 @section Scripts {
-    <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
-    @if (currentCulture == "vi-VN")
-    {
-        <script src="~/vendor/kendo/cultures/kendo.culture.vi-VN.min.js" asp-append-version="true"></script>
-        <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
-    }
+    <partial name="_KendoScripts" />
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
     <script src="~/js/jira-pages.js" asp-append-version="true"></script>
     <script src="~/js/jira-task-board.js" asp-append-version="true"></script>

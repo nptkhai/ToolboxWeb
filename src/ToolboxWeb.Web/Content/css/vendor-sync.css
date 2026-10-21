@@ -122,6 +122,23 @@
     min-height: calc(var(--ui-control-height) + 10px);
 }
 
+/* The generic .form-control rule above outranks Bootstrap's floating-label rules, which made the
+   label overlap the placeholder and the value (Register, Manage/Email). Restore them here. */
+.content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input) {
+    padding: 1rem .9rem;
+}
+
+    .content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input):focus,
+    .content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input):not(:placeholder-shown),
+    .content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input):-webkit-autofill {
+        padding-bottom: .625rem;
+        padding-top: 1.625rem;
+    }
+
+    .content-area .form-floating > .form-control:not(.k-input-inner):not(.k-input)::placeholder {
+        color: transparent;
+    }
+
 .content-area .form-floating > label {
     color: var(--ui-control-muted);
 }
@@ -307,7 +324,7 @@
     transition: var(--ui-transition);
 }
 
-    .content-area .tabulator-toolbar button:hover {
+    .content-area .tabulator-toolbar button:hover:not(:disabled) {
         background: var(--ui-accent-soft);
         border-color: color-mix(in srgb, var(--ui-accent) 38%, var(--ui-control-border));
         color: var(--ui-accent);
@@ -323,6 +340,12 @@
     .content-area .tabulator-toolbar button.danger {
         border-color: color-mix(in srgb, var(--danger) 52%, var(--ui-control-border));
         color: var(--danger);
+    }
+
+    .content-area .tabulator-toolbar button:disabled {
+        cursor: not-allowed;
+        opacity: .5;
+        transform: none;
     }
 
 /* Kendo UI Core: input shells, buttons, dropdown popups, and calendars. */

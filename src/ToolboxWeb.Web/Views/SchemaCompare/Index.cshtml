@@ -446,7 +446,7 @@
 <script id="sc-config" type="application/json">@Html.Raw(configJson)</script>
 
 @section Scripts {
-    <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
+    <partial name="_KendoScripts" />
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
     <script src="~/js/schema-compare.js" asp-append-version="true"></script>
 }

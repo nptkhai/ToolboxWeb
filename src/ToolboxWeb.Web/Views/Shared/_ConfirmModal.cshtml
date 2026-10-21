@@ -1,0 +1,22 @@
+@*
+    One confirmation dialog for the whole app. Use it declaratively with data-confirm on a submit
+    button or form (see site.js), or from script with Toolbox.confirm({ ... }). The form still
+    submits normally if JavaScript is unavailable.
+*@
+<div class="modal fade tbx-confirm-modal" id="tbx-confirm" tabindex="-1" aria-labelledby="tbx-confirm-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="tbx-confirm-title" data-confirm-role="title">@T["Confirm.Title"]</h2>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="@T["Action.Cancel"]"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" data-confirm-role="message"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal" data-confirm-role="cancel">@T["Action.Cancel"]</button>
+                <button class="btn btn-danger" type="button" data-confirm-role="ok" data-default-text="@T["Action.Confirm"]">@T["Action.Confirm"]</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -675,9 +675,8 @@
 </script>
 
 @section Scripts {
-    <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
-    <script src="~/vendor/kendo/cultures/kendo.culture.vi-VN.min.js" asp-append-version="true"></script>
-    <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
+    @{ ViewData["KendoForceVietnamese"] = true; }
+    <partial name="_KendoScripts" />
     <script>
         (function ($) {
             function bindTabRoutes(containerSelector) {

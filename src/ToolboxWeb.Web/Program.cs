@@ -14,6 +14,7 @@ using ToolboxWeb.Web.Data;
 using ToolboxWeb.Web.Domain;
 using ToolboxWeb.Web.Extensions;
 using ToolboxWeb.Web.Infrastructure.DacFx;
+using ToolboxWeb.Web.Infrastructure.Jira;
 using ToolboxWeb.Web.Infrastructure.Logging;
 using ToolboxWeb.Web.Infrastructure.Storage;
 using ToolboxWeb.Web.Localization;
@@ -133,7 +134,24 @@ if (builder.Environment.IsDevelopment())
 }
 builder.Services.AddToolboxServices();
 
+// Sample Jira data for checking the Jira screens without a Jira account. Development only:
+// the flag is ignored in every other environment so it can never reach real users.
+var jiraFakeDataRequested = builder.Configuration.GetValue<bool>("Jira:UseFakeData");
+var useFakeJiraData = jiraFakeDataRequested && builder.Environment.IsDevelopment();
+if (useFakeJiraData)
+{
+    builder.Services.Replace(ServiceDescriptor.Singleton<IJiraClientFactory, FakeJiraClientFactory>());
+}
+
 var app = builder.Build();
+if (useFakeJiraData)
+{
+    app.Logger.LogWarning("Jira:UseFakeData is on. Jira screens show sample data and no real Jira requests are made.");
+}
+else if (jiraFakeDataRequested)
+{
+    app.Logger.LogWarning("Jira:UseFakeData is ignored outside the Development environment.");
+}
 var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value;
 
 using (var scope = app.Services.CreateScope())

@@ -62,6 +62,16 @@
         var schemaCompareHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SchemaCompareHtml) ?? "/schema-compare.html";
         var sqlProfilerHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SqlProfilerHtml) ?? "/sql-profiler.html";
         var brandHref = CurrentUser.IsJiraUser ? jiraDashboardHref : dashboardHref;
+
+        // Current sidebar item, by controller/action so it also holds after a POST round-trip
+        // and on sub-routes such as /component/{tab}.html.
+        var navController = ViewContext.RouteData.Values["controller"] as string ?? string.Empty;
+        var navAction = ViewContext.RouteData.Values["action"] as string ?? string.Empty;
+        bool IsNav(params string[] controllers) => controllers.Any(c => string.Equals(c, navController, StringComparison.OrdinalIgnoreCase));
+        var jiraDashboardActive = IsNav("Jira") && string.Equals(navAction, "DashboardPage", StringComparison.OrdinalIgnoreCase);
+        var jiraWorklistActive = IsNav("Jira") && !jiraDashboardActive;
+        string? NavClass(bool active) => active ? "active" : null;
+        string? NavCurrent(bool active) => active ? "page" : null;
     }
     <div class="app-shell">
         <aside class="app-sidebar">
@@ -71,18 +81,18 @@
                 <nav class="side-nav">
                     @if (CurrentUser.IsJiraUser)
                     {
-                        <a href="@jiraDashboardHref">@T["Nav.JiraDashboard"]</a>
-                        <a href="@jiraWorklistHref">@T["Nav.JiraWorklist"]</a>
+                        <a href="@jiraDashboardHref" class="@NavClass(jiraDashboardActive)" aria-current="@NavCurrent(jiraDashboardActive)">@T["Nav.JiraDashboard"]</a>
+                        <a href="@jiraWorklistHref" class="@NavClass(jiraWorklistActive)" aria-current="@NavCurrent(jiraWorklistActive)">@T["Nav.JiraWorklist"]</a>
                     }
 
-                    <a href="@dashboardHref">@T["Nav.Dashboard"]</a>
-                    <a href="@notesHref">@T["Nav.Notes"]</a>
-                    <a href="@checklistHref">@T["Nav.Checklist"]</a>
-                    <a href="@focusTimerHref">@T["Nav.FocusTimer"]</a>
-                    <a href="@quickLinksHref">@T["Nav.QuickLinks"]</a>
-                    <a href="@schemaCompareHref">@T["Nav.SchemaCompare"]</a>
-                    <a href="@sqlProfilerHref">@T["Nav.SqlProfiler"]</a>
-                    <a href="@componentsHref">@T["Nav.Components"]</a>
+                    <a href="@dashboardHref" class="@NavClass(IsNav("Dashboard"))" aria-current="@NavCurrent(IsNav("Dashboard"))">@T["Nav.Dashboard"]</a>
+                    <a href="@notesHref" class="@NavClass(IsNav("Notes"))" aria-current="@NavCurrent(IsNav("Notes"))">@T["Nav.Notes"]</a>
+                    <a href="@checklistHref" class="@NavClass(IsNav("Checklist"))" aria-current="@NavCurrent(IsNav("Checklist"))">@T["Nav.Checklist"]</a>
+                    <a href="@focusTimerHref" class="@NavClass(IsNav("FocusTimer"))" aria-current="@NavCurrent(IsNav("FocusTimer"))">@T["Nav.FocusTimer"]</a>
+                    <a href="@quickLinksHref" class="@NavClass(IsNav("QuickLinks"))" aria-current="@NavCurrent(IsNav("QuickLinks"))">@T["Nav.QuickLinks"]</a>
+                    <a href="@schemaCompareHref" class="@NavClass(IsNav("SchemaCompare"))" aria-current="@NavCurrent(IsNav("SchemaCompare"))">@T["Nav.SchemaCompare"]</a>
+                    <a href="@sqlProfilerHref" class="@NavClass(IsNav("SqlProfiler"))" aria-current="@NavCurrent(IsNav("SqlProfiler"))">@T["Nav.SqlProfiler"]</a>
+                    <a href="@componentsHref" class="@NavClass(IsNav("Components", "DemoKendo", "TabulatorDemo"))" aria-current="@NavCurrent(IsNav("Components", "DemoKendo", "TabulatorDemo"))">@T["Nav.Components"]</a>
                 </nav>
             }
             else
@@ -132,17 +142,13 @@
             </main>
         </div>
     </div>
+    <partial name="_ConfirmModal" />
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/adaptive-background.js" asp-append-version="true"></script>
     @if (hasFlashNotification)
     {
-        <script src="~/vendor/kendo/js/kendo.ui.core.min.js" asp-append-version="true"></script>
-        @if (currentCulture == "vi-VN")
-        {
-            <script src="~/vendor/kendo/cultures/kendo.culture.vi-VN.min.js" asp-append-version="true"></script>
-            <script src="~/vendor/kendo/messages/kendo.messages.vi-VN.min.js" asp-append-version="true"></script>
-        }
+        <partial name="_KendoScripts" />
     }
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

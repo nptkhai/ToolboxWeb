@@ -374,7 +374,7 @@
         <div class="tabulator-toolbar">
             <div class="actions">
                 <button id="tabulator-add" type="button">@T["TabulatorDemo.AddRow"]</button>
-                <button id="tabulator-delete" class="danger" type="button">@T["TabulatorDemo.DeleteSelected"]</button>
+                <button id="tabulator-delete" class="danger" type="button" disabled>@T["TabulatorDemo.DeleteSelected"]</button>
                 <button id="tabulator-save" class="primary" type="button">@T["TabulatorDemo.SaveChanges"]</button>
                 <button id="tabulator-reload" type="button">@T["TabulatorDemo.Reload"]</button>
             </div>
@@ -741,6 +741,11 @@
                 dataLoaded: function () {
                     updateRowCount();
                 }
+            });
+
+            // Deleting is staged until "Save", so it needs no dialog, but it needs a selection.
+            table.on("rowSelectionChanged", function (data) {
+                document.getElementById("tabulator-delete").disabled = data.length === 0;
             });
 
             document.getElementById("tabulator-add").addEventListener("click", function () {
