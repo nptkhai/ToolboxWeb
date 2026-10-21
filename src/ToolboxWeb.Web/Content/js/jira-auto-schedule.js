@@ -131,6 +131,11 @@
         let criteriaEnabled = { dueDate: true, status: false, createDate: false };
         let criteriaDirection = { dueDate: "dueSoonestFirst", status: "doingFirst", createDate: "createOldestFirst" };
 
+        // Edited due dates live only in the browser until they are written to Jira.
+        function reportUnsaved() {
+            window.ToolboxJiraUnsaved?.set("auto", editedKeys.size);
+        }
+
         function on(el, event, handler) {
             if (!el) {
                 return;
@@ -218,6 +223,7 @@
             }
 
             editedKeys.clear();
+            reportUnsaved();
             proposals = [];
             searchTable?.setData(searchRows);
             resultTable?.setData([]);
@@ -232,7 +238,9 @@
         function onDueDateEdited(cell) {
             const row = cell.getRow().getData();
             editedKeys.add(row.subTaskKey);
-            notify(format(autoConfig.dueEditedToast || "Updated {0}", row.subTaskKey), "success");
+            reportUnsaved();
+            cell.getRow().reformat();
+            notify(format(autoConfig.dueEditedToast || "Updated {0}", row.subTaskKey), "info");
         }
 
         function subTaskKeyFormatter(cell) {
@@ -261,6 +269,9 @@
                 height: "60vh",
                 reactiveData: false,
                 placeholder: autoConfig.resultEmpty || "",
+                rowFormatter: (row) => {
+                    row.getElement().classList.toggle("is-edited", editedKeys.has(row.getData().subTaskKey));
+                },
                 columnDefaults: {
                     resizable: false,
                     tooltip: true
@@ -535,9 +546,10 @@
 
             const count = proposals.length;
             proposals = [];
+            reportUnsaved();
             searchTable?.setData(searchRows);
             renderResultGrid();
-            notify(format(autoConfig.savedToast || "Applied {0} task(s)", count), "success");
+            notify(format(autoConfig.savedToast || "Applied {0} task(s)", count), "info");
         }
 
         function discardProposal() {
@@ -564,7 +576,13 @@
                 buildSearchTable();
                 buildResultTable();
 
-                on(document.querySelector("[data-jira-auto-search]"), "click", performSearch);
+                on(document.querySelector("[data-jira-auto-search]"), "click", async () => {
+                    // A new search replaces the rows, including due dates not yet in Jira.
+                    const proceed = window.ToolboxJiraUnsaved ? await window.ToolboxJiraUnsaved.confirmDiscard("auto") : true;
+                    if (proceed) {
+                        performSearch();
+                    }
+                });
                 on(document.querySelector("[data-jira-auto-sort]"), "click", openConfigModal);
                 on(document.querySelector("[data-jira-auto-config-run]"), "click", runAutoArrange);
                 on(document.querySelector("[data-jira-auto-save]"), "click", saveProposal);
@@ -595,6 +613,7 @@
                 searchRows = [];
                 proposals = [];
                 editedKeys = new Set();
+                reportUnsaved();
                 renderAlert("");
             }
         };

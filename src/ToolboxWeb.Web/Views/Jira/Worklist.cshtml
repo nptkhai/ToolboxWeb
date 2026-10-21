@@ -14,6 +14,13 @@
         loginUrl = Url.Page("/Account/Login", new { area = "Identity" }),
         browseBaseUrl = Model.Session.BaseUrl?.TrimEnd('/'),
         dayCapacityHours = 8,
+        unsaved = new
+        {
+            message = T["Jira.Unsaved.Message"].Value,
+            leaveTitle = T["Jira.Unsaved.LeaveTitle"].Value,
+            leaveMessage = T["Jira.Unsaved.LeaveMessage"].Value,
+            leaveOk = T["Jira.Unsaved.LeaveOk"].Value
+        },
         columns = new
         {
             index = T["Jira.Table.Index"].Value,
@@ -36,6 +43,7 @@
         emptyState = T["Jira.TaskBoard.EmptyState"].Value,
         error = T["Jira.TaskBoard.Error"].Value,
         movedToast = T["Jira.TaskBoard.MovedToast"].Value,
+        movedFrom = T["Jira.TaskBoard.MovedFrom"].Value,
         weekPickerPlaceholder = T["Jira.Dashboard.Filter.WeekPlaceholder"].Value,
         weekPickerOption = T["Jira.Dashboard.Filter.WeekOption"].Value
     }, jsonOptions);
@@ -79,6 +87,11 @@
 
 <div class="jira-shell jira-dashboard-shell">
     <section class="jira-tabs-shell">
+    @* Due-date changes on the board and auto-schedule tabs are not written to Jira yet. *@
+    <div class="alert alert-warning jira-unsaved-bar d-none" role="status" data-jira-unsaved>
+        <span data-jira-unsaved-text></span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-jira-unsaved-discard>@T["Jira.Unsaved.Discard"]</button>
+    </div>
     <ul class="nav nav-tabs jira-page-tabs" id="jira-worklist-tabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="jira-tab-search" data-bs-toggle="tab" data-bs-target="#jira-tab-search-pane" type="button" role="tab" aria-controls="jira-tab-search-pane" aria-selected="true">@T["Jira.Worklist.Tabs.Search"]</button>

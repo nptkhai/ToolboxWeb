@@ -1884,6 +1884,16 @@ a {
     overflow: hidden;
 }
 
+.jira-unsaved-bar {
+    align-items: center;
+    border-radius: 0;
+    border-width: 0 0 1px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    margin: 0;
+}
+
 .jira-page-tabs {
     border-bottom: 1px solid var(--line);
     gap: 8px;
@@ -2276,6 +2286,24 @@ a.jira-board-card-key {
 .jira-board-card-hours {
     color: var(--jira-text-faint);
     font-size: 10.5px;
+}
+
+/* Moved on the board but not saved to Jira yet. */
+.jira-board-card.is-moved,
+.jira-cal-card.is-moved {
+    border-color: var(--jira-amber);
+    border-style: dashed;
+}
+
+#jira-auto-search-grid .tabulator-row.is-edited {
+    box-shadow: inset 3px 0 0 var(--jira-amber);
+}
+
+.jira-board-card-moved {
+    color: var(--jira-amber);
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 4px;
 }
 
 /* ===== Tab: Sắp xếp công việc tự động ===== */
