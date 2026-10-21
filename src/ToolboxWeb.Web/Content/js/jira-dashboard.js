@@ -45,12 +45,7 @@
     };
     const querySortMap = Object.fromEntries(Object.entries(tabulatorFieldMap).map(([key, field]) => [field, key]));
 
-    const chipFilters = {
-        all: null,
-        open: (row) => row.statusTone !== "done",
-        overdue: (row) => !!row.isOverdue,
-        done: (row) => row.statusTone === "done"
-    };
+    const chipFilters = jira.statusFilters;
 
     let table = null;
     let chart = null;
@@ -279,48 +274,17 @@
 
     // ------------------------------------------------------------------ table
 
-    function dueFormatter(cell) {
-        const row = cell.getRow().getData();
-        const date = escapeHtml(jira.displayDate(cell.getValue()));
-        if (!row.daysOverdue) {
-            return date;
-        }
-
-        return `<span class="jira-overdue">${date}</span> <span class="jira-late">${escapeHtml(template(text.daysLate, number(row.daysOverdue)))}</span>`;
-    }
-
-    function estimateFormatter(cell) {
-        const row = cell.getRow().getData();
-        if (Number(cell.getValue()) > 0) {
-            return escapeHtml(hours(cell.getValue()));
-        }
-
-        // Open work without an estimate is something to go and fix in Jira.
-        return row.statusTone === "done" ? "-" : `<span class="jira-unestimated">${escapeHtml(text.noEstimate)}</span>`;
-    }
-
-    function groupHeader(value, count, rows) {
-        const first = rows[0] || {};
-        const logged = rows.reduce((sum, row) => sum + (Number(row.loggedHours) || 0), 0);
-        const meta = escapeHtml(template(text.groupMeta, number(count), hours(logged)));
-        if (!value) {
-            return `<span class="jira-group-title">${escapeHtml(text.noParent)}</span><span class="jira-group-meta">${meta}</span>`;
-        }
-
-        return `${jira.issueLink(value, config.browseBaseUrl, "jira-group-key")}`
-            + `<span class="jira-group-title">${escapeHtml(first.issueSummary || "")}</span>`
-            + `<span class="jira-group-meta">${meta}</span>`;
-    }
+    const groupHeader = grid.parentGroupHeader({
+        browseBaseUrl: config.browseBaseUrl,
+        noParentText: text.noParent,
+        metaTemplate: text.groupMeta,
+        summaryField: "issueSummary"
+    });
 
     const chips = chipsHost ? jira.chipBar(chipsHost, applyChipFilter) : null;
 
     function updateChipCounts(rows) {
-        chips?.setCounts({
-            all: rows.length,
-            open: rows.filter(chipFilters.open).length,
-            overdue: rows.filter(chipFilters.overdue).length,
-            done: rows.filter(chipFilters.done).length
-        });
+        chips?.setCounts(jira.statusCounts(rows));
     }
 
     function applyChipFilter(value) {
@@ -353,17 +317,17 @@
 
         // No fixed height: the page scrolls, not a box inside it. Columns that do not fit step
         // aside instead of scrolling sideways; on a phone a row opens to show them.
-        const narrow = window.matchMedia?.("(max-width: 600px)").matches;
+        const narrow = grid.isNarrow();
         const columns = [
             { title: columnText.subTaskKey, field: "subTaskKey", width: narrow ? 146 : 150, responsive: 0, formatter: grid.formatters.issueKey(config.browseBaseUrl) },
             { title: columnText.subTaskSummary, field: "subTaskSummary", hozAlign: "left", minWidth: narrow ? 140 : 200, widthGrow: 3, responsive: 0, formatter: grid.formatters.text },
             { title: columnText.status, field: "status", width: 140, responsive: 1, formatter: grid.formatters.status },
-            { title: columnText.dueDate, field: "dueDate", width: 190, responsive: 2, sorter: grid.dueDateSorter, formatter: dueFormatter },
-            { title: columnText.estimate, field: "estimateHours", hozAlign: "right", width: 130, responsive: 3, sorter: "number", formatter: estimateFormatter },
+            { title: columnText.dueDate, field: "dueDate", width: 190, responsive: 2, sorter: grid.dueDateSorter, formatter: grid.formatters.dueWithLate(text.daysLate) },
+            { title: columnText.estimate, field: "estimateHours", hozAlign: "right", width: 130, responsive: 3, sorter: "number", formatter: grid.formatters.estimate(text.noEstimate) },
             { title: columnText.logged, field: "loggedHours", hozAlign: "right", width: 110, responsive: 4, sorter: "number", formatter: grid.formatters.hours }
         ];
         if (narrow) {
-            columns.unshift({ formatter: "responsiveCollapse", cssClass: "tbx-collapse-cell", width: 36, minWidth: 36, hozAlign: "center", headerSort: false, resizable: false, responsive: 0, tooltip: false });
+            columns.unshift(grid.collapseColumn());
         }
 
         table = new window.Tabulator(gridHost, grid.options({

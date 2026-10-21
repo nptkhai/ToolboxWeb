@@ -22,7 +22,7 @@ Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expr
 | Apache ECharts (`echarts`, `dist/echarts.min.js` from the npm package). The bundle includes ZRender 5.6.1 (BSD-3-Clause) and tslib 2.3.0 (0BSD), and embeds parts of d3 (BSD-3-Clause) | 5.6.0 | Apache-2.0 | `vendor/echarts/` (with `LICENSE`, `NOTICE`, `licenses/LICENSE-d3`) | In use (Jira Dashboard chart, through `js/charts.js`). The file shipped before 2026-10-21 was 5.5.1 although listed as 5.6.0; it was replaced with the official 5.6.0 build |
 | FullCalendar Standard Bundle | 6.1.15 | MIT | `vendor/fullcalendar/` | Asset only, not wired. Premium plugins are commercial and must not be added |
 | Quill | 2.0.2 | BSD-3-Clause | `vendor/quill/` | Asset only, not wired |
-| SheetJS Community Edition | 0.20.2 | Apache-2.0 | `vendor/sheetjs/` | Asset only, not wired |
+| SheetJS Community Edition (`xlsx.full.min.js`, includes the SheetJS codepage tables, Apache-2.0) | 0.20.2 | Apache-2.0 | `vendor/sheetjs/` (with `LICENSE`) | In use (Jira Search "Export to Excel"; loaded only when the button is pressed). The `LICENSE` text was taken from the npm package `xlsx@0.18.5`, the same Apache-2.0 text, because cdn.sheetjs.com could not be reached when it was added |
 
 ## NuGet packages (direct references in `ToolboxWeb.Web.csproj`)
 

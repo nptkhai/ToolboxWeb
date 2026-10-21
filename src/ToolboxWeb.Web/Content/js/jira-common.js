@@ -241,6 +241,12 @@
         return el;
     }
 
+    /** An icon from the app sprite, for markup built in the browser. */
+    function iconSvg(name, size) {
+        const px = size || 16;
+        return `<svg class="tbx-icon" width="${px}" height="${px}" aria-hidden="true" focusable="false"><use href="${spriteHref(name)}"></use></svg>`;
+    }
+
     function spriteHref(name) {
         const sprite = document.querySelector("svg.tbx-icon use")?.getAttribute("href") || "";
         const base = sprite.split("#")[0] || "/vendor/lucide/lucide-sprite.svg";
@@ -296,7 +302,54 @@
             hours(cell) {
                 const value = Number(cell.getValue());
                 return value ? escapeHtml(displayHours(value)) : "-";
+            },
+            /** Due date plus "Late by N d" (template) while the row is overdue (row.daysOverdue). */
+            dueWithLate(lateTemplate) {
+                return (cell) => {
+                    const row = cell.getRow().getData();
+                    const date = escapeHtml(displayDate(cell.getValue()));
+                    return row.daysOverdue
+                        ? `<span class="jira-overdue">${date}</span><span class="jira-late">${escapeHtml(template(lateTemplate, row.daysOverdue))}</span>`
+                        : date;
+                };
+            },
+            /** Estimate in hours; open work without one says so, since it needs fixing in Jira. */
+            estimate(missingText) {
+                return (cell) => {
+                    if (Number(cell.getValue()) > 0) {
+                        return escapeHtml(displayHours(cell.getValue()));
+                    }
+
+                    return cell.getRow().getData().statusTone === "done"
+                        ? "-"
+                        : `<span class="jira-unestimated">${escapeHtml(missingText)}</span>`;
+                };
             }
+        },
+        /**
+         * Group row for a table grouped by parent issue: key link, parent summary, and a meta line
+         * from metaTemplate ("{0} subtasks · logged {1}"). summaryField names the parent summary.
+         */
+        parentGroupHeader({ browseBaseUrl, noParentText, metaTemplate, summaryField, hoursField }) {
+            return (value, count, rows) => {
+                const first = rows[0] || {};
+                const logged = rows.reduce((sum, row) => sum + (Number(row[hoursField || "loggedHours"]) || 0), 0);
+                const meta = `<span class="jira-group-meta">${escapeHtml(template(metaTemplate, count, displayHours(logged)))}</span>`;
+                if (!value) {
+                    return `<span class="jira-group-title">${escapeHtml(noParentText)}</span>${meta}`;
+                }
+
+                return issueLink(value, browseBaseUrl, "jira-group-key")
+                    + `<span class="jira-group-title">${escapeHtml(first[summaryField] || "")}</span>${meta}`;
+            };
+        },
+        /** True on a phone, where rows open (+) to show the columns that did not fit. */
+        isNarrow() {
+            return !!window.matchMedia?.("(max-width: 600px)").matches;
+        },
+        /** The "+" column of responsiveLayout "collapse". */
+        collapseColumn() {
+            return { formatter: "responsiveCollapse", cssClass: "tbx-collapse-cell", width: 36, minWidth: 36, hozAlign: "center", headerSort: false, resizable: false, responsive: 0, tooltip: false };
         },
         /** Sorts ISO date strings with empty values last. */
         dueDateSorter(a, b, _aRow, _bRow, _column, dir) {
@@ -581,6 +634,23 @@
     }
 
     // ------------------------------------------------------------ chip bar
+    // The four filters every Jira list offers: All / Not done / Overdue / Done.
+    const statusFilters = {
+        all: null,
+        open: (row) => row.statusTone !== "done",
+        overdue: (row) => !!row.isOverdue,
+        done: (row) => row.statusTone === "done"
+    };
+
+    function statusCounts(rows) {
+        return {
+            all: rows.length,
+            open: rows.filter(statusFilters.open).length,
+            overdue: rows.filter(statusFilters.overdue).length,
+            done: rows.filter(statusFilters.done).length
+        };
+    }
+
     // Single-choice filter chips: <button class="tbx-chip" data-chip="open" aria-pressed="false">
     // with an optional <span data-chip-count>.
     function chipBar(root, onChange) {
@@ -618,6 +688,43 @@
     // ------------------------------------------------------------ JQL block
     // Markup: Views/Jira/_JiraJqlBlock.cshtml.
     const jql = {
+        /** One condition per line: breaks before AND, OR and ORDER BY outside quotes. */
+        format(query) {
+            const parts = [];
+            let current = "";
+            let quote = null;
+            const text = String(query || "").replace(/\s+/g, " ").trim();
+            for (let i = 0; i < text.length; i += 1) {
+                const ch = text[i];
+                if (quote) {
+                    current += ch;
+                    if (ch === quote && text[i - 1] !== "\\") {
+                        quote = null;
+                    }
+                    continue;
+                }
+
+                if (ch === '"' || ch === "'") {
+                    quote = ch;
+                    current += ch;
+                    continue;
+                }
+
+                const rest = text.slice(i);
+                const keyword = /^ (AND|OR|ORDER BY) /i.exec(rest);
+                if (keyword) {
+                    parts.push(current.trim());
+                    current = keyword[1].toUpperCase() + " ";
+                    i += keyword[0].length - 1;
+                    continue;
+                }
+
+                current += ch;
+            }
+
+            parts.push(current.trim());
+            return parts.filter(Boolean).join("\n");
+        },
         searchUrl(baseUrl, query) {
             const base = String(baseUrl || "").replace(/\/+$/, "");
             return base && query ? `${base}/issues/?jql=${encodeURIComponent(query)}` : "";
@@ -653,9 +760,12 @@
         statusPill,
         browseUrl,
         issueLink,
+        iconSvg,
         grid,
         periodPicker,
         chipBar,
+        statusFilters,
+        statusCounts,
         jql
     };
 })(window, document);

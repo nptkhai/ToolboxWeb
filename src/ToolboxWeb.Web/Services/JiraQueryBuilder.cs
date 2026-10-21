@@ -4,6 +4,22 @@ namespace ToolboxWeb.Web.Services;
 
 public static class JiraQueryBuilder
 {
+    /// <summary>Checks the simple filters before a search; returns the message to show, or null.</summary>
+    public static string? Validate(JiraSearchRequest request, string assigneeRequired, string dateOrder)
+    {
+        if (request.Advanced)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Assignee))
+        {
+            return assigneeRequired;
+        }
+
+        return request.FromDate.Date > request.ToDate.Date ? dateOrder : null;
+    }
+
     public static string Build(JiraSearchRequest request, string validationMessage)
     {
         if (request.Advanced)
