@@ -17,9 +17,12 @@
         flashNotifications.Add(new { type = "error", message = flashErrorMessage });
     }
     var hasFlashNotification = flashNotifications.Count > 0;
+    // Pages before sign-in (sign-in, register, …) have no sidebar, always show the animated
+    // weather background, and show the clock and weather in the header.
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
 }
 <!DOCTYPE html>
-<html lang="@CultureInfo.CurrentUICulture.Name">
+<html lang="@CultureInfo.CurrentUICulture.Name" data-background-mode="@(isAuthenticated ? "app" : "auth")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -49,9 +52,11 @@
                 theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
             document.documentElement.dataset.theme = theme;
+            // Inside the app the background is opt-in; before sign-in it is always on.
             let background = null;
             try { background = localStorage.getItem('toolbox.background'); } catch (e) { }
-            document.documentElement.dataset.background = background === 'on' ? 'on' : 'off';
+            const authPage = document.documentElement.dataset.backgroundMode === 'auth';
+            document.documentElement.dataset.background = authPage || background === 'on' ? 'on' : 'off';
             // Applied before first paint so the sidebar does not jump on wide screens.
             let sidebar = null;
             try { sidebar = localStorage.getItem('toolbox.sidebar'); } catch (e) { }
@@ -79,7 +84,6 @@
         var schemaCompareHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SchemaCompareHtml) ?? "/schema-compare.html";
         var sqlProfilerHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SqlProfilerHtml) ?? "/sql-profiler.html";
         var brandHref = CurrentUser.IsJiraUser ? jiraDashboardHref : dashboardHref;
-        var isAuthenticated = User.Identity?.IsAuthenticated == true;
         // The DEV group (component hub and demos) is a developer tool, not part of the product.
         var showDevGroup = ToolboxWeb.Web.Infrastructure.Security.DevToolsAccess.IsAllowed(HostEnvironment, User);
 
@@ -116,19 +120,19 @@
             </li>
         }
     }
-    <div class="app-shell" data-shell>
-        <aside class="app-sidebar" id="app-sidebar">
-            <div class="sidebar-head">
-                <a class="brand" href="@(isAuthenticated ? brandHref : Url.Action("Index", "Home", new { area = "" }))">
-                    <span class="brand-mark" aria-hidden="true">TW</span>
-                    <span class="brand-name">@T["App.Name"]</span>
-                </a>
-                <button class="icon-button sidebar-close" type="button" data-sidebar-close aria-label="@T["Action.CloseMenu"]">
-                    <tbx-icon name="x" />
-                </button>
-            </div>
-            @if (isAuthenticated)
-            {
+    <div class="app-shell@(isAuthenticated ? null : " app-shell--guest")" data-shell>
+        @if (isAuthenticated)
+        {
+            <aside class="app-sidebar" id="app-sidebar">
+                <div class="sidebar-head">
+                    <a class="brand" href="@brandHref">
+                        <span class="brand-mark" aria-hidden="true">TW</span>
+                        <span class="brand-name">@T["App.Name"]</span>
+                    </a>
+                    <button class="icon-button sidebar-close" type="button" data-sidebar-close aria-label="@T["Action.CloseMenu"]">
+                        <tbx-icon name="x" />
+                    </button>
+                </div>
                 <nav class="side-nav" aria-label="@T["Nav.Label"]">
                     @if (CurrentUser.IsJiraUser)
                     {
@@ -168,12 +172,19 @@
                         </div>
                     }
                 </nav>
-            }
-        </aside>
-        <div class="sidebar-scrim" data-sidebar-close aria-hidden="true"></div>
+            </aside>
+            <div class="sidebar-scrim" data-sidebar-close aria-hidden="true"></div>
+        }
         <div class="app-main">
             <header class="topbar">
-                @if (isAuthenticated)
+                @if (!isAuthenticated)
+                {
+                    <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">
+                        <span class="brand-mark" aria-hidden="true">TW</span>
+                        <span class="brand-name">@T["App.Name"]</span>
+                    </a>
+                }
+                else
                 {
                     <button class="icon-button" type="button" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="true" aria-label="@T["Action.ToggleSidebar"]">
                         <tbx-icon name="panel-left" class="toggle-icon-wide" />
@@ -186,9 +197,23 @@
                         <span class="topbar-crumb">@breadcrumbGroup</span>
                         <tbx-icon name="chevron-right" class="topbar-crumb-sep" />
                     }
-                    <h1 class="topbar-title">@pageTitle</h1>
+                    @* Before sign-in the page itself shows a heading on the sign-in card. *@
+                    <h1 class="topbar-title@(isAuthenticated ? null : " tbx-visually-hidden")">@pageTitle</h1>
                 </nav>
                 <div class="topbar-actions">
+                    <partial name="_EnvironmentSummary" />
+                    @if (!isAuthenticated)
+                    {
+                        <form asp-area="" asp-controller="Culture" asp-action="Set" method="post" class="guest-language" role="group" aria-label="@T["Account.Language"]">
+                            <input type="hidden" name="returnUrl" value="@($"{Context.Request.Path}{Context.Request.QueryString}")" />
+                            <button type="submit" name="culture" value="vi-VN" lang="vi" title="@T["Language.Vietnamese"]" aria-pressed="@(CultureInfo.CurrentUICulture.Name == "vi-VN" ? "true" : "false")">VI</button>
+                            <button type="submit" name="culture" value="en-US" lang="en" title="@T["Language.English"]" aria-pressed="@(CultureInfo.CurrentUICulture.Name == "en-US" ? "true" : "false")">EN</button>
+                        </form>
+                        <button class="icon-button" type="button" data-theme-toggle aria-label="@T["Action.ToggleTheme"]">
+                            <tbx-icon name="moon" class="theme-icon-light" />
+                            <tbx-icon name="sun" class="theme-icon-dark" />
+                        </button>
+                    }
                     @await RenderSectionAsync("PageActions", required: false)
                     <partial name="_LoginPartial" />
                 </div>

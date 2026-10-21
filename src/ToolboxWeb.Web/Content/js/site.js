@@ -125,6 +125,13 @@
             applyTheme();
         });
     });
+    // Before sign-in there is no avatar menu: one button flips between light and dark.
+    document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            store('toolbox.theme', root.dataset.theme === 'dark' ? 'light' : 'dark');
+            applyTheme();
+        });
+    });
     systemDark.addEventListener('change', applyTheme);
     applyTheme();
 
@@ -134,18 +141,8 @@
         input.checked = read(key) === 'on';
         input.addEventListener('change', function () {
             store(key, input.checked ? 'on' : null);
-            document.querySelectorAll('[data-display-requires="' + key + '"]').forEach(function (dependent) {
-                dependent.disabled = !input.checked;
-                if (!input.checked && dependent.checked) {
-                    dependent.checked = false;
-                    store(dependent.getAttribute('data-display-setting'), null);
-                }
-            });
             document.dispatchEvent(new CustomEvent('toolbox:background-changed'));
         });
-    });
-    document.querySelectorAll('[data-display-requires]').forEach(function (dependent) {
-        dependent.disabled = read(dependent.getAttribute('data-display-requires')) !== 'on';
     });
 
     document.querySelectorAll('[data-copy-target]').forEach(function (button) {

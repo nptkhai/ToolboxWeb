@@ -56,6 +56,8 @@
                     <img src="@Url.Content(avatarUrl)" alt="" data-avatar-image />
                 }
             </span>
+            @* With a photo, the initials also show beside it; without one they are already in the circle. *@
+            <span class="account-initials" aria-hidden="true">@initials</span>
             <tbx-icon name="chevron-down" class="account-trigger-caret" size="14" />
         </button>
         <div class="dropdown-menu dropdown-menu-end account-dropdown">
@@ -94,8 +96,16 @@
 }
 else
 {
+    // The button for the page already open is left out (the sign-in card is right below).
+    var currentPage = ViewContext.RouteData.Values["page"] as string;
     <div class="account-menu account-menu--guest">
-        <a class="btn btn-sm btn-outline-secondary" asp-area="Identity" asp-page="/Account/Register">@T["Auth.Register"]</a>
-        <a class="btn btn-sm btn-primary" asp-area="Identity" asp-page="/Account/Login">@T["Auth.Login"]</a>
+        @if (!string.Equals(currentPage, "/Account/Register", StringComparison.OrdinalIgnoreCase))
+        {
+            <a class="btn btn-sm btn-outline-secondary" asp-area="Identity" asp-page="/Account/Register">@T["Auth.Register"]</a>
+        }
+        @if (!string.Equals(currentPage, "/Account/Login", StringComparison.OrdinalIgnoreCase))
+        {
+            <a class="btn btn-sm btn-primary" asp-area="Identity" asp-page="/Account/Login">@T["Auth.Login"]</a>
+        }
     </div>
 }

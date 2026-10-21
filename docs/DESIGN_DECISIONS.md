@@ -133,6 +133,8 @@ Riêng `#4B87BB` (3,8:1 trên nền trắng) và `#8ED3F2` (1,65:1 trên nền t
 - **Giao diện sáng/tối:** lần đầu theo cài đặt hệ điều hành, sau đó nhớ lựa chọn của người dùng.
 - **Mật độ mặc định:** Gọn (36px).
 - **Trạng thái:** Đã duyệt 21/10/2026.
+- **Điều chỉnh của chủ dự án (21/10/2026, sau khi xem khung app):** các trang **trước khi đăng nhập** (Đăng nhập, Đăng ký…) giữ hình nền động theo thời tiết, luôn bật, có đồng hồ và thời tiết trên thanh trên cùng, **không có sidebar**. Trình duyệt hỏi quyền vị trí ở các trang này để lấy thời tiết, như trước đây. Bên trong sau khi đăng nhập: hình nền mặc định tắt và bật được trong Hồ sơ.
+- **Điều chỉnh tiếp (21/10/2026):** thanh trên cùng **bên trong** app cũng có đồng hồ và thời tiết (thời tiết ẩn trên màn hình dưới 600px, ngày ẩn dưới 900px). Hình nền theo thời tiết bên trong **không** bật lại. Vì thời tiết luôn hiện, công tắc "Hiện thời tiết theo vị trí" trong Hồ sơ được bỏ; trình duyệt hỏi quyền vị trí một lần cho cả trang ngoài và trang trong. Avatar có ảnh thì hiện thêm chữ viết tắt tên người dùng bên cạnh.
 
 ## 2.I Múi giờ và định dạng
 
