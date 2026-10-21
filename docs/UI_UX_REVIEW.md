@@ -922,3 +922,35 @@ Ghi chú khác:
    - Lỗi console `parseColor`: 8 trang. Hết ở GĐ1 (việc 1.1).
    - Ô nhập không có label: Prompt 6, Liên kết nhanh 4, Công việc 3, Hồ sơ 2, Jira Sắp xếp 5, Jira Dashboard 1, Kanban 1.
    - Chữ nhỏ hơn 12px: mọi trang có ít nhất 1 (ngày trên topbar 10,88px); Kanban Jira có **69**.
+
+#### Quyết định của chủ dự án sau Giai đoạn 0 (21/10/2026)
+
+- Duyệt `AGENTS.md`.
+- **Chấp nhận** cả ba thành phần Microsoft (DacFx và chuỗi phụ thuộc, `Microsoft.SqlServer.Types`, `Microsoft.Data.SqlClient.SNI.runtime`). Đã ghi vào `THIRD-PARTY-NOTICES.md`.
+- Đồng ý đưa lỗi tràn ngang của Jira Dashboard vào Giai đoạn 1.
+
+#### Giai đoạn 1 – đã làm xong (21/10/2026)
+
+| # | Việc | Kết quả |
+|---|---|---|
+| 1.6 | Xác nhận khi xóa | `_ConfirmModal` dùng chung, kèm `Toolbox.confirm()` và thuộc tính `data-confirm`. Đã gắn cho Công việc, Liên kết nhanh, Prompt. Nút "Xóa dòng chọn" của Tabulator bị vô hiệu khi chưa chọn dòng. *Làm trước 1.2 vì 1.2 dùng lại modal này.* |
+| 1.2 | Nút "Lưu" của Jira không lưu | Đổi tên thành "Áp dụng vào lưới". Thêm thanh cảnh báo "N thay đổi chưa lưu lên Jira" và nút "Bỏ các thay đổi". Hỏi lại trước khi chuyển tab, tìm lại, về "Hôm nay"; trình duyệt cảnh báo khi rời trang. Thẻ đã kéo có viền vàng nét đứt và dòng "Hạn cũ". Thông báo dùng kiểu "thông tin" thay vì "thành công" |
+| 1.1 | Lỗi nạp Kendo | `_KendoScripts.cshtml` là nơi duy nhất nạp Kendo (có biến rỗng thay cho gói thương mại; mỗi request chỉ render một lần). **Hết lỗi console trên mọi trang.** Catalog trong Component Hub đã sửa cho đúng |
+| 1.11 | "Công việc hôm nay" sai dữ liệu | Đổi thành "Việc đang mở", xếp theo thứ tự quá hạn → hôm nay → sắp tới → chưa có hạn, có nhãn "Quá hạn · ngày" |
+| 1.12 | Hẹn giờ lưu phiên giả | Nút lưu chỉ bật khi bộ đếm chạy hết |
+| 1.9 | Bảng Tìm kiếm Jira | Mã issue có link và không bẻ dòng, trạng thái có nhãn màu, cột ngày log đổi đúng tên, ẩn cột trống. Nhận diện trạng thái chuyển sang `Services/JiraStatus.cs`; "In Developing" được nhận là "đang làm" |
+| 1.10 | Số trong bảng Jira | `18,5` thay cho `18.50`; cột Ước tính và Log canh phải |
+| *mới* | Tràn ngang và bị cắt ở Jira | Jira Dashboard không còn tràn ngang ở 1440px và trên mobile. **Tìm thêm được và đã sửa:** 7 nút trên thanh công cụ tab kanban (có cả Tìm kiếm, Hôm nay) và 6–9 nút ở tab Sắp xếp bị cắt khuất ở 1440px. Cùng nguyên nhân: grid không khai báo cột |
+| *mới* | Ô chọn tuần nhân bản nút × | Mỗi lần quay lại tab kanban lại thêm một nút × (lỗi có từ trước). Đã sửa |
+| 1.7 | Label đè chữ | Đăng ký và Manage/Email hiển thị đúng |
+| 1.8 | Avatar vỡ | Server không trả ảnh khi file đã mất; trình duyệt tự gỡ ảnh lỗi và hiện chữ viết tắt |
+| 1.4 | Menu đang chọn | `active` và `aria-current="page"` theo controller/action. Màu sắc chính thức làm ở GĐ3 |
+| 1.13 | Lỗi nhỏ | Trang Access denied tiếng Việt, có nút "Đăng nhập bằng Jira" (đăng xuất, mở sẵn tab Jira, đăng nhập xong quay về đúng trang) và "Về Tổng quan". Form Liên kết nhanh có đủ label. Sửa lỗi "AI· https". Xóa file `.bak` |
+
+**Chưa làm trong Giai đoạn 1, theo đúng kế hoạch:** 1.3 (sidebar thu gọn) và 1.5 (menu trượt trên mobile), gộp vào khung app ở GĐ3.
+
+**Chưa kiểm tra:** các màn hình Jira trên Jira thật (mới chỉ kiểm tra với dữ liệu giả); hành vi trên Windows/IIS Express.
+
+**Còn tồn tại, đã ghi nhận cho giai đoạn sau:**
+- Ở 1440px, bảng Jira Dashboard phải cuộn ngang mới thấy các cột Trạng thái, Hạn, Ước tính, Log. Gốc rễ là hai cột tóm tắt trùng nhau; xử lý ở 5.1 (nhóm theo issue cha).
+- Kendo Demo tràn ngang trên mobile; xử lý ở 5.13.

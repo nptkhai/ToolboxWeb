@@ -33,7 +33,7 @@ Last verified: 2026-10-20, by reading each package's `LICENSE` file or SPDX expr
 | Microsoft.EntityFrameworkCore.Sqlite | 9.0.6 | MIT | In use |
 | Microsoft.EntityFrameworkCore.Tools | 9.0.6 | MIT | Design-time |
 | Microsoft.Data.SqlClient | 6.1.5 | MIT | In use (Schema Compare, SQL Profiler) |
-| Microsoft.SqlServer.DacFx | 170.4.83 | **Microsoft Software License Terms** (free, proprietary, redistributable with conditions) | In use (Schema Compare). **Owner decision pending**, see below |
+| Microsoft.SqlServer.DacFx | 170.4.83 | **Microsoft Software License Terms** (free, proprietary, redistributable with conditions) | In use (Schema Compare). **Approved by the owner on 2026-10-21**, see below |
 
 ## Transitive NuGet packages
 
@@ -49,7 +49,11 @@ All 138 packages in the restore graph were checked:
 | `Microsoft.SqlServer.Types` 170.1000.7 | 1 | **Microsoft Pre-release Software License Terms (SQL Server vNext Community Preview)**. Required by DacFx 170.x. See below |
 | `Microsoft.SqlServer.DacFx` 170.4.83 | 1 | Listed above |
 
-## Open decisions for the owner
+## Owner decisions
+
+**2026-10-21: the owner accepted all three Microsoft components below** (DacFx with its dependency chain, `Microsoft.SqlServer.Types`, and `Microsoft.Data.SqlClient.SNI.runtime`) for use in ToolboxWeb. Their license texts are kept as they are. Review this decision again when DacFx is upgraded, in case `Microsoft.SqlServer.Types` then ships with general-availability license terms.
+
+The background for each decision:
 
 1. **DacFx and its dependency chain** (Microsoft Software License Terms, Microsoft .NET Library License).
    - These are free Microsoft licenses, not open-source licenses. They allow use and distribution inside your own application, with conditions: no reverse engineering, and distributors must accept terms at least as protective. They do not require payment.
