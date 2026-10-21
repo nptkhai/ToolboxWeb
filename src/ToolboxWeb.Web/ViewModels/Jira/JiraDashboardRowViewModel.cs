@@ -18,4 +18,7 @@ public sealed class JiraDashboardRowViewModel
     public decimal EstimateHours { get; init; }
     public decimal LoggedHours { get; init; }
     public bool IsOverdue { get; init; }
+
+    /// <summary>Days past the due date while still open; 0 when not overdue.</summary>
+    public int DaysOverdue { get; init; }
 }

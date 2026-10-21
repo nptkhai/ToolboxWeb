@@ -3,9 +3,14 @@
 @using ToolboxWeb.Web.Constants
 @using ToolboxWeb.Web.ViewModels.Jira
 @model ToolboxWeb.Web.ViewModels.Jira.JiraDashboardPageViewModel
+@*
+    Jira Dashboard, stage 5.1 pilot (docs/UI_UX_REVIEW.md 4.2): period picker, four cards that
+    answer "is my log complete / over the estimate", hours logged per day against 8 h, and the
+    subtasks grouped by parent issue. Cards, chart and table are drawn by jira-dashboard.js from
+    the same JSON the period picker reloads.
+*@
 @{
     ViewData["Title"] = T["Jira.Dashboard.Title"];
-    var currentCulture = CultureInfo.CurrentUICulture.Name;
     var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html";
     var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     var periodPicker = new JiraPeriodPickerViewModel
@@ -23,26 +28,62 @@
         Jql = Model.AppliedJql,
         BrowseBaseUrl = Model.Session.BaseUrl
     };
-    var dashboardRowsJson = JsonSerializer.Serialize(Model.Rows, jsonOptions);
-    var dashboardConfigJson = JsonSerializer.Serialize(new
+    var dataJson = JsonSerializer.Serialize(new
     {
-        currentCulture,
+        Model.Filter,
+        Model.Summary,
+        Model.LogBarUnit,
+        Model.LogBars,
+        Model.Rows
+    }, jsonOptions);
+    var configJson = JsonSerializer.Serialize(new
+    {
         dashboardApiUrl = Url.Action("Dashboard", "Jira"),
         loginUrl = Url.Page("/Account/Login", new { area = "Identity" }),
         browseBaseUrl = Model.Session.BaseUrl?.TrimEnd('/'),
         initialSort = Model.Filter.Sort,
         initialDirection = Model.Filter.Direction,
-        emptyState = T["Jira.Dashboard.EmptyState"].Value,
-        filterEmpty = T["Jira.Dashboard.FilterEmpty"].Value,
-        searchErrorMessage = T["Jira.Dashboard.Error"].Value,
+        text = new
+        {
+            emptyState = T["Jira.Dashboard.EmptyState"].Value,
+            filterEmpty = T["Jira.Dashboard.FilterEmpty"].Value,
+            searchError = T["Jira.Dashboard.Error"].Value,
+            tableCount = T["Jira.Dashboard.TableCount"].Value,
+            noParent = T["Jira.Dashboard.Group.NoParent"].Value,
+            groupMeta = T["Jira.Dashboard.Group.Meta"].Value,
+            daysLate = T["Jira.Dashboard.DaysLate"].Value,
+            noEstimate = T["Jira.Dashboard.NoEstimate"].Value,
+            cardLogVsEstimate = T["Jira.Dashboard.Card.LogVsEstimate"].Value,
+            cardLogVsEstimateDetail = T["Jira.Dashboard.Card.LogVsEstimateDetail"].Value,
+            cardOverEstimate = T["Jira.Dashboard.Card.OverEstimate"].Value,
+            cardWithinEstimate = T["Jira.Dashboard.Card.WithinEstimate"].Value,
+            cardNoEstimate = T["Jira.Dashboard.Card.NoEstimate"].Value,
+            cardProgress = T["Jira.Dashboard.Card.Progress"].Value,
+            cardProgressDetail = T["Jira.Dashboard.Card.ProgressDetail"].Value,
+            cardProgressPrevious = T["Jira.Dashboard.Card.ProgressPrevious"].Value,
+            cardLogged = T["Jira.Dashboard.Card.Logged"].Value,
+            cardLoggedNeed = T["Jira.Dashboard.Card.LoggedNeed"].Value,
+            cardLoggedShort = T["Jira.Dashboard.Card.LoggedShort"].Value,
+            cardLoggedEnough = T["Jira.Dashboard.Card.LoggedEnough"].Value,
+            cardNotStarted = T["Jira.Dashboard.Card.NotStarted"].Value,
+            deltaUp = T["Jira.Dashboard.Card.DeltaUp"].Value,
+            deltaDown = T["Jira.Dashboard.Card.DeltaDown"].Value,
+            deltaSame = T["Jira.Dashboard.Card.DeltaSame"].Value,
+            cardOverdue = T["Jira.Dashboard.Card.Overdue"].Value,
+            cardUnestimated = T["Jira.Dashboard.Card.Unestimated"].Value,
+            cardAllEstimated = T["Jira.Dashboard.Card.AllEstimated"].Value,
+            chartTitleDay = T["Jira.Dashboard.Chart.TitleDay"].Value,
+            chartTitleMonth = T["Jira.Dashboard.Chart.TitleMonth"].Value,
+            chartTarget = T["Jira.Dashboard.Chart.Target"].Value,
+            chartSummary = T["Jira.Dashboard.Chart.Summary"].Value,
+            chartTooltip = T["Jira.Dashboard.Chart.Tooltip"].Value,
+            chartTooltipNoTarget = T["Jira.Dashboard.Chart.TooltipNoTarget"].Value,
+            chartEmpty = T["Jira.Dashboard.Chart.Empty"].Value
+        },
         columns = new
         {
-            index = T["Jira.Table.Index"].Value,
-            project = T["Jira.Table.Project"].Value,
             subTaskKey = T["Jira.Table.SubtaskKey"].Value,
             subTaskSummary = T["Jira.Table.SubtaskSummary"].Value,
-            issueKey = T["Jira.Table.IssueKey"].Value,
-            issueSummary = T["Jira.Table.IssueSummary"].Value,
             status = T["Jira.Table.Status"].Value,
             dueDate = T["Jira.Table.DueDate"].Value,
             estimate = T["Jira.Table.EstimateTime"].Value,
@@ -59,12 +100,9 @@
 
 <div class="jira-dashboard-shell">
     <form method="get" action="@dashboardHref" class="jira-toolbar" data-jira-dashboard-form>
-        <div class="jira-toolbar-range">
-            <span class="jira-toolbar-caption">@T["Jira.Dashboard.ToolbarLabel"]</span>
-            <strong data-jira-range-label>@Model.Filter.RangeLabel</strong>
-        </div>
-
         <partial name="_JiraPeriodPicker" model="periodPicker" />
+        @* The picker box already shows the dates; screen readers hear the range when it changes. *@
+        <span class="visually-hidden" role="status" aria-live="polite" data-jira-range-label>@Model.Filter.RangeLabel</span>
 
         <input type="hidden" name="periodType" value="@Model.Filter.PeriodType" data-jira-period-type />
         <input type="hidden" name="periodValue" value="@Model.Filter.PeriodValue" data-jira-period-value />
@@ -79,22 +117,27 @@
         }
     </div>
 
-    <section class="jira-dashboard-stats" aria-label="@T["Jira.Dashboard.Title"]" data-jira-stats>
-        @foreach (var stat in Model.Stats)
+    @* Placeholders until the script draws the cards (loading state). *@
+    <section class="jira-kpis" aria-label="@T["Jira.Dashboard.CardsLabel"]" aria-busy="true" data-jira-kpis>
+        @for (var i = 0; i < 4; i++)
         {
-            <article class="jira-dashboard-stat-card jira-dashboard-stat-card--@stat.AccentClass">
-                <span class="jira-dashboard-stat-label">@stat.Label</span>
-                <strong class="jira-dashboard-stat-value">@stat.Value</strong>
-                <span class="jira-dashboard-stat-hint">@stat.Hint</span>
-            </article>
+            <div class="jira-kpi"><span class="tbx-skeleton jira-kpi-skeleton"></span></div>
         }
     </section>
 
-    <section class="jira-dashboard-table-card" data-jira-table-card>
-        <div class="jira-dashboard-table-head">
+    <section class="tbx-panel jira-chart-panel" aria-labelledby="jira-chart-title">
+        <header class="jira-panel-head">
+            <h2 id="jira-chart-title" data-jira-chart-title>@T["Jira.Dashboard.Chart.TitleDay"]</h2>
+            <p class="jira-panel-sub" data-jira-chart-summary></p>
+        </header>
+        <div class="jira-chart" data-jira-chart></div>
+    </section>
+
+    <section class="tbx-panel jira-table-panel" aria-labelledby="jira-table-title">
+        <header class="jira-panel-head">
             <div>
-                <h2>@T["Jira.Dashboard.SubtasksTitle"]</h2>
-                <p>@T["Jira.Dashboard.SubtasksHint"]</p>
+                <h2 id="jira-table-title">@T["Jira.Dashboard.SubtasksTitle"]</h2>
+                <p class="jira-panel-sub"><span data-jira-table-count></span> · @T["Jira.Dashboard.SubtasksHint"]</p>
             </div>
             <div class="jira-chips" role="group" aria-label="@T["Jira.Chips.Label"]" data-jira-chips>
                 <button type="button" class="tbx-chip" data-chip="all" aria-pressed="true">@T["Jira.Chips.All"] <span class="jira-chip-count" data-chip-count></span></button>
@@ -102,7 +145,7 @@
                 <button type="button" class="tbx-chip" data-chip="overdue" aria-pressed="false">@T["Jira.Chips.Overdue"] <span class="jira-chip-count" data-chip-count></span></button>
                 <button type="button" class="tbx-chip" data-chip="done" aria-pressed="false">@T["Jira.Chips.Done"] <span class="jira-chip-count" data-chip-count></span></button>
             </div>
-        </div>
+        </header>
 
         <div id="jira-dashboard-grid" class="jira-grid-host" aria-busy="false" data-jira-grid></div>
 
@@ -110,12 +153,14 @@
     </section>
 </div>
 
-<script id="jira-dashboard-rows" type="application/json">@Html.Raw(dashboardRowsJson)</script>
-<script id="jira-dashboard-config" type="application/json">@Html.Raw(dashboardConfigJson)</script>
+<script id="jira-dashboard-data" type="application/json">@Html.Raw(dataJson)</script>
+<script id="jira-dashboard-config" type="application/json">@Html.Raw(configJson)</script>
 
 @section Scripts {
     <partial name="_KendoScripts" />
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/echarts/js/echarts.min.js" asp-append-version="true"></script>
+    <script src="~/js/charts.js" asp-append-version="true"></script>
     <script src="~/js/jira-common.js" asp-append-version="true"></script>
     <script src="~/js/jira-dashboard.js" asp-append-version="true"></script>
 }

@@ -91,7 +91,8 @@
 - Bootstrap is the default base UI layer.
 - Kendo UI Core is the widget layer used when richer client behavior is needed.
 - Tabulator is the editable grid solution currently in use.
-- Asset-present libraries such as `ECharts`, `FullCalendar`, `Quill`, and `SheetJS` should be treated as available assets, not automatically as wired, supported live integrations.
+- Asset-present libraries such as `FullCalendar`, `Quill`, and `SheetJS` should be treated as available assets, not automatically as wired, supported live integrations.
+- Charts use Apache ECharts through `Content/js/charts.js` (`ToolboxCharts.create(el, build)`): `build(tokens)` returns the ECharts option with colors read from `tokens.css`, and the chart redraws itself on a theme change and resizes with its box. Do not call `echarts.init` directly or put color literals in a chart option.
 - For Kendo UI Core, only live-use widgets that are confirmed usable in the current local bundle.
 - If a Kendo widget is missing from the current bundle, use a catalog note or fallback pattern instead of initializing it blindly.
 - Shared frontend controls must be instance-scoped. Do not rely on global IDs or one-off selectors when the same control can appear multiple times on one screen.
@@ -111,6 +112,7 @@
 - `Kendo DatePicker` - `Kendo UI Core`
 - `Kendo NumericTextBox` - `Kendo UI Core`
 - `Tabulator Grid Demo` - `Tabulator`
+- `Chart` - `Apache ECharts` through `Content/js/charts.js`
 - `Popup` - `Bootstrap Modal`
 - `Bootstrap Tabs` - `Bootstrap`
 - `Bootstrap Alerts` - `Bootstrap`
@@ -191,7 +193,7 @@ Approved by the owner on 2026-10-21 (`docs/DESIGN_DECISIONS.md`). They live in `
 - **Sizes:** list row 36px by default (44px in comfortable density), form input 38px, button 34px, header 48px, sidebar 232px.
 - **Breakpoints:** 600 / 900 / 1200px.
 - **Icons:** Lucide (ISC), only the icons actually used, as an SVG sprite under `Content/vendor/lucide/`. Kendo font icons only inside Kendo widgets.
-- **Controls:** Bootstrap, Tabulator, and Kendo UI Core limited to DatePicker, ComboBox, MultiSelect, AutoComplete, NumericTextBox, Notification. ECharts, FullCalendar, Quill and SheetJS are wired only when a screen needs them.
+- **Controls:** Bootstrap, Tabulator, and Kendo UI Core limited to DatePicker, ComboBox, MultiSelect, AutoComplete, NumericTextBox, Notification. Charts use ECharts (first used on the Jira Dashboard). FullCalendar, Quill and SheetJS are wired only when a screen needs them.
 - **App shell:**
   - Sidebar groups JIRA / CÁ NHÂN / CÔNG CỤ DB / DEV. DEV shows only in Development or for an authorized role.
   - 48px header with breadcrumb and page actions. Theme, language and sign-out live in the avatar menu.
