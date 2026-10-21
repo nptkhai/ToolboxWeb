@@ -1,0 +1,44 @@
+@model ToolboxWeb.Web.ViewModels.Jira.JiraPeriodPickerViewModel
+@* Shared period picker of the Jira screens; behavior in Content/js/jira-common.js (ToolboxJira.periodPicker).
+   Every change reloads by itself, so there is no Search button. *@
+@{
+    string PeriodName(string period) => period switch
+    {
+        "day" => T["Jira.Period.Day"].Value,
+        "month" => T["Jira.Period.Month"].Value,
+        "year" => T["Jira.Period.Year"].Value,
+        _ => T["Jira.Period.Week"].Value
+    };
+}
+<div class="jira-period" data-jira-period data-period-type="@Model.PeriodType"
+     data-week-option="@T["Jira.Period.WeekOption"]" data-week-placeholder="@T["Jira.Period.WeekPlaceholder"]">
+    @if (Model.Periods.Count > 1)
+    {
+        <div class="jira-period-tabs" role="group" aria-label="@T["Jira.Period.Label"]">
+            @foreach (var period in Model.Periods)
+            {
+                var active = period == Model.PeriodType;
+                <button type="button" class="jira-period-tab @(active ? "is-active" : null)" data-period="@period" aria-pressed="@(active ? "true" : "false")">@PeriodName(period)</button>
+            }
+        </div>
+    }
+
+    <div class="jira-period-value">
+        <button type="button" class="btn jira-period-step" data-period-step="-1" title="@T["Jira.Period.Previous"]">
+            <tbx-icon name="chevron-left" label="@T["Jira.Period.Previous"]" />
+        </button>
+        @foreach (var period in Model.Periods)
+        {
+            var inputId = $"{Model.IdPrefix}-{period}";
+            <div class="jira-period-input jira-period-input--@period" data-period-input="@period" hidden="@(period != Model.PeriodType)">
+                <label class="visually-hidden" for="@inputId">@PeriodName(period)</label>
+                <input id="@inputId" class="form-control" type="text" value="@Model.ValueFor(period)" autocomplete="off" />
+            </div>
+        }
+        <button type="button" class="btn jira-period-step" data-period-step="1" title="@T["Jira.Period.Next"]">
+            <tbx-icon name="chevron-right" label="@T["Jira.Period.Next"]" />
+        </button>
+    </div>
+
+    <button type="button" class="btn btn-outline-secondary jira-period-today" data-period-today>@T["Jira.Period.Today"]</button>
+</div>

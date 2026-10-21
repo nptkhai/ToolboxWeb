@@ -5,6 +5,7 @@ blocks
 calendar
 check
 chevron-down
+chevron-left
 chevron-right
 circle-alert
 circle-check

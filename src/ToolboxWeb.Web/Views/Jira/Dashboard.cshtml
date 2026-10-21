@@ -1,12 +1,28 @@
 @using System.Globalization
 @using System.Text.Json
 @using ToolboxWeb.Web.Constants
+@using ToolboxWeb.Web.ViewModels.Jira
 @model ToolboxWeb.Web.ViewModels.Jira.JiraDashboardPageViewModel
 @{
     ViewData["Title"] = T["Jira.Dashboard.Title"];
     var currentCulture = CultureInfo.CurrentUICulture.Name;
     var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html";
     var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var periodPicker = new JiraPeriodPickerViewModel
+    {
+        IdPrefix = "jira-dashboard-period",
+        PeriodType = Model.Filter.PeriodType,
+        DayValue = Model.Filter.DayValue,
+        WeekValue = Model.Filter.WeekValue,
+        MonthValue = Model.Filter.MonthValue,
+        YearValue = Model.Filter.YearValue
+    };
+    var jqlBlock = new JiraJqlBlockViewModel
+    {
+        Id = "jira-dashboard-jql",
+        Jql = Model.AppliedJql,
+        BrowseBaseUrl = Model.Session.BaseUrl
+    };
     var dashboardRowsJson = JsonSerializer.Serialize(Model.Rows, jsonOptions);
     var dashboardConfigJson = JsonSerializer.Serialize(new
     {
@@ -17,8 +33,7 @@
         initialSort = Model.Filter.Sort,
         initialDirection = Model.Filter.Direction,
         emptyState = T["Jira.Dashboard.EmptyState"].Value,
-        weekPickerPlaceholder = T["Jira.Dashboard.Filter.WeekPlaceholder"].Value,
-        weekPickerOption = T["Jira.Dashboard.Filter.WeekOption"].Value,
+        filterEmpty = T["Jira.Dashboard.FilterEmpty"].Value,
         searchErrorMessage = T["Jira.Dashboard.Error"].Value,
         columns = new
         {
@@ -43,51 +58,18 @@
 }
 
 <div class="jira-dashboard-shell">
-    <form method="get" action="@dashboardHref" class="jira-dashboard-toolbar" data-jira-dashboard-form>
-        <div class="jira-dashboard-toolbar-label">
-            <span class="jira-dashboard-toolbar-caption">@T["Jira.Dashboard.ToolbarLabel"]</span>
+    <form method="get" action="@dashboardHref" class="jira-toolbar" data-jira-dashboard-form>
+        <div class="jira-toolbar-range">
+            <span class="jira-toolbar-caption">@T["Jira.Dashboard.ToolbarLabel"]</span>
             <strong data-jira-range-label>@Model.Filter.RangeLabel</strong>
         </div>
 
-        <div class="jira-dashboard-toolbar-controls">
-            <div class="jira-dashboard-period-tabs" data-jira-period-tabs>
-                <button class="jira-dashboard-period-button @(Model.Filter.PeriodType == "day" ? "is-active" : null)" type="button" data-period="day">@T["Jira.Dashboard.Filter.Day"]</button>
-                <button class="jira-dashboard-period-button @(Model.Filter.PeriodType == "week" ? "is-active" : null)" type="button" data-period="week">@T["Jira.Dashboard.Filter.Week"]</button>
-                <button class="jira-dashboard-period-button @(Model.Filter.PeriodType == "month" ? "is-active" : null)" type="button" data-period="month">@T["Jira.Dashboard.Filter.Month"]</button>
-                <button class="jira-dashboard-period-button @(Model.Filter.PeriodType == "year" ? "is-active" : null)" type="button" data-period="year">@T["Jira.Dashboard.Filter.Year"]</button>
-            </div>
+        <partial name="_JiraPeriodPicker" model="periodPicker" />
 
-            <div class="jira-dashboard-period-nav">
-                <button type="button" class="jira-dashboard-nav-button" data-nav-step="-2" title="@T["Jira.Dashboard.Filter.NavBack2"]" aria-label="@T["Jira.Dashboard.Filter.NavBack2"]">&laquo;</button>
-                <button type="button" class="jira-dashboard-nav-button" data-nav-step="-1" title="@T["Jira.Dashboard.Filter.NavBack1"]" aria-label="@T["Jira.Dashboard.Filter.NavBack1"]">&lsaquo;</button>
-
-                <div class="jira-dashboard-period-input @(Model.Filter.PeriodType == "day" ? "is-active" : null)" data-period-input="day">
-                    <input id="jira-dashboard-day" class="form-control jira-dashboard-picker" type="text" value="@Model.Filter.DayValue" autocomplete="off" />
-                </div>
-                <div class="jira-dashboard-period-input @(Model.Filter.PeriodType == "week" ? "is-active" : null)" data-period-input="week">
-                    <input id="jira-dashboard-week" class="form-control jira-dashboard-picker jira-dashboard-week-picker" type="text" value="@Model.Filter.WeekValue" autocomplete="off" />
-                </div>
-                <div class="jira-dashboard-period-input @(Model.Filter.PeriodType == "month" ? "is-active" : null)" data-period-input="month">
-                    <input id="jira-dashboard-month" class="form-control jira-dashboard-picker" type="text" value="@Model.Filter.MonthValue" autocomplete="off" />
-                </div>
-                <div class="jira-dashboard-period-input @(Model.Filter.PeriodType == "year" ? "is-active" : null)" data-period-input="year">
-                    <input id="jira-dashboard-year" class="form-control jira-dashboard-picker jira-dashboard-year-input" type="text" value="@Model.Filter.YearValue" autocomplete="off" />
-                </div>
-
-                <button type="button" class="jira-dashboard-nav-button" data-nav-step="1" title="@T["Jira.Dashboard.Filter.NavForward1"]" aria-label="@T["Jira.Dashboard.Filter.NavForward1"]">&rsaquo;</button>
-                <button type="button" class="jira-dashboard-nav-button" data-nav-step="2" title="@T["Jira.Dashboard.Filter.NavForward2"]" aria-label="@T["Jira.Dashboard.Filter.NavForward2"]">&raquo;</button>
-            </div>
-
-            <input type="hidden" name="periodType" value="@Model.Filter.PeriodType" data-jira-period-type />
-            <input type="hidden" name="periodValue" value="@Model.Filter.PeriodValue" data-jira-period-value />
-            <input type="hidden" name="sort" value="@Model.Filter.Sort" data-jira-sort />
-            <input type="hidden" name="dir" value="@Model.Filter.Direction" data-jira-direction />
-
-            <button type="button" class="jira-dashboard-nav-button jira-icon-button" data-jira-jump-today title="@T["Jira.Dashboard.Filter.JumpToday"]" aria-label="@T["Jira.Dashboard.Filter.JumpToday"]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/><polyline points="12 7 12 12 15.5 14"/></svg>
-            </button>
-            <button type="submit" class="btn btn-primary jira-dashboard-search">@T["Jira.Dashboard.Filter.Search"]</button>
-        </div>
+        <input type="hidden" name="periodType" value="@Model.Filter.PeriodType" data-jira-period-type />
+        <input type="hidden" name="periodValue" value="@Model.Filter.PeriodValue" data-jira-period-value />
+        <input type="hidden" name="sort" value="@Model.Filter.Sort" data-jira-sort />
+        <input type="hidden" name="dir" value="@Model.Filter.Direction" data-jira-direction />
     </form>
 
     <div data-jira-alert-host>
@@ -108,20 +90,23 @@
         }
     </section>
 
-    <section class="jira-dashboard-table-card">
+    <section class="jira-dashboard-table-card" data-jira-table-card>
         <div class="jira-dashboard-table-head">
             <div>
                 <h2>@T["Jira.Dashboard.SubtasksTitle"]</h2>
                 <p>@T["Jira.Dashboard.SubtasksHint"]</p>
             </div>
+            <div class="jira-chips" role="group" aria-label="@T["Jira.Chips.Label"]" data-jira-chips>
+                <button type="button" class="tbx-chip" data-chip="all" aria-pressed="true">@T["Jira.Chips.All"] <span class="jira-chip-count" data-chip-count></span></button>
+                <button type="button" class="tbx-chip" data-chip="open" aria-pressed="false">@T["Jira.Chips.Open"] <span class="jira-chip-count" data-chip-count></span></button>
+                <button type="button" class="tbx-chip" data-chip="overdue" aria-pressed="false">@T["Jira.Chips.Overdue"] <span class="jira-chip-count" data-chip-count></span></button>
+                <button type="button" class="tbx-chip" data-chip="done" aria-pressed="false">@T["Jira.Chips.Done"] <span class="jira-chip-count" data-chip-count></span></button>
+            </div>
         </div>
 
-        <div id="jira-dashboard-grid" class="jira-dashboard-grid-host"></div>
+        <div id="jira-dashboard-grid" class="jira-grid-host" aria-busy="false" data-jira-grid></div>
 
-        <div class="jira-dashboard-jql">
-            <span class="jira-dashboard-jql-label">@T["Jira.Dashboard.JqlLabel"]</span>
-            <code class="jira-dashboard-jql-code" data-jira-jql>@Model.AppliedJql</code>
-        </div>
+        <partial name="_JiraJqlBlock" model="jqlBlock" />
     </section>
 </div>
 
@@ -131,5 +116,6 @@
 @section Scripts {
     <partial name="_KendoScripts" />
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script src="~/js/jira-common.js" asp-append-version="true"></script>
     <script src="~/js/jira-dashboard.js" asp-append-version="true"></script>
 }

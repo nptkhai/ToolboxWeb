@@ -166,10 +166,12 @@
             const target = document.querySelector(button.getAttribute('data-copy-target'));
             if (!target) return;
             await navigator.clipboard.writeText(target.textContent || '');
-            const original = button.dataset.defaultText || button.textContent || '';
+            // A button with an icon keeps it and swaps only its [data-copy-label] text.
+            const label = button.querySelector('[data-copy-label]') || button;
+            const original = button.dataset.defaultText || label.textContent || '';
             const copiedText = button.dataset.copiedText || 'Copied';
-            button.textContent = copiedText;
-            setTimeout(function () { button.textContent = original || 'Copy'; }, 1200);
+            label.textContent = copiedText;
+            setTimeout(function () { label.textContent = original || 'Copy'; }, 1200);
         });
     });
 

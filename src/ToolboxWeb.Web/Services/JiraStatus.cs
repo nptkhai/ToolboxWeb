@@ -51,4 +51,18 @@ public static class JiraStatus
             ? Doing
             : Todo;
     }
+
+    /// <summary>
+    /// The <c>tbx-pill</c> tone class for a status. Same mapping as <c>statusPill</c> in
+    /// Content/js/jira-common.js: done = success, doing = accent, todo = neutral.
+    /// </summary>
+    public static string PillClass(string? status)
+    {
+        return Tone(status) switch
+        {
+            Done => "is-success",
+            Doing => "is-accent",
+            _ => "is-neutral"
+        };
+    }
 }
