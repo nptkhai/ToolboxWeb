@@ -1,0 +1,116 @@
+/*
+ * ToolboxWeb design tokens.
+ * Approved by the owner on 2026-10-21 (docs/DESIGN_DECISIONS.md, AGENTS.md "Design Tokens").
+ * This is the only file that may declare raw color values for the app shell.
+ * Every other stylesheet reads these variables; page-level variables (--ui-*, --jira-*,
+ * --nv-*, --sc-*) are aliases onto them.
+ */
+:root {
+    color-scheme: light;
+
+    /* Accent: --accent-brand is decoration only (too light for text in light mode). */
+    --accent-brand: #4B87BB;
+    --accent: #417BAD;
+    --accent-strong: #3A6E9B;
+    --on-accent: #FFFFFF;
+    --on-danger: #FFFFFF;
+
+    /* Neutrals */
+    --bg: #F7F8FA;
+    --surface: #FFFFFF;
+    --surface-2: #F2F4F7;
+    --line: #E3E6EB;
+    --text: #16181D;
+    --muted: #5B6270;
+
+    /* Status */
+    --success: #15803D;
+    --warning: #B45309;
+    --danger: #C62828;
+
+    /* Derived: tints are the color mixed into the surface, never a new literal. */
+    --accent-tint: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    --accent-tint-strong: color-mix(in srgb, var(--accent) 20%, var(--surface));
+    --success-tint: color-mix(in srgb, var(--success) 12%, var(--surface));
+    --warning-tint: color-mix(in srgb, var(--warning) 14%, var(--surface));
+    --danger-tint: color-mix(in srgb, var(--danger) 12%, var(--surface));
+    --line-strong: color-mix(in srgb, var(--line) 70%, var(--text) 30%);
+    --hover: color-mix(in srgb, var(--text) 5%, transparent);
+    --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+    --shadow: 0 1px 2px color-mix(in srgb, var(--text) 6%, transparent);
+    --shadow-popup: 0 12px 32px -12px color-mix(in srgb, var(--text) 28%, transparent);
+    --backdrop: color-mix(in srgb, var(--text) 45%, transparent);
+
+    /* Type */
+    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --text-xs: 0.75rem;     /* 12px */
+    --text-sm: 0.8125rem;   /* 13px */
+    --text-md: 0.875rem;    /* 14px */
+    --text-lg: 1rem;        /* 16px */
+    --text-xl: 1.25rem;     /* 20px */
+    --text-2xl: 1.5rem;     /* 24px */
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --leading: 1.5;
+
+    /* Spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    /* Radius */
+    --radius-pill: 4px;
+    --radius-control: 6px;
+    --radius-panel: 8px;
+    --radius-chip: 999px;
+
+    /* Sizes */
+    --row-height: 36px;
+    --row-height-comfortable: 44px;
+    --input-height: 38px;
+    --button-height: 34px;
+    --header-height: 48px;
+    --sidebar-width: 232px;
+    --sidebar-width-collapsed: 56px;
+
+    /* Motion */
+    --duration: 140ms;
+    --ease: cubic-bezier(.2, 0, 0, 1);
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --accent-brand: #8ED3F2;
+    --accent: #8ED3F2;
+    --accent-strong: #9FDAF4;
+    --on-accent: #0E1014;
+    --on-danger: #0E1014;
+
+    --bg: #0E1014;
+    --surface: #15181E;
+    --surface-2: #1C2028;
+    --line: #2A2F39;
+    --text: #E8EAEE;
+    --muted: #A2A9B6;
+
+    --success: #4ADE80;
+    --warning: #FBBF24;
+    --danger: #F87171;
+
+    --hover: color-mix(in srgb, var(--text) 6%, transparent);
+    --shadow: none;
+    --shadow-popup: 0 12px 32px -12px color-mix(in srgb, #000000 70%, transparent);
+    --backdrop: color-mix(in srgb, #000000 60%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --duration: 0ms;
+    }
+}

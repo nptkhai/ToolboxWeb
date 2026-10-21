@@ -5,19 +5,29 @@
     const starsHost = document.getElementById('adaptiveBackgroundStars');
     const cloudsHost = document.getElementById('adaptiveBackgroundClouds');
     const particlesHost = document.getElementById('adaptiveBackgroundParticles');
-    const environmentSummary = document.querySelector('[data-environment-summary]');
-    const currentTimeElement = environmentSummary?.querySelector('[data-current-time]');
-    const currentDateElement = environmentSummary?.querySelector('[data-current-date]');
-    const currentWeatherElement = environmentSummary?.querySelector('[data-current-weather]');
     if (!root || !starsHost || !cloudsHost || !particlesHost) {
         return;
     }
+
+    // The animated background is opt-in and off by default (docs/DESIGN_DECISIONS.md 2.H).
+    // Weather needs the browser location, so it has its own switch; without it the sky only
+    // follows the time of day and the season. Both switches live on the account page.
+    const ENABLED_KEY = 'toolbox.background';
+    const WEATHER_KEY = 'toolbox.background.weather';
 
     const CACHE_KEY = 'toolbox.adaptive-background.weather.v1';
     const CACHE_TTL = 60 * 60 * 1000;
     const MAX_STALE_AGE = 24 * 60 * 60 * 1000;
     const API_URL = 'https://api.open-meteo.com/v1/forecast';
-    const state = { coords: null, weather: null, savedAt: 0, refreshTimer: null, lastThemeKey: '' };
+    const state = { coords: null, weather: null, savedAt: 0, refreshTimer: null, lastThemeKey: '', started: false };
+
+    function readSetting(key) {
+        try {
+            return localStorage.getItem(key) === 'on';
+        } catch {
+            return false;
+        }
+    }
 
     const TIMES = {
         dawn: { colors: ['#26375f', '#9c6685', '#efb391'], glow: '#ffd09c', orb: ['74%', '18%', '.82'], horizon: '.62' },
@@ -166,56 +176,6 @@
         particlesHost.appendChild(particles);
     }
 
-    function getLocale() {
-        return document.documentElement.lang || 'vi-VN';
-    }
-
-    function updateClock() {
-        if (!currentTimeElement || !currentDateElement) {
-            return;
-        }
-
-        const now = new Date();
-        currentTimeElement.textContent = new Intl.DateTimeFormat(getLocale(), {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        }).format(now);
-        currentTimeElement.dateTime = now.toISOString();
-        currentDateElement.textContent = new Intl.DateTimeFormat(getLocale(), {
-            weekday: 'short',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).format(now);
-    }
-
-    function updateWeatherSummary(kind, unavailable) {
-        if (!environmentSummary || !currentWeatherElement) {
-            return;
-        }
-
-        if (!state.weather) {
-            environmentSummary.dataset.weatherKind = unavailable ? 'unavailable' : 'loading';
-            currentWeatherElement.textContent = unavailable
-                ? environmentSummary.dataset.weatherUnavailable
-                : environmentSummary.dataset.weatherLoading;
-            return;
-        }
-
-        const labelKey = `weather${kind.charAt(0).toUpperCase()}${kind.slice(1)}`;
-        const weatherLabel = environmentSummary.dataset[labelKey] || kind;
-        const temperature = Number(state.weather.temperature_2m);
-        const temperatureText = Number.isFinite(temperature)
-            ? `${new Intl.NumberFormat(getLocale(), { maximumFractionDigits: 1 }).format(temperature)}°C`
-            : '';
-
-        environmentSummary.dataset.weatherKind = kind;
-        currentWeatherElement.textContent = temperatureText
-            ? `${temperatureText} · ${weatherLabel}`
-            : weatherLabel;
-    }
-
     function render() {
         const now = new Date();
         const timeKey = getTimeBucket(now);
@@ -240,13 +200,7 @@
         document.body.dataset.adaptiveNight = String(timeKey === 'night' || timeKey === 'evening');
         document.body.dataset.adaptiveWeather = kind;
 
-        const themeMeta = document.querySelector('meta[name="theme-color"]');
-        if (themeMeta) {
-            themeMeta.content = top;
-        }
-
         createParticles(kind);
-        updateWeatherSummary(kind, false);
         state.lastThemeKey = `${timeKey}-${seasonKey}-${state.weather?.weather_code ?? 'none'}`;
     }
 
@@ -304,6 +258,10 @@
     }
 
     async function updateWeather() {
+        if (!readSetting(WEATHER_KEY)) {
+            return;
+        }
+
         const latest = readCache();
         if (latest && Date.now() - latest.savedAt < CACHE_TTL) {
             state.coords = latest.coords;
@@ -325,19 +283,19 @@
         } catch (error) {
             console.warn('[Adaptive background]', error);
             state.savedAt = state.savedAt || Date.now();
-            if (!state.weather) {
-                updateWeatherSummary('clear', true);
-            }
         } finally {
             scheduleRefresh();
         }
     }
 
     function initialize() {
+        if (state.started) {
+            return;
+        }
+
+        state.started = true;
         createScene();
-        updateClock();
-        window.setInterval(updateClock, 1000);
-        const cached = readCache();
+        const cached = readSetting(WEATHER_KEY) ? readCache() : null;
         if (cached) {
             state.coords = cached.coords;
             state.weather = cached.weather;
@@ -345,10 +303,13 @@
         }
 
         render();
-        if (!cached || Date.now() - cached.savedAt >= CACHE_TTL) {
-            updateWeather();
-        } else {
-            scheduleRefresh();
+        // Without the weather switch: time of day only, no location request, no network call.
+        if (readSetting(WEATHER_KEY)) {
+            if (!cached || Date.now() - cached.savedAt >= CACHE_TTL) {
+                updateWeather();
+            } else {
+                scheduleRefresh();
+            }
         }
 
         window.setInterval(function () {
@@ -387,5 +348,25 @@
         });
     }
 
-    initialize();
+    // The account page switches the background on or off without a reload.
+    document.addEventListener('toolbox:background-changed', function () {
+        const enabled = readSetting(ENABLED_KEY);
+        document.documentElement.dataset.background = enabled ? 'on' : 'off';
+        if (!enabled) {
+            return;
+        }
+
+        if (!state.started) {
+            initialize();
+        } else if (readSetting(WEATHER_KEY)) {
+            updateWeather();
+        } else {
+            state.weather = null;
+            render();
+        }
+    });
+
+    if (readSetting(ENABLED_KEY)) {
+        initialize();
+    }
 })();

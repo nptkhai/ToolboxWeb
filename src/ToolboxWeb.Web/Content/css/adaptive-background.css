@@ -9,6 +9,15 @@
     --adaptive-orb-opacity: .9;
 }
 
+/* Opt-in and off by default: the layout sets data-background="on" from the account setting. */
+.adaptive-background {
+    display: none;
+}
+
+:root[data-background="on"] .adaptive-background {
+    display: block;
+}
+
 .adaptive-background {
     background:
         radial-gradient(circle at var(--adaptive-orb-x) var(--adaptive-orb-y), color-mix(in srgb, var(--adaptive-glow), transparent 62%) 0, transparent 24%),

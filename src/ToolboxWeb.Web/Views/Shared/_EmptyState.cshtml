@@ -1,0 +1,18 @@
+@model EmptyStateViewModel
+<div class="tbx-empty" role="status">
+    <span class="tbx-empty-icon"><tbx-icon name="@Model.Icon" size="20" /></span>
+    <p class="tbx-empty-text">@Model.Message</p>
+    @if (!string.IsNullOrEmpty(Model.ActionText))
+    {
+        if (!string.IsNullOrEmpty(Model.ActionTarget))
+        {
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="@Model.ActionTarget">
+                <tbx-icon name="plus" />@Model.ActionText
+            </button>
+        }
+        else if (!string.IsNullOrEmpty(Model.ActionHref))
+        {
+            <a class="btn btn-primary btn-sm" href="@Model.ActionHref"><tbx-icon name="plus" />@Model.ActionText</a>
+        }
+    }
+</div>

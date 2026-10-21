@@ -2346,6 +2346,9 @@
                     hour12: false
                 });
                 let table = null;
+                // Tabulator builds the table asynchronously; setData before that fails inside
+                // Tabulator ("verticalFillMode" of null) when the data request returns first.
+                let tableBuilt = Promise.resolve();
                 let tempRowCounter = 0;
 
                 function setFeedback(message, type) {
@@ -2536,6 +2539,7 @@
                         return;
                     }
 
+                    await tableBuilt;
                     table.setData(payload);
                     clearPending();
                     if (showMessage) {
@@ -2648,6 +2652,7 @@
                         updateRowCount();
                     }
                 });
+                tableBuilt = new Promise(function (resolve) { table.on("tableBuilt", resolve); });
 
                 async function addRowFromPopup(formData) {
                     if (!table) {

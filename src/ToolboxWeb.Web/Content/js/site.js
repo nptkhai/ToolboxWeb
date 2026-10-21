@@ -1,14 +1,98 @@
 (function () {
-    const shell = document.querySelector('.app-shell');
-    const savedSidebar = localStorage.getItem('toolbox.sidebar');
-    if (shell && savedSidebar === 'collapsed') {
-        shell.classList.add('sidebar-collapsed');
+    const root = document.documentElement;
+    const shell = document.querySelector('[data-shell]');
+    const sidebar = document.getElementById('app-sidebar');
+    const sidebarToggle = document.querySelector('[data-sidebar-toggle]');
+    const narrowScreen = window.matchMedia('(max-width: 899.98px)');
+
+    function store(key, value) {
+        try {
+            if (value === null) {
+                localStorage.removeItem(key);
+            } else {
+                localStorage.setItem(key, value);
+            }
+        } catch {
+            // Settings still apply for this page when storage is unavailable.
+        }
     }
 
-    document.querySelector('[data-sidebar-toggle]')?.addEventListener('click', function () {
-        shell?.classList.toggle('sidebar-collapsed');
-        localStorage.setItem('toolbox.sidebar', shell?.classList.contains('sidebar-collapsed') ? 'collapsed' : 'expanded');
+    function read(key) {
+        try {
+            return localStorage.getItem(key);
+        } catch {
+            return null;
+        }
+    }
+
+    // Sidebar: collapses to icons on wide screens, slides in as a drawer on narrow screens.
+    function syncSidebarState() {
+        const collapsed = root.dataset.sidebar === 'collapsed';
+        const drawerOpen = shell?.classList.contains('sidebar-open');
+        sidebarToggle?.setAttribute('aria-expanded', String(narrowScreen.matches ? !!drawerOpen : !collapsed));
+        // Icon-only links get a tooltip with their name.
+        sidebar?.querySelectorAll('.side-nav-link').forEach(function (link) {
+            if (collapsed && !narrowScreen.matches) {
+                link.title = link.querySelector('.nav-text')?.textContent.trim() || '';
+            } else {
+                link.removeAttribute('title');
+            }
+        });
+    }
+
+    function openDrawer() {
+        shell?.classList.add('sidebar-open');
+        syncSidebarState();
+        (sidebar?.querySelector('.side-nav-link.active') || sidebar?.querySelector('.side-nav-link'))?.focus();
+    }
+
+    function closeDrawer(returnFocus) {
+        if (!shell?.classList.contains('sidebar-open')) {
+            return;
+        }
+
+        shell.classList.remove('sidebar-open');
+        syncSidebarState();
+        if (returnFocus) {
+            sidebarToggle?.focus();
+        }
+    }
+
+    sidebarToggle?.addEventListener('click', function () {
+        if (narrowScreen.matches) {
+            if (shell?.classList.contains('sidebar-open')) {
+                closeDrawer(false);
+            } else {
+                openDrawer();
+            }
+            return;
+        }
+
+        const collapsed = root.dataset.sidebar !== 'collapsed';
+        if (collapsed) {
+            root.dataset.sidebar = 'collapsed';
+        } else {
+            delete root.dataset.sidebar;
+        }
+        store('toolbox.sidebar', collapsed ? 'collapsed' : 'expanded');
+        syncSidebarState();
     });
+
+    document.querySelectorAll('[data-sidebar-close]').forEach(function (element) {
+        element.addEventListener('click', function () { closeDrawer(true); });
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeDrawer(true);
+        }
+    });
+
+    narrowScreen.addEventListener('change', function () {
+        closeDrawer(false);
+        syncSidebarState();
+    });
+    syncSidebarState();
 
     // A missing avatar file falls back to the initials rendered underneath the image.
     document.querySelectorAll('img[data-avatar-image]').forEach(function (img) {
@@ -20,10 +104,48 @@
         }
     });
 
-    document.querySelector('[data-theme-toggle]')?.addEventListener('click', function () {
-        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-        document.documentElement.dataset.theme = next;
-        localStorage.setItem('toolbox.theme', next);
+    // Theme: light, dark, or "system" (no stored choice; follows the OS and its changes).
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function applyTheme() {
+        const choice = read('toolbox.theme');
+        const theme = choice === 'light' || choice === 'dark' ? choice : (systemDark.matches ? 'dark' : 'light');
+        root.dataset.theme = theme;
+        document.querySelectorAll('[data-theme-set]').forEach(function (button) {
+            const value = button.getAttribute('data-theme-set');
+            const pressed = value === 'system' ? choice !== 'light' && choice !== 'dark' : value === choice;
+            button.setAttribute('aria-pressed', String(pressed));
+        });
+    }
+
+    document.querySelectorAll('[data-theme-set]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const value = button.getAttribute('data-theme-set');
+            store('toolbox.theme', value === 'system' ? null : value);
+            applyTheme();
+        });
+    });
+    systemDark.addEventListener('change', applyTheme);
+    applyTheme();
+
+    // Display settings on the account page (stored per browser).
+    document.querySelectorAll('[data-display-setting]').forEach(function (input) {
+        const key = input.getAttribute('data-display-setting');
+        input.checked = read(key) === 'on';
+        input.addEventListener('change', function () {
+            store(key, input.checked ? 'on' : null);
+            document.querySelectorAll('[data-display-requires="' + key + '"]').forEach(function (dependent) {
+                dependent.disabled = !input.checked;
+                if (!input.checked && dependent.checked) {
+                    dependent.checked = false;
+                    store(dependent.getAttribute('data-display-setting'), null);
+                }
+            });
+            document.dispatchEvent(new CustomEvent('toolbox:background-changed'));
+        });
+    });
+    document.querySelectorAll('[data-display-requires]').forEach(function (dependent) {
+        dependent.disabled = read(dependent.getAttribute('data-display-requires')) !== 'on';
     });
 
     document.querySelectorAll('[data-copy-target]').forEach(function (button) {

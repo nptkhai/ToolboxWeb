@@ -17,36 +17,27 @@
 
 .sc-page {
     /* spacing scale */
-    --sc-1: 4px;
-    --sc-2: 8px;
-    --sc-3: 12px;
-    --sc-4: 16px;
-    --sc-6: 24px;
-    --sc-8: 32px;
-    --sc-radius: 10px;
-    --sc-radius-sm: 8px;
+    --sc-1: var(--space-1);
+    --sc-2: var(--space-2);
+    --sc-3: var(--space-3);
+    --sc-4: var(--space-4);
+    --sc-6: var(--space-5);
+    --sc-8: var(--space-6);
+    --sc-radius: var(--radius-panel);
+    --sc-radius-sm: var(--radius-control);
     /* only in source -> will be added to the target */
-    --sc-add: #0f7a4d;
-    --sc-add-bg: rgba(15, 122, 77, .12);
+    --sc-add: var(--success);
+    --sc-add-bg: var(--success-tint);
     /* present on both sides but different */
-    --sc-change: #9a6100;
-    --sc-change-bg: rgba(154, 97, 0, .12);
+    --sc-change: var(--warning);
+    --sc-change-bg: var(--warning-tint);
     /* only in target -> will be removed */
-    --sc-del: #c02a32;
-    --sc-del-bg: rgba(192, 42, 50, .12);
+    --sc-del: var(--danger);
+    --sc-del-bg: var(--danger-tint);
 
     display: flex;
     flex-direction: column;
     gap: var(--sc-4);
-}
-
-:root[data-theme="dark"] .sc-page {
-    --sc-add: #5be3a4;
-    --sc-add-bg: rgba(91, 227, 164, .14);
-    --sc-change: #ffcc73;
-    --sc-change-bg: rgba(255, 204, 115, .14);
-    --sc-del: #ff8f8f;
-    --sc-del-bg: rgba(255, 143, 143, .14);
 }
 
 /* ---------------------------------------------------------------- primitives */
@@ -79,29 +70,17 @@
 .sc-page .sc-btn-primary {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
-    font-size: .95rem;
-    min-height: 44px;
-    padding: var(--sc-3) var(--sc-6);
+    color: var(--on-accent);
 }
 
 .sc-page .sc-btn-primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--accent) 84%, #000);
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
 }
 
-/* In dark mode --accent is a light blue, so white text on it is barely readable;
-   the filled button flips to dark ink instead. */
-:root[data-theme="dark"] .sc-page .sc-btn-primary {
-    color: #0b1220;
-}
-
-:root[data-theme="dark"] .sc-page .sc-btn-primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--accent) 82%, #fff);
-}
-
-:root[data-theme="dark"] .sc-page .sc-spinner {
-    border-color: rgba(11, 18, 32, .35);
-    border-top-color: #0b1220;
+.sc-page .sc-btn-primary .sc-spinner {
+    border-color: color-mix(in srgb, var(--on-accent) 35%, transparent);
+    border-top-color: var(--on-accent);
 }
 
 .sc-page .sc-btn-ghost {
