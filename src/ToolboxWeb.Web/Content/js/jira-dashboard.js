@@ -617,7 +617,7 @@
                 {
                     title: columnText.estimate || "Estimate Time",
                     field: "estimateHours",
-                    hozAlign: "center",
+                    hozAlign: "right",
                     width: 150,
                     sorter: "number",
                     formatter(cell) {
@@ -628,7 +628,7 @@
                 {
                     title: columnText.logged || "LogTime",
                     field: "loggedHours",
-                    hozAlign: "center",
+                    hozAlign: "right",
                     width: 150,
                     sorter: "number",
                     formatter(cell) {

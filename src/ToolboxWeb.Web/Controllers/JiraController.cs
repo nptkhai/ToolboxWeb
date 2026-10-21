@@ -787,10 +787,11 @@ public class JiraController : Controller
     {
         if (hours <= 0)
         {
-            return dashWhenZero ? "-" : "0.00";
+            return dashWhenZero ? "-" : 0m.ToString("0.##", CultureInfo.CurrentCulture);
         }
 
-        return string.Create(CultureInfo.InvariantCulture, $"{hours:0.00}");
+        // Follows the UI culture: 17,5 in vi-VN, 17.5 in en-US.
+        return hours.ToString("0.##", CultureInfo.CurrentCulture);
     }
 
     private static bool IsDoneStatus(JiraDashboardRowViewModel row)

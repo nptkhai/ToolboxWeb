@@ -130,6 +130,9 @@
         let rows = [];
         // subTaskKey -> due date before it was dragged; these moves exist only in the browser.
         let moved = new Map();
+        // Markup of the period inputs before Kendo wrapped them. Kendo's destroy() leaves its
+        // wrapper behind, so re-entering the tab used to stack an extra clear button each time.
+        let pristinePickerHtml = null;
         let periodType = "week";
         let referenceDate = null;
         let syncingPickers = false;
@@ -637,6 +640,9 @@
 
                 periodButtons = Array.from(toolbar.querySelectorAll("[data-period]"));
                 inputWraps = Array.from(toolbar.querySelectorAll("[data-period-input]"));
+                if (!pristinePickerHtml) {
+                    pristinePickerHtml = inputWraps.map((wrap) => wrap.innerHTML);
+                }
                 navButtons = Array.from(toolbar.querySelectorAll("[data-nav-step]"));
                 inputs = {
                     week: document.getElementById("jira-board-week"),
@@ -684,6 +690,9 @@
                 if (widgets.week) { widgets.week.destroy(); }
                 if (widgets.month) { widgets.month.destroy(); }
                 widgets = { week: null, month: null };
+                if (pristinePickerHtml) {
+                    inputWraps.forEach((wrap, index) => { wrap.innerHTML = pristinePickerHtml[index]; });
+                }
                 if (root) {
                     root.innerHTML = "";
                 }

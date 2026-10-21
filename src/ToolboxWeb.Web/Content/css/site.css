@@ -1133,6 +1133,9 @@ a {
     --jira-rose: #ef4444;
     display: grid;
     gap: 18px;
+    /* Without an explicit track the column grows to the widest child (the Tabulator grid's
+       minimum width), which pushed the whole page sideways at 1440px. */
+    grid-template-columns: minmax(0, 1fr);
 }
 
 :root[data-theme="dark"] .jira-dashboard-shell {
@@ -1627,6 +1630,7 @@ a {
 .jira-shell {
     display: grid;
     gap: 18px;
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .jira-panels {
@@ -1638,11 +1642,13 @@ a {
 .jira-panel {
     display: grid;
     gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .jira-search-form {
     display: grid;
     gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .jira-search-grid {
@@ -1700,6 +1706,18 @@ a {
 
     .jira-dashboard-toolbar-controls {
         justify-content: flex-start;
+    }
+
+    /* Let the Day/Week/Month/Year switch share the row instead of overflowing it. */
+    .jira-dashboard-period-tabs {
+        display: flex;
+        width: 100%;
+    }
+
+    .jira-dashboard-period-button {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 9px 8px;
     }
 
     .jira-dashboard-stats {
@@ -1938,6 +1956,9 @@ a {
 .jira-tab-content .tab-pane.active {
     display: grid;
     gap: 18px;
+    /* Keep the pane at the shell's width so wide content (the 7 day columns, the grids)
+       scrolls inside its own box instead of stretching the toolbar out of view. */
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .jira-icon-button {
