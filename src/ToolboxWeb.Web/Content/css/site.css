@@ -134,6 +134,13 @@ a {
             text-decoration: none;
         }
 
+        /* Current page. Final styling comes with the new app shell in stage 3. */
+        .side-nav a.active {
+            background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+            box-shadow: inset 3px 0 0 var(--accent);
+            color: var(--accent);
+        }
+
 .app-main {
     min-width: 0;
     flex: 1;
