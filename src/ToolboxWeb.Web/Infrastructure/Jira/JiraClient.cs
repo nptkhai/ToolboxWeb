@@ -184,6 +184,24 @@ public sealed class JiraClient : IJiraClient
         return response.IsSuccessStatusCode;
     }
 
+    public async Task UpdateDueDateAsync(string issueKey, DateTime? dueDate, CancellationToken cancellationToken = default)
+    {
+        var body = new Dictionary<string, object?>
+        {
+            ["fields"] = new Dictionary<string, object?>
+            {
+                ["duedate"] = dueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            }
+        };
+        using var request = new HttpRequestMessage(HttpMethod.Put, Url("/rest/api/2/issue/" + Uri.EscapeDataString(issueKey)))
+        {
+            Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
+        };
+        // Jira Server skips its XSRF check for REST calls that carry this header.
+        request.Headers.Add("X-Atlassian-Token", "no-check");
+        await ReadSuccessAsync(await _http.SendAsync(request, cancellationToken));
+    }
+
     private async Task<string> GetStringAsync(string path, CancellationToken cancellationToken)
     {
         return await ReadSuccessAsync(await _http.GetAsync(Url(path), cancellationToken));

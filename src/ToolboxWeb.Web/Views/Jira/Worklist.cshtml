@@ -23,6 +23,19 @@
             leaveMessage = T["Jira.Unsaved.LeaveMessage"].Value,
             leaveOk = T["Jira.Unsaved.LeaveOk"].Value
         },
+        save = new
+        {
+            url = Url.Action("UpdateDueDates", "Jira"),
+            intro = T["Jira.Save.Intro"].Value,
+            noDue = T["Jira.Save.NoDueDate"].Value,
+            saving = T["Jira.Save.Saving"].Value,
+            done = T["Jira.Save.Done"].Value,
+            partial = T["Jira.Save.Partial"].Value,
+            failed = T["Jira.Save.Failed"].Value,
+            ok = T["Jira.Save.ItemOk"].Value,
+            close = T["Action.Close"].Value,
+            confirm = T["Jira.Save.Confirm"].Value
+        },
         columns = new
         {
             index = T["Jira.Table.Index"].Value,
@@ -39,14 +52,29 @@
     }, jsonOptions);
     var boardConfigJson = JsonSerializer.Serialize(new
     {
-        hint = T["Jira.TaskBoard.Hint"].Value,
-        noTasks = T["Jira.TaskBoard.NoTasks"].Value,
-        emptyState = T["Jira.TaskBoard.EmptyState"].Value,
         error = T["Jira.TaskBoard.Error"].Value,
+        retry = T["Jira.Search.Retry"].Value,
+        loading = T["Jira.Board.Loading"].Value,
+        empty = T["Jira.Board.Empty"].Value,
+        noTasks = T["Jira.TaskBoard.NoTasks"].Value,
+        today = T["Jira.Board.Today"].Value,
         movedToast = T["Jira.TaskBoard.MovedToast"].Value,
-        movedFrom = T["Jira.TaskBoard.MovedFrom"].Value,
-        loadTitle = T["Jira.TaskBoard.LoadTitle"].Value,
-        cardHours = T["Jira.TaskBoard.CardHours"].Value
+        cardHours = T["Jira.TaskBoard.CardHours"].Value,
+        late = T["Jira.Dashboard.DaysLate"].Value,
+        load = T["Jira.Board.Load"].Value,
+        over = T["Jira.Board.Over"].Value,
+        moreCards = T["Jira.Board.MoreCards"].Value,
+        dayCount = T["Jira.Board.DayCount"].Value,
+        moveButton = T["Jira.Board.MoveButton"].Value,
+        moveItem = T["Jira.Board.MoveItem"].Value,
+        picked = T["Jira.Board.Picked"].Value,
+        movedTo = T["Jira.Board.MovedTo"].Value,
+        dropped = T["Jira.Board.Dropped"].Value,
+        cancelled = T["Jira.Board.Cancelled"].Value,
+        totalsLogged = T["Jira.Board.TotalsLogged"].Value,
+        totalsOpen = T["Jira.Board.TotalsOpen"].Value,
+        totalsCapacity = T["Jira.Board.TotalsCapacity"].Value,
+        saveError = T["Jira.Save.CardError"].Value
     }, jsonOptions);
     var searchJqlBlock = new JiraJqlBlockViewModel
     {
@@ -161,11 +189,6 @@
 
 <div class="jira-shell jira-dashboard-shell">
     <section class="jira-tabs-shell">
-    @* Due-date changes on the board and auto-schedule tabs are not written to Jira yet. *@
-    <div class="alert alert-warning jira-unsaved-bar d-none" role="status" data-jira-unsaved>
-        <span data-jira-unsaved-text></span>
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-jira-unsaved-discard>@T["Jira.Unsaved.Discard"]</button>
-    </div>
     <ul class="nav nav-tabs jira-page-tabs" id="jira-worklist-tabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="jira-tab-search" data-bs-toggle="tab" data-bs-target="#jira-tab-search-pane" type="button" role="tab" aria-controls="jira-tab-search-pane" aria-selected="true">@T["Jira.Worklist.Tabs.Search"]</button>
@@ -311,26 +334,79 @@
         </div>
 
         <div class="tab-pane fade" id="jira-tab-board-pane" role="tabpanel" aria-labelledby="jira-tab-board">
-            <div class="jira-toolbar" data-jira-board-toolbar>
-                <div class="jira-toolbar-range">
-                    <span class="jira-toolbar-caption">@T["Jira.Dashboard.ToolbarLabel"]</span>
-                    <strong data-jira-board-range-label></strong>
+            @* Stage 5.3: subtasks by due date, one column a day (a calendar for the month). Moving a card
+               changes its due date here first; "Write to Jira" saves the moves after a confirmation.
+               Content/js/jira-task-board.js *@
+            <div class="jira-board" data-jira-board>
+                <div class="jira-toolbar" data-jira-board-toolbar>
+                    <partial name="_JiraPeriodPicker" model="boardPeriodPicker" />
+                    <span class="visually-hidden" role="status" aria-live="polite" data-jira-board-range-label></span>
+                    <dl class="jira-board-totals" data-board-totals></dl>
                 </div>
 
-                <partial name="_JiraPeriodPicker" model="boardPeriodPicker" />
+                <div class="jira-board-bar">
+                    <div class="jira-chips" role="group" aria-label="@T["Jira.Search.ChipsLabel"]" data-board-chips>
+                        <button type="button" class="tbx-chip" data-chip="all" aria-pressed="true">@T["Jira.Chips.All"] <span class="jira-chip-count" data-chip-count></span></button>
+                        <button type="button" class="tbx-chip" data-chip="open" aria-pressed="false">@T["Jira.Chips.Open"] <span class="jira-chip-count" data-chip-count></span></button>
+                        <button type="button" class="tbx-chip" data-chip="overdue" aria-pressed="false">@T["Jira.Chips.Overdue"] <span class="jira-chip-count" data-chip-count></span></button>
+                    </div>
+                    <div class="form-check jira-board-switch">
+                        <input class="form-check-input" type="checkbox" id="jira-board-hide-done" data-board-hide-done />
+                        <label class="form-check-label" for="jira-board-hide-done">@T["Jira.Board.HideDone"]</label>
+                    </div>
+                    <div class="form-check jira-board-switch">
+                        <input class="form-check-input" type="checkbox" id="jira-board-hide-weekend" data-board-hide-weekend />
+                        <label class="form-check-label" for="jira-board-hide-weekend">@T["Jira.Board.HideWeekend"]</label>
+                    </div>
+                    <ul class="jira-board-legend" aria-label="@T["Jira.Board.LegendLabel"]">
+                        <li><span class="jira-legend-swatch is-done" aria-hidden="true"></span>@T["Jira.Board.LegendDone"]</li>
+                        <li><span class="jira-legend-swatch is-open" aria-hidden="true"></span>@T["Jira.Board.LegendOpen"]</li>
+                        <li><span class="jira-legend-swatch is-over" aria-hidden="true"></span>@T["Jira.Board.LegendOver"]</li>
+                    </ul>
+                </div>
+
+                <div data-jira-board-alert></div>
+
+                <section class="tbx-panel jira-board-panel" aria-label="@T["Jira.Worklist.Tabs.Board"]">
+                    <p class="jira-board-help">@T["Jira.Board.Help"]</p>
+                    <div class="jira-board-daystrip" role="group" aria-label="@T["Jira.Board.DayStripLabel"]" data-board-daystrip></div>
+                    <div id="jira-board-root" class="jira-board-root" data-board-root aria-busy="false"></div>
+                </section>
+                <p class="visually-hidden" aria-live="assertive" data-board-live></p>
             </div>
 
-            <div data-jira-board-alert></div>
-
-            <section class="jira-dashboard-table-card">
-                <div class="jira-dashboard-table-head">
-                    <div>
-                        <h2>@T["Jira.Worklist.Tabs.Board"]</h2>
-                        <p>@T["Jira.TaskBoard.Hint"]</p>
-                    </div>
+            @* Change one card's due date without dragging (phones, or a precise date). *@
+            <div class="modal fade" id="jira-board-move" tabindex="-1" aria-labelledby="jira-board-move-title" aria-hidden="true" data-board-move-modal>
+                <div class="modal-dialog modal-dialog-centered">
+                    <form class="modal-content" data-board-move-form novalidate>
+                        <div class="modal-header">
+                            <h2 class="modal-title fs-5" id="jira-board-move-title">@T["Jira.Board.MoveTitle"]</h2>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+                        </div>
+                        <div class="modal-body tbx-form-grid">
+                            <p class="jira-board-move-item" data-board-move-item></p>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-board-move-date">@T["Jira.Board.MoveDate"]</label>
+                                <input class="form-control" id="jira-board-move-date" autocomplete="off" data-board-move-date />
+                                <span class="tbx-field-hint">@T["Jira.Board.MoveHint"]</span>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                            <button type="submit" class="btn btn-primary">@T["Jira.Board.Apply"]</button>
+                        </div>
+                    </form>
                 </div>
-                <div id="jira-board-root" class="jira-board-root"></div>
-            </section>
+            </div>
+
+            @* All cards of one day in the month view. *@
+            <div class="offcanvas offcanvas-end tbx-sidepanel" tabindex="-1" id="jira-board-day" aria-labelledby="jira-board-day-title" data-board-day-panel>
+                <div class="offcanvas-header">
+                    <h2 class="offcanvas-title fs-5" id="jira-board-day-title" data-board-day-title></h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="@T["Action.Close"]"></button>
+                </div>
+                <div class="offcanvas-body" data-board-day-body></div>
+            </div>
         </div>
 
         <div class="tab-pane fade" id="jira-tab-auto-pane" role="tabpanel" aria-labelledby="jira-tab-auto">
@@ -458,6 +534,34 @@
 </div>
 
 <script id="jira-search-config" type="application/json">@Html.Raw(searchConfigJson)</script>
+@* Due dates moved on the board (or auto-schedule) live in the browser until they are written to
+   Jira. The bar floats at the bottom while there are any; the modal confirms the write. *@
+<div class="jira-unsaved-bar" role="region" aria-label="@T["Jira.Unsaved.Label"]" data-jira-unsaved hidden>
+    <tbx-icon name="circle-alert" />
+    <span class="jira-unsaved-text" data-jira-unsaved-text></span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-jira-unsaved-discard>@T["Jira.Unsaved.Discard"]</button>
+    <button type="button" class="btn btn-sm btn-primary" data-jira-unsaved-save hidden>@T["Jira.Save.Button"]</button>
+</div>
+
+<div class="modal fade" id="jira-save-modal" tabindex="-1" aria-labelledby="jira-save-title" aria-hidden="true" data-jira-save-modal>
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="jira-save-title">@T["Jira.Save.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <p class="jira-save-intro" data-jira-save-intro></p>
+                <ul class="jira-save-list" data-jira-save-list></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-jira-save-cancel>@T["Action.Cancel"]</button>
+                <button type="button" class="btn btn-primary" data-jira-save-confirm>@T["Jira.Save.Confirm"]</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script id="jira-worklist-config" type="application/json">@Html.Raw(worklistConfigJson)</script>
 <script id="jira-task-board-config" type="application/json">@Html.Raw(boardConfigJson)</script>
 <script id="jira-auto-schedule-config" type="application/json">@Html.Raw(autoScheduleConfigJson)</script>

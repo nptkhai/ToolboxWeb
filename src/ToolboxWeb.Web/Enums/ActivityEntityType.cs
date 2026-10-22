@@ -10,5 +10,6 @@ public enum ActivityEntityType
     TabulatorTask = 6,
     UserProfile = 7,
     SchemaCompare = 8,
-    SqlProfiler = 9
+    SqlProfiler = 9,
+    JiraIssue = 10
 }

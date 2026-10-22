@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using ToolboxWeb.Web.ViewModels.Jira;
@@ -29,8 +30,24 @@ public sealed partial class FakeJiraClient : IJiraClient
         Username = username;
     }
 
+    // Due dates written through UpdateDueDateAsync, kept for this sign-in so the next search
+    // shows them, as a real Jira would.
+    private readonly ConcurrentDictionary<string, DateTime?> _dueDates = new(StringComparer.OrdinalIgnoreCase);
+
     public string BaseUrl { get; }
     public string Username { get; }
+
+    public Task UpdateDueDateAsync(string issueKey, DateTime? dueDate, CancellationToken cancellationToken = default)
+    {
+        if (!BuildSampleIssues(AppClock.Today).Any(x => string.Equals(x.IssueKey, issueKey, StringComparison.OrdinalIgnoreCase)))
+        {
+            // Same shape as JiraClient's error, so the page shows the "not found" message.
+            throw new InvalidOperationException("Jira API lỗi 404: Issue Does Not Exist");
+        }
+
+        _dueDates[issueKey] = dueDate?.Date;
+        return Task.CompletedTask;
+    }
 
     public Task LoginAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
@@ -135,6 +152,11 @@ public sealed partial class FakeJiraClient : IJiraClient
 
         foreach (var issue in issues)
         {
+            if (_dueDates.TryGetValue(issue.IssueKey, out var due))
+            {
+                issue.DueDate = due;
+            }
+
             foreach (var log in issue.Worklogs)
             {
                 log.AuthorName = Username;

@@ -23,11 +23,19 @@ public class JiraController : Controller
         MySubtasksBaseJql + " AND statusCategory != Done";
 
     private readonly IJiraAuthService _jiraAuth;
+    private readonly IJiraDueDateService _dueDates;
+    private readonly ICurrentUserService _currentUser;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public JiraController(IJiraAuthService jiraAuth, IStringLocalizer<SharedResource> localizer)
+    public JiraController(
+        IJiraAuthService jiraAuth,
+        IJiraDueDateService dueDates,
+        ICurrentUserService currentUser,
+        IStringLocalizer<SharedResource> localizer)
     {
         _jiraAuth = jiraAuth;
+        _dueDates = dueDates;
+        _currentUser = currentUser;
         _localizer = localizer;
     }
 
@@ -143,6 +151,26 @@ public class JiraController : Controller
                 _localizer["Jira.NotFound"].Value,
                 _localizer["Jira.InvalidRequest"].Value)));
         }
+    }
+
+    /// <summary>Writes due dates moved on the board to Jira; answers with one result per issue.</summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateDueDates([FromBody] JiraDueDateUpdateRequest? request)
+    {
+        var session = await GetSessionOrSignOutAsync();
+        if (session is null)
+        {
+            return Json(JiraApiResponse<object>.LoginRequired(_localizer["Jira.SessionExpired"].Value));
+        }
+
+        if (request?.Changes is not { Count: > 0 })
+        {
+            return Json(JiraApiResponse<object>.Fail(_localizer["Jira.Save.Invalid"].Value));
+        }
+
+        var results = await _dueDates.UpdateAsync(session.Client, _currentUser.UserId, request.Changes, HttpContext.RequestAborted);
+        return Json(JiraApiResponse<object>.Ok(results));
     }
 
     [HttpGet]
