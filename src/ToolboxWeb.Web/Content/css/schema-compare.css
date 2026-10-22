@@ -666,8 +666,8 @@
         cursor: pointer;
     }
 
-        .sc-grid .tabulator-row.sc-selected-row,
-        .sc-grid .tabulator-row.sc-selected-row:hover {
+        /* Same weight as the zebra and hover rules in vendor-sync.css, and later, so it wins. */
+        .content-area .sc-grid.tabulator .tabulator-row.sc-selected-row {
             background: var(--accent-tint);
         }
 

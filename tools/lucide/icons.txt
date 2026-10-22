@@ -41,9 +41,11 @@ message-square-text
 monitor
 moon
 panel-left
+pause
 pencil
 pin
 pin-off
+play
 plug
 plus
 refresh-cw

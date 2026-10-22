@@ -77,7 +77,47 @@
             networkError = T["SqlConnection.NetworkError"].Value,
             genericError = T["SqlProfiler.Error.StartFailed"].Value,
             loadingDefinition = T["SqlProfiler.Message.LoadingDefinition"].Value,
-            planCacheNote = T["SqlProfiler.Message.PlanCacheNote"].Value
+            planCacheNote = T["SqlProfiler.Message.PlanCacheNote"].Value,
+            gridBeforeStart = T["SqlProfiler.Message.GridBeforeStart"].Value,
+            gridNoMatch = T["SqlProfiler.Message.GridNoMatch"].Value,
+            recentEmpty = T["SqlProfiler.Message.RecentEmpty"].Value,
+            recentBefore = T["SqlProfiler.Message.RecentBefore"].Value,
+            recentLoading = T["SqlProfiler.Message.RecentLoading"].Value,
+            readyTest = T["SqlProfiler.Ready.Test"].Value,
+            readyRunning = T["SqlProfiler.Ready.Running"].Value,
+            confirmTitle = T["SqlProfiler.Confirm.Title"].Value,
+            confirmMessage = T["SqlProfiler.Confirm.Message"].Value,
+            confirmAllDatabases = T["SqlProfiler.Confirm.AllDatabases"].Value,
+            confirmOk = T["SqlProfiler.Action.Start"].Value,
+            autoStopIn = T["SqlProfiler.Message.AutoStopIn"].Value,
+            pollFailed = T["SqlProfiler.Error.PollFailed"].Value,
+            newRows = T["SqlProfiler.Message.NewRows"].Value,
+            pause = T["SqlProfiler.Action.Pause"].Value,
+            resume = T["SqlProfiler.Action.Resume"].Value,
+            cleared = T["SqlProfiler.Message.Cleared"].Value,
+            optionsReset = T["SqlProfiler.Options.ResetDone"].Value,
+            noStatement = T["SqlProfiler.Detail.NoStatement"].Value
+        },
+        groupColumns = new
+        {
+            calls = T["SqlProfiler.Grid.Calls"].Value,
+            average = T["SqlProfiler.Grid.Average"].Value,
+            slowest = T["SqlProfiler.Grid.Slowest"].Value,
+            total = T["SqlProfiler.Grid.Total"].Value,
+            errors = T["SqlProfiler.Grid.Errors"].Value
+        },
+        detailLabels = new
+        {
+            time = T["SqlProfiler.Grid.Time"].Value,
+            duration = T["SqlProfiler.Grid.Duration"].Value,
+            cpu = T["SqlProfiler.Grid.Cpu"].Value,
+            reads = T["SqlProfiler.Grid.Reads"].Value,
+            rows = T["SqlProfiler.Detail.Rows"].Value,
+            database = T["SqlConnection.Database"].Value,
+            user = T["SqlProfiler.Grid.User"].Value,
+            host = T["SqlProfiler.Grid.Host"].Value,
+            app = T["SqlProfiler.Grid.App"].Value,
+            session = T["SqlProfiler.Detail.Session"].Value
         }
     }, jsonOptions);
 }
@@ -92,129 +132,229 @@
 <div class="sp-page" id="sp-root">
     @Html.AntiForgeryToken()
 
-    <section class="panel">
-        <div class="panel-header">
-            <h2>@T["SqlProfiler.Connection"]</h2>
-            <span class="muted">@T["SqlProfiler.Intro"]</span>
-        </div>
-        <partial name="_SqlConnectionForm" model="connectionForm" />
-    </section>
+    <ol class="tbx-steps">
+        <li class="tbx-step" data-step="1">
+            <div class="tbx-step-head">
+                <span class="tbx-step-no" aria-hidden="true">1</span>
+                <h2 class="tbx-step-title">@T["SqlProfiler.Connection"]</h2>
+                <span class="tbx-step-hint">@T["SqlProfiler.Intro"]</span>
+            </div>
+            <partial name="_SqlConnectionForm" model="connectionForm" />
+        </li>
 
-    <section class="panel">
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="sp-tab-capture" data-bs-toggle="tab" data-bs-target="#sp-pane-capture"
-                        type="button" role="tab" aria-controls="sp-pane-capture" aria-selected="true">
-                    @T["SqlProfiler.Tab.Capture"]
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="sp-tab-recent" data-bs-toggle="tab" data-bs-target="#sp-pane-recent"
-                        type="button" role="tab" aria-controls="sp-pane-recent" aria-selected="false">
-                    @T["SqlProfiler.Tab.Recent"]
-                </button>
-            </li>
-        </ul>
+        @* Step 2: how to look. Recording sees who called what with which values; the quick look
+           reads SQL Server's own statistics for the last minutes without recording first. *@
+        <li class="tbx-step" data-step="2">
+            <div class="tbx-step-head">
+                <span class="tbx-step-no" aria-hidden="true">2</span>
+                <h2 class="tbx-step-title">@T["SqlProfiler.Step.Mode"]</h2>
+            </div>
 
-        <div class="tab-content">
-            <!-- ------------------------------------------------ capture ---- -->
-            <div class="tab-pane fade show active" id="sp-pane-capture" role="tabpanel" aria-labelledby="sp-tab-capture">
-                <p class="muted sp-howto">@T["SqlProfiler.Capture.HowTo"]</p>
+            <ul class="nav nav-tabs sp-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="sp-tab-capture" data-bs-toggle="tab" data-bs-target="#sp-pane-capture"
+                            type="button" role="tab" aria-controls="sp-pane-capture" aria-selected="true">
+                        @T["SqlProfiler.Tab.Capture"]
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sp-tab-recent" data-bs-toggle="tab" data-bs-target="#sp-pane-recent"
+                            type="button" role="tab" aria-controls="sp-pane-recent" aria-selected="false">
+                        @T["SqlProfiler.Tab.Recent"]
+                    </button>
+                </li>
+            </ul>
 
-                <div class="sp-toolbar">
-                    <button class="btn btn-primary" type="button" id="sp-start">@T["SqlProfiler.Action.Start"]</button>
-                    <button class="btn btn-outline-danger" type="button" id="sp-stop" disabled>@T["SqlProfiler.Action.Stop"]</button>
-                    <span class="sp-clock" id="sp-clock">00:00:00</span>
-                    <span class="sp-live" id="sp-live" hidden>@T["SqlProfiler.Message.Recording"]</span>
-                    <span class="spacer"></span>
-                    <a class="btn btn-outline-secondary btn-sm" id="sp-export" href="#">@T["SqlProfiler.Action.Export"]</a>
+            <div class="tab-content sp-tab-content">
+                <div class="tab-pane fade show active" id="sp-pane-capture" role="tabpanel" aria-labelledby="sp-tab-capture">
+                    <p class="sp-howto">@T["SqlProfiler.Capture.HowTo"]</p>
+
+                    <div class="sp-run-bar">
+                        <button class="btn btn-primary" type="button" id="sp-start" disabled aria-describedby="sp-ready">
+                            <tbx-icon name="activity" />@T["SqlProfiler.Action.Start"]
+                        </button>
+                        <button class="btn btn-outline-danger" type="button" id="sp-stop" hidden>@T["SqlProfiler.Action.Stop"]</button>
+                        <span class="sp-live" id="sp-live" hidden>@T["SqlProfiler.Message.Recording"]</span>
+                        <span class="sp-clock" id="sp-clock" hidden>00:00:00</span>
+                        <span class="sp-countdown" data-role="countdown" hidden></span>
+                    </div>
+                    @* Why Start is still disabled; a reserved line, so the layout does not jump. *@
+                    <p class="sp-ready" id="sp-ready" data-role="ready" aria-live="polite"></p>
+
+                    <div class="tbx-error-state sp-error" data-role="capture-error" role="alert" hidden>
+                        <tbx-icon name="circle-alert" />
+                        <span data-role="capture-error-text"></span>
+                    </div>
+
+                    <div class="sp-main-options">
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="sp-warn">@T["SqlProfiler.Filter.WarnMs"]</label>
+                            <input class="form-control" id="sp-warn" type="number" min="0" value="300" data-remember data-default="300" />
+                        </div>
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="sp-danger">@T["SqlProfiler.Filter.DangerMs"]</label>
+                            <input class="form-control" id="sp-danger" type="number" min="0" value="1000" data-remember data-default="1000" />
+                        </div>
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="sp-auto-stop">@T["SqlProfiler.Filter.AutoStop"]</label>
+                            <input class="form-control" id="sp-auto-stop" type="number" min="1" max="120" value="15" data-remember data-default="15" />
+                        </div>
+                    </div>
+
+                    <div class="sp-advanced-head">
+                        <button class="sp-advanced-toggle" type="button" id="sp-toggle-advanced" aria-expanded="false" aria-controls="sp-advanced">
+                            <tbx-icon name="chevron-right" class="sp-caret" />@T["SqlProfiler.Options.Advanced"]
+                            <span class="sp-advanced-count" data-role="advanced-count" hidden></span>
+                        </button>
+                        <button class="btn btn-link btn-sm" type="button" id="sp-reset-options">@T["SchemaCompare.Options.ResetDefaults"]</button>
+                    </div>
+
+                    <div class="sp-advanced" id="sp-advanced" hidden>
+                        <div class="sp-filters">
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="sp-min-duration">@T["SqlProfiler.Filter.MinDuration"]</label>
+                                <input class="form-control" id="sp-min-duration" type="number" min="0" value="0" data-remember data-default="0" />
+                            </div>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="sp-filter-user">@T["SqlProfiler.Filter.User"]</label>
+                                <input class="form-control" id="sp-filter-user" autocomplete="off" data-remember data-default="" />
+                            </div>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="sp-filter-host">@T["SqlProfiler.Filter.Host"]</label>
+                                <input class="form-control" id="sp-filter-host" autocomplete="off" data-remember data-default="" />
+                            </div>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="sp-filter-app">@T["SqlProfiler.Filter.App"]</label>
+                                <input class="form-control" id="sp-filter-app" autocomplete="off" data-remember data-default="" />
+                            </div>
+                        </div>
+                        <div class="sp-checks">
+                            @foreach (var check in new[]
+                            {
+                                new { Id = "sp-cap-proc", Label = T["SqlProfiler.Capture.Procedures"].Value, On = true },
+                                new { Id = "sp-cap-module", Label = T["SqlProfiler.Capture.Modules"].Value, On = true },
+                                new { Id = "sp-cap-error", Label = T["SqlProfiler.Capture.Errors"].Value, On = true },
+                                new { Id = "sp-mask", Label = T["SqlProfiler.Capture.MaskParameters"].Value, On = false }
+                            })
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" id="@check.Id" type="checkbox" checked="@check.On"
+                                           data-remember data-default="@(check.On ? "true" : "false")" />
+                                    <label class="form-check-label" for="@check.Id">@check.Label</label>
+                                </div>
+                            }
+                        </div>
+                    </div>
                 </div>
 
-                <div class="sp-filters">
-                    <div>
-                        <label class="form-label" for="sp-min-duration">@T["SqlProfiler.Filter.MinDuration"]</label>
-                        <input class="form-control form-control-sm" id="sp-min-duration" type="number" min="0" value="0" />
-                    </div>
-                    <div>
-                        <label class="form-label" for="sp-filter-user">@T["SqlProfiler.Filter.User"]</label>
-                        <input class="form-control form-control-sm" id="sp-filter-user" autocomplete="off" />
-                    </div>
-                    <div>
-                        <label class="form-label" for="sp-filter-host">@T["SqlProfiler.Filter.Host"]</label>
-                        <input class="form-control form-control-sm" id="sp-filter-host" autocomplete="off" />
-                    </div>
-                    <div>
-                        <label class="form-label" for="sp-filter-app">@T["SqlProfiler.Filter.App"]</label>
-                        <input class="form-control form-control-sm" id="sp-filter-app" autocomplete="off" />
-                    </div>
-                    <div>
-                        <label class="form-label" for="sp-warn">@T["SqlProfiler.Filter.WarnMs"]</label>
-                        <input class="form-control form-control-sm" id="sp-warn" type="number" min="0" value="300" />
-                    </div>
-                    <div>
-                        <label class="form-label" for="sp-danger">@T["SqlProfiler.Filter.DangerMs"]</label>
-                        <input class="form-control form-control-sm" id="sp-danger" type="number" min="0" value="1000" />
-                    </div>
-                    <div>
-                        <label class="form-label" for="sp-auto-stop">@T["SqlProfiler.Filter.AutoStop"]</label>
-                        <input class="form-control form-control-sm" id="sp-auto-stop" type="number" min="1" max="120" value="15" />
+                <div class="tab-pane fade" id="sp-pane-recent" role="tabpanel" aria-labelledby="sp-tab-recent">
+                    <p class="sp-howto">@T["SqlProfiler.Recent.HowTo"]</p>
+                    <div class="sp-run-bar">
+                        <div class="tbx-field sp-minutes">
+                            <label class="tbx-field-label" for="sp-minutes">@T["SqlProfiler.Recent.Minutes"]</label>
+                            <input class="form-control" id="sp-minutes" type="number" min="1" max="1440" value="5" data-remember data-default="5" />
+                        </div>
+                        <button class="btn btn-primary" type="button" id="sp-refresh-recent">
+                            <tbx-icon name="refresh-cw" />@T["SqlProfiler.Action.Refresh"]
+                        </button>
                     </div>
                 </div>
+            </div>
+        </li>
 
-                <div class="sp-checks">
-                    <div class="form-check">
-                        <input class="form-check-input" id="sp-cap-proc" type="checkbox" checked />
-                        <label class="form-check-label" for="sp-cap-proc">@T["SqlProfiler.Capture.Procedures"]</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" id="sp-cap-module" type="checkbox" checked />
-                        <label class="form-check-label" for="sp-cap-module">@T["SqlProfiler.Capture.Modules"]</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" id="sp-cap-error" type="checkbox" checked />
-                        <label class="form-check-label" for="sp-cap-error">@T["SqlProfiler.Capture.Errors"]</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" id="sp-mask" type="checkbox" />
-                        <label class="form-check-label" for="sp-mask">@T["SqlProfiler.Capture.MaskParameters"]</label>
-                    </div>
-                </div>
+        <li class="tbx-step" data-step="3">
+            <div class="tbx-step-head">
+                <span class="tbx-step-no" aria-hidden="true">3</span>
+                <h2 class="tbx-step-title">@T["SqlProfiler.Step.Result"]</h2>
+                <span class="tbx-step-hint">@T["SqlProfiler.Step.ResultHint"]</span>
+            </div>
 
+            <section data-results="capture">
                 <div class="sp-summary" data-role="summary" hidden></div>
                 <div class="sp-warning" data-role="dropped" hidden></div>
 
-                <div class="sp-grid" id="sp-grid"></div>
-            </div>
-
-            <!-- ------------------------------------------------- recent ---- -->
-            <div class="tab-pane fade" id="sp-pane-recent" role="tabpanel" aria-labelledby="sp-tab-recent">
-                <p class="muted sp-howto">@T["SqlProfiler.Recent.HowTo"]</p>
-
                 <div class="sp-toolbar">
-                    <label class="form-label mb-0" for="sp-minutes">@T["SqlProfiler.Recent.Minutes"]</label>
-                    <input class="form-control form-control-sm sp-minutes" id="sp-minutes" type="number" min="1" max="1440" value="5" />
-                    <button class="btn btn-primary btn-sm" type="button" id="sp-refresh-recent">@T["SqlProfiler.Action.Refresh"]</button>
-                    <span class="muted" data-role="recent-status" role="status" aria-live="polite"></span>
+                    <div class="sp-search">
+                        <label class="visually-hidden" for="sp-search">@T["SqlProfiler.Search"]</label>
+                        <tbx-icon name="search" class="sp-search-icon" />
+                        <input class="form-control" id="sp-search" type="search" autocomplete="off" placeholder="@T["SqlProfiler.Search"]" />
+                    </div>
+                    <div class="sp-view-switch" role="group" aria-label="@T["SqlProfiler.View.Label"]">
+                        <button class="tbx-chip" type="button" data-view="calls" aria-pressed="true">@T["SqlProfiler.View.Calls"]</button>
+                        <button class="tbx-chip" type="button" data-view="objects" aria-pressed="false">@T["SqlProfiler.View.Objects"]</button>
+                    </div>
+                    <span class="sp-spacer"></span>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" id="sp-pause" aria-pressed="false">
+                        <tbx-icon name="pause" class="sp-icon-pause" />
+                        <tbx-icon name="play" class="sp-icon-play" />
+                        <span data-role="pause-text">@T["SqlProfiler.Action.Pause"]</span>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" id="sp-clear">
+                        <tbx-icon name="trash-2" />@T["SqlProfiler.Action.Clear"]
+                    </button>
+                    <a class="btn btn-outline-secondary btn-sm" id="sp-export" href="#" aria-disabled="true">
+                        <tbx-icon name="download" />@T["SqlProfiler.Action.Export"]
+                    </a>
                 </div>
 
-                <div class="sp-grid" id="sp-recent-grid"></div>
-            </div>
-        </div>
+                <div class="sp-filter-row">
+                    <div class="sp-filter-chips" role="group" aria-label="@T["SqlProfiler.FilterLabel"]">
+                        <button class="tbx-chip" type="button" data-filter="all" aria-pressed="true">
+                            <span>@T["SqlProfiler.Filter.All"]</span><span class="tbx-chip-count" data-count="all">0</span>
+                        </button>
+                        <button class="tbx-chip" type="button" data-filter="slow" aria-pressed="false">
+                            <span class="sp-mark is-slow" aria-hidden="true"></span>
+                            <span>@T["SqlProfiler.Filter.Slow"]</span><span class="tbx-chip-count" data-count="slow">0</span>
+                        </button>
+                        <button class="tbx-chip" type="button" data-filter="error" aria-pressed="false">
+                            <span class="sp-mark is-error" aria-hidden="true"></span>
+                            <span>@T["SqlProfiler.Filter.Errors"]</span><span class="tbx-chip-count" data-count="error">0</span>
+                        </button>
+                    </div>
+                    <span class="sp-keys">
+                        <kbd class="tbx-kbd">J</kbd><kbd class="tbx-kbd">K</kbd>
+                        @T["SqlProfiler.Keys"]
+                    </span>
+                </div>
 
-        <!-- ------------------------------------------------------ detail ---- -->
-        <div class="sp-detail">
-            <div class="sp-detail-header">
-                <strong data-role="detail-title">@T["SqlProfiler.Message.DetailHint"]</strong>
-                <span class="spacer"></span>
-                <button class="btn btn-outline-secondary btn-sm" type="button" id="sp-copy-exec" hidden>@T["SqlProfiler.Action.CopyExec"]</button>
-                <button class="btn btn-outline-secondary btn-sm" type="button" id="sp-load-definition" hidden>@T["SqlProfiler.Action.ViewDefinition"]</button>
-                <span class="muted" data-role="detail-status" role="status" aria-live="polite"></span>
-            </div>
-            <div class="sp-detail-body" data-role="detail-body">
-                <p class="muted">@T["SqlProfiler.Message.DetailHint"]</p>
-            </div>
-        </div>
-    </section>
+                <div class="sp-new-rows" data-role="new-rows" hidden>
+                    <span data-role="new-rows-text"></span>
+                    <button class="btn btn-link btn-sm" type="button" id="sp-show-new">@T["SqlProfiler.Action.ShowNew"]</button>
+                </div>
+
+                <div class="sp-grid" id="sp-grid"></div>
+            </section>
+
+            <section data-results="recent" hidden>
+                <p class="sp-note" data-role="recent-note" hidden>@T["SqlProfiler.Message.PlanCacheNote"]</p>
+                <div data-role="recent-state"></div>
+                <div class="sp-grid" id="sp-recent-grid" hidden></div>
+            </section>
+        </li>
+    </ol>
+</div>
+
+@* Detail of one call. No backdrop, so the list stays usable and J / K move through it. *@
+<div class="offcanvas offcanvas-end tbx-sidepanel sp-panel" tabindex="-1" id="sp-detail" aria-labelledby="sp-detail-title"
+     data-bs-backdrop="false" data-bs-scroll="true">
+    <div class="offcanvas-header">
+        <h2 class="offcanvas-title" id="sp-detail-title" data-role="detail-title"></h2>
+        <button type="button" class="btn btn-sm tbx-icon-button" data-bs-dismiss="offcanvas" aria-label="@T["Action.Close"]"><tbx-icon name="x" /></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="sp-detail-meta" data-role="detail-meta"></div>
+        <div data-role="detail-body"></div>
+        <div data-role="definition"></div>
+        <p class="sp-detail-status" data-role="detail-status" role="status" aria-live="polite"></p>
+    </div>
+    <div class="tbx-sidepanel-footer">
+        <button class="btn btn-outline-secondary btn-sm" type="button" id="sp-load-definition">
+            <tbx-icon name="file-text" />@T["SqlProfiler.Action.ViewDefinition"]
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" type="button" id="sp-copy-exec">
+            <tbx-icon name="copy" />@T["SqlProfiler.Action.CopyExec"]
+        </button>
+    </div>
 </div>
 
 <script id="sp-config" type="application/json">@Html.Raw(configJson)</script>
