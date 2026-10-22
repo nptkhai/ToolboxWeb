@@ -224,7 +224,8 @@ public class SqlProfilerController : Controller
             _localizer["SchemaCompare.Error.ServerNotFound"].Value,
             _localizer["SchemaCompare.Error.DatabaseNotFound"].Value,
             _localizer["SqlProfiler.Error.PermissionDenied"].Value,
-            _localizer["SchemaCompare.Error.Timeout"].Value);
+            _localizer["SchemaCompare.Error.Timeout"].Value,
+            _localizer["SqlConnection.Error.CertificateUntrusted"].Value);
     }
 
     private string BrowserSessionId()

@@ -1,255 +1,58 @@
 /* ============================================================================
-   Schema compare — feature stylesheet.
+   Schema compare (Views/SchemaCompare/Index.cshtml).
 
-   Every selector below is nested under .sc-page (the page root, #sc-root), so this file
-   cannot reach any other screen. Colours come from the site tokens (--surface, --text,
-   --accent, ...) so the light/dark toggle keeps working; only the states this feature needs
-   are defined locally, and they are redefined for dark mode rather than hard-coded once.
-
-   Spacing is an 8px scale (--sc-1 = 4px half-step, then 8/12/16/24/32).
+   Built on the shared parts: .tbx-steps for the 1-2-3 flow, .btn, .tbx-chip, .tbx-field,
+   .tbx-empty / .tbx-error-state / .tbx-skeleton. This file only lays them out and draws
+   what is particular to this screen: the status colors of a difference (green = only in
+   source, amber = different, red = only in target), the diff table and the script view.
+   Every value comes from tokens.css.
 
    Breakpoints change the LAYOUT, not just the size:
-     < 600px   phone   — object table becomes a card list, type list becomes a chip strip,
-                         one column everywhere, run bar pinned to the bottom of the screen
-     600-1023  tablet  — table returns, type list stays a chip strip, endpoints stack
-     >= 1024   desktop — type list becomes a fixed side column, endpoints sit side by side
+     < 600px   phone   - object table becomes a card list, type list becomes a chip strip
+     600-1199  tablet  - table returns, type list stays a chip strip, endpoints stack
+     >= 1200   desktop - type list becomes a side column, endpoints sit side by side
    ============================================================================ */
 
 .sc-page {
-    /* spacing scale */
-    --sc-1: var(--space-1);
-    --sc-2: var(--space-2);
-    --sc-3: var(--space-3);
-    --sc-4: var(--space-4);
-    --sc-6: var(--space-5);
-    --sc-8: var(--space-6);
-    --sc-radius: var(--radius-panel);
-    --sc-radius-sm: var(--radius-control);
-    /* only in source -> will be added to the target */
-    --sc-add: var(--success);
-    --sc-add-bg: var(--success-tint);
-    /* present on both sides but different */
-    --sc-change: var(--warning);
-    --sc-change-bg: var(--warning-tint);
-    /* only in target -> will be removed */
-    --sc-del: var(--danger);
-    --sc-del-bg: var(--danger-tint);
-
-    display: flex;
-    flex-direction: column;
-    gap: var(--sc-4);
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: minmax(0, 1fr);
 }
 
-/* ---------------------------------------------------------------- primitives */
+    /* Grid and flex items default to min-width:auto, so a single input at its intrinsic
+       size can push the whole page sideways on a phone. */
+    .sc-page input,
+    .sc-page textarea,
+    .sc-page select {
+        max-width: 100%;
+        min-width: 0;
+    }
 
-.sc-page .sc-btn {
-    align-items: center;
-    border: 1px solid transparent;
-    border-radius: var(--sc-radius-sm);
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: .875rem;
-    font-weight: 600;
-    gap: var(--sc-2);
-    justify-content: center;
-    line-height: 1.2;
-    min-height: 40px;
-    padding: var(--sc-2) var(--sc-4);
-    text-decoration: none;
-    transition: background .12s, border-color .12s, color .12s;
-    white-space: nowrap;
+.sc-step-head .btn {
+    align-self: center;
+    margin-left: auto;
 }
 
-.sc-page .sc-btn:disabled {
-    cursor: not-allowed;
-    opacity: .55;
-}
-
-/* One primary action per screen; it is the only filled button. */
-.sc-page .sc-btn-primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
-}
-
-.sc-page .sc-btn-primary:hover:not(:disabled) {
-    background: var(--accent-strong);
-    border-color: var(--accent-strong);
-}
-
-.sc-page .sc-btn-primary .sc-spinner {
-    border-color: color-mix(in srgb, var(--on-accent) 35%, transparent);
-    border-top-color: var(--on-accent);
-}
-
-.sc-page .sc-btn-ghost {
-    background: var(--surface);
-    border-color: var(--line);
-    color: var(--text);
-}
-
-.sc-page .sc-btn-ghost:hover:not(:disabled) {
-    border-color: var(--accent);
-    color: var(--accent);
-}
-
-.sc-page .sc-btn-danger {
-    background: transparent;
-    border-color: color-mix(in srgb, var(--sc-del) 60%, transparent);
-    color: var(--sc-del);
-}
-
-.sc-page .sc-btn-danger:hover:not(:disabled) {
-    background: var(--sc-del-bg);
-}
-
-.sc-page .sc-btn-link {
-    background: none;
-    color: var(--accent);
-    min-height: 32px;
-    padding: var(--sc-1) var(--sc-2);
-    text-decoration: underline;
-}
-
-.sc-page .sc-btn-sm {
-    font-size: .82rem;
-    min-height: 36px;
-    padding: var(--sc-1) var(--sc-3);
-}
-
-.sc-page .sc-btn-icon {
-    min-height: 36px;
-    padding: var(--sc-1);
-    width: 36px;
-}
-
-.sc-page .sc-check {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    font-size: .875rem;
-    gap: var(--sc-2);
-    line-height: 1.35;
-    margin: 0;
-    min-height: 32px;
-}
-
-.sc-page .sc-check input {
-    flex: none;
-    height: 16px;
-    margin: 0;
-    width: 16px;
-}
-
-.sc-page .sc-field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sc-1);
-    min-width: 0;
-}
-
-.sc-page .form-label {
+.sc-group-title {
     color: var(--muted);
-    font-size: .78rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-.sc-page .form-control {
-    border-radius: var(--sc-radius-sm);
-    min-height: 40px;
-}
-
-/* Grid and flex items default to min-width:auto, so a single input at its intrinsic size can
-   push the whole page sideways on a phone. */
-.sc-page > *,
-.sc-page .sc-endpoints > *,
-.sc-page .sc-progress-grid > *,
-.sc-page .sc-result-layout > * {
-    min-width: 0;
-}
-
-.sc-page input,
-.sc-page textarea,
-.sc-page select {
-    max-width: 100%;
-    min-width: 0;
-}
-
-.sc-page .sc-group-title {
-    color: var(--muted);
-    font-size: .74rem;
-    font-weight: 700;
-    letter-spacing: .06em;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: .04em;
     margin: 0;
     text-transform: uppercase;
 }
 
-.sc-page .sc-note,
-.sc-page .sc-empty {
+.sc-note {
     color: var(--muted);
-    font-size: .84rem;
+    font-size: var(--text-sm);
     margin: 0;
 }
 
-/* ---------------------------------------------------------------- steps */
-
-.sc-steps {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sc-4);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.sc-step {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--sc-radius);
-    box-shadow: var(--shadow);
-    padding: var(--sc-4);
-}
-
-.sc-step-head {
-    align-items: baseline;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--sc-2) var(--sc-3);
-    margin-bottom: var(--sc-4);
-}
-
-.sc-step-no {
-    align-self: center;
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
-    border-radius: 50%;
-    color: var(--accent);
-    display: grid;
-    flex: none;
-    font-size: .8rem;
-    font-weight: 700;
-    height: 24px;
-    place-items: center;
-    width: 24px;
-}
-
-.sc-step-title {
-    font-size: 1rem;
-    font-weight: 700;
-    margin: 0;
-}
-
-.sc-step-hint {
-    color: var(--muted);
-    font-size: .8rem;
-}
-
-/* ---------------------------------------------------------------- endpoints */
+/* ---------------------------------------------------------------- step 1: endpoints */
 
 .sc-endpoints {
     display: grid;
-    gap: var(--sc-4);
+    gap: var(--space-4);
     grid-template-columns: minmax(0, 1fr);
 }
 
@@ -259,858 +62,713 @@
 }
 
 .sqlconn[data-side="target"] .sqlconn-dot {
-    background: var(--accent-2);
+    background: var(--accent-strong);
 }
 
-.sqlconn[data-side="source"] .sqlconn-tag {
-    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-    border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+.sqlconn[data-side="source"] .sqlconn-tag,
+.sqlconn[data-side="target"] .sqlconn-tag {
+    background: var(--accent-tint);
+    border-color: transparent;
     color: var(--accent-strong);
 }
 
-.sqlconn[data-side="target"] .sqlconn-tag {
-    background: color-mix(in srgb, var(--accent-2) 14%, var(--surface));
-    border-color: color-mix(in srgb, var(--accent-2) 34%, transparent);
-    color: var(--accent-2);
-}
+/* ---------------------------------------------------------------- step 2: options */
 
-/* ---------------------------------------------------------------- scope chips */
+.sc-reset {
+    font-size: var(--text-sm);
+}
 
 .sc-scope-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sc-2);
+    gap: var(--space-2);
 }
 
+/* A .tbx-chip holding a real checkbox: the box shows the state without color alone. */
 .sc-scope-chip {
-    align-items: center;
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    cursor: pointer;
-    display: inline-flex;
-    gap: var(--sc-2);
+    gap: var(--space-2);
     margin: 0;
-    min-height: 40px;
-    padding: var(--sc-2) var(--sc-4) var(--sc-2) var(--sc-3);
-    transition: background .12s, border-color .12s, color .12s;
+    min-height: 32px;
     user-select: none;
 }
 
-.sc-scope-chip:hover {
-    border-color: var(--accent);
-}
+    .sc-scope-chip .form-check-input {
+        flex: none;
+        margin: 0;
+    }
 
-/* The input stays in the DOM for the JS, but the tick is what the eye reads. */
-.sc-scope-chip input {
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
-    position: absolute;
-    width: 1px;
-}
+    .sc-scope-chip:has(input:checked) {
+        background: var(--accent-tint);
+        border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+        color: var(--accent-strong);
+    }
 
-.sc-chip-tick {
-    align-items: center;
-    border: 1.5px solid var(--line);
-    border-radius: 5px;
-    display: inline-flex;
-    flex: none;
-    height: 18px;
-    justify-content: center;
-    width: 18px;
-}
-
-.sc-chip-tick::before {
-    color: #fff;
-    content: "\2713";
-    font-size: .7rem;
-    font-weight: 700;
-    opacity: 0;
-}
-
-.sc-chip-text {
-    font-size: .86rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.sc-scope-chip:has(input:checked) {
-    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-    border-color: var(--accent);
-    color: var(--accent);
-}
-
-.sc-scope-chip:has(input:checked) .sc-chip-tick {
-    background: var(--accent);
-    border-color: var(--accent);
-}
-
-.sc-scope-chip:has(input:checked) .sc-chip-tick::before {
-    opacity: 1;
-}
-
-.sc-scope-chip:has(input:focus-visible) {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-/* ---------------------------------------------------------------- advanced */
+    .sc-scope-chip:has(input:focus-visible) {
+        box-shadow: var(--focus-ring);
+    }
 
 .sc-advanced-toggle {
     align-items: center;
     background: none;
     border: 0;
-    border-top: 1px dashed var(--line);
+    border-top: 1px solid var(--line);
     color: var(--accent);
     cursor: pointer;
     display: flex;
-    font: inherit;
-    font-size: .86rem;
-    font-weight: 600;
-    gap: var(--sc-2);
-    margin-top: var(--sc-4);
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+    gap: var(--space-2);
+    margin-top: var(--space-4);
     min-height: 44px;
-    padding: var(--sc-3) 0 0;
+    padding: var(--space-3) 0 0;
     text-align: left;
     width: 100%;
 }
 
-.sc-caret {
-    border-bottom: 4.5px solid transparent;
-    border-left: 6px solid currentColor;
-    border-top: 4.5px solid transparent;
-    flex: none;
-    height: 0;
-    transition: transform .18s;
-    width: 0;
-}
+    .sc-advanced-toggle .sc-caret {
+        transition: transform var(--duration) var(--ease);
+    }
 
-.sc-advanced-toggle[aria-expanded="true"] .sc-caret {
-    transform: rotate(90deg);
-}
+    .sc-advanced-toggle[aria-expanded="true"] .sc-caret {
+        transform: rotate(90deg);
+    }
 
 .sc-advanced {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sc-6);
-    margin-top: var(--sc-4);
+    display: grid;
+    gap: var(--space-5);
+    margin-top: var(--space-4);
 }
 
+    .sc-advanced[hidden] {
+        display: none;
+    }
+
 .sc-advanced-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sc-3);
+    display: grid;
+    gap: var(--space-3);
 }
 
 .sc-group-head {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sc-3);
+    gap: var(--space-3);
     justify-content: space-between;
 }
 
 .sc-check-grid {
     display: grid;
-    gap: var(--sc-2) var(--sc-4);
+    gap: var(--space-2) var(--space-4);
     grid-template-columns: minmax(0, 1fr);
 }
 
-/* ---------------------------------------------------------------- name mapping */
+    .sc-check-grid .form-check {
+        font-size: var(--text-md);
+        margin: 0;
+    }
 
 .sc-mapping {
     border-top: 1px solid var(--line);
-    padding-top: var(--sc-4);
+    padding-top: var(--space-4);
 }
 
 .sc-map-row {
     align-items: end;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sc-3);
-}
-
-.sc-code-input {
-    font-family: Consolas, "Cascadia Mono", monospace;
-    text-transform: uppercase;
-}
-
-.sc-map-arrow {
-    color: var(--muted);
-    padding-bottom: 10px;
+    gap: var(--space-3);
 }
 
 .sc-field-code {
     width: 200px;
 }
 
+.sc-code-input,
 .sc-mapping-input {
-    font-family: Consolas, "Cascadia Mono", monospace;
-    font-size: .82rem;
+    font-family: var(--font-mono);
+}
+
+.sc-code-input {
+    text-transform: uppercase;
+}
+
+.sc-mapping-input {
+    font-size: var(--text-sm);
     min-height: 72px;
 }
 
-/* Guidance stays on screen rather than folding away: these two boxes are what tells the
-   reader that a code swap only touches database-name positions, which is the whole safety
-   story of this feature. Dashed border marks them as explanation, not input. */
-.sc-hint-box {
-    background: color-mix(in srgb, var(--accent) 5%, var(--surface));
-    border: 1px dashed color-mix(in srgb, var(--accent) 38%, transparent);
-    border-radius: var(--sc-radius-sm);
+.sc-map-arrow {
     color: var(--muted);
-    font-size: .82rem;
-    line-height: 1.65;
+    padding-bottom: var(--space-2);
+}
+
+/* Guidance stays on screen rather than folding away: these boxes tell the reader that a
+   code swap only touches database-name positions, which is the whole safety story here. */
+.sc-hint-box {
+    align-items: flex-start;
+    background: var(--surface-2);
+    border-radius: var(--radius-control);
+    color: var(--muted);
+    display: flex;
+    font-size: var(--text-sm);
+    gap: var(--space-2);
+    line-height: 1.6;
     margin: 0;
     overflow-wrap: anywhere;
-    padding: var(--sc-3) var(--sc-3) var(--sc-3) var(--sc-8);
-    position: relative;
+    padding: var(--space-3);
 }
 
-.sc-hint-box::before {
-    content: "💡";
-    font-size: .9rem;
-    line-height: 1.5;
-    left: var(--sc-3);
-    position: absolute;
-    top: var(--sc-3);
-}
+    .sc-hint-box > .tbx-icon {
+        color: var(--accent);
+        flex: none;
+        margin-top: 3px;
+    }
 
-.sc-hint-box strong {
-    color: var(--text);
-}
+    .sc-hint-box strong {
+        color: var(--text);
+        font-weight: var(--weight-semibold);
+    }
 
 /* Database names inside the guidance read as code, not prose. */
-.sc-hint-box code,
 .sc-code-token {
-    background: var(--surface-2);
+    background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 5px;
+    border-radius: var(--radius-pill);
     color: var(--text);
-    font-family: Consolas, "Cascadia Mono", monospace;
-    font-size: .78rem;
-    padding: 1px 6px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    padding: 1px var(--space-1);
     white-space: nowrap;
 }
 
-.sc-code-token.to {
-    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-    border-color: color-mix(in srgb, var(--accent) 34%, transparent);
-    color: var(--accent);
-}
+    .sc-code-token.to {
+        background: var(--accent-tint);
+        border-color: transparent;
+        color: var(--accent-strong);
+    }
 
 .sc-code-pair {
-    display: inline-flex;
     align-items: center;
-    gap: var(--sc-1);
-    margin-right: var(--sc-2);
+    display: inline-flex;
+    gap: var(--space-1);
+    margin-right: var(--space-2);
     white-space: nowrap;
 }
 
-/* ---------------------------------------------------------------- run bar */
+/* ---------------------------------------------------------------- step 3: run */
 
 .sc-run-bar {
     align-items: center;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--sc-radius);
-    bottom: var(--sc-3);
-    box-shadow: var(--shadow);
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sc-3);
-    padding: var(--sc-3) var(--sc-4);
-    position: sticky;
-    z-index: 4;
+    gap: var(--space-2) var(--space-3);
 }
 
-.sc-run-spacer {
-    flex: 1;
+/* While running, the spinner takes the place of the compare icon. */
+.sc-run-btn .sc-spinner,
+.sc-run-btn.is-running .sc-run-icon {
+    display: none;
+}
+
+.sc-run-btn.is-running .sc-spinner {
+    display: inline-block;
 }
 
 .sc-clock {
-    font-family: Consolas, "Cascadia Mono", monospace;
-    font-size: 1rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-md);
     font-variant-numeric: tabular-nums;
-    font-weight: 700;
+    font-weight: var(--weight-semibold);
 }
 
 .sc-run-status {
-    font-size: .84rem;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
-.sc-run-status.ok {
-    color: var(--sc-add);
-}
-
-.sc-run-status.error {
-    color: var(--sc-del);
-}
-
-/* Shown only while a comparison is in flight — the loading state of this screen. */
-.sc-spinner {
-    animation: sc-spin .9s linear infinite;
-    border: 2px solid rgba(255, 255, 255, .45);
-    border-radius: 50%;
-    border-top-color: #fff;
-    display: none;
-    flex: none;
-    height: 14px;
-    width: 14px;
-}
-
-.sc-run-btn:disabled .sc-spinner {
-    display: block;
-}
-
-@keyframes sc-spin {
-    to {
-        transform: rotate(360deg);
+    .sc-run-status.ok {
+        color: var(--success);
     }
-}
+
+    .sc-run-status.error {
+        color: var(--danger);
+    }
 
 .sc-quick-summary {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sc-2) var(--sc-4);
-    font-size: .82rem;
+    font-size: var(--text-sm);
+    gap: var(--space-1) var(--space-4);
+    margin-left: auto;
 }
+
+    .sc-quick-summary b {
+        font-variant-numeric: tabular-nums;
+        font-weight: var(--weight-semibold);
+    }
 
 .qs-item {
     align-items: baseline;
     display: inline-flex;
-    gap: var(--sc-1);
+    gap: var(--space-1);
 }
 
 .qs-label {
     color: var(--muted);
 }
 
-.sc-quick-summary b {
-    font-variant-numeric: tabular-nums;
-}
-
 .qs-add b {
-    color: var(--sc-add);
+    color: var(--success);
 }
 
 .qs-change b {
-    color: var(--sc-change);
+    color: var(--warning);
 }
 
 .qs-del b {
-    color: var(--sc-del);
+    color: var(--danger);
 }
+
+/* Why Compare is still disabled. A reserved line, so the layout does not jump when it clears. */
+.sc-ready {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin: var(--space-2) 0 0;
+    min-height: 1.45em;
+}
+
+    .sc-ready.warn {
+        background: var(--warning-tint);
+        border-radius: var(--radius-control);
+        color: var(--text);
+        padding: var(--space-2) var(--space-3);
+    }
+
+.sc-compare-error {
+    margin-top: var(--space-3);
+}
+
+    .sc-compare-error[hidden] {
+        display: none;
+    }
 
 /* ---------------------------------------------------------------- results shell */
 
 .sc-results {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--sc-radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
+    margin-top: var(--space-3);
 }
 
-.sc-page .sc-tabs {
-    border-bottom: 1px solid var(--line);
+.sc-tabs {
     flex-wrap: nowrap;
-    gap: var(--sc-1);
     overflow-x: auto;
-    padding: var(--sc-2) var(--sc-3) 0;
     scrollbar-width: thin;
 }
 
-.sc-page .sc-tabs .nav-link {
-    border: 0;
-    border-bottom: 2.5px solid transparent;
-    border-radius: 0;
-    color: var(--muted);
-    font-size: .9rem;
-    font-weight: 600;
-    min-height: 44px;
-    padding: var(--sc-2) var(--sc-4);
-    white-space: nowrap;
+    .sc-tabs .nav-link {
+        white-space: nowrap;
+    }
+
+.sc-results .tab-content {
+    padding-top: var(--space-4);
 }
 
-.sc-page .sc-tabs .nav-link.active {
-    background: none;
-    border-bottom-color: var(--accent);
-    color: var(--accent);
+.sc-state {
+    padding: var(--space-5) var(--space-4);
 }
 
-.sc-page .tab-content {
-    padding: var(--sc-4);
+.sc-loading {
+    padding: var(--space-3);
 }
 
 /* ---------------------------------------------------------------- progress */
 
 .sc-progress-grid {
     display: grid;
-    gap: var(--sc-4);
+    gap: var(--space-4);
     grid-template-columns: minmax(0, 1fr);
 }
 
 .sc-progress-column {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sc-2);
+    display: grid;
+    gap: var(--space-2);
     min-width: 0;
 }
 
 /* Wide content scrolls inside its own frame instead of widening the page. */
 .sc-table-scroll {
     border: 1px solid var(--line);
-    border-radius: var(--sc-radius-sm);
+    border-radius: var(--radius-control);
     max-height: 420px;
     overflow: auto;
 }
 
 .sc-progress-table {
     border-collapse: collapse;
-    font-size: .8rem;
+    font-size: var(--text-sm);
     min-width: 420px;
     width: 100%;
 }
 
-.sc-progress-table th {
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--line);
-    color: var(--muted);
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .04em;
-    padding: var(--sc-2) var(--sc-3);
-    position: sticky;
-    text-align: center;
-    text-transform: uppercase;
-    top: 0;
-    z-index: 1;
-}
+    .sc-progress-table th {
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+        padding: var(--space-2) var(--space-3);
+        position: sticky;
+        text-align: center;
+        top: 0;
+        z-index: 1;
+    }
 
-.sc-progress-table td {
-    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
-    padding: var(--sc-2) var(--sc-3);
-}
+    .sc-progress-table td {
+        border-bottom: 1px solid var(--line);
+        padding: var(--space-1) var(--space-3);
+    }
 
-.sc-progress-table .sc-col-time {
-    width: 104px;
-}
+    .sc-progress-table .sc-col-time {
+        width: 96px;
+    }
 
-.sc-progress-table .sc-col-state {
-    width: 116px;
-}
+    .sc-progress-table .sc-col-state {
+        width: 120px;
+    }
 
-.sc-progress-table td.time,
-.sc-progress-table td.state {
-    text-align: center;
-    white-space: nowrap;
-}
+    .sc-progress-table td.time,
+    .sc-progress-table td.state {
+        text-align: center;
+        white-space: nowrap;
+    }
 
-.sc-progress-table td.time {
-    color: var(--muted);
-    font-family: Consolas, "Cascadia Mono", monospace;
-}
+    .sc-progress-table td.time {
+        color: var(--muted);
+        font-family: var(--font-mono);
+    }
 
-/* Status carries a mark as well as a colour. */
-.sc-progress-table td.state {
-    font-weight: 600;
-}
+    /* Status carries a mark as well as a color. */
+    .sc-progress-table td.state {
+        font-weight: var(--weight-medium);
+    }
 
-.sc-progress-table td.state::before {
-    margin-right: var(--sc-1);
-}
+        .sc-progress-table td.state::before {
+            margin-right: var(--space-1);
+        }
 
-.sc-progress-table td.state.Completed {
-    color: var(--sc-add);
-}
+        .sc-progress-table td.state.Completed {
+            color: var(--success);
+        }
 
-.sc-progress-table td.state.Completed::before {
-    content: "\2713";
-}
+            .sc-progress-table td.state.Completed::before {
+                content: "\2713";
+            }
 
-.sc-progress-table td.state.Running {
-    color: var(--accent);
-}
+        .sc-progress-table td.state.Running {
+            color: var(--accent);
+        }
 
-.sc-progress-table td.state.Running::before {
-    content: "\25CF";
-}
+            .sc-progress-table td.state.Running::before {
+                content: "\25CF";
+            }
 
-.sc-progress-table td.state.Failed {
-    color: var(--sc-del);
-}
+        .sc-progress-table td.state.Failed {
+            color: var(--danger);
+        }
 
-.sc-progress-table td.state.Failed::before {
-    content: "\26A0";
-}
+            .sc-progress-table td.state.Failed::before {
+                content: "\26A0";
+            }
 
 /* ---------------------------------------------------------------- result layout */
 
 .sc-result-layout {
     display: grid;
-    gap: var(--sc-4);
+    gap: var(--space-4);
     grid-template-columns: minmax(0, 1fr);
 }
+
+    .sc-result-layout[hidden] {
+        display: none;
+    }
 
 .sc-type-panel {
     display: none;
 }
 
 .sc-result-main {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sc-3);
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: minmax(0, 1fr);
     min-width: 0;
 }
 
 /* Type filter as a horizontal strip; becomes the side column on desktop. */
 .sc-type-strip {
     display: flex;
-    gap: var(--sc-2);
+    gap: var(--space-2);
     overflow-x: auto;
-    padding-bottom: var(--sc-1);
+    padding-bottom: var(--space-1);
     scrollbar-width: thin;
 }
 
-.sc-type-chip {
-    align-items: center;
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--text);
-    cursor: pointer;
-    display: inline-flex;
-    flex: none;
-    font-size: .84rem;
-    font-weight: 600;
-    gap: var(--sc-2);
-    min-height: 40px;
-    padding: var(--sc-2) var(--sc-3);
-}
-
-.sc-type-chip .count {
-    background: var(--surface);
-    border-radius: 999px;
-    font-size: .74rem;
-    font-weight: 700;
-    padding: 1px 7px;
-}
-
-.sc-type-chip.active {
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
-    border-color: var(--accent);
-    color: var(--accent);
-}
+    .sc-type-strip .tbx-chip {
+        flex: none;
+    }
 
 .sc-type-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: 2px;
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-.sc-type-list li {
+.sc-type-item {
     align-items: center;
-    border-radius: var(--sc-radius-sm);
-    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: var(--radius-control);
+    color: var(--text);
     display: flex;
-    font-size: .86rem;
-    gap: var(--sc-2);
+    font-size: var(--text-md);
+    gap: var(--space-2);
     justify-content: space-between;
-    min-height: 40px;
-    padding: var(--sc-2) var(--sc-3);
+    min-height: 36px;
+    padding: var(--space-1) var(--space-3);
+    text-align: left;
+    width: 100%;
 }
 
-.sc-type-list li:hover {
-    background: var(--surface-2);
-}
+    .sc-type-item:hover {
+        background: var(--hover);
+    }
 
-.sc-type-list li.active {
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
-    color: var(--accent);
-    font-weight: 700;
-}
+    .sc-type-item:focus-visible {
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
 
-.sc-type-list li .count {
-    background: var(--surface-2);
-    border-radius: 999px;
-    flex: none;
-    font-size: .74rem;
-    font-weight: 700;
-    padding: 1px 8px;
-}
+    .sc-type-item.is-active {
+        background: var(--accent-tint);
+        color: var(--accent-strong);
+        font-weight: var(--weight-medium);
+    }
 
-.sc-type-list li.active .count {
-    background: color-mix(in srgb, var(--accent) 24%, var(--surface));
-}
+        .sc-type-item.is-active .tbx-chip-count {
+            color: inherit;
+        }
 
 /* ---------------------------------------------------------------- toolbar & filters */
 
 .sc-grid-toolbar {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sc-3);
+    gap: var(--space-2) var(--space-3);
 }
 
 .sc-search-wrap {
     flex: 1 1 220px;
     min-width: 0;
+    position: relative;
 }
 
-.sc-search {
+.sc-search-icon {
+    color: var(--muted);
+    left: var(--space-3);
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Five classes: the field padding in vendor-sync.css (".content-area .form-control:not(...)")
+   would otherwise win and put the text under the icon. */
+.content-area .sc-page .sc-search-wrap .form-control.sc-search {
+    padding-left: calc(var(--space-3) + 16px + var(--space-2));
     width: 100%;
 }
 
 .sc-bulk {
     display: flex;
-    gap: var(--sc-2);
+    flex-wrap: wrap;
+    gap: var(--space-2);
 }
 
-.sc-filter-buttons {
+.sc-filter-row {
+    align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sc-2);
+    gap: var(--space-2) var(--space-4);
+    justify-content: space-between;
 }
 
-.sc-filter {
-    align-items: center;
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--text);
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: .82rem;
-    font-weight: 600;
-    gap: var(--sc-2);
-    min-height: 40px;
-    padding: var(--sc-2) var(--sc-3);
+.sc-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
 }
 
+/* The mark repeats the status color of the rows the chip filters to. */
 .sc-filter-mark {
-    font-weight: 700;
+    font-weight: var(--weight-semibold);
 }
 
-.sc-filter-count {
-    background: var(--surface);
-    border-radius: 999px;
-    font-size: .74rem;
-    font-weight: 700;
-    padding: 1px 7px;
-}
+    .sc-filter-mark.is-add {
+        color: var(--success);
+    }
 
-.sc-filter[data-filter="Add"] {
-    color: var(--sc-add);
-}
+    .sc-filter-mark.is-change {
+        color: var(--warning);
+    }
 
-.sc-filter[data-filter="Change"] {
-    color: var(--sc-change);
-}
+    .sc-filter-mark.is-del {
+        color: var(--danger);
+    }
 
-.sc-filter[data-filter="Delete"] {
-    color: var(--sc-del);
-}
-
-.sc-filter.active {
-    border-color: currentColor;
-    box-shadow: inset 0 0 0 1px currentColor;
-}
-
-.sc-filter[data-filter="all"].active {
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
-    color: var(--accent);
+.sc-keys {
+    align-items: center;
+    color: var(--muted);
+    display: inline-flex;
+    font-size: var(--text-xs);
+    gap: var(--space-1);
 }
 
 .sc-mapped-note {
     align-items: center;
-    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-    border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
-    border-radius: var(--sc-radius-sm);
+    background: var(--accent-tint);
+    border-radius: var(--radius-control);
     display: flex;
     flex-wrap: wrap;
-    font-size: .82rem;
-    gap: var(--sc-2);
-    padding: var(--sc-2) var(--sc-3);
+    font-size: var(--text-sm);
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
 }
+
+    .sc-mapped-note[hidden] {
+        display: none;
+    }
 
 /* ---------------------------------------------------------------- object table */
 
 .sc-grid {
     border: 1px solid var(--line);
-    border-radius: var(--sc-radius-sm);
+    border-radius: var(--radius-control);
     overflow: hidden;
 }
 
-/* Roomier rows and a header tall enough for the full column name — the old 26px header cut
-   "Loại đối tượng" down to "Loại đối t...". */
-.sc-page .tabulator {
-    background: var(--surface);
-    border: 0;
-    font-size: .84rem;
-}
+    .sc-grid .tabulator {
+        border: 0;
+    }
 
-.sc-page .tabulator .tabulator-header {
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--line);
-    color: var(--muted);
-    font-weight: 700;
-}
+    .sc-grid .tabulator-row {
+        cursor: pointer;
+    }
 
-.sc-page .tabulator .tabulator-header .tabulator-col {
-    background: transparent;
-    border-right: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
-}
+        .sc-grid .tabulator-row.sc-selected-row,
+        .sc-grid .tabulator-row.sc-selected-row:hover {
+            background: var(--accent-tint);
+        }
 
-.sc-page .tabulator .tabulator-col-title {
-    font-size: .76rem;
-    letter-spacing: .03em;
-    text-transform: uppercase;
-    white-space: normal;
-}
+    .sc-grid .tabulator-placeholder .tbx-empty {
+        white-space: normal;
+    }
 
-.sc-page .tabulator .tabulator-row {
-    background: var(--surface);
-    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
-    color: var(--text);
-}
-
-.sc-page .tabulator .tabulator-row:hover {
-    background: var(--surface-2);
-}
-
-.sc-page .tabulator .tabulator-cell {
-    border-right: 1px solid color-mix(in srgb, var(--line) 40%, transparent);
-    padding: var(--sc-2) var(--sc-3);
-}
-
-.sc-page .tabulator .tabulator-row.sc-selected-row,
-.sc-page .tabulator .tabulator-row.sc-selected-row:hover {
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
-}
-
-.sc-page .tabulator .tabulator-placeholder {
-    color: var(--muted);
-    font-size: .88rem;
-}
-
-.sc-row-check,
-.sc-header-check {
-    height: 17px;
-    width: 17px;
-}
-
-/* Status pill: mark plus text, so it does not depend on colour alone. */
-.sc-status-symbol {
+/* Status pill: mark plus text, so it does not depend on color alone. */
+.sc-status {
     align-items: center;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     display: inline-flex;
-    font-size: .76rem;
-    font-weight: 700;
-    gap: var(--sc-1);
-    justify-content: center;
-    line-height: 1.2;
-    padding: 3px 9px;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    gap: var(--space-1);
+    line-height: 1.4;
+    padding: 1px var(--space-2);
     white-space: nowrap;
 }
 
-.sc-status-symbol.Add {
-    background: var(--sc-add-bg);
-    color: var(--sc-add);
-}
+    .sc-status.Add {
+        background: var(--success-tint);
+        color: var(--success);
+    }
 
-.sc-status-symbol.Change {
-    background: var(--sc-change-bg);
-    color: var(--sc-change);
-}
+    .sc-status.Change {
+        background: var(--warning-tint);
+        color: var(--warning);
+    }
 
-.sc-status-symbol.Delete {
-    background: var(--sc-del-bg);
-    color: var(--sc-del);
-}
+    .sc-status.Delete {
+        background: var(--danger-tint);
+        color: var(--danger);
+    }
 
 /* ---------------------------------------------------------------- card list (phone) */
 
 .sc-card-list {
     display: none;
-    flex-direction: column;
-    gap: var(--sc-2);
+    gap: var(--space-2);
 }
 
 .sc-card {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: var(--sc-radius-sm);
+    border-radius: var(--radius-control);
+    cursor: pointer;
     display: flex;
-    gap: var(--sc-3);
-    padding: var(--sc-3);
-    text-align: left;
-    width: 100%;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
 }
 
-.sc-card.sc-selected-row {
-    border-color: var(--accent);
-}
+    .sc-card.sc-selected-row {
+        border-color: var(--accent);
+    }
 
 .sc-card-check {
     align-items: center;
     display: flex;
     flex: none;
     min-height: 44px;
-    min-width: 24px;
 }
 
 .sc-card-body {
-    display: flex;
+    display: grid;
     flex: 1;
-    flex-direction: column;
-    gap: var(--sc-1);
+    gap: var(--space-1);
     min-width: 0;
 }
 
 .sc-card-name {
-    font-family: Consolas, "Cascadia Mono", monospace;
-    font-size: .84rem;
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
     overflow-wrap: anywhere;
 }
 
-.sc-card-name.dim {
-    color: var(--muted);
-    font-style: italic;
-}
+    .sc-card-name.dim {
+        color: var(--muted);
+        font-style: italic;
+    }
 
 .sc-card-meta {
     align-items: center;
     color: var(--muted);
     display: flex;
     flex-wrap: wrap;
-    font-size: .76rem;
-    gap: var(--sc-2);
+    font-size: var(--text-xs);
+    gap: var(--space-2);
 }
 
-.sc-card-open {
-    align-self: flex-start;
-    background: none;
-    border: 0;
-    color: var(--accent);
-    cursor: pointer;
-    font: inherit;
-    font-size: .78rem;
-    font-weight: 600;
-    min-height: 36px;
+.sc-page .sc-card-open {
+    justify-self: start;
     padding: 0;
-    text-decoration: underline;
 }
 
 /* ---------------------------------------------------------------- detail */
 
 .sc-detail {
     border: 1px solid var(--line);
-    border-radius: var(--sc-radius-sm);
+    border-radius: var(--radius-control);
     overflow: hidden;
 }
 
@@ -1120,40 +778,50 @@
     border-bottom: 1px solid var(--line);
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sc-2);
-    padding: var(--sc-2) var(--sc-3);
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-1) var(--space-3);
 }
 
-.sc-detail-header .spacer {
-    flex: 1;
-}
-
-[data-role="detail-title"] {
+.sc-detail-title {
+    font-weight: var(--weight-semibold);
     overflow-wrap: anywhere;
 }
 
 .sc-detail-summary {
     color: var(--muted);
-    font-size: .8rem;
+    font-size: var(--text-sm);
+}
+
+.sc-spacer {
+    flex: 1;
 }
 
 .sc-detail-toggle {
-    font-size: .8rem;
+    font-size: var(--text-sm);
+    margin: 0;
 }
+
+    .sc-detail-toggle[hidden] {
+        display: none;
+    }
 
 .sc-detail-body {
     max-height: 62vh;
     overflow: auto;
-    padding: var(--sc-3);
     resize: vertical;
 }
+
+    .sc-detail-body > .tbx-error-state {
+        margin: var(--space-3);
+    }
 
 .sc-detail.expanded .sc-detail-body {
     max-height: 82vh;
 }
 
-/* .sc-page .sc-btn sets display:inline-flex, so this needs the same specificity to win. */
-.sc-page .sc-detail-back {
+/* Beats the app-wide ":is(.app-shell) .btn { display: inline-flex }" in vendor-sync.css. */
+.sc-page .btn.sc-detail-back {
     display: none;
 }
 
@@ -1161,71 +829,76 @@
 
 .sc-diff-table {
     border-collapse: collapse;
-    font-family: Consolas, "Cascadia Mono", monospace;
-    font-size: .78rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
     table-layout: fixed;
     width: 100%;
 }
 
-.sc-diff-table th {
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    padding: var(--sc-1) var(--sc-2);
-    position: sticky;
-    text-align: center;
-    top: 0;
-    z-index: 1;
-}
+    .sc-diff-table th {
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        font-family: var(--font-sans);
+        font-weight: var(--weight-semibold);
+        padding: var(--space-1) var(--space-2);
+        position: sticky;
+        text-align: center;
+        top: 0;
+        z-index: 1;
+    }
 
-.sc-diff-table td {
-    border: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
-    padding: 2px var(--sc-2);
-    vertical-align: top;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
+    .sc-diff-table td {
+        border-bottom: 1px solid var(--line);
+        padding: 2px var(--space-2);
+        vertical-align: top;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
 
-.sc-diff-table col.num {
-    width: 48px;
-}
+    .sc-diff-table col.num {
+        width: 48px;
+    }
 
-.sc-diff-table td.num {
-    color: var(--muted);
-    text-align: right;
-    user-select: none;
-}
+    .sc-diff-table td.num {
+        color: var(--muted);
+        text-align: right;
+        user-select: none;
+    }
 
-.sc-diff-table tr.Changed td.src,
-.sc-diff-table tr.Changed td.dst {
-    background: var(--sc-change-bg);
-    box-shadow: inset 3px 0 0 var(--sc-change);
-}
+    .sc-diff-table tr.Changed td.src,
+    .sc-diff-table tr.Changed td.dst {
+        background: var(--warning-tint);
+        box-shadow: inset 3px 0 0 var(--warning);
+    }
 
-.sc-diff-table tr.OnlyInSource td.src {
-    background: var(--sc-add-bg);
-    box-shadow: inset 3px 0 0 var(--sc-add);
-}
+    .sc-diff-table tr.OnlyInSource td.src {
+        background: var(--success-tint);
+        box-shadow: inset 3px 0 0 var(--success);
+    }
 
-.sc-diff-table tr.OnlyInTarget td.dst {
-    background: var(--sc-del-bg);
-    box-shadow: inset 3px 0 0 var(--sc-del);
-}
+    .sc-diff-table tr.OnlyInTarget td.dst {
+        background: var(--danger-tint);
+        box-shadow: inset 3px 0 0 var(--danger);
+    }
 
-.sc-diff-table tr.OnlyInSource td.dst,
-.sc-diff-table tr.OnlyInTarget td.src {
-    background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(127, 127, 127, .08) 5px, rgba(127, 127, 127, .08) 10px);
-}
+    /* The missing side of a line, hatched so it reads as "nothing here". */
+    .sc-diff-table tr.OnlyInSource td.dst,
+    .sc-diff-table tr.OnlyInTarget td.src {
+        background: repeating-linear-gradient(45deg, transparent, transparent 5px, var(--surface-2) 5px, var(--surface-2) 10px);
+    }
 
-.sc-diff-table tr.sc-fold td {
-    background: var(--surface-2);
-    color: var(--muted);
-    cursor: pointer;
-    text-align: center;
-}
+    .sc-diff-table tr.sc-fold td {
+        background: var(--surface-2);
+        color: var(--muted);
+        cursor: pointer;
+        font-family: var(--font-sans);
+        text-align: center;
+    }
 
-.sc-diff-table tr.sc-fold td:hover {
-    color: var(--accent);
-}
+        .sc-diff-table tr.sc-fold td:hover {
+            color: var(--accent);
+        }
 
 /* ---------------------------------------------------------------- script */
 
@@ -1233,70 +906,145 @@
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sc-2);
-    margin-bottom: var(--sc-3);
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
 }
 
+    .sc-script-bar .sc-run-status {
+        margin-left: auto;
+    }
+
 .sc-script-warn {
-    background: var(--sc-del-bg);
-    border: 1px solid color-mix(in srgb, var(--sc-del) 40%, transparent);
-    border-radius: var(--sc-radius-sm);
-    color: var(--sc-del);
-    font-size: .84rem;
-    margin-bottom: var(--sc-3);
-    padding: var(--sc-3);
+    background: var(--danger-tint);
+    border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--line));
+    border-radius: var(--radius-panel);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+}
+
+    .sc-script-warn[hidden] {
+        display: none;
+    }
+
+.sc-script-warn-head {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+    .sc-script-warn-head > .tbx-icon {
+        color: var(--danger);
+    }
+
+    .sc-script-warn-head strong {
+        font-weight: var(--weight-semibold);
+    }
+
+    .sc-script-warn-head .btn {
+        margin-left: auto;
+    }
+
+.sc-script-warn-title {
+    color: var(--muted);
+    margin: var(--space-2) 0 0;
 }
 
 .sc-script-warn ul {
-    margin: var(--sc-1) 0 0;
-    padding-left: var(--sc-6);
+    margin: var(--space-1) 0 0;
+    max-height: 180px;
+    overflow: auto;
+    padding-left: var(--space-5);
 }
 
 .sc-script-warn li {
-    margin-top: 3px;
+    margin-top: 2px;
+    overflow-wrap: anywhere;
 }
 
+.sc-script-warn code {
+    color: var(--danger);
+    font-size: var(--text-xs);
+}
+
+/* Read-only code view with line numbers. Lines that remove something are marked red with
+   a bar, so they stay visible without color too. */
 .sc-script {
     background: var(--surface-2);
     border: 1px solid var(--line);
-    border-radius: var(--sc-radius-sm);
+    border-radius: var(--radius-control);
     color: var(--text);
-    font-family: Consolas, "Cascadia Mono", monospace;
-    font-size: .8rem;
-    min-height: 420px;
-    padding: var(--sc-3);
-    white-space: pre;
-    width: 100%;
+    counter-reset: sc-line;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1.6;
+    margin: 0;
+    max-height: 70vh;
+    min-height: 240px;
+    overflow: auto;
+    padding: var(--space-2) 0;
+    position: relative;
 }
 
+    .sc-script:focus-visible {
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
+
+    .sc-script code {
+        color: inherit;
+        display: block;
+        font-size: inherit;
+        min-width: max-content;
+    }
+
+.sc-line {
+    display: block;
+    padding-right: var(--space-3);
+    white-space: pre;
+}
+
+    .sc-line::before {
+        color: var(--muted);
+        content: counter(sc-line);
+        counter-increment: sc-line;
+        display: inline-block;
+        margin-right: var(--space-3);
+        padding-right: var(--space-2);
+        text-align: right;
+        user-select: none;
+        width: 5ch;
+    }
+
+    .sc-line.is-drop {
+        background: var(--danger-tint);
+        box-shadow: inset 3px 0 0 var(--danger);
+        color: var(--danger);
+        font-weight: var(--weight-semibold);
+    }
+
+    .sc-line.is-current {
+        outline: 2px solid var(--danger);
+        outline-offset: -2px;
+    }
+
 /* ============================================================================
-   TABLET — from 600px: the object table is readable again, endpoints still stack.
+   TABLET - from 600px
    ============================================================================ */
 
 @media (min-width: 600px) {
-    .sc-page {
-        gap: var(--sc-6);
-    }
-
-    .sc-step {
-        padding: var(--sc-6);
-    }
-
     .sc-check-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .sc-page .tab-content {
-        padding: var(--sc-6);
     }
 }
 
 /* ============================================================================
-   DESKTOP — from 1024px: endpoints side by side, type list becomes a side column,
+   DESKTOP - from 1200px: endpoints side by side, type list becomes a side column,
    progress logs sit next to each other.
    ============================================================================ */
 
-@media (min-width: 1024px) {
+@media (min-width: 1200px) {
     .sc-endpoints {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1310,7 +1058,7 @@
     }
 
     .sc-result-layout {
-        grid-template-columns: 232px minmax(0, 1fr);
+        grid-template-columns: 220px minmax(0, 1fr);
     }
 
     .sc-type-panel {
@@ -1318,14 +1066,13 @@
            pane beside it, leaving a tall empty column under seven short rows. */
         align-self: start;
         border-right: 1px solid var(--line);
-        display: flex;
-        flex-direction: column;
-        gap: var(--sc-2);
+        display: grid;
+        gap: var(--space-2);
         max-height: 52vh;
         overflow-y: auto;
-        padding-right: var(--sc-4);
+        padding-right: var(--space-3);
         position: sticky;
-        top: var(--sc-3);
+        top: var(--space-3);
     }
 
     /* The strip and the column are the same filter; only one is on screen at a time. */
@@ -1334,30 +1081,19 @@
     }
 }
 
-/* ============================================================================
-   WIDE — from 1600px the page keeps filling the window (no max-width), so the extra
-   room goes into more columns rather than into wider text fields.
-   ============================================================================ */
-
 @media (min-width: 1600px) {
     .sc-check-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
-    .sc-result-layout {
-        grid-template-columns: 280px minmax(0, 1fr);
-    }
-
-    /* A server name or a mapping line is never 1600px long; capping the inputs keeps
-       the label and its value close enough to read as a pair. */
+    /* A mapping line is never 1600px long; capping the box keeps label and value close. */
     .sc-mapping-input {
         max-width: 720px;
     }
 }
 
 /* ============================================================================
-   PHONE — below 600px: the object table becomes a card list, and the run bar is pinned
-   to the bottom of the screen because it is the action people come back to.
+   PHONE - below 600px: the object table becomes a card list.
    ============================================================================ */
 
 @media (max-width: 599.98px) {
@@ -1366,7 +1102,11 @@
     }
 
     .sc-card-list {
-        display: flex;
+        display: grid;
+    }
+
+    .sc-step-head .btn {
+        margin-left: 0;
     }
 
     .sc-map-row {
@@ -1378,7 +1118,8 @@
         width: 100%;
     }
 
-    .sc-map-arrow {
+    .sc-map-arrow,
+    .sc-keys {
         display: none;
     }
 
@@ -1391,51 +1132,38 @@
         overflow-wrap: anywhere;
     }
 
-    .sc-run-bar {
-        border-radius: var(--sc-radius) var(--sc-radius) 0 0;
-        bottom: 0;
-        left: 0;
-        margin: 0 calc(-1 * var(--sc-3));
-        padding: var(--sc-3);
-        position: sticky;
-    }
-
-    .sc-run-spacer {
-        display: none;
-    }
-
-    /* Four status filters stacked would push the list off the first screen, so they
-       scroll sideways in their own strip, like the type chips above them. */
-    .sc-filter-buttons {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        padding-bottom: var(--sc-1);
-        scrollbar-width: thin;
-    }
-
-    .sc-filter {
-        flex: none;
-    }
-
     .sc-run-btn {
         flex: 1 1 100%;
     }
 
     .sc-quick-summary {
-        order: -1;
+        margin-left: 0;
         width: 100%;
     }
+
+    /* Four status filters stacked would push the list off the first screen, so they
+       scroll sideways in their own strip, like the type chips above them. */
+    .sc-filter-chips {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: var(--space-1);
+        scrollbar-width: thin;
+    }
+
+        .sc-filter-chips .tbx-chip {
+            flex: none;
+        }
 
     /* Picking an object and reading its diff are two steps on a phone, not one screen. */
     .sc-result-main.sc-showing-detail .sc-card-list,
     .sc-result-main.sc-showing-detail .sc-grid-toolbar,
-    .sc-result-main.sc-showing-detail .sc-filter-buttons,
+    .sc-result-main.sc-showing-detail .sc-filter-row,
     .sc-result-main.sc-showing-detail .sc-type-strip,
     .sc-result-main.sc-showing-detail .sc-mapped-note {
         display: none;
     }
 
-    .sc-page .sc-result-main.sc-showing-detail .sc-detail-back {
+    .sc-page .sc-result-main.sc-showing-detail .btn.sc-detail-back {
         display: inline-flex;
     }
 
@@ -1443,43 +1171,23 @@
         max-height: none;
     }
 
-    .sc-diff-table {
-        font-size: .72rem;
+    .sc-script-warn-head .btn {
+        margin-left: 0;
     }
 }
 
 /* Touch devices: nothing people tap may be smaller than about 44px. */
 @media (pointer: coarse) {
-    .sc-page .sc-btn,
     .sc-scope-chip,
-    .sc-filter,
-    .sc-type-chip,
-    .sc-type-list li,
-    .sc-help > summary {
+    .sc-type-strip .tbx-chip,
+    .sc-filter-chips .tbx-chip,
+    .sc-type-item {
         min-height: 44px;
-    }
-
-    .sc-page .sc-btn-icon {
-        width: 44px;
-    }
-
-    .sc-page .sc-check,
-    .sc-card-open {
-        min-height: 44px;
-    }
-
-    .sc-page .sc-check input,
-    .sc-row-check,
-    .sc-header-check {
-        height: 20px;
-        width: 20px;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .sc-page *,
-    .sc-page *::before {
-        animation-duration: .001ms !important;
-        transition: none !important;
+    .sc-advanced-toggle .sc-caret {
+        transition: none;
     }
 }

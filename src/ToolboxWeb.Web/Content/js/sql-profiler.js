@@ -88,6 +88,7 @@
 
     // The connection form: Views/Shared/_SqlConnectionForm.cshtml, Content/js/sql-connection.js.
     const connection = window.ToolboxSqlConnection.init(root.querySelector('[data-sql-connection]'), {
+        recent: true,
         // Connecting is not enough to capture; say why Start stays disabled.
         onTested: function (data) {
             state.canCapture = data.canCapture;

@@ -90,6 +90,70 @@
         gap: var(--space-1);
     }
 
+.sqlconn-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-left: auto;
+}
+
+/* Connections tested before. Each row: the connection, then a small remove button. */
+.sqlconn-recent-menu {
+    max-width: min(420px, calc(100vw - 2 * var(--space-4)));
+    min-width: 260px;
+    padding: var(--space-1);
+}
+
+.sqlconn-recent-item {
+    align-items: center;
+    display: flex;
+    gap: var(--space-1);
+}
+
+    .sqlconn-recent-item .dropdown-item {
+        border-radius: var(--radius-control);
+        display: grid;
+        flex: 1;
+        min-width: 0;
+        padding: var(--space-1) var(--space-2);
+    }
+
+.sqlconn-recent-name {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sqlconn-recent-meta {
+    color: var(--muted);
+    font-size: var(--text-xs);
+}
+
+.sqlconn-trust-warning {
+    align-items: flex-start;
+    background: var(--warning-tint);
+    border-radius: var(--radius-control);
+    color: var(--text);
+    display: flex;
+    font-size: var(--text-sm);
+    gap: var(--space-2);
+    line-height: 1.45;
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+}
+
+    .sqlconn-trust-warning[hidden] {
+        display: none;
+    }
+
+    .sqlconn-trust-warning .tbx-icon {
+        color: var(--warning);
+        flex: none;
+        margin-top: 2px;
+    }
+
 /* Test result. A symbol as well as a color, so it still reads without color. */
 .sqlconn-status {
     border-radius: var(--radius-control);

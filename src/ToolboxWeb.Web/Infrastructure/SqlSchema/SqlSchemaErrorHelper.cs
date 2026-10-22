@@ -16,7 +16,8 @@ public static partial class SqlSchemaErrorHelper
         string? serverNotFound = null,
         string? databaseNotFound = null,
         string? permissionDenied = null,
-        string? timeout = null)
+        string? timeout = null,
+        string? certificateUntrusted = null)
     {
         // Validation failures are authored by this module and safe to show verbatim.
         if (exception is SqlSchemaValidationException validation)
@@ -30,6 +31,13 @@ public static partial class SqlSchemaErrorHelper
         if (exception is not SqlException && FindSqlException(exception) is { } wrapped)
         {
             exception = wrapped;
+        }
+
+        // With "trust server certificate" off, a self-signed server fails the TLS handshake. That
+        // arrives as a generic connection error, which would otherwise read as "server not found".
+        if (!string.IsNullOrWhiteSpace(certificateUntrusted) && MentionsUntrustedCertificate(exception))
+        {
+            return certificateUntrusted;
         }
 
         if (exception is SqlException sql)
@@ -94,6 +102,20 @@ public static partial class SqlSchemaErrorHelper
         }
 
         return null;
+    }
+
+    private static bool MentionsUntrustedCertificate(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is System.Security.Authentication.AuthenticationException
+                || current.Message.Contains("certificate", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool MentionsTimeout(Exception exception)

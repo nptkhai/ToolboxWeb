@@ -382,6 +382,8 @@ public sealed class DacFxSchemaCompareService : IDacFxSchemaCompareService
                 IncludedCount = includedCount,
                 ExcludedCount = rows.Count - includedCount,
                 Warnings = processed.Warnings
+                    .Select(x => new ScriptWarningViewModel { Kind = x.Kind, ObjectKind = x.ObjectKind, Name = x.Name })
+                    .ToList()
             };
         });
     }

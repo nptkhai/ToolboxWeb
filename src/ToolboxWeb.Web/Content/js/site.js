@@ -873,6 +873,16 @@
     }
 
     window.Toolbox = window.Toolbox || {};
+
+    // An icon from the app sprite (<tbx-icon> on the server), for markup built in the browser.
+    window.Toolbox.icon = function (name, size) {
+        const px = size || 16;
+        const sprite = document.querySelector('svg.tbx-icon use')?.getAttribute('href') || '';
+        const base = sprite.split('#')[0] || '/vendor/lucide/lucide-sprite.svg';
+        return '<svg class="tbx-icon" width="' + px + '" height="' + px + '" aria-hidden="true" focusable="false">'
+            + '<use href="' + base + '#' + name + '"></use></svg>';
+    };
+
     window.Toolbox.notify = function (message, type) {
         if (!message) return;
         const safeType = type || 'info';

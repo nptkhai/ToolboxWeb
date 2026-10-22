@@ -2,12 +2,14 @@
 # Add a name here, then rebuild the sprite (see build-sprite.py). Keep only icons the app uses.
 activity
 arrow-left
+arrow-left-right
 blocks
 calendar
 check
 chevron-down
 chevron-left
 chevron-right
+chevron-up
 circle-alert
 circle-check
 clock
