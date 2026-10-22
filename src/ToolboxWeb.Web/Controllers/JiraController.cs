@@ -62,19 +62,6 @@ public class JiraController : Controller
         }));
     }
 
-    [HttpPost("/" + ToolboxRouteSlugs.HtmlPages.JiraWorklist)]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> WorklistPage(JiraSearchRequest search)
-    {
-        var session = await GetSessionOrRedirectAsync();
-        if (session is null)
-        {
-            return RedirectToLogin();
-        }
-
-        return View("Worklist", await BuildWorklistPageModelAsync(session, search, runSearch: true));
-    }
-
     [HttpGet]
     public async Task<IActionResult> Status()
     {
@@ -118,6 +105,7 @@ public class JiraController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Search([FromBody] JiraSearchRequest request)
     {
         var session = await GetSessionOrSignOutAsync();
@@ -126,15 +114,25 @@ public class JiraController : Controller
             return Json(JiraApiResponse<object>.LoginRequired(_localizer["Jira.SessionExpired"].Value));
         }
 
+        if (request is null)
+        {
+            return Json(JiraApiResponse<object>.Fail(_localizer["Jira.SearchFailed"].Value));
+        }
+
+        var invalid = JiraQueryBuilder.Validate(
+            request,
+            _localizer["Jira.Search.AssigneeRequired"].Value,
+            _localizer["Jira.Search.DateOrder"].Value);
+        if (invalid is not null)
+        {
+            return Json(JiraApiResponse<object>.Fail(invalid));
+        }
+
         try
         {
             var jql = JiraQueryBuilder.Build(request, _localizer["Jira.Search.AssigneeRequired"].Value);
             var issues = await session.Client.SearchIssuesAsync(jql);
-            return Json(JiraApiResponse<object>.Ok(new
-            {
-                issues,
-                jql
-            }));
+            return Json(JiraApiResponse<object>.Ok(JiraSearchResults.Build(issues, jql, AppClock.Today)));
         }
         catch (Exception ex)
         {
@@ -406,36 +404,16 @@ public class JiraController : Controller
         };
     }
 
-    private async Task<JiraWorklistPageViewModel> BuildWorklistPageModelAsync(JiraSession session, JiraSearchRequest search, bool runSearch = false)
+    // The Search tab runs its searches through POST /Jira/Search; the page only brings the saved
+    // filters and users for the form.
+    private async Task<JiraWorklistPageViewModel> BuildWorklistPageModelAsync(JiraSession session, JiraSearchRequest search)
     {
-        var filters = await SafeFiltersAsync(session);
-        var users = await SafeUsersAsync(session);
-        var issues = Array.Empty<JiraIssue>();
-        var appliedJql = string.Empty;
-        string? errorMessage = null;
-
-        if (runSearch)
-        {
-            try
-            {
-                appliedJql = JiraQueryBuilder.Build(search, _localizer["Jira.Search.AssigneeRequired"].Value);
-                issues = (await session.Client.SearchIssuesAsync(appliedJql)).ToArray();
-            }
-            catch (Exception ex)
-            {
-                errorMessage = JiraErrorHelper.ToUserMessage(ex, _localizer["Jira.SearchFailed"].Value);
-            }
-        }
-
         return new JiraWorklistPageViewModel
         {
             Session = BuildSessionSummary(session),
             Search = search,
-            Issues = issues,
-            Filters = filters,
-            Users = users,
-            AppliedJql = appliedJql,
-            ErrorMessage = errorMessage
+            Filters = await SafeFiltersAsync(session),
+            Users = await SafeUsersAsync(session)
         };
     }
 

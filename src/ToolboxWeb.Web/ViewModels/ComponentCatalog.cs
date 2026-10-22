@@ -118,7 +118,7 @@ public static class ComponentCatalog
         // Grid and data list
         new("tabulator", "Tabulator grid", GridData, Tabulator, ComponentStatus.Usable, HasDemo: true),
         new("kendo-listview", "Kendo DataSource + ListView + Pager", GridData, KendoCore, ComponentStatus.Available, HasDemo: true),
-        new("sheetjs", "SheetJS", GridData, SheetJs, ComponentStatus.Available, "Components.Catalog.Note.AssetOnly"),
+        new("sheetjs", "SheetJS", GridData, SheetJs, ComponentStatus.Usable, "Components.Catalog.Note.SheetJs"),
         new("echarts", "Apache ECharts", GridData, ECharts, ComponentStatus.Usable, "Components.Catalog.Note.ECharts"),
         new("kendo-grid", "Kendo Grid", GridData, KendoCommercial, ComponentStatus.NotInKendoCore, "Components.Catalog.Note.UseTabulator"),
         new("kendo-chart", "Kendo Chart", GridData, KendoCommercial, ComponentStatus.NotInKendoCore, "Components.Catalog.Note.UseECharts"),

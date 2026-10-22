@@ -51,9 +51,69 @@
     var searchJqlBlock = new JiraJqlBlockViewModel
     {
         Id = "jira-search-jql",
-        Jql = Model.AppliedJql,
         BrowseBaseUrl = Model.Session.BaseUrl
     };
+    var searchConfigJson = JsonSerializer.Serialize(new
+    {
+        searchUrl = Url.Action("Search", "Jira"),
+        loginUrl = Url.Page("/Account/Login", new { area = "Identity" }),
+        browseBaseUrl = Model.Session.BaseUrl?.TrimEnd('/'),
+        sheetUrl = Url.Content("~/vendor/sheetjs/js/xlsx.full.min.js"),
+        defaults = new
+        {
+            mode = "filter",
+            assignee = "currentUser()",
+            from = Model.Search.FromDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            to = Model.Search.ToDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+        },
+        text = new
+        {
+            searching = T["Jira.Search.Searching"].Value,
+            assigneeRequired = T["Jira.Search.AssigneeRequired"].Value,
+            dateOrder = T["Jira.Search.DateOrder"].Value,
+            failed = T["Jira.SearchFailed"].Value,
+            retry = T["Jira.Search.Retry"].Value,
+            empty = T["Jira.Search.Empty"].Value,
+            filterEmpty = T["Jira.Dashboard.FilterEmpty"].Value,
+            editFilters = T["Jira.Search.EditFilters"].Value,
+            count = T["Jira.Search.Count"].Value,
+            truncated = T["Jira.Search.Truncated"].Value,
+            summaryJql = T["Jira.Search.SummaryJql"].Value,
+            any = T["Jira.Search.Any"].Value,
+            noParent = T["Jira.Dashboard.Group.NoParent"].Value,
+            groupMeta = T["Jira.Search.GroupMeta"].Value,
+            daysLate = T["Jira.Dashboard.DaysLate"].Value,
+            noEstimate = T["Jira.Dashboard.NoEstimate"].Value,
+            pageCounter = T["Jira.Search.PageCounter"].Value,
+            pageFirst = T["Jira.Search.PageFirst"].Value,
+            pagePrev = T["Jira.Search.PagePrev"].Value,
+            pageNext = T["Jira.Search.PageNext"].Value,
+            pageLast = T["Jira.Search.PageLast"].Value,
+            exportFailed = T["Jira.Search.ExportFailed"].Value,
+            exportSheet = T["Jira.Search.ExportSheet"].Value,
+            labels = new
+            {
+                assignee = T["Jira.Worklist.Assignee"].Value,
+                due = T["Jira.Table.DueDate"].Value,
+                status = T["Jira.Worklist.Status"].Value,
+                project = T["Jira.Worklist.Project"].Value,
+                issueKey = T["Jira.Worklist.IssueKey"].Value,
+                reporter = T["Jira.Worklist.Reporter"].Value
+            }
+        },
+        columns = new
+        {
+            key = T["Jira.Table.Key"].Value,
+            summary = T["Jira.Table.Summary"].Value,
+            status = T["Jira.Table.Status"].Value,
+            type = T["Jira.Table.Type"].Value,
+            dueDate = T["Jira.Table.DueDate"].Value,
+            estimate = T["Jira.Table.Estimate"].Value,
+            logged = T["Jira.Table.LogTime"].Value,
+            parent = T["Jira.Table.Parent"].Value,
+            parentSummary = T["Jira.Table.IssueSummary"].Value
+        }
+    }, jsonOptions);
     var boardPeriodPicker = new JiraPeriodPickerViewModel
     {
         IdPrefix = "jira-board-period",
@@ -120,173 +180,134 @@
 
     <div class="tab-content jira-tab-content">
         <div class="tab-pane fade show active" id="jira-tab-search-pane" role="tabpanel" aria-labelledby="jira-tab-search">
-            <section class="panel jira-panel">
-                @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-                {
-                    <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
-                }
-
-                <form method="post" class="jira-search-form" data-jira-search-form>
-                    @Html.AntiForgeryToken()
-                    <div class="form-grid jira-search-grid">
-                        <div>
-                            <label class="form-label" for="jira-filter-select">@T["Jira.Worklist.FiltersLabel"]</label>
-                            <select id="jira-filter-select" class="form-select" data-jira-filter-select>
-                                <option value="">@T["Jira.Worklist.FiltersEmpty"]</option>
-                                @foreach (var filter in Model.Filters)
-                                {
-                                    <option value="@filter.Id" data-jql="@filter.Jql">@filter.Name</option>
-                                }
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label" asp-for="Search.Project">@T["Jira.Worklist.Project"]</label>
-                            <input class="form-control" asp-for="Search.Project" />
-                        </div>
-                        <div>
-                            <label class="form-label" asp-for="Search.IssueKey">@T["Jira.Worklist.IssueKey"]</label>
-                            <input class="form-control" asp-for="Search.IssueKey" />
-                        </div>
-                        <div>
-                            <label class="form-label" asp-for="Search.Status">@T["Jira.Worklist.Status"]</label>
-                            <select class="form-select" asp-for="Search.Status">
-                                <option value="">@T["Jira.Worklist.StatusEmpty"]</option>
-                                <option>Open</option>
-                                <option>In Analysis</option>
-                                <option>To Do</option>
-                                <option>In Progress</option>
-                                <option>Done</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label" asp-for="Search.Assignee">@T["Jira.Worklist.Assignee"]</label>
-                            <select class="form-select" asp-for="Search.Assignee">
-                                <option value="">@T["Jira.Worklist.AssigneeEmpty"]</option>
-                                <option value="currentUser()">@T["Jira.Worklist.AssigneeCurrentUser"]</option>
-                                @foreach (var user in Model.Users)
-                                {
-                                    <option value="@user.Name">@user.DisplayName</option>
-                                }
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label" asp-for="Search.Reporter">@T["Jira.Worklist.Reporter"]</label>
-                            <select class="form-select" asp-for="Search.Reporter">
-                                <option value="">@T["Jira.Worklist.ReporterEmpty"]</option>
-                                @foreach (var user in Model.Users)
-                                {
-                                    <option value="@user.Name">@user.DisplayName</option>
-                                }
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label" asp-for="Search.FromDate">@T["Jira.Worklist.FromDate"]</label>
-                            <input class="form-control" asp-for="Search.FromDate" type="date" />
-                        </div>
-                        <div>
-                            <label class="form-label" asp-for="Search.ToDate">@T["Jira.Worklist.ToDate"]</label>
-                            <input class="form-control" asp-for="Search.ToDate" type="date" />
-                        </div>
+            @* Stage 5.2: two exclusive modes (filters / JQL), searches without reloading the page, the
+               form folds into a one-line summary, results in a grouped Tabulator. Content/js/jira-search.js *@
+            <div class="jira-search" data-jira-search>
+                <section class="tbx-panel jira-search-panel">
+                    <div class="jira-search-summary" data-search-summary hidden>
+                        <tbx-icon name="search" />
+                        <p class="jira-search-summary-text" data-search-summary-text></p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-search-edit>
+                            <tbx-icon name="pencil" />
+                            <span>@T["Jira.Search.EditFilters"]</span>
+                        </button>
                     </div>
 
-                    <label class="form-check jira-advanced-toggle">
-                        <input class="form-check-input" asp-for="Search.Advanced" data-jira-advanced-toggle />
-                        <span class="form-check-label">@T["Jira.Worklist.AdvancedLabel"]</span>
-                    </label>
+                    <form class="jira-search-form" data-search-form novalidate>
+                        @Html.AntiForgeryToken()
+                        <div class="jira-period-tabs jira-search-modes" role="group" aria-label="@T["Jira.Search.ModeLabel"]">
+                            <button type="button" class="jira-period-tab is-active" data-search-mode-button="filter" aria-pressed="true">@T["Jira.Search.ModeFilter"]</button>
+                            <button type="button" class="jira-period-tab" data-search-mode-button="jql" aria-pressed="false">@T["Jira.Search.ModeJql"]</button>
+                        </div>
 
-                    <div class="jira-advanced-block @(Model.Search.Advanced ? string.Empty : "d-none")" data-jira-advanced-panel>
-                        <label class="form-label" asp-for="Search.AdvancedJql">@T["Jira.Worklist.AdvancedJql"]</label>
-                        <textarea class="form-control" asp-for="Search.AdvancedJql" rows="4">@Model.Search.AdvancedJql</textarea>
-                    </div>
+                        <div class="jira-search-grid" data-search-mode="filter">
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-search-assignee">@T["Jira.Worklist.Assignee"]<span class="tbx-required" aria-hidden="true">*</span></label>
+                                <select id="jira-search-assignee" class="form-select" data-search-field="assignee">
+                                    <option value="">@T["Jira.Worklist.AssigneeEmpty"]</option>
+                                    <option value="currentUser()" selected>@T["Jira.Worklist.AssigneeCurrentUser"]</option>
+                                    @foreach (var user in Model.Users)
+                                    {
+                                        <option value="@user.Name">@user.DisplayName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-search-from">@T["Jira.Worklist.FromDate"]</label>
+                                <input id="jira-search-from" class="form-control" autocomplete="off" data-search-field="from" data-search-date value="@Model.Search.FromDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
+                            </div>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-search-to">@T["Jira.Worklist.ToDate"]</label>
+                                <input id="jira-search-to" class="form-control" autocomplete="off" data-search-field="to" data-search-date value="@Model.Search.ToDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
+                            </div>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-search-status">@T["Jira.Worklist.Status"]</label>
+                                <select id="jira-search-status" class="form-select" data-search-field="status">
+                                    <option value="">@T["Jira.Search.Any"]</option>
+                                    <option>Open</option>
+                                    <option>In Analysis</option>
+                                    <option>To Do</option>
+                                    <option>In Progress</option>
+                                    <option>Done</option>
+                                </select>
+                            </div>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-search-project">@T["Jira.Worklist.Project"]</label>
+                                <input id="jira-search-project" class="form-control" autocomplete="off" data-search-field="project" placeholder="@T["Jira.Search.ProjectExample"]" />
+                            </div>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-search-key">@T["Jira.Worklist.IssueKey"]</label>
+                                <input id="jira-search-key" class="form-control" autocomplete="off" data-search-field="issueKey" placeholder="@T["Jira.Search.IssueKeyExample"]" />
+                            </div>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-search-reporter">@T["Jira.Worklist.Reporter"]</label>
+                                <select id="jira-search-reporter" class="form-select" data-search-field="reporter">
+                                    <option value="">@T["Jira.Search.Any"]</option>
+                                    @foreach (var user in Model.Users)
+                                    {
+                                        <option value="@user.Name">@user.DisplayName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="jira-search-actions">
+                                <button type="submit" class="btn btn-primary"><tbx-icon name="search" /><span>@T["Jira.Worklist.SearchButton"]</span></button>
+                                <button type="button" class="btn btn-outline-secondary" data-search-reset>@T["Jira.Worklist.ResetButton"]</button>
+                            </div>
+                        </div>
 
-                    <div class="inline-actions">
-                        <button type="submit" class="btn btn-primary">@T["Jira.Worklist.SearchButton"]</button>
-                        <a class="btn btn-outline-secondary" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraWorklistHtml) ?? "/jira-worklist.html")">@T["Jira.Worklist.ResetButton"]</a>
-                    </div>
-                </form>
-            </section>
+                        <div class="jira-search-jql" data-search-mode="jql" hidden>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-search-saved">@T["Jira.Worklist.FiltersLabel"]</label>
+                                <select id="jira-search-saved" class="form-select" data-search-saved>
+                                    <option value="">@T["Jira.Search.SavedNone"]</option>
+                                    @foreach (var filter in Model.Filters)
+                                    {
+                                        <option value="@filter.Id" data-jql="@filter.Jql">@filter.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="tbx-field jira-search-jql-field">
+                                <label class="tbx-field-label" for="jira-search-jql-text">@T["Jira.Worklist.AdvancedJql"]</label>
+                                <textarea id="jira-search-jql-text" class="form-control jira-jql-input" rows="5" spellcheck="false" data-search-field="jql" aria-describedby="jira-search-jql-hint"></textarea>
+                                <span class="tbx-field-hint" id="jira-search-jql-hint">@T["Jira.Search.JqlHint"]</span>
+                            </div>
+                            <div class="jira-search-actions">
+                                <button type="submit" class="btn btn-primary"><tbx-icon name="search" /><span>@T["Jira.Worklist.SearchButton"]</span></button>
+                                <button type="button" class="btn btn-outline-secondary" data-search-format>@T["Jira.Search.FormatJql"]</button>
+                            </div>
+                        </div>
 
-            <section class="panel jira-panel">
-                <div class="panel-header">
-                    <div>
-                        <h2>@T["Jira.Worklist.ResultsTitle"]</h2>
-                        <p>@T["Jira.Worklist.ResultsNote"]</p>
-                    </div>
-                </div>
+                        <p class="jira-search-error" role="alert" data-search-error></p>
+                    </form>
+                </section>
 
-                @if (!Model.Issues.Any())
-                {
-                    <div class="muted">@T["Jira.Worklist.NoResults"]</div>
-                }
-                else
-                {
-                    var browseBase = Model.Session.BaseUrl?.TrimEnd('/');
-                    // Columns that are empty for every result only take space, so they are hidden.
-                    var showParent = Model.Issues.Any(x => !string.IsNullOrWhiteSpace(x.Parent));
-                    var showEstimate = Model.Issues.Any(x => !string.IsNullOrWhiteSpace(x.Estimate));
-                    var showLoggedDates = Model.Issues.Any(x => !string.IsNullOrWhiteSpace(x.LoggedDates));
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle jira-table">
-                            <thead>
-                                <tr>
-                                    <th>@T["Jira.Table.Key"]</th>
-                                    <th>@T["Jira.Table.Summary"]</th>
-                                    <th>@T["Jira.Table.Status"]</th>
-                                    <th>@T["Jira.Table.Type"]</th>
-                                    <th>@T["Jira.Table.DueDate"]</th>
-                                    @if (showParent)
-                                    {
-                                        <th>@T["Jira.Table.Parent"]</th>
-                                    }
-                                    @if (showEstimate)
-                                    {
-                                        <th>@T["Jira.Table.Estimate"]</th>
-                                    }
-                                    @if (showLoggedDates)
-                                    {
-                                        <th>@T["Jira.Table.LoggedDates"]</th>
-                                    }
-                                </tr>
-                            </thead>
-                            <tbody>
-                            @foreach (var issue in Model.Issues)
-                            {
-                                <tr>
-                                    <td class="jira-table-nowrap">
-                                        @if (string.IsNullOrWhiteSpace(browseBase))
-                                        {
-                                            <span class="jira-key">@issue.IssueKey</span>
-                                        }
-                                        else
-                                        {
-                                            <a class="jira-key" href="@($"{browseBase}/browse/{Uri.EscapeDataString(issue.IssueKey)}")" target="_blank" rel="noopener noreferrer">@issue.IssueKey</a>
-                                        }
-                                    </td>
-                                    <td>@issue.Summary</td>
-                                    <td class="jira-table-nowrap text-center"><span class="tbx-pill @JiraStatus.PillClass(issue.Status)">@issue.Status</span></td>
-                                    <td class="jira-table-nowrap text-center">@issue.Type</td>
-                                    <td class="jira-table-nowrap text-center">@issue.DueDate.ToDisplayDate()</td>
-                                    @if (showParent)
-                                    {
-                                        <td>@(string.IsNullOrWhiteSpace(issue.Parent) ? "-" : $"{issue.Parent} - {issue.ParentSummary}")</td>
-                                    }
-                                    @if (showEstimate)
-                                    {
-                                        <td class="jira-table-nowrap text-end">@(string.IsNullOrWhiteSpace(issue.Estimate) ? "-" : issue.Estimate)</td>
-                                    }
-                                    @if (showLoggedDates)
-                                    {
-                                        <td>@(string.IsNullOrWhiteSpace(issue.LoggedDates) ? "-" : issue.LoggedDates)</td>
-                                    }
-                                </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
-                }
+                <section class="tbx-panel jira-table-panel jira-search-results" aria-labelledby="jira-search-results-title" data-search-results>
+                    <header class="jira-panel-head">
+                        <div>
+                            <h2 id="jira-search-results-title">@T["Jira.Worklist.ResultsTitle"]</h2>
+                            <p class="jira-panel-sub" data-search-count></p>
+                        </div>
+                        <div class="jira-search-tools">
+                            <div class="jira-chips" role="group" aria-label="@T["Jira.Search.ChipsLabel"]" data-search-chips>
+                                <button type="button" class="tbx-chip" data-chip="all" aria-pressed="true">@T["Jira.Chips.All"] <span class="jira-chip-count" data-chip-count></span></button>
+                                <button type="button" class="tbx-chip" data-chip="open" aria-pressed="false">@T["Jira.Chips.Open"] <span class="jira-chip-count" data-chip-count></span></button>
+                                <button type="button" class="tbx-chip" data-chip="overdue" aria-pressed="false">@T["Jira.Chips.Overdue"] <span class="jira-chip-count" data-chip-count></span></button>
+                                <button type="button" class="tbx-chip" data-chip="done" aria-pressed="false">@T["Jira.Chips.Done"] <span class="jira-chip-count" data-chip-count></span></button>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary jira-search-export" data-search-export disabled>
+                                <tbx-icon name="download" />
+                                <span>@T["Jira.Search.Export"]</span>
+                            </button>
+                        </div>
+                    </header>
 
-                <partial name="_JiraJqlBlock" model="searchJqlBlock" />
-            </section>
+                    <p class="jira-search-note" data-search-truncated hidden></p>
+                    <div data-search-state></div>
+                    <div class="jira-grid-host" aria-busy="false" data-search-grid></div>
+
+                    <partial name="_JiraJqlBlock" model="searchJqlBlock" />
+                </section>
+            </div>
         </div>
 
         <div class="tab-pane fade" id="jira-tab-board-pane" role="tabpanel" aria-labelledby="jira-tab-board">
@@ -436,6 +457,7 @@
     </section>
 </div>
 
+<script id="jira-search-config" type="application/json">@Html.Raw(searchConfigJson)</script>
 <script id="jira-worklist-config" type="application/json">@Html.Raw(worklistConfigJson)</script>
 <script id="jira-task-board-config" type="application/json">@Html.Raw(boardConfigJson)</script>
 <script id="jira-auto-schedule-config" type="application/json">@Html.Raw(autoScheduleConfigJson)</script>
@@ -444,7 +466,7 @@
     <partial name="_KendoScripts" />
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
     <script src="~/js/jira-common.js" asp-append-version="true"></script>
-    <script src="~/js/jira-pages.js" asp-append-version="true"></script>
+    <script src="~/js/jira-search.js" asp-append-version="true"></script>
     <script src="~/js/jira-task-board.js" asp-append-version="true"></script>
     <script src="~/js/jira-auto-schedule.js" asp-append-version="true"></script>
     <script src="~/js/jira-worklist-tabs.js" asp-append-version="true"></script>

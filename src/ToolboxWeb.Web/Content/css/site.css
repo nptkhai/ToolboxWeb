@@ -1799,6 +1799,169 @@ a.jira-key {
 /* ---------------------------------------------------------------- Jira Dashboard (5.1)
    Four cards, the hours-logged chart and the subtask table grouped by parent issue. Color is
    only used where a card has something to say (over the estimate, short of hours, overdue). */
+/* ---------------------------------------------------------------- Jira Search (5.2)
+   Filters or JQL in one panel that folds into a summary line after a search; results below. */
+.jira-search {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.jira-search-panel {
+    padding: var(--space-4);
+}
+
+.jira-search-form {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.jira-search-modes {
+    justify-self: start;
+}
+
+.jira-search-grid {
+    align-items: start;
+    display: grid;
+    gap: var(--space-2) var(--space-4);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+    .jira-search-grid .k-datepicker {
+        width: 100%;
+    }
+
+.jira-search-actions {
+    align-items: center;
+    align-self: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+    .jira-search-actions .btn {
+        align-items: center;
+        display: inline-flex;
+        gap: var(--space-1);
+    }
+
+.jira-search-jql {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 960px;
+}
+
+/* Outranks the shared .form-control font in vendor-sync.css. */
+.content-area textarea.jira-jql-input.form-control:not(.k-input-inner):not(.k-input) {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.jira-search-error {
+    color: var(--danger);
+    font-size: var(--text-sm);
+    margin: 0;
+    min-height: calc(var(--text-sm) * 1.5);
+}
+
+.jira-search-summary {
+    align-items: center;
+    display: flex;
+    gap: var(--space-3);
+}
+
+    .jira-search-summary > .tbx-icon {
+        color: var(--muted);
+    }
+
+.jira-search-summary-text {
+    color: var(--text);
+    flex: 1 1 auto;
+    font-size: var(--text-sm);
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.jira-search-summary .btn {
+    align-items: center;
+    display: inline-flex;
+    flex: none;
+    gap: var(--space-1);
+}
+
+.jira-search-tools {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+    .jira-search-tools .btn {
+        align-items: center;
+        display: inline-flex;
+        gap: var(--space-1);
+    }
+
+.jira-search-note {
+    background: var(--warning-tint);
+    border-radius: var(--radius-control);
+    color: var(--text);
+    font-size: var(--text-sm);
+    margin: 0 0 var(--space-3);
+    padding: var(--space-2) var(--space-3);
+}
+
+.jira-search-loading {
+    align-items: center;
+    color: var(--muted);
+    display: flex;
+    font-size: var(--text-sm);
+    gap: var(--space-2);
+    margin: 0 0 var(--space-3);
+}
+
+.jira-search-error-body {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+}
+
+    .jira-search-error-body p {
+        margin: 0;
+    }
+
+/* Tabulator's pager, in the app's buttons. */
+.jira-search-results .tabulator .tabulator-footer {
+    padding: var(--space-2);
+}
+
+@media (max-width: 1200px) {
+    .jira-search-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .jira-search-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .jira-search-summary {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .jira-search-summary-text {
+        white-space: normal;
+    }
+}
+
 /* The alert slot takes no row (and no grid gap) while it is empty. */
 .jira-dashboard-shell > [data-jira-alert-host]:empty {
     display: none;
@@ -2010,40 +2173,6 @@ a.jira-key {
     grid-template-columns: minmax(0, 1fr);
 }
 
-.jira-search-form {
-    display: grid;
-    gap: 16px;
-    grid-template-columns: minmax(0, 1fr);
-}
-
-.jira-search-grid {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
-.jira-advanced-toggle {
-    margin-bottom: 0;
-}
-
-.jira-advanced-block {
-    display: grid;
-    gap: 8px;
-}
-
-.jira-table th {
-    font-size: 12px;
-    text-align: center;
-    text-transform: uppercase;
-}
-
-.jira-table-nowrap {
-    white-space: nowrap;
-}
-
-.jira-table td,
-.jira-table th {
-    vertical-align: middle;
-}
-
 @media (max-width: 991.98px) {
     .auth-login-shell {
         padding: 28px 18px;
@@ -2052,8 +2181,6 @@ a.jira-key {
     .auth-login-panel {
         max-width: 460px;
     }
-
-    /* Let the Day/Week/Month/Year switch share the row instead of overflowing it. */
 }
 
 /* ---------------------------------------------------------------- account pages
