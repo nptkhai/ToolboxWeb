@@ -19,9 +19,16 @@ public static partial class DacFxScriptPostProcessor
 {
     private const string Nl = "\r\n";
 
+    /// <summary>
+    /// A statement the reviewer must look at before running the script. <see cref="Kind"/> is
+    /// Drop, DataLossGuard or Rebuild; <see cref="ObjectKind"/> is the dropped kind (TABLE,
+    /// INDEX, ...) for a Drop. <see cref="Text"/> is the English line written into the script header.
+    /// </summary>
+    public sealed record ScriptWarning(string Kind, string ObjectKind, string Name, string Text);
+
     public sealed record Result(
         string Script,
-        IReadOnlyList<string> Warnings,
+        IReadOnlyList<ScriptWarning> Warnings,
         int SuppressedMappedModuleCount = 0,
         int SuppressedSelectionBatchCount = 0);
 
@@ -48,7 +55,7 @@ public static partial class DacFxScriptPostProcessor
             targetDatabase,
             sourceLabel,
             targetLabel,
-            warnings,
+            warnings.Select(x => x.Text).ToList(),
             selectionSuppression.BatchCount) + body.TrimStart('\r', '\n');
 
         return new Result(
@@ -341,9 +348,9 @@ public static partial class DacFxScriptPostProcessor
     /// Pulls out the data-loss notices DacFx wrote into the body so they can be repeated at
     /// the very top, where a reviewer actually sees them.
     /// </summary>
-    private static List<string> CollectWarnings(string script)
+    private static List<ScriptWarning> CollectWarnings(string script)
     {
-        var warnings = new List<string>();
+        var warnings = new List<ScriptWarning>();
 
         foreach (Match match in GoTerminatedBatchPattern().Matches(script))
         {
@@ -353,7 +360,7 @@ public static partial class DacFxScriptPostProcessor
         return warnings;
     }
 
-    private static void CollectBatchWarnings(string batch, List<string> warnings)
+    private static void CollectBatchWarnings(string batch, List<ScriptWarning> warnings)
     {
         // DROP TABLE inside a procedure body is application logic (usually a local #temp
         // table), not a schema deployment action. Counting it in REVIEW FIRST made the header
@@ -366,31 +373,38 @@ public static partial class DacFxScriptPostProcessor
         foreach (Match match in DataLossGuardPattern().Matches(batch))
         {
             var table = match.Groups["table"].Value;
-            var text = $"Data-loss guard on {table}: the script stops if that table has rows.";
-            if (!warnings.Contains(text, StringComparer.Ordinal))
-            {
-                warnings.Add(text);
-            }
+            Add(warnings, new ScriptWarning("DataLossGuard", "TABLE", table,
+                $"Data-loss guard on {table}: the script stops if that table has rows."));
         }
 
         foreach (Match match in RebuildPattern().Matches(batch))
         {
-            var text = $"Table rebuild via temp table: {match.Groups["table"].Value}";
-            if (!warnings.Contains(text, StringComparer.Ordinal))
-            {
-                warnings.Add(text);
-            }
+            var table = match.Groups["table"].Value;
+            Add(warnings, new ScriptWarning("Rebuild", "TABLE", table,
+                $"Table rebuild via temp table: {table}"));
         }
 
         foreach (Match match in DropPattern().Matches(batch))
         {
-            var text = $"DROP {match.Groups["kind"].Value.ToUpperInvariant()} {match.Groups["name"].Value}";
-            if (!warnings.Contains(text, StringComparer.Ordinal))
-            {
-                warnings.Add(text);
-            }
+            var kind = match.Groups["kind"].Value.ToUpperInvariant();
+            var name = match.Groups["name"].Value;
+            Add(warnings, new ScriptWarning("Drop", kind, name, $"DROP {kind} {name}"));
         }
 
+        // A dropped column loses its data just like a dropped table.
+        foreach (Match match in DropColumnPattern().Matches(batch))
+        {
+            var name = $"{match.Groups["table"].Value}.{match.Groups["column"].Value}";
+            Add(warnings, new ScriptWarning("Drop", "COLUMN", name, $"DROP COLUMN {name}"));
+        }
+    }
+
+    private static void Add(List<ScriptWarning> warnings, ScriptWarning warning)
+    {
+        if (!warnings.Exists(x => string.Equals(x.Text, warning.Text, StringComparison.Ordinal)))
+        {
+            warnings.Add(warning);
+        }
     }
 
     private static string BuildHeader(
@@ -477,4 +491,7 @@ public static partial class DacFxScriptPostProcessor
 
     [GeneratedRegex(@"(?im)^\s*DROP\s+(?<kind>TABLE|VIEW|PROCEDURE|FUNCTION|TRIGGER|INDEX)\s+(?<name>\[[^\r\n;]+)")]
     private static partial Regex DropPattern();
+
+    [GeneratedRegex(@"(?im)^\s*ALTER\s+TABLE\s+(?<table>\[[^\r\n]+?\])\s+DROP\s+COLUMN\s+(?<column>\[[^\]\r\n]+\])")]
+    private static partial Regex DropColumnPattern();
 }

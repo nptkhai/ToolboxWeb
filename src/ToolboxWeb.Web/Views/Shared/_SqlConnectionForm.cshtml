@@ -53,14 +53,31 @@
 
     <div class="sqlconn-foot">
         <div class="form-check">
-            <input class="form-check-input" id="@id-trust" data-field="trustServerCertificate" type="checkbox" checked />
+            <input class="form-check-input" id="@id-trust" data-field="trustServerCertificate" type="checkbox"
+                   aria-describedby="@id-trust-warning" />
             <label class="form-check-label" for="@id-trust">@T["SqlConnection.TrustServerCertificate"]</label>
         </div>
-        <button class="btn btn-outline-secondary btn-sm" type="button" data-sqlconn-test>
-            <tbx-icon name="database" />
-            <span>@T["SqlConnection.Test"]</span>
-        </button>
+        <div class="sqlconn-actions">
+            @* Filled by sql-connection.js from the connections tested before; hidden while empty. *@
+            <div class="dropdown" data-sqlconn-recent hidden>
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <tbx-icon name="clock" />
+                    <span>@T["SqlConnection.Recent"]</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end sqlconn-recent-menu" data-sqlconn-recent-list
+                    data-msg-remove="@T["SqlConnection.RecentRemove"]"></ul>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-sqlconn-test>
+                <tbx-icon name="database" />
+                <span>@T["SqlConnection.Test"]</span>
+            </button>
+        </div>
     </div>
+
+    <p class="sqlconn-trust-warning" id="@id-trust-warning" data-sqlconn-trust-warning hidden>
+        <tbx-icon name="triangle-alert" />
+        <span>@T["SqlConnection.TrustServerCertificateWarning"]</span>
+    </p>
 
     <p class="sqlconn-status" data-sqlconn-status role="status" aria-live="polite"></p>
 

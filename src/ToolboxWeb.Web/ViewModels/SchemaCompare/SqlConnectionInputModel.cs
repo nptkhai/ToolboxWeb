@@ -24,7 +24,8 @@ public sealed class SqlConnectionInputModel
     [StringLength(128)]
     public string Password { get; set; } = string.Empty;
 
-    public bool TrustServerCertificate { get; set; } = true;
+    /// <summary>Off unless the user ticks it: trusting skips the check that the server is the real one.</summary>
+    public bool TrustServerCertificate { get; set; }
 
     public bool Encrypt { get; set; } = true;
 

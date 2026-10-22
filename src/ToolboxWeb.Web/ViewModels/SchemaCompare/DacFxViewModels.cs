@@ -209,5 +209,18 @@ public sealed class ScriptViewModel
     public string Script { get; init; } = string.Empty;
     public int IncludedCount { get; init; }
     public int ExcludedCount { get; init; }
-    public IReadOnlyList<string> Warnings { get; init; } = [];
+
+    /// <summary>Drops, data-loss guards and table rebuilds, worded by the page in the UI language.</summary>
+    public IReadOnlyList<ScriptWarningViewModel> Warnings { get; init; } = [];
+}
+
+public sealed class ScriptWarningViewModel
+{
+    /// <summary>Drop, DataLossGuard or Rebuild.</summary>
+    public string Kind { get; init; } = string.Empty;
+
+    /// <summary>TABLE, VIEW, PROCEDURE, FUNCTION, TRIGGER or INDEX.</summary>
+    public string ObjectKind { get; init; } = string.Empty;
+
+    public string Name { get; init; } = string.Empty;
 }

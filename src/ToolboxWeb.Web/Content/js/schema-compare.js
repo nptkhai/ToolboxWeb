@@ -1,3 +1,5 @@
+// Schema compare (Views/SchemaCompare/Index.cshtml). Three steps: two connections, the
+// options (remembered in the browser), then the run with its progress, result and script.
 (function () {
     'use strict';
 
@@ -11,9 +13,11 @@
     const messages = config.messages;
     const CONNECTION_STORAGE_KEY = 'toolbox.schemaCompare.connections.v1';
     const CONNECTION_SECRET_KEY = 'toolbox.schemaCompare.connectionSecrets.v1';
+    const OPTIONS_STORAGE_KEY = 'toolbox.schemaCompare.options.v1';
 
     const state = {
         comparisonId: null,
+        running: false,
         rows: [],
         stats: null,
         grid: null,
@@ -24,15 +28,20 @@
         clockTimer: null,
         startedAt: 0,
         scriptDirty: true,
+        script: null,
+        dropCursor: -1,
         showMapped: false,
         detail: null,
         expandedFolds: new Set(),
         onlyChanges: true,
         detailExpanded: false,
-        togglePending: false
+        togglePending: false,
+        // Logins that passed "Test connection" in this page view. Compare stays locked until
+        // both sides match one of them; editing a field after the test locks it again.
+        tested: new Set()
     };
 
-    const SYMBOLS = { Add: '⇒', Change: '><', Delete: 'X' };
+    const SYMBOLS = { Add: '+', Change: '≠', Delete: '−' };
 
     // ------------------------------------------------------------ utilities
 
@@ -67,7 +76,7 @@
         }
 
         node.textContent = text || '';
-        node.classList.remove('ok', 'error');
+        node.classList.remove('ok', 'error', 'warn');
         if (tone) {
             node.classList.add(tone);
         }
@@ -89,6 +98,14 @@
         return (map && map[code]) || code;
     }
 
+    function icon(name, size) {
+        return window.Toolbox && window.Toolbox.icon ? window.Toolbox.icon(name, size) : '';
+    }
+
+    function formatNumber(value) {
+        return window.Toolbox && window.Toolbox.format ? window.Toolbox.format.number(value, 0) : String(value);
+    }
+
     function formatClock(ms) {
         const total = Math.floor(ms / 1000);
         const h = String(Math.floor(total / 3600)).padStart(2, '0');
@@ -97,13 +114,24 @@
         return h + ':' + m + ':' + s;
     }
 
-    // ----------------------------------------------------------- connections
+    // The shared states (components.css): empty, error and loading look the same on every screen.
+    function emptyHtml(iconName, text) {
+        return '<div class="tbx-empty sc-state" role="status">'
+            + '<span class="tbx-empty-icon">' + icon(iconName, 20) + '</span>'
+            + '<p class="tbx-empty-text">' + escapeHtml(text) + '</p></div>';
+    }
 
-    // Source and target forms: Views/Shared/_SqlConnectionForm.cshtml, Content/js/sql-connection.js.
-    const connections = {};
+    function errorHtml(text) {
+        return '<div class="tbx-error-state" role="alert">' + icon('circle-alert')
+            + '<span>' + escapeHtml(text) + '</span></div>';
+    }
 
-    function readEndpoint(panel) {
-        return connections[panel.dataset.side].read();
+    function loadingHtml(text, lines) {
+        let bars = '';
+        for (let i = 0; i < (lines || 3); i++) {
+            bars += '<span class="tbx-skeleton" style="width: ' + (90 - i * 17) + '%"></span>';
+        }
+        return '<div class="sc-loading" role="status"><span class="visually-hidden">' + escapeHtml(text) + '</span>' + bars + '</div>';
     }
 
     function readStoredJson(storage, key) {
@@ -120,58 +148,142 @@
             storage.setItem(key, JSON.stringify(value));
         } catch (error) {
             // Private browsing or a storage policy can disable browser storage. Comparing must
-            // still work; the user will simply have to enter the connection again next time.
+            // still work; the user will simply have to enter the values again next time.
         }
     }
 
-    function savedEndpoint(endpoint) {
-        return {
-            server: endpoint.server,
-            database: endpoint.database,
-            username: endpoint.username,
-            trustServerCertificate: endpoint.trustServerCertificate
-        };
+    // ----------------------------------------------------------- connections
+
+    // Source and target forms: Views/Shared/_SqlConnectionForm.cshtml, Content/js/sql-connection.js.
+    const connections = {};
+    const SIDES = ['source', 'target'];
+    const FIELDS = ['server', 'username', 'password', 'database', 'trustServerCertificate'];
+
+    function readEndpoint(side) {
+        return connections[side].read();
     }
 
-    function setEndpointField(panel, field, value) {
-        connections[panel.dataset.side].set(field, value);
+    function loginSignature(endpoint) {
+        return [endpoint.server.toLowerCase(), endpoint.username.toLowerCase(), endpoint.password, endpoint.trustServerCertificate].join('\u0001');
     }
 
     function restoreConnections() {
         const saved = readStoredJson(window.localStorage, CONNECTION_STORAGE_KEY) || {};
         const secrets = readStoredJson(window.sessionStorage, CONNECTION_SECRET_KEY) || {};
 
-        ['source', 'target'].forEach(function (side) {
-            const panel = root.querySelector('[data-side="' + side + '"]');
-            if (!panel) {
-                return;
-            }
-
+        SIDES.forEach(function (side) {
             const endpoint = saved[side] || {};
             ['server', 'database', 'username', 'trustServerCertificate'].forEach(function (field) {
-                setEndpointField(panel, field, endpoint[field]);
+                connections[side].set(field, endpoint[field]);
             });
-            setEndpointField(panel, 'password', secrets[side]);
+            connections[side].set('password', secrets[side]);
         });
     }
 
     function persistConnections() {
-        const source = readEndpoint(root.querySelector('[data-side="source"]'));
-        const target = readEndpoint(root.querySelector('[data-side="target"]'));
+        const source = readEndpoint('source');
+        const target = readEndpoint('target');
+        const saved = function (endpoint) {
+            return {
+                server: endpoint.server,
+                database: endpoint.database,
+                username: endpoint.username,
+                trustServerCertificate: endpoint.trustServerCertificate
+            };
+        };
 
         // Non-secret values survive browser restarts. Passwords deliberately live only in the
         // current browser session so they are not written as clear text to persistent storage.
-        writeStoredJson(window.localStorage, CONNECTION_STORAGE_KEY, {
-            source: savedEndpoint(source),
-            target: savedEndpoint(target)
-        });
-        writeStoredJson(window.sessionStorage, CONNECTION_SECRET_KEY, {
-            source: source.password,
-            target: target.password
-        });
+        writeStoredJson(window.localStorage, CONNECTION_STORAGE_KEY, { source: saved(source), target: saved(target) });
+        writeStoredJson(window.sessionStorage, CONNECTION_SECRET_KEY, { source: source.password, target: target.password });
     }
 
-    // --------------------------------------------------------------- compare
+    // What still stands between the user and the Compare button, in the order they would fix it.
+    function readiness() {
+        const source = readEndpoint('source');
+        const target = readEndpoint('target');
+        const missing = [];
+
+        if (!state.tested.has(loginSignature(source))) {
+            missing.push(messages.readyTestSource);
+        } else if (!source.database) {
+            missing.push(messages.readyChooseSource);
+        }
+
+        if (!state.tested.has(loginSignature(target))) {
+            missing.push(messages.readyTestTarget);
+        } else if (!target.database) {
+            missing.push(messages.readyChooseTarget);
+        }
+
+        const sameDatabase = source.server && source.database
+            && source.server.toLowerCase() === target.server.toLowerCase()
+            && source.database.toLowerCase() === target.database.toLowerCase();
+
+        return { ok: missing.length === 0 && !sameDatabase, missing: missing, sameDatabase: sameDatabase };
+    }
+
+    function updateReadiness() {
+        const ready = readiness();
+        const node = root.querySelector('[data-role="ready"]');
+        document.getElementById('sc-compare').disabled = state.running || !ready.ok;
+
+        if (state.running) {
+            setStatus(node, '');
+        } else if (ready.sameDatabase) {
+            setStatus(node, messages.readySameDatabase, 'warn');
+        } else if (ready.missing.length) {
+            setStatus(node, messages.readyMissing.replace('{0}', ready.missing.join(', ')));
+        } else {
+            setStatus(node, '');
+        }
+    }
+
+    // Swaps every field, the database lists and the test results, so a comparison the wrong
+    // way round is one click instead of retyping two forms.
+    function swapSides() {
+        const a = connections.source;
+        const b = connections.target;
+        const va = a.read();
+        const vb = b.read();
+        const listA = a.databases();
+        const listB = b.databases();
+        const statusA = a.status();
+        const statusB = b.status();
+
+        a.setDatabases(listB);
+        b.setDatabases(listA);
+        FIELDS.forEach(function (field) {
+            a.set(field, vb[field]);
+            b.set(field, va[field]);
+        });
+        a.setStatus(statusB.text, statusB.tone);
+        b.setStatus(statusA.text, statusA.tone);
+
+        // The name mapping rewrites source names into target names, so it turns round too.
+        // A line with several targets (A=B|C) has no single reverse and stays as written.
+        const from = document.getElementById('sc-code-from');
+        const to = document.getElementById('sc-code-to');
+        const code = from.value;
+        from.value = to.value;
+        to.value = code;
+        const mapping = document.getElementById('sc-mapping-input');
+        mapping.value = mapping.value.split('\n').map(function (line) {
+            const eq = line.indexOf('=');
+            if (eq <= 0 || line.indexOf('|') >= 0) {
+                return line;
+            }
+            return line.slice(eq + 1).trim() + '=' + line.slice(0, eq).trim();
+        }).join('\n');
+
+        persistConnections();
+        saveOptions();
+        renderCodePreview();
+        updateReadiness();
+        setStatus(root.querySelector('[data-role="compare-status"]'), messages.swapped);
+    }
+
+    // --------------------------------------------------------------- options
 
     function readScope() {
         const scope = {};
@@ -187,6 +299,56 @@
             options[node.dataset.option] = node.checked;
         });
         return options;
+    }
+
+    function saveOptions() {
+        writeStoredJson(window.localStorage, OPTIONS_STORAGE_KEY, {
+            scope: readScope(),
+            options: readOptions(),
+            sourceCode: document.getElementById('sc-code-from').value,
+            targetCode: document.getElementById('sc-code-to').value,
+            mappings: document.getElementById('sc-mapping-input').value,
+            advancedOpen: !document.getElementById('sc-options').hidden
+        });
+    }
+
+    function restoreOptions() {
+        const saved = readStoredJson(window.localStorage, OPTIONS_STORAGE_KEY);
+        if (!saved) {
+            return;
+        }
+
+        root.querySelectorAll('[data-scope]').forEach(function (node) {
+            if (saved.scope && typeof saved.scope[node.dataset.scope] === 'boolean') {
+                node.checked = saved.scope[node.dataset.scope];
+            }
+        });
+        root.querySelectorAll('[data-option]').forEach(function (node) {
+            if (saved.options && typeof saved.options[node.dataset.option] === 'boolean') {
+                node.checked = saved.options[node.dataset.option];
+            }
+        });
+        document.getElementById('sc-code-from').value = saved.sourceCode || '';
+        document.getElementById('sc-code-to').value = saved.targetCode || '';
+        document.getElementById('sc-mapping-input').value = saved.mappings || '';
+        setAdvancedOpen(Boolean(saved.advancedOpen));
+    }
+
+    // Back to the shipped defaults for scope and noise; the name mapping belongs to the
+    // databases in play, so it is left alone.
+    function resetOptions() {
+        root.querySelectorAll('[data-scope], [data-option]').forEach(function (node) {
+            node.checked = node.dataset.default === 'true';
+        });
+        saveOptions();
+        if (window.Toolbox && window.Toolbox.notify) {
+            window.Toolbox.notify(messages.optionsReset, 'success');
+        }
+    }
+
+    function setAdvancedOpen(open) {
+        document.getElementById('sc-options').hidden = !open;
+        document.getElementById('sc-toggle-options').setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 
     // Each non-empty line is "SOURCE=TARGET"; anything malformed is skipped.
@@ -230,6 +392,13 @@
         return '<span class="sc-code-token' + (isTarget ? ' to' : '') + '">' + escapeHtml(text) + '</span>';
     }
 
+    function readCodes() {
+        return {
+            sourceCode: document.getElementById('sc-code-from').value.trim(),
+            targetCode: document.getElementById('sc-code-to').value.trim()
+        };
+    }
+
     // Shows the rewrite the typed codes produce, using the databases actually in play rather
     // than a fixed sentence, so a wrong code is visible before the comparison runs.
     function renderCodePreview() {
@@ -245,7 +414,7 @@
         }
 
         const candidates = [];
-        const sourceDb = readEndpoint(root.querySelector('[data-side="source"]')).database;
+        const sourceDb = readEndpoint('source').database;
         if (sourceDb) {
             candidates.push(sourceDb);
         }
@@ -274,13 +443,6 @@
             + pairs.map(function (p) { return '<span class="sc-code-pair">' + p + '</span>'; }).join('')
             + (candidates.length > pairs.length ? '&hellip; ' : '')
             + escapeHtml(messages.mappingCodeSuffix);
-    }
-
-    function readCodes() {
-        return {
-            sourceCode: document.getElementById('sc-code-from').value.trim(),
-            targetCode: document.getElementById('sc-code-to').value.trim()
-        };
     }
 
     // EDU_ORG_DATA and EDU_FBU_DATA differ in exactly one underscore segment, and that
@@ -312,8 +474,8 @@
     }
 
     function autoFillMappings() {
-        const source = readEndpoint(root.querySelector('[data-side="source"]'));
-        const target = readEndpoint(root.querySelector('[data-side="target"]'));
+        const source = readEndpoint('source');
+        const target = readEndpoint('target');
         const status = root.querySelector('[data-role="compare-status"]');
         if (!source.database || !target.database || source.database === target.database) {
             return;
@@ -328,23 +490,43 @@
         document.getElementById('sc-code-from').value = codes.sourceCode;
         document.getElementById('sc-code-to').value = codes.targetCode;
         renderCodePreview();
+        saveOptions();
         setStatus(status, messages.mappingAutoFilled);
     }
 
-    async function startCompare() {
+    // --------------------------------------------------------------- compare
+
+    function setRunning(running) {
+        state.running = running;
         const button = document.getElementById('sc-compare');
+        button.classList.toggle('is-running', running);
+        button.setAttribute('aria-busy', running ? 'true' : 'false');
+        document.getElementById('sc-swap').disabled = running;
+        updateReadiness();
+    }
+
+    function showCompareError(text) {
+        const box = root.querySelector('[data-role="compare-error"]');
+        box.hidden = !text;
+        root.querySelector('[data-role="compare-error-text"]').textContent = text || '';
+    }
+
+    async function startCompare() {
         const status = root.querySelector('[data-role="compare-status"]');
-        const source = readEndpoint(root.querySelector('[data-side="source"]'));
-        const target = readEndpoint(root.querySelector('[data-side="target"]'));
+        const source = readEndpoint('source');
+        const target = readEndpoint('target');
         const codes = readCodes();
 
-        if (!source.server || !source.database || !target.server || !target.database) {
-            setStatus(status, messages.bothSidesRequired, 'error');
+        if (!readiness().ok) {
+            updateReadiness();
             return;
         }
 
         persistConnections();
-        button.disabled = true;
+        connections.source.remember();
+        connections.target.remember();
+        showCompareError('');
+        setRunning(true);
         setStatus(status, messages.comparing);
         resetResults();
 
@@ -360,20 +542,19 @@
             });
 
             if (!started.success) {
-                setStatus(status, started.message || messages.genericError, 'error');
-                button.disabled = false;
+                finishCompare(started.message || messages.genericError, true);
                 return;
             }
 
             state.comparisonId = started.data.comparisonId;
             document.getElementById('sc-cancel').hidden = false;
+            root.querySelector('[data-role="results-empty"]').hidden = true;
             document.getElementById('sc-results').hidden = false;
             showTab('sc-tab-progress');
             startClock();
             poll();
         } catch (error) {
-            setStatus(status, messages.networkError, 'error');
-            button.disabled = false;
+            finishCompare(messages.networkError, true);
         }
     }
 
@@ -384,16 +565,23 @@
         state.typeFilter = null;
         state.actionFilter = 'all';
         state.scriptDirty = true;
+        state.script = null;
         state.showMapped = false;
+        syncFilterButtons();
         root.querySelector('[data-role="mapped-note"]').hidden = true;
-        root.querySelector('[data-role="progress-source"]').innerHTML = '';
-        root.querySelector('[data-role="progress-target"]').innerHTML = '';
+        ['progress-source', 'progress-target'].forEach(function (role) {
+            const body = root.querySelector('[data-role="' + role + '"]');
+            body.innerHTML = '';
+            delete body.dataset.signature;
+        });
         root.querySelector('[data-role="type-list"]').innerHTML = '';
         root.querySelector('[data-role="type-chips"]').innerHTML = '';
         root.querySelector('[data-role="card-list"]').innerHTML = '';
+        root.querySelector('[data-role="result-equal"]').hidden = true;
+        root.querySelector('[data-role="result-layout"]').hidden = false;
+        root.querySelector('[data-role="quick-summary"]').hidden = true;
         hideDetailPane();
-        document.getElementById('sc-script').value = '';
-        renderScriptWarnings([]);
+        renderScript(null);
         renderDetail(null);
         if (state.grid) {
             state.grid.setData([]);
@@ -401,10 +589,13 @@
     }
 
     function startClock() {
+        const clock = document.getElementById('sc-clock');
         state.startedAt = Date.now();
         stopClock();
+        clock.hidden = false;
+        clock.textContent = formatClock(0);
         state.clockTimer = setInterval(function () {
-            document.getElementById('sc-clock').textContent = formatClock(Date.now() - state.startedAt);
+            clock.textContent = formatClock(Date.now() - state.startedAt);
         }, 500);
     }
 
@@ -439,27 +630,11 @@
                 return;
             }
 
-            applyResult(progress.result);
             finishCompare('', false);
+            applyResult(progress.result);
         } catch (error) {
             finishCompare(messages.networkError, true);
         }
-    }
-
-    // The script carries its own warnings — DROP statements above all — and they matter more
-    // than anything else on the tab, so they go above the script rather than inside it.
-    function renderScriptWarnings(warnings) {
-        const box = root.querySelector('[data-role="script-warnings"]');
-        const list = root.querySelector('[data-role="script-warning-list"]');
-        if (!box || !list) {
-            return;
-        }
-
-        const items = Array.isArray(warnings) ? warnings : [];
-        list.innerHTML = items.map(function (line) {
-            return '<li>' + escapeHtml(line) + '</li>';
-        }).join('');
-        box.hidden = items.length === 0;
     }
 
     function finishCompare(message, isError) {
@@ -467,8 +642,14 @@
         const cancel = document.getElementById('sc-cancel');
         cancel.hidden = true;
         cancel.disabled = false;
-        document.getElementById('sc-compare').disabled = false;
-        setStatus(root.querySelector('[data-role="compare-status"]'), message, isError ? 'error' : null);
+        setRunning(false);
+        const status = root.querySelector('[data-role="compare-status"]');
+        if (isError) {
+            setStatus(status, '');
+            showCompareError(message);
+        } else {
+            setStatus(status, message);
+        }
     }
 
     // Extracting a large database runs for minutes. The server owns the cancellation token,
@@ -496,18 +677,21 @@
 
     function renderProgressColumn(role, lines) {
         const body = root.querySelector('[data-role="' + role + '"]');
-        if (!body || body.childElementCount === lines.length) {
+        // The last line changes state (running, then done or failed) without a new line coming in.
+        const last = lines.length ? lines[lines.length - 1] : null;
+        const signature = lines.length + '|' + (last ? last.state : '');
+        if (!body || body.dataset.signature === signature) {
             return;
         }
 
-        const html = lines.map(function (line) {
+        body.dataset.signature = signature;
+        body.innerHTML = lines.map(function (line) {
             return '<tr><td class="time">' + escapeHtml(line.time) + '</td>'
                 + '<td>' + escapeHtml(line.operation) + '</td>'
-                + '<td class="state ' + escapeHtml(line.state) + '">' + escapeHtml(line.state) + '</td></tr>';
+                + '<td class="state ' + escapeHtml(line.state) + '">' + escapeHtml(label(config.progressStates, line.state)) + '</td></tr>';
         }).join('');
 
-        body.innerHTML = html;
-        const scroller = body.closest('.sc-scroll');
+        const scroller = body.closest('.sc-table-scroll');
         if (scroller) {
             scroller.scrollTop = scroller.scrollHeight;
         }
@@ -524,9 +708,14 @@
         state.stats = result.stats;
         state.scriptDirty = true;
 
-        root.querySelector('[data-role="compare-status"]').textContent = messages.summary
+        setStatus(root.querySelector('[data-role="compare-status"]'), messages.summary
             .replace('{0}', result.sourceLabel)
-            .replace('{1}', result.targetLabel);
+            .replace('{1}', result.targetLabel));
+
+        const realCount = state.rows.filter(function (row) { return !row.mappedSame; }).length;
+        const equal = result.isEqual || realCount === 0;
+        root.querySelector('[data-role="result-equal"]').hidden = !equal;
+        root.querySelector('[data-role="result-layout"]').hidden = equal && !(state.stats && state.stats.mappedSame);
 
         renderTypeList();
         renderFilterCounts();
@@ -535,8 +724,7 @@
         renderDetail(null);
         showTab('sc-tab-result');
 
-        const realCount = state.rows.filter(function (row) { return !row.mappedSame; }).length;
-        if (result.isEqual || realCount === 0) {
+        if (equal) {
             setStatus(root.querySelector('[data-role="compare-status"]'), messages.noDifferences, 'ok');
         }
     }
@@ -552,38 +740,53 @@
 
         note.hidden = false;
         root.querySelector('[data-role="mapped-text"]').textContent =
-            messages.mappedSame.replace('{0}', count);
+            messages.mappedSame.replace('{0}', formatNumber(count));
         document.getElementById('sc-toggle-mapped').textContent =
             state.showMapped ? messages.hideMapped : messages.showMapped;
     }
 
+    function pickType(objectType) {
+        state.typeFilter = objectType;
+        renderTypeList();
+        renderGrid();
+    }
+
+    // The same filter twice: a side column on desktop and a chip strip below 1024px.
     function renderTypeList() {
-        renderTypeChips();
-        const host = root.querySelector('[data-role="type-list"]');
         const stats = state.stats;
-        host.innerHTML = '';
+        const entries = [{ type: null, text: messages.allTypes, count: stats ? stats.total : 0 }]
+            .concat((stats ? stats.byType : []).map(function (entry) {
+                return { type: entry.objectType, text: entry.objectType, count: entry.total };
+            }));
 
-        const all = document.createElement('li');
-        all.className = state.typeFilter === null ? 'active' : '';
-        all.innerHTML = '<span>' + escapeHtml(messages.allTypes) + '</span><span class="count">' + (stats ? stats.total : 0) + '</span>';
-        all.addEventListener('click', function () {
-            state.typeFilter = null;
-            renderTypeList();
-            renderGrid();
-        });
+        const list = root.querySelector('[data-role="type-list"]');
+        const chips = root.querySelector('[data-role="type-chips"]');
+        list.innerHTML = '';
+        chips.innerHTML = '';
 
-        host.appendChild(all);
+        entries.forEach(function (entry) {
+            const active = state.typeFilter === entry.type;
+            const pick = function () {
+                pickType(entry.type === null || state.typeFilter === entry.type ? null : entry.type);
+            };
 
-        (stats ? stats.byType : []).forEach(function (entry) {
             const item = document.createElement('li');
-            item.className = state.typeFilter === entry.objectType ? 'active' : '';
-            item.innerHTML = '<span>' + escapeHtml(entry.objectType) + '</span><span class="count">' + entry.total + '</span>';
-            item.addEventListener('click', function () {
-                state.typeFilter = state.typeFilter === entry.objectType ? null : entry.objectType;
-                renderTypeList();
-                renderGrid();
-            });
-            host.appendChild(item);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'sc-type-item' + (active ? ' is-active' : '');
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+            button.innerHTML = '<span>' + escapeHtml(entry.text) + '</span><span class="tbx-chip-count">' + formatNumber(entry.count) + '</span>';
+            button.addEventListener('click', pick);
+            item.appendChild(button);
+            list.appendChild(item);
+
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'tbx-chip';
+            chip.setAttribute('aria-pressed', active ? 'true' : 'false');
+            chip.innerHTML = '<span>' + escapeHtml(entry.text) + '</span><span class="tbx-chip-count">' + formatNumber(entry.count) + '</span>';
+            chip.addEventListener('click', pick);
+            chips.appendChild(chip);
         });
     }
 
@@ -599,14 +802,17 @@
         Object.keys(counts).forEach(function (key) {
             // The same counts appear on the filter chips and in the run bar summary.
             root.querySelectorAll('[data-count="' + key + '"]').forEach(function (node) {
-                node.textContent = counts[key];
+                node.textContent = formatNumber(counts[key]);
             });
         });
 
-        const summary = root.querySelector('[data-role="quick-summary"]');
-        if (summary) {
-            summary.hidden = !stats;
-        }
+        root.querySelector('[data-role="quick-summary"]').hidden = !stats;
+    }
+
+    function syncFilterButtons() {
+        root.querySelectorAll('.sc-filter').forEach(function (button) {
+            button.setAttribute('aria-pressed', button.dataset.filter === state.actionFilter ? 'true' : 'false');
+        });
     }
 
     function visibleRows() {
@@ -649,9 +855,15 @@
 
     function statusPill(action) {
         const text = label(config.actions, action);
-        return '<span class="sc-status-symbol ' + escapeHtml(action) + '" title="' + escapeHtml(text) + '">'
+        return '<span class="sc-status ' + escapeHtml(action) + '" title="' + escapeHtml(text) + '">'
             + '<span aria-hidden="true">' + escapeHtml(SYMBOLS[action] || '?') + '</span>'
             + '<span>' + escapeHtml(text) + '</span></span>';
+    }
+
+    function emptyGridElement() {
+        const holder = document.createElement('div');
+        holder.innerHTML = emptyHtml('search', messages.gridEmpty);
+        return holder.firstElementChild;
     }
 
     // Under 600px the table is unreadable, so the same rows are drawn as cards. Both are in
@@ -659,36 +871,30 @@
     // never disagree.
     function renderCardList() {
         const host = root.querySelector('[data-role="card-list"]');
-        if (!host) {
-            return;
-        }
-
         const rows = visibleRows();
         host.innerHTML = '';
 
         if (!rows.length) {
-            const empty = document.createElement('p');
-            empty.className = 'sc-empty';
-            empty.textContent = messages.gridEmpty;
-            host.appendChild(empty);
+            host.innerHTML = emptyHtml('search', messages.gridEmpty);
             return;
         }
 
         rows.forEach(function (row) {
             const card = document.createElement('div');
             card.className = 'sc-card' + (row.id === state.selectedId ? ' sc-selected-row' : '');
+            card.dataset.id = row.id;
 
             const name = row.sourceName || row.targetName || '';
             const dim = row.sourceName ? '' : ' dim';
 
             card.innerHTML = '<span class="sc-card-check">'
-                + '<input type="checkbox" class="form-check-input sc-row-check"'
+                + '<input type="checkbox" class="form-check-input sc-row-check" aria-label="' + escapeHtml(name) + '"'
                 + (row.included ? ' checked' : '') + (row.canToggle ? '' : ' disabled') + ' /></span>'
                 + '<span class="sc-card-body">'
                 + '<span class="sc-card-name' + dim + '">' + escapeHtml(name) + '</span>'
                 + '<span class="sc-card-meta">' + statusPill(row.action)
                 + '<span>' + escapeHtml(row.objectType || '') + '</span></span>'
-                + '<button type="button" class="sc-card-open">' + escapeHtml(messages.showDetail) + '</button>'
+                + '<button type="button" class="btn btn-link btn-sm sc-card-open">' + escapeHtml(messages.showDetail) + '</button>'
                 + '</span>';
 
             card.querySelector('.sc-row-check').addEventListener('click', function (event) {
@@ -707,74 +913,26 @@
         });
     }
 
-    // Same filter as the desktop side column, drawn as a horizontal strip for narrow screens.
-    function renderTypeChips() {
-        const host = root.querySelector('[data-role="type-chips"]');
-        const stats = state.stats;
-        if (!host) {
-            return;
-        }
-
-        host.innerHTML = '';
-
-        function chip(labelText, count, isActive, onPick) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'sc-type-chip' + (isActive ? ' active' : '');
-            button.innerHTML = '<span>' + escapeHtml(labelText) + '</span>'
-                + '<span class="count">' + count + '</span>';
-            button.addEventListener('click', onPick);
-            host.appendChild(button);
-        }
-
-        chip(messages.allTypes, stats ? stats.total : 0, state.typeFilter === null, function () {
-            state.typeFilter = null;
-            renderTypeList();
-            renderTypeChips();
-            renderGrid();
-        });
-
-        (stats ? stats.byType : []).forEach(function (entry) {
-            chip(entry.objectType, entry.total, state.typeFilter === entry.objectType, function () {
-                state.typeFilter = state.typeFilter === entry.objectType ? null : entry.objectType;
-                renderTypeList();
-                renderTypeChips();
-                renderGrid();
-            });
-        });
-    }
-
     // On a phone, picking an object and reading its diff are two steps rather than one
     // crowded screen; the class is what the stylesheet keys off.
     function showDetailPane() {
-        const main = root.querySelector('.sc-result-main');
-        if (main) {
-            main.classList.add('sc-showing-detail');
-        }
+        root.querySelector('.sc-result-main').classList.add('sc-showing-detail');
     }
 
     function hideDetailPane() {
-        const main = root.querySelector('.sc-result-main');
-        if (main) {
-            main.classList.remove('sc-showing-detail');
-        }
+        root.querySelector('.sc-result-main').classList.remove('sc-showing-detail');
     }
 
     function markSelectedRow() {
-        if (!state.grid) {
-            return;
+        if (state.grid) {
+            state.grid.getRows('active').forEach(function (row) {
+                row.getElement().classList.toggle('sc-selected-row', row.getData().id === state.selectedId);
+            });
         }
 
-        state.grid.getRows('active').forEach(function (row) {
-            row.getElement().classList.toggle('sc-selected-row', row.getData().id === state.selectedId);
+        root.querySelectorAll('.sc-card').forEach(function (card) {
+            card.classList.toggle('sc-selected-row', card.dataset.id === state.selectedId);
         });
-    }
-
-    function bindDetailBack() {
-        const back = root.querySelector('[data-role="detail-back"]');
-        if (back) {
-            back.addEventListener('click', hideDetailPane);
-        }
     }
 
     function headerCheckFormatter() {
@@ -825,9 +983,9 @@
             // maxHeight rather than height: with a handful of rows the table hugs them
             // instead of leaving half a screen of empty grid under the last one.
             maxHeight: '52vh',
-            rowHeight: 40,
+            rowHeight: 36,
             resizableColumns: false,
-            placeholder: messages.gridEmpty,
+            placeholder: emptyGridElement(),
             index: 'id',
             columns: [
                 {
@@ -842,6 +1000,7 @@
                             ? ' title="' + escapeHtml(messages.destructiveDefault) + '"'
                             : '';
                         return '<input type="checkbox" class="form-check-input sc-row-check"'
+                            + ' aria-label="' + escapeHtml(row.sourceName || row.targetName) + '"'
                             + checked + disabled + title + ' />';
                     },
                     cellClick: function (event, cell) {
@@ -855,7 +1014,7 @@
                     }
                 },
                 {
-                    title: config.columns.objectType, field: 'objectType', width: 178,
+                    title: config.columns.objectType, field: 'objectType', width: 160,
                     hozAlign: 'center', headerHozAlign: 'center', resizable: false,
                     // The object-type filter beside the table already says this.
                     responsive: 3
@@ -866,7 +1025,7 @@
                     widthGrow: 4, resizable: false, responsive: 0
                 },
                 {
-                    title: config.columns.status, field: 'action', width: 168,
+                    title: config.columns.status, field: 'action', width: 160,
                     hozAlign: 'center', headerHozAlign: 'center', resizable: false,
                     formatter: function (cell) {
                         return statusPill(cell.getValue());
@@ -878,7 +1037,7 @@
                     widthGrow: 4, resizable: false, responsive: 0
                 },
                 {
-                    title: config.columns.changes, field: 'childCount', width: 132,
+                    title: config.columns.changes, field: 'childCount', width: 144,
                     hozAlign: 'center', headerHozAlign: 'center', resizable: false,
                     // Repeated in the detail pane when a row is opened.
                     responsive: 4
@@ -910,7 +1069,7 @@
         state.togglePending = true;
         syncHeaderCheck();
         setBulkBusy(true);
-        setStatus(status, messages.toggleWorking.replace('{0}', ids.length));
+        setStatus(status, messages.toggleWorking.replace('{0}', formatNumber(ids.length)));
 
         try {
             const response = await callJson(config.urls.toggle, {
@@ -937,7 +1096,7 @@
                 status,
                 blocked.length
                     ? messages.blocked.replace('{0}', blocked.join(', '))
-                    : messages.toggleDone.replace('{0}', ids.length),
+                    : messages.toggleDone.replace('{0}', formatNumber(ids.length)),
                 blocked.length ? 'error' : 'ok');
         } catch (error) {
             setStatus(status, messages.networkError, 'error');
@@ -952,11 +1111,39 @@
     // it say so instead of staying live and inviting a second click.
     function setBulkBusy(busy) {
         ['sc-check-all', 'sc-uncheck-all'].forEach(function (id) {
-            const button = document.getElementById(id);
-            if (button) {
-                button.disabled = busy;
-            }
+            document.getElementById(id).disabled = busy;
         });
+    }
+
+    // J / K walk the objects in the order they are on screen, the way a code review does.
+    function stepRow(direction) {
+        const gridVisible = state.grid && document.getElementById('sc-grid').offsetParent !== null;
+        const rows = gridVisible
+            ? state.grid.getRows('active').map(function (row) { return row.getData(); })
+            : visibleRows();
+        if (!rows.length) {
+            return;
+        }
+
+        const index = rows.findIndex(function (row) { return row.id === state.selectedId; });
+        const next = index < 0 ? 0 : Math.min(rows.length - 1, Math.max(0, index + direction));
+        const id = rows[next].id;
+
+        if (gridVisible) {
+            state.grid.scrollToRow(id, 'nearest', false);
+        } else {
+            const card = root.querySelector('.sc-card[data-id="' + CSS.escape(id) + '"]');
+            if (card) {
+                card.scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        loadDetail(id);
+    }
+
+    function isTyping(target) {
+        return target instanceof HTMLElement
+            && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
     }
 
     // ---------------------------------------------------------------- detail
@@ -965,21 +1152,32 @@
         state.selectedId = id;
         markSelectedRow();
         const body = root.querySelector('[data-role="detail-body"]');
-        body.innerHTML = '<p class="sc-empty">' + escapeHtml(messages.comparing) + '</p>';
+        const row = state.rows.find(function (item) { return item.id === id; });
+        root.querySelector('[data-role="detail-title"]').textContent = row ? (row.sourceName || row.targetName) : '';
+        root.querySelector('[data-role="detail-summary"]').textContent = '';
+        setDetailControls(false);
+        body.innerHTML = loadingHtml(messages.detailLoading, 6);
 
         try {
             const response = await callJson(config.urls.detail
                 + '?comparisonId=' + encodeURIComponent(state.comparisonId)
                 + '&differenceId=' + encodeURIComponent(id));
 
+            // A faster J/K press may have moved on while this was loading.
+            if (state.selectedId !== id) {
+                return;
+            }
+
             if (!response.success) {
-                body.innerHTML = '<p class="sc-empty">' + escapeHtml(response.message || messages.genericError) + '</p>';
+                body.innerHTML = errorHtml(response.message || messages.genericError);
                 return;
             }
 
             renderDetail(response.data);
         } catch (error) {
-            body.innerHTML = '<p class="sc-empty">' + escapeHtml(messages.networkError) + '</p>';
+            if (state.selectedId === id) {
+                body.innerHTML = errorHtml(messages.networkError);
+            }
         }
     }
 
@@ -991,12 +1189,7 @@
     }
 
     function setDetailControls(visible) {
-        ['only-changes-wrap'].forEach(function (role) {
-            const node = root.querySelector('[data-role="' + role + '"]');
-            if (node) {
-                node.hidden = !visible;
-            }
-        });
+        root.querySelector('[data-role="only-changes-wrap"]').hidden = !visible;
         ['sc-prev-change', 'sc-next-change', 'sc-expand-detail'].forEach(function (id) {
             document.getElementById(id).hidden = !visible;
         });
@@ -1011,18 +1204,18 @@
         const body = root.querySelector('[data-role="detail-body"]');
 
         if (!detail) {
-            title.textContent = messages.detailHint;
+            title.textContent = '';
             summary.textContent = '';
-            body.innerHTML = '<p class="sc-empty">' + escapeHtml(messages.detailHint) + '</p>';
+            body.innerHTML = emptyHtml('file-text', messages.detailHint);
             setDetailControls(false);
             return;
         }
 
         title.textContent = detail.title;
-        summary.textContent = detail.changedLines + ' / ' + detail.lines.length;
+        summary.textContent = formatNumber(detail.changedLines) + ' / ' + formatNumber(detail.lines.length);
 
         if (!detail.lines.length) {
-            body.innerHTML = '<p class="sc-empty">' + escapeHtml(messages.detailEmpty) + '</p>';
+            body.innerHTML = emptyHtml('file-text', messages.detailEmpty);
             setDetailControls(false);
             return;
         }
@@ -1106,7 +1299,7 @@
 
     function foldRow(key, count) {
         return '<tr class="sc-fold" data-fold="' + key + '"><td colspan="4">'
-            + escapeHtml(messages.collapsedLines.replace('{0}', count)) + '</td></tr>';
+            + escapeHtml(messages.collapsedLines.replace('{0}', formatNumber(count))) + '</td></tr>';
     }
 
     // Scrolls the detail body to the next or previous changed row from the current position.
@@ -1139,33 +1332,191 @@
 
     // ---------------------------------------------------------------- script
 
+    // Statements that remove a schema object or a column, outside module bodies. Mirrors
+    // DacFxScriptPostProcessor on the server: DROP TABLE inside a procedure is application
+    // logic (usually a #temp table), not something this script does to the target.
+    const GO_LINE = /^\s*GO\s*;?\s*$/i;
+    const MODULE_LINE = /^\s*(?:CREATE|ALTER)\s+(?:OR\s+ALTER\s+)?(?:PROC(?:EDURE)?|VIEW|FUNCTION|TRIGGER)\b/i;
+    const DROP_LINE = /^\s*DROP\s+(?:TABLE|VIEW|PROC(?:EDURE)?|FUNCTION|TRIGGER|INDEX|SYNONYM|SEQUENCE|TYPE|SCHEMA|USER|ROLE|DEFAULT|RULE|STATISTICS|FULLTEXT\s+INDEX|XML\s+SCHEMA\s+COLLECTION)\b(?!\s+(?:IF\s+EXISTS\s+)?\[?#)/i;
+    const DROP_COLUMN_LINE = /^\s*ALTER\s+TABLE\b.*\bDROP\s+COLUMN\b/i;
+
+    function analyseScript(text) {
+        const lines = text.split(/\r?\n/);
+        const drops = [];
+        let start = 0;
+
+        function closeBatch(end) {
+            for (let i = start; i < end; i++) {
+                if (MODULE_LINE.test(lines[i])) {
+                    return;
+                }
+            }
+
+            for (let i = start; i < end; i++) {
+                if (DROP_LINE.test(lines[i]) || DROP_COLUMN_LINE.test(lines[i])) {
+                    drops.push(i);
+                }
+            }
+        }
+
+        lines.forEach(function (line, index) {
+            if (GO_LINE.test(line)) {
+                closeBatch(index);
+                start = index + 1;
+            }
+        });
+        closeBatch(lines.length);
+
+        return { lines: lines, drops: drops };
+    }
+
+    function setScriptActions(enabled) {
+        const download = document.getElementById('sc-download-script');
+        download.classList.toggle('disabled', !enabled);
+        download.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+        download.tabIndex = enabled ? 0 : -1;
+        document.getElementById('sc-copy-script').disabled = !enabled;
+    }
+
+    function renderWarnings(script) {
+        const box = root.querySelector('[data-role="script-warnings"]');
+        const list = root.querySelector('[data-role="script-warning-list"]');
+        const count = root.querySelector('[data-role="script-drop-count"]');
+        const nextDrop = document.getElementById('sc-next-drop');
+        const warnings = script ? script.warnings : [];
+        const drops = script ? script.drops.length : 0;
+
+        list.innerHTML = warnings.map(function (warning) {
+            if (warning.kind === 'Drop') {
+                return '<li><code>DROP ' + escapeHtml(warning.objectKind) + '</code> ' + escapeHtml(warning.name) + '</li>';
+            }
+
+            const template = warning.kind === 'Rebuild' ? messages.warnRebuild : messages.warnDataLossGuard;
+            return '<li>' + escapeHtml(template).replace('{0}', '<code>' + escapeHtml(warning.name) + '</code>') + '</li>';
+        }).join('');
+
+        count.textContent = drops ? messages.dropCount.replace('{0}', formatNumber(drops)) : '';
+        count.hidden = !drops;
+        nextDrop.hidden = !drops;
+        list.previousElementSibling.hidden = !warnings.length;
+        box.hidden = !drops && !warnings.length;
+    }
+
+    // script: null (nothing yet), { loading }, { error }, or the loaded script.
+    function renderScript(script) {
+        state.script = script && script.text !== undefined ? script : null;
+        state.dropCursor = -1;
+        const stateNode = root.querySelector('[data-role="script-state"]');
+        const pre = document.getElementById('sc-script');
+        const code = root.querySelector('[data-role="script-code"]');
+
+        renderWarnings(state.script);
+        setScriptActions(Boolean(state.script && state.script.includedCount > 0));
+
+        if (!script) {
+            stateNode.innerHTML = '';
+            pre.hidden = true;
+            code.innerHTML = '';
+            return;
+        }
+
+        if (script.loading || script.error) {
+            stateNode.innerHTML = script.loading ? loadingHtml(messages.scriptLoading, 8) : errorHtml(script.error);
+            pre.hidden = true;
+            return;
+        }
+
+        if (!script.includedCount) {
+            stateNode.innerHTML = emptyHtml('file-text', messages.scriptEmpty);
+            pre.hidden = true;
+            return;
+        }
+
+        const dropSet = new Set(script.drops);
+        stateNode.innerHTML = '';
+        code.innerHTML = script.lines.map(function (line, index) {
+            return '<span class="sc-line' + (dropSet.has(index) ? ' is-drop' : '') + '" data-line="' + index + '">'
+                + escapeHtml(line) + '\n</span>';
+        }).join('');
+        pre.hidden = false;
+    }
+
     async function loadScript(force) {
         if (!state.comparisonId || (!state.scriptDirty && !force)) {
             return;
         }
 
         const status = root.querySelector('[data-role="script-status"]');
-        setStatus(status, messages.comparing);
+        setStatus(status, '');
+        renderScript({ loading: true });
 
         try {
             const response = await callJson(config.urls.script + '?comparisonId=' + encodeURIComponent(state.comparisonId));
             if (!response.success) {
-                setStatus(status, response.message || messages.genericError, 'error');
+                renderScript({ error: response.message || messages.genericError });
                 return;
             }
 
-            document.getElementById('sc-script').value = response.data.script || '';
+            const data = response.data;
+            const analysed = analyseScript(data.script || '');
             document.getElementById('sc-download-script').href =
                 config.urls.download + '?comparisonId=' + encodeURIComponent(state.comparisonId);
-            renderScriptWarnings(response.data.warnings);
             state.scriptDirty = false;
+            renderScript({
+                text: data.script || '',
+                lines: analysed.lines,
+                drops: analysed.drops,
+                warnings: data.warnings || [],
+                includedCount: data.includedCount
+            });
 
             setStatus(status, messages.scriptSelection
-                .replace('{0}', response.data.includedCount)
-                .replace('{1}', response.data.excludedCount), 'ok');
+                .replace('{0}', formatNumber(data.includedCount))
+                .replace('{1}', formatNumber(data.excludedCount)));
         } catch (error) {
-            setStatus(status, messages.networkError, 'error');
+            renderScript({ error: messages.networkError });
         }
+    }
+
+    function nextDrop() {
+        const script = state.script;
+        if (!script || !script.drops.length) {
+            return;
+        }
+
+        state.dropCursor = (state.dropCursor + 1) % script.drops.length;
+        const pre = document.getElementById('sc-script');
+        const line = pre.querySelector('[data-line="' + script.drops[state.dropCursor] + '"]');
+        pre.querySelectorAll('.sc-line.is-current').forEach(function (node) { node.classList.remove('is-current'); });
+        if (line) {
+            line.classList.add('is-current');
+            pre.scrollTop = Math.max(0, line.offsetTop - pre.clientHeight / 3);
+        }
+    }
+
+    // A script that drops something is shown in full before it leaves the page: the dialog
+    // names what will be removed and the user confirms once per download or copy.
+    function confirmDrops(okText) {
+        const script = state.script;
+        if (!script || !script.drops.length || !window.Toolbox || !window.Toolbox.confirm) {
+            return Promise.resolve(true);
+        }
+
+        const names = script.drops.slice(0, 5).map(function (index) {
+            const text = script.lines[index].trim().replace(/;$/, '');
+            return text.length > 90 ? text.slice(0, 89) + '…' : text;
+        });
+        let list = names.join('; ');
+        if (script.drops.length > names.length) {
+            list += '; ' + messages.confirmMore.replace('{0}', formatNumber(script.drops.length - names.length));
+        }
+
+        return window.Toolbox.confirm({
+            title: messages.confirmTitle,
+            message: messages.confirmMessage.replace('{0}', formatNumber(script.drops.length)).replace('{1}', list),
+            okText: okText,
+            tone: 'danger'
+        });
     }
 
     function showTab(buttonId) {
@@ -1178,35 +1529,55 @@
     // ----------------------------------------------------------------- wiring
 
     root.querySelectorAll('[data-sql-connection]').forEach(function (panel) {
-        connections[panel.dataset.side] = window.ToolboxSqlConnection.init(panel, {
+        const side = panel.dataset.side;
+        connections[side] = window.ToolboxSqlConnection.init(panel, {
+            recent: true,
             onChange: function () {
                 persistConnections();
                 renderCodePreview();
+                updateReadiness();
             },
-            beforeTest: persistConnections
+            beforeTest: persistConnections,
+            onTested: function () {
+                state.tested.add(loginSignature(connections[side].read()));
+                window.setTimeout(updateReadiness, 0);
+            }
         });
+        // The database box is a ComboBox whose change fires on blur; typing should unlock too.
+        panel.addEventListener('input', updateReadiness);
     });
     restoreConnections();
+    restoreOptions();
 
-    bindDetailBack();
+    root.querySelector('[data-role="detail-back"]').addEventListener('click', hideDetailPane);
     ['sc-code-from', 'sc-code-to', 'sc-mapping-input'].forEach(function (id) {
-        document.getElementById(id).addEventListener('input', renderCodePreview);
+        document.getElementById(id).addEventListener('input', function () {
+            renderCodePreview();
+            saveOptions();
+        });
+    });
+    root.querySelectorAll('[data-scope], [data-option]').forEach(function (node) {
+        node.addEventListener('change', saveOptions);
     });
     renderCodePreview();
+    renderDetail(null);
+    updateReadiness();
 
     document.getElementById('sc-compare').addEventListener('click', startCompare);
     document.getElementById('sc-cancel').addEventListener('click', cancelCompare);
+    document.getElementById('sc-swap').addEventListener('click', swapSides);
+    document.getElementById('sc-reset-options').addEventListener('click', resetOptions);
 
     document.getElementById('sc-toggle-options').addEventListener('click', function () {
-        const options = document.getElementById('sc-options');
-        options.hidden = !options.hidden;
-        this.setAttribute('aria-expanded', options.hidden ? 'false' : 'true');
+        setAdvancedOpen(document.getElementById('sc-options').hidden);
+        saveOptions();
     });
 
     document.getElementById('sc-mapping-auto').addEventListener('click', autoFillMappings);
 
     document.getElementById('sc-toggle-mapped').addEventListener('click', function () {
         state.showMapped = !state.showMapped;
+        root.querySelector('[data-role="result-layout"]').hidden = false;
         renderMappedNote();
         renderGrid();
     });
@@ -1232,14 +1603,14 @@
         this.textContent = state.detailExpanded ? messages.collapse : messages.expand;
     });
 
-    document.getElementById('sc-search').addEventListener('input', renderGrid);
+    document.getElementById('sc-search').addEventListener('input', function () {
+        renderGrid();
+    });
 
     root.querySelectorAll('.sc-filter').forEach(function (button) {
         button.addEventListener('click', function () {
             state.actionFilter = button.dataset.filter;
-            root.querySelectorAll('.sc-filter').forEach(function (other) {
-                other.classList.toggle('active', other === button);
-            });
+            syncFilterButtons();
             renderGrid();
         });
     });
@@ -1260,6 +1631,20 @@
         }
     });
 
+    document.addEventListener('keydown', function (event) {
+        const key = event.key ? event.key.toLowerCase() : '';
+        if ((key !== 'j' && key !== 'k') || event.ctrlKey || event.metaKey || event.altKey
+            || isTyping(event.target) || document.querySelector('.modal.show')
+            || document.getElementById('sc-results').hidden
+            || !document.getElementById('sc-pane-result').classList.contains('active')
+            || !state.rows.length) {
+            return;
+        }
+
+        event.preventDefault();
+        stepRow(key === 'j' ? 1 : -1);
+    });
+
     document.getElementById('sc-refresh-script').addEventListener('click', function () {
         loadScript(true);
     });
@@ -1268,10 +1653,30 @@
         loadScript(false);
     });
 
+    document.getElementById('sc-next-drop').addEventListener('click', nextDrop);
+
+    document.getElementById('sc-download-script').addEventListener('click', function (event) {
+        event.preventDefault();
+        if (!state.script || !state.script.includedCount) {
+            return;
+        }
+
+        const href = this.href;
+        confirmDrops(messages.confirmDownload).then(function (confirmed) {
+            if (confirmed) {
+                window.location.href = href;
+            }
+        });
+    });
+
     document.getElementById('sc-copy-script').addEventListener('click', async function () {
         const status = root.querySelector('[data-role="script-status"]');
+        if (!state.script || !(await confirmDrops(messages.confirmCopy))) {
+            return;
+        }
+
         try {
-            await navigator.clipboard.writeText(document.getElementById('sc-script').value);
+            await navigator.clipboard.writeText(state.script.text);
             setStatus(status, messages.copied, 'ok');
         } catch (error) {
             setStatus(status, messages.copyFailed, 'error');
