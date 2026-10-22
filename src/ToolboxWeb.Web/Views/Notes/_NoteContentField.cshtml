@@ -4,30 +4,30 @@
 }
 <div class="nv-block" data-content-block>
     <div class="nv-block-head">
-        <label class="nv-label" for="@Model.Id">@T[Model.LabelKey]</label>
+        <label class="tbx-field-label" for="@Model.Id">@T[Model.LabelKey]</label>
         <div class="nv-tools">
             @if (format.Format == NoteFormat.Json)
             {
                 <button class="nv-tool" type="button" data-tool="json-format" data-target="#@Model.Id">
-                    <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-format" /></svg>
+                    <tbx-icon name="wand-sparkles" />
                     <span>@T["Notes.Tool.JsonFormat"]</span>
                 </button>
             }
             @if (format.Format == NoteFormat.Xml)
             {
                 <button class="nv-tool" type="button" data-tool="xml-check" data-target="#@Model.Id">
-                    <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-check" /></svg>
+                    <tbx-icon name="check" />
                     <span>@T["Notes.Tool.XmlCheck"]</span>
                 </button>
             }
             <button class="nv-tool" type="button" data-tool="copy" data-target="#@Model.Id" title="@T["Action.Copy"]">
-                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                <tbx-icon name="copy" />
                 <span>@T["Action.Copy"]</span>
             </button>
             <button class="nv-tool" type="button" data-tool="download" data-target="#@Model.Id"
                     data-file-name="@Model.FileName" data-extension="@format.DownloadExtension" data-mime="@format.MimeType"
                     title="@T["Notes.Tool.Download"]">
-                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-download" /></svg>
+                <tbx-icon name="download" />
                 <span>@T["Notes.Tool.Download"]</span>
             </button>
         </div>
@@ -45,7 +45,7 @@
             {
                 <li>
                     <a href="@link" target="_blank" rel="noopener noreferrer">
-                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-external" /></svg>
+                        <tbx-icon name="external-link" />
                         <span>@link</span>
                     </a>
                 </li>

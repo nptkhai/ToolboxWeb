@@ -1,6 +1,7 @@
 # Lucide icons included in Content/vendor/lucide/lucide-sprite.svg.
 # Add a name here, then rebuild the sprite (see build-sprite.py). Keep only icons the app uses.
 activity
+arrow-left
 blocks
 calendar
 check
@@ -30,6 +31,7 @@ layout-dashboard
 link
 list-checks
 loader-circle
+lock
 log-out
 mail
 menu
@@ -38,6 +40,9 @@ monitor
 moon
 panel-left
 pencil
+pin
+pin-off
+plug
 plus
 refresh-cw
 search
@@ -51,4 +56,5 @@ trash-2
 triangle-alert
 user
 user-x
+wand-sparkles
 x

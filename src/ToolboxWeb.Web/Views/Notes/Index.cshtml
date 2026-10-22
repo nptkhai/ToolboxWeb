@@ -22,8 +22,6 @@
             jsonInvalid = T["Notes.Tool.JsonInvalid"].Value,
             xmlValid = T["Notes.Tool.XmlValid"].Value,
             xmlInvalid = T["Notes.Tool.XmlInvalid"].Value,
-            deleteConfirm = T["Notes.DeleteConfirm"].Value,
-            deleteConfirmWithChildren = T["Notes.DeleteConfirmWithChildren"].Value,
             unsaved = T["Notes.UnsavedWarning"].Value,
             reveal = T["Notes.Server.Reveal"].Value,
             hide = T["Notes.Server.Hide"].Value,
@@ -39,8 +37,6 @@
     <link rel="stylesheet" href="~/css/notes.css" asp-append-version="true" />
 }
 
-<partial name="_NoteIcons" />
-
 <div class="@rootClass" id="nv-root">
     @Html.AntiForgeryToken()
 
@@ -48,8 +44,11 @@
         @* The layout already shows the page title "Ghi chú"; this line only adds the totals. *@
         <p class="nv-summary">
             <strong>@Model.TotalCount</strong> @T["Notes.Summary.Notes"]
-            <span class="nv-sep" aria-hidden="true">·</span>
-            <strong>@Model.FormatsInUse</strong> @T["Notes.Summary.Formats"]
+            @if (Model.PinnedCount > 0)
+            {
+                <span class="nv-sep" aria-hidden="true">·</span>
+                <strong>@Model.PinnedCount</strong> @T["Notes.Summary.Pinned"]
+            }
         </p>
 
         <form class="nv-search" method="get" action="@ListUrl(null, null)" role="search">
@@ -57,77 +56,85 @@
             {
                 <input type="hidden" name="format" value="@formatSlug" />
             }
-            <svg class="nv-icon nv-search-icon" aria-hidden="true"><use href="#nv-i-search" /></svg>
+            <tbx-icon name="search" class="nv-search-icon" />
             <input class="form-control" type="search" name="search" value="@Model.Search"
                    placeholder="@T["Notes.SearchNotesPlaceholder"]" aria-label="@T["Notes.SearchNotesPlaceholder"]"
                    autocomplete="off" data-shortcut-target="search" />
         </form>
 
-        <button class="nv-btn nv-btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#nv-create" data-shortcut-target="new">
-            <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-plus" /></svg>
+        <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#nv-create" data-shortcut-target="new">
+            <tbx-icon name="plus" />
             @T["Notes.New"]
         </button>
     </header>
 
     @if (!Model.HasAnyNotes)
     {
-        <section class="nv-onboard">
-            <svg class="nv-onboard-icon" aria-hidden="true"><use href="#nv-i-note" /></svg>
-            <h2>@T["Notes.Empty.Title"]</h2>
-            <p>@T["Notes.Empty.Hint"]</p>
-            <button class="nv-btn nv-btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#nv-create">
-                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-plus" /></svg>
-                @T["Notes.Empty.Create"]
-            </button>
-        </section>
+        <partial name="_EmptyState" model="@(new EmptyStateViewModel(T["Notes.Empty.Hint"].Value, "file-text") { ActionText = T["Notes.Empty.Create"].Value, ActionTarget = "#nv-create" })" />
     }
     else
     {
-        <nav class="nv-formats" aria-label="@T["Notes.Format.Label"]">
-            <a class="nv-chip@(Model.ActiveFormat is null ? " is-active" : null)" href="@ListUrl(null, Model.Search)"
+        <div class="nv-filter-bar">
+        <nav class="nv-formats tbx-filter-chips" aria-label="@T["Notes.Format.Label"]">
+            <a class="tbx-chip@(Model.ActiveFormat is null ? " is-selected" : null)" href="@ListUrl(null, Model.Search)"
                aria-current="@(Model.ActiveFormat is null ? "page" : null)">
                 @T["Notes.FilterAll"]
-                <span class="nv-chip-count">@Model.MatchingCount</span>
+                <span class="tbx-chip-count">@Model.MatchingCount</span>
             </a>
             @foreach (var entry in Model.FormatCounts)
             {
                 var active = Model.ActiveFormat?.Format == entry.Format.Format;
-                <a class="nv-chip @entry.Format.CssClass@(active ? " is-active" : null)@(entry.Count == 0 ? " is-empty" : null)"
+                <a class="tbx-chip @entry.Format.CssClass@(active ? " is-selected" : null)@(entry.Count == 0 ? " is-empty" : null)"
                    href="@ListUrl(entry.Format.Slug, Model.Search)" aria-current="@(active ? "page" : null)">
                     <span class="nv-dot" aria-hidden="true"></span>
                     @T[entry.Format.LabelKey]
-                    <span class="nv-chip-count">@entry.Count</span>
+                    <span class="tbx-chip-count">@entry.Count</span>
                 </a>
             }
         </nav>
+        <form class="nv-sort" method="get" action="@ListUrl(null, null)" data-nv-sort>
+            @if (formatSlug is not null)
+            {
+                <input type="hidden" name="format" value="@formatSlug" />
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Search))
+            {
+                <input type="hidden" name="search" value="@Model.Search" />
+            }
+            <label class="tbx-field-label" for="nv-sort">@T["Notes.Sort.Label"]</label>
+            <select class="form-select form-select-sm" id="nv-sort" name="sort">
+                <option value="updated" selected="@(Model.Sort == "updated")">@T["Notes.Sort.Updated"]</option>
+                <option value="title" selected="@(Model.Sort == "title")">@T["Notes.Sort.Title"]</option>
+                <option value="created" selected="@(Model.Sort == "created")">@T["Notes.Sort.Created"]</option>
+            </select>
+            <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">@T["Checklist.Sort.Apply"]</button></noscript>
+        </form>
+        </div>
 
         <div class="nv-body">
             <section class="nv-list" aria-label="@T["Notes.AllNotes"]">
                 @if (Model.Items.Count == 0)
                 {
-                    <div class="nv-empty">
-                        <p class="nv-empty-title">@T["Notes.NoMatch.Title"]</p>
-                        <a class="nv-btn nv-btn-ghost nv-btn-sm" href="@ListUrl(null, null)">
-                            <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-close" /></svg>
+                    <div class="tbx-empty" role="status">
+                        <span class="tbx-empty-icon"><tbx-icon name="search" size="20" /></span>
+                        <p class="tbx-empty-text">@T["Notes.NoMatch.Title"]</p>
+                        <a class="btn btn-sm btn-outline-secondary" href="@ListUrl(null, null)">
+                            <tbx-icon name="x" />
                             @T["Notes.NoMatch.Clear"]
                         </a>
                     </div>
                 }
                 else
                 {
-                    <ul class="nv-items">
+                    <ul class="nv-items" data-nv-items>
                         @foreach (var item in Model.Items)
                         {
-                            <li>
+                            <li class="nv-item-row@(item.IsPinned ? " is-pinned" : null)">
                                 <a class="nv-item @item.Format.CssClass@(item.IsSelected ? " is-selected" : null)"
                                    href="@ListUrl(formatSlug, Model.Search, item.Id)" aria-current="@(item.IsSelected ? "true" : null)">
                                     <span class="nv-item-head">
                                         <span class="nv-badge">@item.Format.Badge</span>
                                         <span class="nv-item-title">@item.Title</span>
-                                        @if (item.IsPinned)
-                                        {
-                                            <svg class="nv-icon nv-pin-mark" role="img" aria-label="@T["Common.Pinned"]"><use href="#nv-i-pin" /></svg>
-                                        }
                                         @if (item.ChildCount > 0)
                                         {
                                             <span class="nv-count-pill">@(item.Format.Format == NoteFormat.Server
@@ -147,10 +154,21 @@
                                         }
                                     </span>
                                 </a>
+                                @* Outside the link: pinning from the list keeps the note that is open. *@
+                                <form method="post" asp-action="TogglePin" class="nv-row-pin">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <input type="hidden" name="returnId" value="@Model.Selected?.Id" />
+                                    <partial name="_NoteReturnState" model="Model" />
+                                    <button class="btn btn-sm tbx-icon-button@(item.IsPinned ? " is-on" : null)" type="submit" aria-pressed="@(item.IsPinned ? "true" : "false")"
+                                            title="@(item.IsPinned ? T["Notes.Unpin"] : T["Notes.Pin"])">
+                                        <tbx-icon name="pin" label="@(item.IsPinned ? T["Notes.UnpinItem", item.Title] : T["Notes.PinItem", item.Title])" />
+                                    </button>
+                                </form>
                             </li>
                         }
                     </ul>
                 }
+                <p class="nv-hint nv-shortcuts">@T["Notes.Shortcuts"]</p>
             </section>
 
             <section class="nv-detail">
@@ -160,17 +178,17 @@
                 }
                 else
                 {
-                    <p class="nv-empty nv-empty-title">@T["Notes.NoSelection"]</p>
+                    <div class="tbx-empty" role="status">
+                        <span class="tbx-empty-icon"><tbx-icon name="file-text" size="20" /></span>
+                        <p class="tbx-empty-text">@T["Notes.NoSelection"]</p>
+                    </div>
                 }
             </section>
         </div>
-
-        <p class="nv-hint nv-shortcuts">@T["Notes.Shortcuts"]</p>
     }
 </div>
 
 <partial name="_NoteCreateModal" model="Model" />
-<partial name="_NoteDeleteModal" />
 
 <script id="nv-config" type="application/json">@Html.Raw(configJson)</script>
 

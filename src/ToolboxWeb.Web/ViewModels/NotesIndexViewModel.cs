@@ -10,8 +10,11 @@ public class NotesIndexViewModel
     /// <summary>Every note the user owns, sub-notes included.</summary>
     public int TotalCount { get; init; }
 
-    /// <summary>How many formats at least one group uses.</summary>
-    public int FormatsInUse { get; init; }
+    /// <summary>Top-level notes pinned to the top of the list.</summary>
+    public int PinnedCount { get; init; }
+
+    /// <summary>The list order in effect (one of NoteSorts).</summary>
+    public string Sort { get; init; } = "updated";
 
     /// <summary>Groups matching the search, whatever their format: the "All" chip.</summary>
     public int MatchingCount { get; init; }

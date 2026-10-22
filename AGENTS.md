@@ -160,6 +160,7 @@
 Approved by the owner on 2026-10-21 (`docs/DESIGN_DECISIONS.md`). They live in `Content/css/tokens.css`, the only stylesheet that declares raw color values for the app. How to use them:
 
 - Read the variables (`var(--accent)`, `var(--space-3)`, …). Older page variables (`--ui-*`, `--jira-*`, `--nv-*`, `--sc-*`) are aliases onto them; do not add new aliases.
+- Note format colours are tokens too: `--format-text`, `--format-js`, `--format-css`, `--format-json`, `--format-xml`, `--format-link`, `--format-server`, `--format-checklist`, `--format-mixed`, plus `--state-review` and `--state-high` for checklist rows (light and dark values in `tokens.css`).
 - Derived tokens in the same file: `--accent-tint`, `--success-tint`, `--warning-tint`, `--danger-tint`, `--line-strong`, `--hover`, `--focus-ring`, `--shadow`, `--shadow-popup`, `--on-danger`.
 - Shared building blocks are in `Content/css/components.css` (`.tbx-panel`, `.tbx-toolbar`, `.tbx-list`/`.tbx-row`, `.tbx-pill`, `.tbx-chip`, `.tbx-field`, `.tbx-steps`/`.tbx-step` for 1-2-3 flows, `.tbx-sidepanel`, `.tbx-empty`, `.tbx-error-state`, `.tbx-skeleton`). Empty states use `Views/Shared/_EmptyState.cshtml` with `EmptyStateViewModel`.
 - Icons: `<tbx-icon name="search" />` (add `label="…"` when the icon stands alone). The sprite only holds the names in `tools/lucide/icons.txt`; to add one, add the name and rebuild with `tools/lucide/build-sprite.py`.

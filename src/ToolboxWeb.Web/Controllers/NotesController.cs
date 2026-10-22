@@ -29,9 +29,16 @@ public class NotesController : Controller
 
     [HttpGet("/" + ToolboxRouteSlugs.Pages.Notes)]
     [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.Notes, Name = ToolboxRouteSlugs.RouteNames.NotesHtml)]
-    public async Task<IActionResult> Index(string? format = null, string? search = null, int? id = null)
+    public async Task<IActionResult> Index(string? format = null, string? search = null, int? id = null, string? sort = null)
     {
-        return View(await _notes.GetPageAsync(_currentUser.UserId, new NotePageQuery(format, search, id)));
+        // The list order is remembered between visits, so redirects after a save keep it.
+        var chosen = NoteSorts.Normalize(sort);
+        if (chosen is not null)
+        {
+            Response.Cookies.Append(SortCookie, chosen, new CookieOptions { MaxAge = TimeSpan.FromDays(365), IsEssential = true, HttpOnly = true, SameSite = SameSiteMode.Lax });
+        }
+
+        return View(await _notes.GetPageAsync(_currentUser.UserId, new NotePageQuery(format, search, id, Sort: chosen ?? Request.Cookies[SortCookie])));
     }
 
     [HttpPost]
@@ -43,7 +50,7 @@ public class NotesController : Controller
             if (form.ParentId is null)
             {
                 // Reopen the dialog with what was typed instead of throwing it away.
-                var page = await _notes.GetPageAsync(_currentUser.UserId, new NotePageQuery(form.ReturnFormat, form.ReturnSearch, null));
+                var page = await _notes.GetPageAsync(_currentUser.UserId, new NotePageQuery(form.ReturnFormat, form.ReturnSearch, null, Sort: Request.Cookies[SortCookie]));
                 page.Form = form;
                 page.OpenCreateModal = true;
                 return View("Index", page);
@@ -111,7 +118,7 @@ public class NotesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> TogglePin(int id, string? returnFormat = null, string? returnSearch = null)
+    public async Task<IActionResult> TogglePin(int id, string? returnFormat = null, string? returnSearch = null, int? returnId = null)
     {
         var pinned = await _notes.TogglePinAsync(_currentUser.UserId, id);
         if (pinned is null)
@@ -119,7 +126,8 @@ public class NotesController : Controller
             TempData[TempDataKeys.ErrorMessage] = _localizer["Notes.NotFound"].Value;
         }
 
-        return RedirectToNotes(returnFormat, returnSearch, pinned is null ? null : id);
+        // Pinning from a list row keeps the note that was open; from the detail it is that note.
+        return RedirectToNotes(returnFormat, returnSearch, pinned is null ? returnId : returnId ?? id);
     }
 
     /// <summary>
@@ -141,6 +149,8 @@ public class NotesController : Controller
             _ => NotFound()
         };
     }
+
+    private const string SortCookie = "toolbox.notes.sort";
 
     private IActionResult RedirectToNotes(string? format, string? search, int? id, int? focusChildId = null)
     {

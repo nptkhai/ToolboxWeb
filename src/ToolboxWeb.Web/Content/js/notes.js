@@ -367,7 +367,7 @@
                 label.textContent = messages.hide;
             }
             if (icon) {
-                icon.setAttribute('href', '#nv-i-eye-off');
+                icon.setAttribute('href', icon.getAttribute('href').replace(/#.*$/, '#eye-off'));
             }
 
             window.setTimeout(function () { hideSecret(output, label, icon); }, SECRET_TTL_MS);
@@ -391,7 +391,7 @@
             label.textContent = messages.reveal;
         }
         if (icon) {
-            icon.setAttribute('href', '#nv-i-eye');
+            icon.setAttribute('href', icon.getAttribute('href').replace(/#.*$/, '#eye'));
         }
     }
 
@@ -472,38 +472,14 @@
 
     // ------------------------------------------------------------------ delete confirmation
 
-    const deleteModalElement = document.getElementById('nv-delete');
-    let pendingDelete = null;
-
-    function confirmDelete(form) {
-        if (!deleteModalElement || !window.bootstrap) {
-            return true;
+    // Deletes ask through the app-wide dialog (data-confirm, site.js). Once confirmed, leaving the
+    // page is on purpose even if another form on it has unsaved changes.
+    document.addEventListener('submit', function (event) {
+        const form = event.target;
+        if (form.matches && form.matches('form[data-nv-delete]') && form.dataset.confirmed === 'true') {
+            leavingOnPurpose = true;
         }
-
-        const children = parseInt(form.dataset.children || '0', 10);
-        const message = children > 0
-            ? format(messages.deleteConfirmWithChildren, form.dataset.title, children)
-            : format(messages.deleteConfirm, form.dataset.title);
-        deleteModalElement.querySelector('[data-role="delete-message"]').textContent = message;
-
-        pendingDelete = form;
-        bootstrap.Modal.getOrCreateInstance(deleteModalElement).show();
-        return false;
-    }
-
-    if (deleteModalElement) {
-        deleteModalElement.querySelector('[data-role="delete-confirm"]').addEventListener('click', function () {
-            if (pendingDelete) {
-                leavingOnPurpose = true;
-                // submit() skips the submit event, so this does not ask a second time.
-                pendingDelete.submit();
-            }
-        });
-
-        deleteModalElement.addEventListener('shown.bs.modal', function () {
-            deleteModalElement.querySelector('[data-role="delete-confirm"]').focus();
-        });
-    }
+    });
 
     // ------------------------------------------------------------------ textarea sizing
 
@@ -563,13 +539,6 @@
         }
     });
 
-    document.addEventListener('submit', function (event) {
-        const form = event.target;
-        if (form.matches && form.matches('form[data-confirm-delete]') && !confirmDelete(form)) {
-            event.preventDefault();
-        }
-    });
-
     document.addEventListener('keydown', function (event) {
         const key = event.key;
 
@@ -581,6 +550,18 @@
 
         if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)
             || document.querySelector('.modal.show')) {
+            return;
+        }
+
+        // ↑ ↓ move between notes in the list; Enter opens the one in focus (it is a link).
+        const item = event.target.closest && event.target.closest('.nv-item');
+        if (item && (key === 'ArrowDown' || key === 'ArrowUp')) {
+            const items = Array.from(root.querySelectorAll('[data-nv-items] .nv-item'));
+            const next = items[items.indexOf(item) + (key === 'ArrowDown' ? 1 : -1)];
+            if (next) {
+                event.preventDefault();
+                next.focus();
+            }
             return;
         }
 
@@ -620,6 +601,12 @@
         };
         select.addEventListener('change', apply);
         apply();
+    });
+
+    // The sort order applies as soon as it is picked.
+    const sortForm = root.querySelector('[data-nv-sort]');
+    sortForm?.querySelector('select')?.addEventListener('change', function () {
+        sortForm.submit();
     });
 
     root.querySelectorAll('.nv-row').forEach(syncRow);
