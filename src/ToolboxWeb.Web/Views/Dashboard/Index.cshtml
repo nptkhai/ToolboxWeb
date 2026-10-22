@@ -1,146 +1,378 @@
+@using System.Globalization
+@using ToolboxWeb.Web.Constants
 @model DashboardViewModel
+@*
+    Stage 5.5: personal overview. A greeting, a row of numbers for today, then panels that each
+    keep their natural height (to-do, notes, links, prompts, focus, activity). Panels can be
+    hidden from "Customize"; the choice stays in this browser (Content/js/dashboard.js).
+*@
 @{
     ViewData["Title"] = T["Dashboard.Title"];
+
+    var checklistHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html";
+    var notesHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.NotesHtml) ?? "/notes.html";
+    var linksHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.QuickLinksHtml) ?? "/quick-links.html";
+    var promptsHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml) ?? "/prompt-templates.html";
+    var focusHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html";
+    var activityHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ActivityHtml) ?? "/activity.html";
+    var jiraHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html";
+    var overdueHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml, new { filter = ChecklistFilters.Overdue }) ?? checklistHref;
+    var todoHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml, new { filter = ChecklistFilters.Todo }) ?? checklistHref;
+
+    var greetingKey = Model.Now.Hour < 11 ? "Dashboard.Greeting.Morning" : Model.Now.Hour < 18 ? "Dashboard.Greeting.Afternoon" : "Dashboard.Greeting.Evening";
+    var weekday = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Model.Today.ToString("dddd", CultureInfo.CurrentCulture));
+
+    string Minutes(int value) => T["Common.Minutes", ((double)value).ToDisplayNumber()].Value;
+    string GroupLabel(DashboardTaskGroup group) => T[$"Dashboard.Group.{group}"].Value;
+
+    // NoteFormViewModel's own messages are the framework's English ones; say it in the UI language.
+    var noteTitleError = ViewData.ModelState["QuickNote.Title"]?.Errors.Any() == true
+        ? (string.IsNullOrWhiteSpace(Model.QuickNote.Title) ? T["Validation.Required"].Value : T["Validation.MaxLength", "", 160].Value)
+        : null;
+
+    // Panels the visitor can hide; the ids are what dashboard.js remembers.
+    var panels = new (string Id, string Label)[]
+    {
+        ("tasks", T["Dashboard.Tasks"].Value),
+        ("notes", T["Dashboard.RecentNotes"].Value),
+        ("links", T["Dashboard.QuickLinks"].Value),
+        ("prompts", T["Dashboard.Prompts"].Value),
+        ("focus", T["Dashboard.FocusSessions"].Value),
+        ("activity", T["Dashboard.ActivityHistory"].Value)
+    };
 }
 
-<div class="tool-grid">
-    <section class="panel span-8">
-        <div class="panel-header">
-            <h2>@T["Dashboard.RecentNotes"]</h2>
-            <a asp-controller="Notes" asp-action="Index">@T["Dashboard.OpenNotes"]</a>
+@section Styles {
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
+
+<div class="dash" data-list-page data-dashboard>
+    <div class="dash-head">
+        <div>
+            <p class="dash-greeting">@T[greetingKey, Model.DisplayName]</p>
+            <p class="dash-date">@weekday, @Model.Today.ToDisplayDate()</p>
         </div>
-        <div class="stack">
-            @foreach (var note in Model.RecentNotes)
-            {
-                <div class="item-row">
-                    <div>
-                        <div class="item-title">@note.Title</div>
-                        <div class="item-meta">@note.Tags</div>
-                    </div>
-                    @if (note.IsPinned)
-                    {
-                        <span class="chip">@T["Common.Pinned"]</span>
-                    }
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#dash-customize">
+            <tbx-icon name="settings" /><span>@T["Dashboard.Customize"]</span>
+        </button>
+    </div>
+
+    <section class="dash-stats" aria-label="@T["Dashboard.Stats"]">
+        <a class="dash-stat @(Model.OverdueCount > 0 ? "is-danger" : null)" href="@overdueHref">
+            <span class="dash-stat-label">@T["Dashboard.Stat.Overdue"]</span>
+            <strong class="dash-stat-value">@(((double)Model.OverdueCount).ToDisplayNumber())</strong>
+            <span class="dash-stat-sub">@(Model.OverdueCount > 0 ? T["Dashboard.Stat.OverdueSome"] : T["Dashboard.Stat.OverdueNone"])</span>
+        </a>
+        <a class="dash-stat" href="@todoHref">
+            <span class="dash-stat-label">@T["Dashboard.Stat.Today"]</span>
+            <strong class="dash-stat-value">@(((double)Model.DueTodayCount).ToDisplayNumber())</strong>
+            <span class="dash-stat-sub">@T["Dashboard.Stat.OpenTotal", ((double)Model.OpenTaskCount).ToDisplayNumber()]</span>
+        </a>
+        <a class="dash-stat" href="@focusHref">
+            <span class="dash-stat-label">@T["Dashboard.Stat.Focus"]</span>
+            <strong class="dash-stat-value">@Minutes(Model.FocusMinutesToday)</strong>
+            <span class="dash-stat-sub">@T["Dashboard.Stat.FocusWeek", Minutes(Model.FocusMinutesWeek)]</span>
+        </a>
+        @if (Model.HasJiraSession)
+        {
+            @* Filled by dashboard.js from /Jira/TodayHours, so a slow Jira never delays the page. *@
+            <a class="dash-stat" href="@jiraHref" data-jira-hours data-url="@Url.Action("TodayHours", "Jira")" aria-busy="true">
+                <span class="dash-stat-label">@T["Dashboard.Stat.Jira"]</span>
+                <strong class="dash-stat-value" data-jira-hours-value>–</strong>
+                <span class="dash-stat-sub" data-jira-hours-sub>@T["Dashboard.Stat.Loading"]</span>
+                <span class="dash-stat-meter" aria-hidden="true"><span data-jira-hours-bar></span></span>
+            </a>
+        }
+    </section>
+
+    <div class="dash-grid">
+        <section class="tbx-panel dash-panel dash-panel--tasks" data-dash-panel="tasks" aria-labelledby="dash-tasks-title">
+            <header class="dash-panel-head">
+                <h2 id="dash-tasks-title">@T["Dashboard.Tasks"]</h2>
+                <a href="@checklistHref">@T["Dashboard.OpenChecklist"]</a>
+            </header>
+
+            <form asp-action="QuickTask" method="post" class="dash-quick-task">
+                <div class="tbx-field dash-quick-task-title">
+                    <label class="tbx-field-label" for="dash-task-title">@T["Dashboard.QuickTask.Label"]</label>
+                    <input class="form-control" id="dash-task-title" name="QuickTask.Title" maxlength="180" autocomplete="off"
+                           placeholder="@T["Dashboard.QuickTask.Example"]" required />
                 </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="dash-task-due">@T["Dashboard.QuickTask.Due"]</label>
+                    <select class="form-select" id="dash-task-due" name="QuickTask.Due">
+                        <option value="today">@T["Dashboard.QuickTask.DueToday"]</option>
+                        <option value="none">@T["Dashboard.QuickTask.DueNone"]</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary"><tbx-icon name="plus" /><span>@T["Checklist.Add"]</span></button>
+            </form>
+
+            @if (Model.OpenTaskCount == 0)
+            {
+                <partial name="_EmptyState" model="@(new EmptyStateViewModel(T["Dashboard.NoOpenTasks"].Value, "list-checks"))" />
             }
+            else
+            {
+                foreach (var group in Model.TaskGroups)
+                {
+                    var headingId = $"dash-group-{group.Group.ToString().ToLowerInvariant()}";
+                    <div class="dash-task-group is-@group.Group.ToString().ToLowerInvariant()">
+                        <h3 class="dash-group-title" id="@headingId">@GroupLabel(group.Group) <span class="dash-group-count">@group.Total</span></h3>
+                        <ul class="tbx-list" aria-labelledby="@headingId">
+                            @foreach (var item in group.Items)
+                            {
+                                <li class="tbx-row">
+                                    <form asp-action="CompleteTask" method="post" class="todo-toggle">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="tbx-row-check" role="checkbox" aria-checked="false" aria-label="@T["Checklist.MarkDone", item.Title]">
+                                            <tbx-icon name="check" />
+                                        </button>
+                                    </form>
+                                    <span class="tbx-row-main"><span class="tbx-row-title">@item.Title</span></span>
+                                    @if (group.Group == DashboardTaskGroup.Overdue)
+                                    {
+                                        <span class="tbx-pill is-danger">@item.DueDate.ToDisplayDate()</span>
+                                    }
+                                    else if (group.Group == DashboardTaskGroup.Upcoming)
+                                    {
+                                        <span class="tbx-row-meta">@item.DueDate.ToDisplayDate()</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                        @if (group.Total > group.Items.Count)
+                        {
+                            <a class="dash-more" href="@(group.Group == DashboardTaskGroup.Overdue ? overdueHref : todoHref)">@T["Dashboard.Group.More", group.Total - group.Items.Count]</a>
+                        }
+                    </div>
+                }
+            }
+        </section>
+
+        <section class="tbx-panel dash-panel dash-panel--notes" data-dash-panel="notes" aria-labelledby="dash-notes-title">
+            <header class="dash-panel-head">
+                <h2 id="dash-notes-title">@T["Dashboard.RecentNotes"]</h2>
+                <div class="dash-panel-actions">
+                    @if (Model.RecentNotes.Any())
+                    {
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#dash-note-create">
+                            <tbx-icon name="plus" /><span>@T["Notes.New"]</span>
+                        </button>
+                    }
+                    <a href="@notesHref">@T["Dashboard.OpenNotes"]</a>
+                </div>
+            </header>
             @if (!Model.RecentNotes.Any())
             {
-                <div class="muted">@T["Dashboard.NoNotesYet"]</div>
+                <partial name="_EmptyState" model="@(new EmptyStateViewModel(T["Dashboard.NoNotesYet"].Value, "sticky-note") { ActionText = T["Notes.New"].Value, ActionTarget = "#dash-note-create" })" />
             }
-        </div>
-    </section>
+            else
+            {
+                <ul class="tbx-list">
+                    @foreach (var note in Model.RecentNotes)
+                    {
+                        <li>
+                            <a class="tbx-row tbx-row--two-line dash-link-row" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.NotesHtml, new { id = note.Id }) ?? notesHref)">
+                                <span class="tbx-row-main">
+                                    <span class="tbx-row-title">@note.Title</span>
+                                    <span class="tbx-row-sub">@T["Dashboard.NoteEdited", (note.UpdatedAt ?? note.CreatedAt).ToDisplayAppDateTime()]</span>
+                                </span>
+                                @if (note.IsPinned)
+                                {
+                                    <span class="tbx-pill is-accent">@T["Common.Pinned"]</span>
+                                }
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
 
-    <section class="panel span-4">
-        <div class="panel-header">
-            <h2>@T["Dashboard.OpenTasks"]</h2>
-            <a asp-controller="Checklist" asp-action="Index">@T["Action.Open"]</a>
-        </div>
-        <div class="stack">
-            @foreach (var item in Model.OpenTasks)
-            {
-                var due = item.DueDate?.Date;
-                var isOverdue = due < Model.Today;
-                var dueLabel = due is null
-                    ? T["Common.NoDueDate"].Value
-                    : isOverdue
-                        ? T["Dashboard.DueOverdue", due.Value.ToDisplayDate()].Value
-                        : due == Model.Today
-                            ? T["Dashboard.DueToday"].Value
-                            : due.Value.ToDisplayDate();
-                <div class="item-row">
-                    <div>
-                        <div class="item-title">@item.Title</div>
-                        <div class="item-meta @(isOverdue ? "is-overdue" : null)">@dueLabel</div>
-                    </div>
-                </div>
-            }
-            @if (!Model.OpenTasks.Any())
-            {
-                <div class="muted">@T["Dashboard.NoOpenTasks"]</div>
-            }
-        </div>
-    </section>
-
-    <section class="panel span-4">
-        <div class="panel-header">
-            <h2>@T["Dashboard.QuickLinks"]</h2>
-            <a asp-controller="QuickLinks" asp-action="Index">@T["Action.Manage"]</a>
-        </div>
-        <div class="stack">
-            @foreach (var link in Model.QuickLinks)
-            {
-                <a class="item-row" href="@link.Url" target="_blank" rel="noopener">
-                    <span>
-                        <span class="item-title">@link.Title</span>
-                        <span class="item-meta d-block">@link.GroupName</span>
-                    </span>
-                </a>
-            }
+        <section class="tbx-panel dash-panel" data-dash-panel="links" aria-labelledby="dash-links-title">
+            <header class="dash-panel-head">
+                <h2 id="dash-links-title">@T["Dashboard.QuickLinks"]</h2>
+                <a href="@linksHref">@T["Action.Manage"]</a>
+            </header>
             @if (!Model.QuickLinks.Any())
             {
-                <div class="muted">@T["Dashboard.AddLinksYouOpenOften"]</div>
+                <partial name="_EmptyState" model="@(new EmptyStateViewModel(T["Dashboard.AddLinksYouOpenOften"].Value, "link") { ActionText = T["QuickLinks.AddLink"].Value, ActionHref = linksHref })" />
             }
-        </div>
-    </section>
-
-    <section class="panel span-4">
-        <div class="panel-header">
-            <h2>@T["PromptTemplates.Title"]</h2>
-            <a asp-controller="PromptTemplates" asp-action="Index">@T["Action.Open"]</a>
-        </div>
-        <div class="stack">
-            @foreach (var prompt in Model.PromptTemplates)
+            else
             {
-                <div class="item-row">
-                    <div>
-                        <div class="item-title">@prompt.Name</div>
-                        <div class="item-meta">@prompt.Category.Localize(T)</div>
-                    </div>
-                </div>
+                @* Tiles with the first letter, not a favicon: a favicon would ask a third-party server. *@
+                <ul class="dash-tiles">
+                    @foreach (var link in Model.QuickLinks)
+                    {
+                        var host = Uri.TryCreate(link.Url, UriKind.Absolute, out var uri) ? uri.Host : link.Url;
+                        <li>
+                            <a class="dash-tile" href="@link.Url" target="_blank" rel="noopener noreferrer" title="@link.Url">
+                                <span class="dash-tile-mark" aria-hidden="true">@(link.Title.Length > 0 ? char.ToUpper(link.Title[0], CultureInfo.CurrentCulture) : '?')</span>
+                                <span class="dash-tile-text">
+                                    <span class="dash-tile-title">@link.Title</span>
+                                    <span class="dash-tile-host">@host</span>
+                                </span>
+                            </a>
+                        </li>
+                    }
+                </ul>
             }
-        </div>
-    </section>
+        </section>
 
-    <section class="panel span-4">
-        <div class="panel-header">
-            <h2>@T["Dashboard.FocusSessions"]</h2>
-            <a asp-controller="FocusTimer" asp-action="Index">@T["Action.StartTimer"]</a>
-        </div>
-        <div class="stack">
-            @foreach (var session in Model.RecentFocusSessions)
+        <section class="tbx-panel dash-panel" data-dash-panel="prompts" aria-labelledby="dash-prompts-title">
+            <header class="dash-panel-head">
+                <h2 id="dash-prompts-title">@T["Dashboard.Prompts"]</h2>
+                <a href="@promptsHref">@T["Action.Open"]</a>
+            </header>
+            @if (!Model.PromptTemplates.Any())
             {
-                <div class="item-row">
-                    <div>
-                        <div class="item-title">@T["Common.Minutes", session.DurationMinutes]</div>
-                        <div class="item-meta">@session.CompletedAt.ToDisplayAppDateTime()</div>
-                    </div>
-                </div>
+                <partial name="_EmptyState" model="@(new EmptyStateViewModel(T["Dashboard.NoPrompts"].Value, "message-square-text") { ActionText = T["Action.Open"].Value, ActionHref = promptsHref })" />
             }
+            else
+            {
+                <ul class="tbx-list">
+                    @foreach (var prompt in Model.PromptTemplates)
+                    {
+                        var category = prompt.Category.Localize(T);
+                        // Seeded prompts are named after their category; say it once.
+                        var sub = !string.IsNullOrWhiteSpace(prompt.Description) ? prompt.Description
+                            : string.Equals(category, prompt.Name, StringComparison.CurrentCultureIgnoreCase) ? null : category;
+                        var contentId = $"dash-prompt-{prompt.Id}";
+                        <li class="tbx-row @(sub is null ? null : "tbx-row--two-line")">
+                            <span class="tbx-row-main">
+                                <span class="tbx-row-title">@prompt.Name</span>
+                                @if (sub is not null)
+                                {
+                                    <span class="tbx-row-sub">@sub</span>
+                                }
+                            </span>
+                            <pre class="visually-hidden" id="@contentId">@prompt.Content</pre>
+                            <button type="button" class="btn btn-sm btn-outline-secondary dash-copy" data-copy-target="#@contentId"
+                                    data-default-text="@T["Action.Copy"]" data-copied-text="@T["Action.Copied"]" aria-label="@T["Dashboard.CopyPrompt", prompt.Name]">
+                                <tbx-icon name="copy" /><span data-copy-label>@T["Action.Copy"]</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section class="tbx-panel dash-panel" data-dash-panel="focus" aria-labelledby="dash-focus-title">
+            <header class="dash-panel-head">
+                <h2 id="dash-focus-title">@T["Dashboard.FocusSessions"]</h2>
+                <a href="@focusHref">@T["Action.Open"]</a>
+            </header>
+            <div class="dash-focus">
+                <p class="dash-focus-totals">@T["Dashboard.FocusToday", Minutes(Model.FocusMinutesToday), Minutes(Model.FocusMinutesWeek)]</p>
+                <a class="btn btn-primary btn-sm" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml, new { minutes = 25, start = true }) ?? focusHref)">
+                    <tbx-icon name="timer" /><span>@T["Dashboard.Start25"]</span>
+                </a>
+            </div>
             @if (!Model.RecentFocusSessions.Any())
             {
-                <div class="muted">@T["Dashboard.NoCompletedFocusSession"]</div>
+                <p class="dash-quiet">@T["Dashboard.NoCompletedFocusSession"]</p>
             }
-        </div>
-    </section>
-
-    <section class="panel span-12">
-        <div class="panel-header">
-            <h2>@T["Dashboard.ActivityHistory"]</h2>
-        </div>
-        <div class="stack">
-            @foreach (var activity in Model.RecentActivity)
+            else
             {
-                <div class="item-row">
-                    <div>
-                        <div class="item-title">@activity.Summary</div>
-                        <div class="item-meta">@activity.ActionType.Localize(T) &middot; @activity.EntityType.Localize(T) &middot; @activity.CreatedAt.ToDisplayAppDateTime()</div>
-                    </div>
-                </div>
+                <ul class="tbx-list">
+                    @foreach (var session in Model.RecentFocusSessions)
+                    {
+                        <li class="tbx-row">
+                            <span class="tbx-row-main"><span class="tbx-row-title">@Minutes(session.DurationMinutes)</span></span>
+                            <span class="tbx-row-meta">@session.CompletedAt.ToDisplayAppDateTime()</span>
+                        </li>
+                    }
+                </ul>
             }
+        </section>
+
+        <section class="tbx-panel dash-panel dash-panel--activity" data-dash-panel="activity" aria-labelledby="dash-activity-title">
+            <header class="dash-panel-head">
+                <h2 id="dash-activity-title">@T["Dashboard.ActivityHistory"]</h2>
+                <a href="@activityHref">@T["Dashboard.SeeAll"]</a>
+            </header>
             @if (!Model.RecentActivity.Any())
             {
-                <div class="muted">@T["Dashboard.ActivityWillAppear"]</div>
+                <partial name="_EmptyState" model="@(new EmptyStateViewModel(T["Dashboard.ActivityWillAppear"].Value, "activity"))" />
             }
-        </div>
-    </section>
+            else
+            {
+                <ol class="dash-timeline">
+                    @foreach (var activity in Model.RecentActivity)
+                    {
+                        <li>
+                            <span class="dash-timeline-text">@activity.Summary</span>
+                            <span class="dash-timeline-meta">@activity.EntityType.Localize(T) · @activity.CreatedAt.ToDisplayAppDateTime()</span>
+                        </li>
+                    }
+                </ol>
+            }
+        </section>
+    </div>
 </div>
+
+<div class="modal fade" id="dash-customize" data-list-modal tabindex="-1" aria-labelledby="dash-customize-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="dash-customize-title">@T["Dashboard.CustomizeTitle"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                @foreach (var panel in panels)
+                {
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="dash-show-@panel.Id" data-dash-toggle="@panel.Id" checked />
+                        <label class="form-check-label" for="dash-show-@panel.Id">@panel.Label</label>
+                    </div>
+                }
+                <p class="tbx-field-hint dash-customize-hint">@T["Dashboard.CustomizeHint"]</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">@T["Action.Close"]</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="dash-note-create" data-list-modal tabindex="-1" aria-labelledby="dash-note-title" aria-hidden="true" data-open-on-load="@(Model.OpenQuickNote ? "true" : "false")">
+    <div class="modal-dialog modal-dialog-centered">
+        <form asp-action="QuickNote" method="post" class="modal-content" novalidate>
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="dash-note-title">@T["Notes.New"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body tbx-form-grid">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="dash-note-title-input">@T["Dashboard.QuickNote.Title"]<span class="tbx-required" aria-hidden="true">*</span></label>
+                    <input class="form-control" id="dash-note-title-input" name="QuickNote.Title" value="@Model.QuickNote.Title" maxlength="160" autocomplete="off" required
+                           placeholder="@T["Dashboard.QuickNote.TitleExample"]" aria-describedby="dash-note-title-error" aria-invalid="@(noteTitleError is null ? null : "true")" />
+                    <span class="tbx-field-error" id="dash-note-title-error">@noteTitleError</span>
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="dash-note-content">@T["Dashboard.QuickNote.Content"]</label>
+                    <textarea class="form-control" id="dash-note-content" name="QuickNote.Content" rows="6" maxlength="200000" aria-describedby="dash-note-hint">@Model.QuickNote.Content</textarea>
+                    <span class="tbx-field-hint" id="dash-note-hint">@T["Dashboard.QuickNote.Hint"]</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary">@T["Dashboard.QuickNote.Save"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script id="dashboard-config" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new
+{
+    target = T["Dashboard.Stat.JiraTarget"].Value,
+    left = T["Dashboard.Stat.JiraLeft"].Value,
+    done = T["Dashboard.Stat.JiraDone"].Value,
+    dayOff = T["Dashboard.Stat.JiraDayOff"].Value,
+    failed = T["Dashboard.JiraHoursFailed"].Value
+}))</script>
+
+@section Scripts {
+    <script src="~/js/list-page.js" asp-append-version="true"></script>
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+}

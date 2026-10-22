@@ -8,7 +8,7 @@
     <section class="panel span-6">
         <div class="panel-header"><h2>@T["FocusTimer.Timer"]</h2></div>
         <form asp-action="Complete" method="post" class="form-grid">
-            <div data-focus-timer data-minutes="@Model.DurationMinutes" data-finished-message="@T["FocusTimer.Finished"]">
+            <div data-focus-timer data-minutes="@Model.DurationMinutes" data-autostart="@(ViewBag.AutoStart == true ? "true" : "false")" data-finished-message="@T["FocusTimer.Finished"]">
                 <div class="timer-display" data-timer-display>25:00</div>
                 <div class="inline-actions justify-content-center mt-3">
                     <button class="btn btn-primary" type="button" data-timer-start>@T["Action.Start"]</button>

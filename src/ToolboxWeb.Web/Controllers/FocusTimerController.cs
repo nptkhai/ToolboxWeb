@@ -20,10 +20,12 @@ public class FocusTimerController : Controller
 
     [HttpGet("/" + ToolboxRouteSlugs.Pages.FocusTimer)]
     [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.FocusTimer, Name = ToolboxRouteSlugs.RouteNames.FocusTimerHtml)]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? minutes = null, bool start = false)
     {
+        // ?minutes=25&start=true comes from "Start 25 minutes" on the overview.
         ViewBag.RecentSessions = await _focusSessions.GetRecentAsync(_currentUser.UserId, 20);
-        return View(new FocusSessionFormViewModel());
+        ViewBag.AutoStart = start;
+        return View(new FocusSessionFormViewModel { DurationMinutes = minutes is >= 1 and <= 240 ? minutes.Value : 25 });
     }
 
     [HttpPost]

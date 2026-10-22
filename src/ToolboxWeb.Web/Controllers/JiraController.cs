@@ -304,6 +304,42 @@ public class JiraController : Controller
     }
 
     /// <summary>
+    /// Hours the user logged in Jira today, for the card on the personal overview. The card only
+    /// asks when a Jira session is open, so a missing session is a plain "no data".
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> TodayHours()
+    {
+        var session = await _jiraAuth.GetCurrentSessionAsync(HttpContext);
+        if (session is null)
+        {
+            return Json(JiraApiResponse<object>.LoginRequired(_localizer["Jira.SessionExpired"].Value));
+        }
+
+        var today = AppClock.Today;
+        try
+        {
+            var issues = await session.Client.SearchIssuesAsync(
+                string.Create(CultureInfo.InvariantCulture, $"worklogAuthor = currentUser() AND worklogDate = \"{today:yyyy-MM-dd}\""),
+                includeWorklogs: true);
+            return Json(JiraApiResponse<object>.Ok(new
+            {
+                hours = JiraDashboardMetrics.LoggedHours(issues, today, today, session.Username),
+                target = JiraDashboardMetrics.IsWorkingDay(today) ? JiraDashboardMetrics.HoursPerWorkingDay : 0m
+            }));
+        }
+        catch (Exception ex)
+        {
+            return Json(JiraApiResponse<object>.Fail(JiraErrorHelper.ToUserMessage(
+                ex,
+                _localizer["Dashboard.JiraHoursFailed"].Value,
+                _localizer["Jira.SessionExpired"].Value,
+                _localizer["Jira.NotFound"].Value,
+                _localizer["Jira.InvalidRequest"].Value)));
+        }
+    }
+
+    /// <summary>
     /// My subtasks due between two dates (any status). Auto-schedule reads them to know how many
     /// hours each day already holds before it adds more.
     /// </summary>

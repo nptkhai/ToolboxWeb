@@ -766,6 +766,15 @@
         timer.querySelector('[data-timer-reset]')?.addEventListener('click', resetFromInput);
         minutesInput?.addEventListener('change', resetFromInput);
         render();
+
+        // Opened from "Start 25 minutes" on the overview: start once, and drop the flag from the
+        // address so a refresh does not start it again.
+        if (timer.dataset.autostart === 'true') {
+            timer.querySelector('[data-timer-start]')?.click();
+            const url = new URL(window.location.href);
+            url.searchParams.delete('start');
+            window.history.replaceState(null, '', url);
+        }
     }
 
     const NOTIFY_TITLES = {
