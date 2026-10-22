@@ -61,6 +61,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.Property(x => x.Title).HasMaxLength(180).IsRequired();
             entity.Property(x => x.Description).HasMaxLength(1000);
+            entity.Property(x => x.Priority).HasConversion<int>();
             entity.HasIndex(x => new { x.UserId, x.Status, x.DueDate });
         });
 

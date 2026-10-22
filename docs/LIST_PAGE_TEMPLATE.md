@@ -29,6 +29,7 @@ The structure every list screen follows. It comes from the Notes screen (the ref
 ## Server side
 
 - The filter and search are query parameters (`?filter=overdue&search=report`). The service returns the items for the filter and the count behind every chip (`ChecklistService.GetListAsync`), always scoped to the user.
+- Optional, as the to-do list does since stage 5.6: a sort order in the query string (remembered in a cookie), items grouped under small headings, a quick-add form above the list, rows that are focusable for keyboard shortcuts, a "select several" mode with a floating action bar, and "Undo" after complete or delete (the row is soft-deleted for a day, `ChecklistItem.DeletedAt`).
 - Write actions (toggle, delete, create) post the current `filter` and `search` back and redirect to the same list, so the user stays where they were.
 - "Today" comes from `AppClock.Today` (the app time zone), not the server clock.
 - Validation messages are localization keys (`Validation.Required`, `Validation.MaxLength`).

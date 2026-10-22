@@ -64,7 +64,7 @@ public class DashboardController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CompleteTask(int id)
     {
-        if (await _checklist.ToggleAsync(_currentUser.UserId, id))
+        if ((await _checklist.CompleteAsync(_currentUser.UserId, [id])).Count > 0)
         {
             TempData[TempDataKeys.SuccessMessage] = _localizer["Dashboard.TaskCompleted"].Value;
         }

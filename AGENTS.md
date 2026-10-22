@@ -68,6 +68,7 @@
 - Every Identity page the app shows is a local page under `Areas/Identity/Pages/Account/` (sign-in, register, two-factor sign-in, recovery code, lockout, and all `Manage/` pages), written in localization keys. Do not fall back to the package's English pages. Manage pages derive from `Manage/ManagePageModel` and render inside `Manage/_Layout.cshtml`.
 - Jira accounts have no ToolboxWeb password: the password and two-factor tabs are hidden for them.
 - No email sender is configured, so there is no "forgot password" and the email cannot be changed. Do not add flows that depend on sending email until a sender exists.
+- Deleting a to-do is soft: `ChecklistItem.DeletedAt` is set so "Undo" can restore it, and `ChecklistService` purges it after a day. Every to-do query goes through `ChecklistService` and skips rows with `DeletedAt`.
 - Deleting an account goes through `IAccountService.DeleteAccountAsync`, which also deletes every user-owned row and the profile images. A new user-owned table must be added there.
 
 ## Third-Party License Policy
