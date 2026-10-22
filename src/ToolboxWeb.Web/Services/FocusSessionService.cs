@@ -12,6 +12,9 @@ public interface IFocusSessionService
 {
     Task<IReadOnlyList<FocusSession>> GetRecentAsync(string userId, int take = 10);
     Task<int> CompleteAsync(string userId, FocusSessionFormViewModel model);
+
+    /// <summary>Minutes of focus sessions completed on or after <paramref name="fromUtc"/>.</summary>
+    Task<int> GetMinutesSinceAsync(string userId, DateTime fromUtc);
 }
 
 public class FocusSessionService : IFocusSessionService
@@ -34,6 +37,13 @@ public class FocusSessionService : IFocusSessionService
             .OrderByDescending(x => x.CompletedAt)
             .Take(take)
             .ToListAsync();
+    }
+
+    public async Task<int> GetMinutesSinceAsync(string userId, DateTime fromUtc)
+    {
+        return await _db.FocusSessions
+            .Where(x => x.UserId == userId && x.CompletedAt >= fromUtc)
+            .SumAsync(x => x.DurationMinutes);
     }
 
     public async Task<int> CompleteAsync(string userId, FocusSessionFormViewModel model)

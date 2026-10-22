@@ -44,6 +44,14 @@ public static partial class JiraDashboardMetrics
                 || string.Equals(x.AuthorName.Trim(), user, StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>Hours the signed-in user logged on these issues inside the range.</summary>
+    public static decimal LoggedHours(IEnumerable<JiraIssue> issues, DateTime rangeStart, DateTime rangeEnd, string currentUsername)
+    {
+        return issues
+            .SelectMany(issue => OwnWorklogs(issue.Worklogs, rangeStart, rangeEnd, currentUsername))
+            .Sum(x => ParseHours(x.TimeSpent));
+    }
+
     /// <summary>Jira time text ("1h 30m", "2d", "1,5h") in hours; a day is 8 h and a week 40 h.</summary>
     public static decimal ParseHours(string? value)
     {

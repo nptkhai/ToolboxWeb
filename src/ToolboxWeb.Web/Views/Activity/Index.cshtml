@@ -1,0 +1,87 @@
+@using ToolboxWeb.Web.Constants
+@model ActivityPageViewModel
+@*
+    Stage 5.5: "See all" from the overview. Newest first, 30 a page, filtered by kind.
+    The filter is a GET form, so the page, the kind and the back button all live in the address.
+*@
+@{
+    ViewData["Title"] = T["Activity.Title"];
+
+    string PageUrl(int page) => Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ActivityHtml, new
+    {
+        type = Model.EntityType?.ToString(),
+        page = page > 1 ? page : (int?)null
+    }) ?? "/activity.html";
+
+    var allUrl = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ActivityHtml) ?? "/activity.html";
+    var dashboardUrl = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
+
+<div class="tbx-list-page">
+    <div class="tbx-toolbar activity-toolbar">
+        <p class="tbx-toolbar-summary">@T["Activity.Summary", ((double)Model.Total).ToDisplayNumber()]</p>
+        <form method="get" action="@allUrl" class="activity-filter">
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="activity-type">@T["Activity.FilterLabel"]</label>
+                <select class="form-select" id="activity-type" name="type">
+                    <option value="">@T["Activity.FilterAll"]</option>
+                    @foreach (var type in Model.EntityTypes)
+                    {
+                        <option value="@type" selected="@(type == Model.EntityType)">@type.Localize(T)</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn btn-outline-secondary">@T["Activity.Filter"]</button>
+        </form>
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        if (Model.EntityType is null)
+        {
+            <partial name="_EmptyState" model="@(new EmptyStateViewModel(T["Activity.Empty"].Value, "activity") { ActionText = T["Activity.BackToDashboard"].Value, ActionHref = dashboardUrl })" />
+        }
+        else
+        {
+            <div class="tbx-empty" role="status">
+                <span class="tbx-empty-icon"><tbx-icon name="search" size="20" /></span>
+                <p class="tbx-empty-text">@T["Activity.EmptyFiltered"]</p>
+                <a class="btn btn-outline-secondary btn-sm" href="@allUrl"><tbx-icon name="x" />@T["Activity.ShowAll"]</a>
+            </div>
+        }
+    }
+    else
+    {
+        <ul class="tbx-list" aria-label="@T["Activity.Title"]">
+            @foreach (var activity in Model.Items)
+            {
+                <li class="tbx-row tbx-row--two-line">
+                    <span class="tbx-row-main">
+                        <span class="tbx-row-title">@activity.Summary</span>
+                        <span class="tbx-row-sub">@activity.ActionType.Localize(T) · @activity.EntityType.Localize(T)</span>
+                    </span>
+                    <span class="tbx-row-meta">@activity.CreatedAt.ToDisplayAppDateTime()</span>
+                </li>
+            }
+        </ul>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="activity-pages" aria-label="@T["Activity.Pages"]">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn btn-outline-secondary btn-sm" href="@PageUrl(Model.Page - 1)"><tbx-icon name="chevron-left" /><span>@T["Activity.PagePrev"]</span></a>
+                }
+                <span class="activity-page-of">@T["Activity.PageOf", Model.Page, Model.TotalPages]</span>
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn btn-outline-secondary btn-sm" href="@PageUrl(Model.Page + 1)"><span>@T["Activity.PageNext"]</span><tbx-icon name="chevron-right" /></a>
+                }
+            </nav>
+        }
+    }
+</div>

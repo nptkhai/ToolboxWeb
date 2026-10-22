@@ -5,6 +5,7 @@ public static class ToolboxRouteSlugs
     public static class Pages
     {
         public const string Dashboard = "dashboard";
+        public const string Activity = "activity";
         public const string Notes = "notes";
         public const string Checklist = "checklist";
         public const string FocusTimer = "focus-timer";
@@ -24,6 +25,7 @@ public static class ToolboxRouteSlugs
     public static class HtmlPages
     {
         public const string Dashboard = "dashboard.html";
+        public const string Activity = "activity.html";
         public const string Notes = "notes.html";
         public const string Checklist = "checklist.html";
         public const string FocusTimer = "focus-timer.html";
@@ -43,6 +45,7 @@ public static class ToolboxRouteSlugs
     public static class RouteNames
     {
         public const string DashboardHtml = "dashboard-html";
+        public const string ActivityHtml = "activity-html";
         public const string NotesHtml = "notes-html";
         public const string ChecklistHtml = "checklist-html";
         public const string FocusTimerHtml = "focus-timer-html";

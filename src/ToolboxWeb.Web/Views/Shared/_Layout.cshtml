@@ -96,7 +96,7 @@
         bool IsNav(params string[] controllers) => controllers.Any(c => string.Equals(c, navController, StringComparison.OrdinalIgnoreCase));
         var jiraDashboardActive = IsNav("Jira") && string.Equals(navAction, "DashboardPage", StringComparison.OrdinalIgnoreCase);
         var jiraWorklistActive = IsNav("Jira") && !jiraDashboardActive;
-        var personalControllers = new[] { "Dashboard", "Notes", "Checklist", "FocusTimer", "QuickLinks", "PromptTemplates" };
+        var personalControllers = new[] { "Dashboard", "Activity", "Notes", "Checklist", "FocusTimer", "QuickLinks", "PromptTemplates" };
         var devControllers = new[] { "Components", "DemoKendo", "TabulatorDemo" };
 
         // Breadcrumb: the sidebar group of the current page, then the page title.
@@ -148,7 +148,7 @@
                     <div class="nav-group">
                         <p class="nav-group-label" id="nav-group-personal">@T["Nav.Group.Personal"]</p>
                         <ul aria-labelledby="nav-group-personal">
-                            @{ await NavItem(dashboardHref, "layout-dashboard", T["Nav.Dashboard"].Value, IsNav("Dashboard")); }
+                            @{ await NavItem(dashboardHref, "layout-dashboard", T["Nav.Dashboard"].Value, IsNav("Dashboard", "Activity")); }
                             @{ await NavItem(notesHref, "sticky-note", T["Nav.Notes"].Value, IsNav("Notes")); }
                             @{ await NavItem(checklistHref, "list-checks", T["Nav.Checklist"].Value, IsNav("Checklist")); }
                             @{ await NavItem(focusTimerHref, "timer", T["Nav.FocusTimer"].Value, IsNav("FocusTimer")); }

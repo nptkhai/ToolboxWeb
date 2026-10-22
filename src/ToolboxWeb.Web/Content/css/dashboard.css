@@ -1,0 +1,422 @@
+/* Personal overview (stage 5.5). Views/Dashboard/Index.cshtml, Content/js/dashboard.js.
+   Greeting, a row of numbers, then panels that keep their own height. */
+.dash {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.dash-head {
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+}
+
+.dash-greeting {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    margin: 0;
+}
+
+.dash-date {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin: 2px 0 0;
+}
+
+/* Numbers for today */
+.dash-stats {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.dash-stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow);
+    color: var(--text);
+    display: grid;
+    gap: 2px;
+    padding: var(--space-3) var(--space-4);
+    text-decoration: none;
+    transition: border-color var(--duration) var(--ease);
+}
+
+    .dash-stat:hover,
+    .dash-stat:focus-visible {
+        border-color: var(--line-strong);
+        color: var(--text);
+    }
+
+    .dash-stat[hidden] {
+        display: none;
+    }
+
+.dash-stat-label {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+}
+
+.dash-stat-value {
+    font-size: var(--text-2xl);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-semibold);
+    line-height: 1.2;
+}
+
+.dash-stat-sub {
+    color: var(--muted);
+    font-size: var(--text-xs);
+}
+
+.dash-stat.is-danger .dash-stat-value,
+.dash-stat.is-danger .dash-stat-sub {
+    color: var(--danger);
+}
+
+.dash-stat.is-warning .dash-stat-sub {
+    color: var(--warning);
+}
+
+.dash-stat.is-success .dash-stat-sub {
+    color: var(--success);
+}
+
+.dash-stat-meter {
+    background: var(--line);
+    border-radius: 999px;
+    display: block;
+    height: 4px;
+    margin-top: var(--space-1);
+    overflow: hidden;
+}
+
+    .dash-stat-meter span {
+        background: var(--accent-brand);
+        display: block;
+        height: 100%;
+        width: 0;
+        transition: width var(--duration) var(--ease);
+    }
+
+.dash-stat.is-success .dash-stat-meter span {
+    background: var(--success);
+}
+
+/* Panels: each keeps its own height (align-items: start). */
+.dash-grid {
+    align-items: start;
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.dash-panel {
+    grid-column: span 4;
+    min-width: 0;
+    padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+    .dash-panel[hidden] {
+        display: none;
+    }
+
+.dash-panel--tasks {
+    grid-column: span 7;
+}
+
+.dash-panel--notes {
+    grid-column: span 5;
+}
+
+.dash-panel--activity {
+    grid-column: span 12;
+}
+
+.dash-panel-head {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+    .dash-panel-head h2 {
+        font-size: var(--text-lg);
+        font-weight: var(--weight-semibold);
+        margin: 0;
+    }
+
+    .dash-panel-head a {
+        font-size: var(--text-sm);
+    }
+
+.dash-panel-actions {
+    align-items: center;
+    display: flex;
+    gap: var(--space-3);
+}
+
+.dash-panel .tbx-empty {
+    padding: var(--space-4) var(--space-3);
+}
+
+/* To-do */
+.dash-quick-task {
+    align-items: end;
+    display: grid;
+    gap: var(--space-2);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 150px) auto;
+    margin-bottom: var(--space-3);
+}
+
+.dash-task-group + .dash-task-group {
+    margin-top: var(--space-3);
+}
+
+.dash-group-title {
+    align-items: center;
+    color: var(--muted);
+    display: flex;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    gap: var(--space-2);
+    letter-spacing: .02em;
+    margin: 0 0 var(--space-1);
+    text-transform: uppercase;
+}
+
+.dash-task-group.is-overdue .dash-group-title {
+    color: var(--danger);
+}
+
+.dash-group-count {
+    background: var(--surface-2);
+    border-radius: 999px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    padding: 0 var(--space-2);
+}
+
+.dash-more {
+    display: inline-block;
+    font-size: var(--text-sm);
+    margin-top: var(--space-1);
+}
+
+/* Rows that are links (notes) */
+.dash-link-row {
+    color: var(--text);
+    text-decoration: none;
+}
+
+    .dash-link-row:hover,
+    .dash-link-row:focus-visible {
+        color: var(--text);
+    }
+
+/* Quick links as tiles with the first letter */
+.dash-tiles {
+    display: grid;
+    gap: var(--space-2);
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.dash-tile {
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    color: var(--text);
+    display: flex;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-2);
+    text-decoration: none;
+}
+
+    .dash-tile:hover,
+    .dash-tile:focus-visible {
+        background: var(--hover);
+        color: var(--text);
+    }
+
+.dash-tile-mark {
+    background: var(--accent-tint);
+    border-radius: var(--radius-control);
+    color: var(--accent-strong);
+    display: grid;
+    flex: none;
+    font-weight: var(--weight-semibold);
+    height: 32px;
+    place-items: center;
+    width: 32px;
+}
+
+.dash-tile-text {
+    display: grid;
+    min-width: 0;
+}
+
+.dash-tile-title,
+.dash-tile-host {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dash-tile-title {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+}
+
+.dash-tile-host {
+    color: var(--muted);
+    font-size: var(--text-xs);
+}
+
+/* Prompts */
+.dash-copy {
+    align-items: center;
+    display: inline-flex;
+    flex: none;
+    gap: var(--space-1);
+}
+
+/* Focus */
+.dash-focus {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    justify-content: space-between;
+    margin-bottom: var(--space-2);
+}
+
+.dash-focus-totals,
+.dash-quiet {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin: 0;
+}
+
+/* Activity: a short timeline */
+.dash-timeline {
+    display: grid;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .dash-timeline li {
+        border-left: 2px solid var(--line);
+        display: grid;
+        gap: 2px;
+        padding-left: var(--space-3);
+    }
+
+.dash-timeline-text {
+    font-size: var(--text-sm);
+}
+
+.dash-timeline-meta {
+    color: var(--muted);
+    font-size: var(--text-xs);
+}
+
+.dash-customize-hint {
+    margin: var(--space-3) 0 0;
+}
+
+/* Activity page (Views/Activity/Index.cshtml) */
+.activity-toolbar {
+    align-items: end;
+}
+
+.activity-filter {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-left: auto;
+}
+
+    .activity-filter .tbx-field {
+        min-width: 200px;
+    }
+
+.activity-pages {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    justify-content: center;
+}
+
+    .activity-pages .btn {
+        align-items: center;
+        display: inline-flex;
+        gap: var(--space-1);
+    }
+
+.activity-page-of {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1199.98px) {
+    .dash-panel,
+    .dash-panel--tasks,
+    .dash-panel--notes {
+        grid-column: span 6;
+    }
+
+    .dash-panel--activity {
+        grid-column: span 12;
+    }
+}
+
+@media (max-width: 899.98px) {
+    .dash-panel,
+    .dash-panel--tasks,
+    .dash-panel--notes,
+    .dash-panel--activity {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 599.98px) {
+    .dash-quick-task {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+        .dash-quick-task-title {
+            grid-column: 1 / -1;
+        }
+
+    .dash-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dash-stat {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .dash-stat-value {
+        font-size: var(--text-xl);
+    }
+}

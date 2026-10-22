@@ -18,6 +18,7 @@ const ANONYMOUS_PAGES = [
 
 const LOCAL_PAGES = [
   { name: 'dashboard', path: '/dashboard.html' },
+  { name: 'activity', path: '/activity.html' },
   { name: 'notes', path: '/notes.html' },
   { name: 'checklist', path: '/checklist.html' },
   { name: 'focus-timer', path: '/focus-timer.html' },
