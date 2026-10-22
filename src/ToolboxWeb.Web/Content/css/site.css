@@ -2439,16 +2439,6 @@ a.jira-key {
     overflow: hidden;
 }
 
-.jira-unsaved-bar {
-    align-items: center;
-    border-radius: 0;
-    border-width: 0 0 1px;
-    display: flex;
-    gap: 12px;
-    justify-content: space-between;
-    margin: 0;
-}
-
 .jira-page-tabs {
     border-bottom: 1px solid var(--line);
     gap: 8px;
@@ -2488,372 +2478,705 @@ a.jira-key {
     grid-template-columns: minmax(0, 1fr);
 }
 
-/* ===== Tab: Quản lý công việc (board) — toolbar + board keep their own card box, like Jira Dashboard ===== */
+/* ---------------------------------------------------------------- Jira Worklist, Board tab
+   Stage 5.3. Subtasks by due date: one column a day, a calendar for the month.
+   Behavior: Content/js/jira-task-board.js; unsaved bar and save dialog: jira-worklist-tabs.js. */
+.jira-board {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.jira-board-totals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin: 0;
+}
+
+    .jira-board-totals div {
+        display: grid;
+        gap: 2px;
+    }
+
+    .jira-board-totals dt {
+        color: var(--muted);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-medium);
+    }
+
+    .jira-board-totals dd {
+        font-size: var(--text-md);
+        font-variant-numeric: tabular-nums;
+        font-weight: var(--weight-semibold);
+        margin: 0;
+    }
+
+.jira-board-bar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+}
+
+.jira-board-switch {
+    font-size: var(--text-sm);
+    margin: 0;
+}
+
+.jira-board-legend {
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--text-xs);
+    gap: var(--space-1) var(--space-3);
+    list-style: none;
+    margin: 0 0 0 auto;
+    padding: 0;
+}
+
+    .jira-board-legend li {
+        align-items: center;
+        display: inline-flex;
+        gap: var(--space-1);
+    }
+
+.jira-legend-swatch {
+    border-radius: 2px;
+    display: inline-block;
+    height: 8px;
+    width: 14px;
+}
+
+.jira-legend-swatch.is-done,
+.jira-load-fill.is-done {
+    background: var(--success);
+}
+
+.jira-legend-swatch.is-open,
+.jira-load-fill.is-open {
+    background: var(--accent-brand);
+}
+
+.jira-legend-swatch.is-over {
+    background: var(--danger);
+}
+
+[data-jira-board-alert]:empty {
+    display: none;
+}
+
+.jira-board-panel {
+    padding: var(--space-3);
+}
+
+.jira-board-help {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    margin: 0 0 var(--space-3);
+}
+
 .jira-board-root {
     overflow-x: auto;
-    padding-bottom: 6px;
 }
 
-.jira-board-columns {
-    align-items: flex-start;
-    display: flex;
-    gap: 12px;
+.jira-board-loading {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
 }
 
-.jira-board-day-col {
-    background: var(--jira-panel-alt);
-    border: 1px solid var(--jira-border);
-    border-radius: 12px;
+    .jira-board-loading .tbx-skeleton {
+        height: 28px;
+    }
+
+/* Week: one column a day; Saturday and Sunday are narrower. */
+.jira-week {
+    display: grid;
+    gap: var(--space-2);
+    /* Set per week by the script: empty Saturday and Sunday columns are narrower. */
+    grid-template-columns: var(--week-columns, repeat(7, minmax(150px, 1fr)));
+}
+
+.jira-day {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
-    max-width: 250px;
-    min-width: 230px;
-}
-
-    /* Weekend columns (T7, CN) sit slightly back so work days read first */
-    .jira-board-columns .jira-board-day-col:nth-child(6),
-    .jira-board-columns .jira-board-day-col:nth-child(7) {
-        background: color-mix(in srgb, var(--jira-panel-alt) 55%, transparent);
-    }
-
-    .jira-board-day-col.is-today {
-        background: color-mix(in srgb, var(--jira-mint) 7%, var(--jira-panel-alt));
-        border-color: var(--jira-mint);
-    }
-
-.jira-board-day-head {
-    border-bottom: 1px solid var(--jira-border-soft);
-    padding: 11px 12px;
-}
-
-.jira-board-day-label {
-    color: var(--jira-text);
-    font-size: 12.5px;
-    font-weight: 800;
-}
-
-.jira-board-day-count {
-    background: color-mix(in srgb, var(--jira-panel) 80%, transparent);
-    border-radius: 999px;
-    color: var(--jira-text-dim);
-    float: right;
-    font-size: 10.5px;
-    font-weight: 700;
-    min-width: 22px;
-    padding: 1px 7px;
-    text-align: center;
-}
-
-/* Sibling of .jira-board-day-head, so it needs its own horizontal padding
-   to keep the load bar clear of the column borders. */
-.jira-board-day-load {
-    align-items: center;
-    color: var(--jira-text);
-    display: flex;
-    font-size: 11px;
-    font-weight: 700;
-    gap: 10px;
-    padding: 9px 12px 11px;
-}
-
-    .jira-board-day-load > span:first-child {
-        flex-shrink: 0;
-        white-space: nowrap;
-    }
-
-/* Two stacked segments: logged time on finished subtasks, then estimate still outstanding. */
-.jira-board-load-bar {
-    background: color-mix(in srgb, var(--jira-border) 60%, var(--jira-panel));
-    border-radius: 999px;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--jira-border) 70%, transparent);
-    display: flex;
-    flex: 1;
-    height: 8px;
+    min-height: 220px;
     min-width: 0;
+    transition: border-color var(--duration) var(--ease), background-color var(--duration) var(--ease);
+}
+
+    .jira-day.is-weekend {
+        background: var(--bg);
+    }
+
+    .jira-day.is-today {
+        border-color: var(--accent);
+        box-shadow: inset 0 2px 0 var(--accent);
+    }
+
+    .jira-day.is-drag-over,
+    .jira-cal-cell.is-drag-over {
+        background: var(--accent-tint);
+        border-color: var(--accent);
+    }
+
+.jira-day-head {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+    padding: var(--space-2) var(--space-3) 0;
+}
+
+.jira-day-name {
+    color: var(--muted);
+    white-space: nowrap;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+}
+
+    .jira-day-name strong {
+        color: var(--text);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+    }
+
+    .jira-day.is-today .jira-day-name,
+    .jira-day.is-today .jira-day-name strong {
+        color: var(--accent-strong);
+        font-weight: var(--weight-semibold);
+    }
+
+.jira-day-count {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+}
+
+/* Load line: logged hours of done work (green) and estimates of open work (accent). */
+.jira-load {
+    display: grid;
+    gap: 3px;
+    padding: var(--space-2) var(--space-3) 0;
+}
+
+.jira-load-text {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+}
+
+.jira-load-bar {
+    background: var(--line);
+    border-radius: 999px;
+    display: flex;
+    height: 4px;
     overflow: hidden;
 }
 
-.jira-board-load-fill {
-    display: block;
+.jira-load-fill {
     height: 100%;
-    transition: width .25s ease;
 }
 
-    .jira-board-load-fill--done {
-        background: var(--jira-mint);
-    }
-
-    .jira-board-load-fill--open {
-        background: var(--jira-amber);
-    }
-
-.jira-board-day-body {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 8px;
-    min-height: 180px;
-    padding: 10px;
+.jira-load.is-over .jira-load-text {
+    color: var(--danger);
+    font-weight: var(--weight-medium);
 }
 
-    .jira-board-day-body.is-drag-over {
-        background: color-mix(in srgb, var(--jira-mint) 8%, transparent);
-        border-radius: 8px;
-        outline: 1.5px dashed var(--jira-mint);
-        outline-offset: -4px;
-    }
+.jira-load.is-over .jira-load-bar {
+    box-shadow: 0 0 0 1px var(--danger);
+}
 
-.jira-board-day-empty {
-    color: var(--jira-text-faint);
-    font-size: 11.5px;
-    padding: 16px 6px;
+.jira-day-body {
+    display: grid;
+    gap: var(--space-2);
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-2);
+}
+
+.jira-day-empty {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    margin: 0;
+    padding: var(--space-2);
     text-align: center;
 }
 
-/* Month calendar: 7 fixed-width columns (minmax(0,…) stops long summaries from stretching them),
-   only the row height grows to fit every subtask. */
-.jira-cal-weekday-header,
-.jira-cal-grid {
+/* Cards */
+.jira-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    cursor: grab;
     display: grid;
-    gap: 8px;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--space-1);
+    min-width: 0;
+    padding: var(--space-2);
+    transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease), opacity var(--duration) var(--ease);
 }
 
-.jira-cal-weekday-header {
-    background: color-mix(in srgb, var(--jira-panel-alt) 60%, transparent);
-    border: 1px solid var(--jira-border-soft);
-    border-radius: 10px;
-    margin-bottom: 8px;
-    padding: 8px 0;
-}
-
-    .jira-cal-weekday-header span {
-        color: var(--jira-text-dim);
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: .04em;
-        min-width: 0;
-        text-align: center;
-        text-transform: uppercase;
+    .jira-card:hover {
+        border-color: var(--line-strong);
     }
 
-.jira-cal-cell {
-    background: var(--jira-panel-alt);
-    border: 1px solid var(--jira-border);
-    border-radius: 10px;
+    .jira-card:focus-visible,
+    .jira-cal-chip:focus-visible {
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
+
+    /* Done work steps back: no fill, muted text (still readable, so no opacity). */
+    .jira-card.is-done {
+        background: var(--surface-2);
+        cursor: default;
+    }
+
+        .jira-card.is-done .jira-card-title,
+        .jira-card.is-done .jira-card-key {
+            color: var(--muted);
+        }
+
+    .jira-card.is-moved,
+    .jira-cal-chip.is-moved {
+        border-color: var(--accent);
+        border-style: dashed;
+    }
+
+    .jira-card.is-overdue {
+        box-shadow: inset 3px 0 0 var(--danger);
+    }
+
+    .jira-card.has-error {
+        border-color: var(--danger);
+    }
+
+    .jira-card.is-picked,
+    .jira-cal-chip.is-picked {
+        box-shadow: var(--shadow-popup), var(--focus-ring);
+    }
+
+    .jira-card.is-dragging,
+    .jira-cal-chip.is-dragging {
+        opacity: .4;
+    }
+
+.jira-card-top {
+    align-items: center;
     display: flex;
-    flex-direction: column;
-    min-height: 96px;
+    gap: var(--space-2);
     min-width: 0;
-    padding: 8px;
 }
 
-    /* Weekend columns (T7, CN) sit slightly back so work days read first */
-    .jira-cal-grid .jira-cal-cell:nth-child(7n + 6),
-    .jira-cal-grid .jira-cal-cell:nth-child(7n) {
-        background: color-mix(in srgb, var(--jira-panel-alt) 55%, transparent);
+.jira-card-key {
+    flex: 0 1 auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.jira-card-move {
+    align-items: center;
+    flex: none;
+    background: none;
+    border: 0;
+    border-radius: var(--radius-pill);
+    color: var(--muted);
+    display: inline-flex;
+    justify-content: center;
+    margin-left: auto;
+    min-height: 24px;
+    min-width: 24px;
+    padding: 0;
+}
+
+    .jira-card-move:hover,
+    .jira-card-move:focus-visible {
+        background: var(--hover);
+        color: var(--text);
+    }
+
+.jira-card-title {
+    display: -webkit-box;
+    font-size: var(--text-sm);
+    line-height: 1.35;
+    margin: 0;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.jira-card-meta {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+}
+
+    .jira-card-meta .tbx-pill {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+.jira-card-hours {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+}
+
+.jira-card-notes {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--text-xs);
+    gap: 2px var(--space-2);
+}
+
+    .jira-card-notes .jira-late {
+        margin-left: 0;
+    }
+
+.jira-card-moved {
+    color: var(--accent-strong);
+    font-weight: var(--weight-medium);
+}
+
+.jira-card-error {
+    color: var(--danger);
+}
+
+/* Phone: a day strip picks the one column shown. */
+.jira-board-daystrip {
+    display: none;
+}
+
+.jira-daystrip-day {
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    color: var(--muted);
+    display: grid;
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: var(--text-xs);
+    gap: 0;
+    justify-items: center;
+    min-height: 44px;
+    padding: var(--space-1);
+}
+
+    .jira-daystrip-day strong {
+        color: var(--text);
+        font-size: var(--text-md);
+        font-weight: var(--weight-semibold);
+    }
+
+    .jira-daystrip-day.is-today {
+        border-color: var(--accent);
+    }
+
+    .jira-daystrip-day.is-active {
+        background: var(--accent-tint);
+        border-color: var(--accent);
+        color: var(--accent-strong);
+    }
+
+/* Month calendar */
+.jira-cal {
+    min-width: 640px;
+}
+
+.jira-cal-weekdays,
+.jira-cal-grid {
+    display: grid;
+    gap: var(--space-1);
+    grid-template-columns: repeat(5, minmax(0, 1fr)) repeat(2, minmax(0, .7fr));
+}
+
+.jira-cal.is-no-weekend .jira-cal-weekdays,
+.jira-cal.is-no-weekend .jira-cal-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.jira-cal-weekdays {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    margin-bottom: var(--space-1);
+    text-align: center;
+}
+
+.jira-cal-cell {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-height: 92px;
+    min-width: 0;
+    padding: var(--space-1) var(--space-2) var(--space-2);
+}
+
+    .jira-cal-cell.is-weekend {
+        background: var(--bg);
     }
 
     .jira-cal-cell.is-today {
-        background: color-mix(in srgb, var(--jira-mint) 7%, var(--jira-panel-alt));
-        border-color: var(--jira-mint);
+        border-color: var(--accent);
     }
 
     .jira-cal-cell.is-other-month {
-        background: none;
+        background: transparent;
         border-style: dashed;
-        opacity: .45;
+        color: var(--muted);
+        opacity: .6;
     }
 
-.jira-cal-cell-head {
+.jira-cal-head {
     align-items: center;
     display: flex;
-    flex-shrink: 0;
-    gap: 6px;
-    justify-content: space-between;
-    margin-bottom: 6px;
+    gap: var(--space-1);
+    min-height: 22px;
 }
 
-.jira-cal-daynum {
-    color: var(--jira-text);
-    font-size: 12.5px;
-    font-weight: 800;
-}
-
-.jira-cal-cell.is-other-month .jira-cal-daynum {
-    color: var(--jira-text-faint);
-    font-weight: 600;
-}
-
-.jira-cal-cell.is-today .jira-cal-daynum {
-    color: var(--jira-mint);
-}
-
-.jira-cal-load {
-    background: color-mix(in srgb, var(--jira-panel) 80%, transparent);
-    border-radius: 999px;
-    color: var(--jira-text-dim);
-    font-size: 10px;
-    font-weight: 700;
-    padding: 1px 7px;
-    white-space: nowrap;
-}
-
-.jira-cal-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-}
-
-    .jira-cal-cards.is-drag-over {
-        background: color-mix(in srgb, var(--jira-mint) 8%, transparent);
-        border-radius: 6px;
-        outline: 1.5px dashed var(--jira-mint);
-        outline-offset: -2px;
+    .jira-cal-head .tbx-pill {
+        font-size: var(--text-xs);
     }
 
-.jira-cal-card {
-    background: var(--jira-panel);
-    border: 1px solid var(--jira-border);
-    border-left: 3px solid var(--jira-blue);
-    border-radius: 6px;
+.jira-cal-num {
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-semibold);
+}
+
+.jira-cal-hours {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+}
+
+    .jira-cal-hours.is-over {
+        color: var(--danger);
+        font-weight: var(--weight-semibold);
+    }
+
+.jira-cal-chips {
+    display: grid;
+    gap: 2px;
+}
+
+.jira-cal-chip {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
     cursor: grab;
-    font-size: 10.5px;
-    line-height: 1.35;
-    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
     overflow: hidden;
-    padding: 5px 7px;
+    padding: 1px var(--space-1);
     text-overflow: ellipsis;
-    transition: border-color .18s ease, box-shadow .18s ease;
     white-space: nowrap;
 }
 
-    .jira-cal-card.is-dragging {
-        opacity: .4;
-    }
-
-    .jira-cal-card.is-done {
-        background: color-mix(in srgb, var(--jira-mint) 6%, var(--jira-panel));
-        border-left-color: var(--jira-mint);
-        color: var(--jira-text-dim);
+    .jira-cal-chip.is-done {
+        background: transparent;
+        color: var(--muted);
         cursor: default;
     }
 
-    .jira-cal-card:hover {
-        border-color: var(--jira-blue);
-        box-shadow: 0 4px 10px rgba(15, 23, 42, .10);
+    .jira-cal-chip.is-overdue {
+        border-left: 3px solid var(--danger);
     }
 
-    .jira-cal-card .jira-board-card-key {
-        font-weight: 800;
-    }
-
-.jira-board-card {
-    background: var(--jira-panel);
-    border: 1px solid var(--jira-border);
-    border-radius: 8px;
-    cursor: grab;
-    padding: 10px 12px;
-}
-
-    .jira-board-card.is-dragging {
-        opacity: .4;
-    }
-
-    /* Finished subtasks are read-only history: no grab cursor, visually receded. */
-    .jira-board-card.is-done {
-        background: color-mix(in srgb, var(--jira-mint) 6%, var(--jira-panel));
-        border-left: 3px solid var(--jira-mint);
-        cursor: default;
-    }
-
-        .jira-board-card.is-done .jira-board-card-title {
-            color: var(--jira-text-dim);
-        }
-
-.jira-board-card-top {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 6px;
-}
-
-.jira-board-card-key {
-    color: var(--jira-text-faint);
-    font-size: 11px;
-}
-
-/* Element+class beats the plain .jira-board-card-key colour above, so the
-   subtask key still reads as a link inside board and calendar cards. */
-a.jira-board-card-key {
+.jira-cal-open {
+    align-self: flex-start;
+    background: none;
+    border: 0;
     color: var(--accent);
-    font-weight: 700;
-    text-decoration: none;
+    font-size: var(--text-xs);
+    padding: 0;
 }
 
-    a.jira-board-card-key:hover,
-    a.jira-board-card-key:focus {
-        color: color-mix(in srgb, var(--accent) 78%, var(--jira-text) 22%);
+    .jira-cal-open:hover,
+    .jira-cal-open:focus-visible {
         text-decoration: underline;
     }
 
-.jira-board-card-project {
-    background: var(--jira-panel-alt);
-    border-radius: 999px;
-    color: var(--jira-text-dim);
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 8px;
+.jira-cal-open-narrow {
+    display: none;
 }
 
-.jira-board-card-title {
-    color: var(--jira-text);
-    font-size: 13px;
-    line-height: 1.4;
-    margin-bottom: 8px;
+.jira-board-move-item {
+    font-size: var(--text-sm);
+    margin: 0;
 }
 
-.jira-board-card-bottom {
+/* Floating "N changes not in Jira yet" bar and the write-to-Jira dialog. */
+.jira-unsaved-bar {
     align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-panel);
+    bottom: var(--space-4);
+    box-shadow: var(--shadow-popup);
     display: flex;
-    gap: 6px;
-    justify-content: space-between;
-    margin-bottom: 6px;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    left: 50%;
+    max-width: calc(100vw - 2 * var(--space-4));
+    padding: var(--space-2) var(--space-3);
+    position: fixed;
+    transform: translateX(-50%);
+    z-index: 1030;
 }
 
-.jira-board-card-due {
-    color: var(--jira-text-faint);
-    font-size: 10.5px;
+    .jira-unsaved-bar[hidden] {
+        display: none;
+    }
+
+    .jira-unsaved-bar > svg {
+        color: var(--warning);
+        flex: none;
+    }
+
+.jira-unsaved-text {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
 }
 
-.jira-board-overdue {
-    color: var(--jira-rose);
-    font-weight: 700;
+.jira-save-intro {
+    font-size: var(--text-sm);
 }
 
-.jira-board-card-hours {
-    color: var(--jira-text-faint);
-    font-size: 10.5px;
+.jira-save-list {
+    display: grid;
+    gap: var(--space-1);
+    list-style: none;
+    margin: 0;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding: 0;
 }
 
-/* Moved on the board but not saved to Jira yet. */
-.jira-board-card.is-moved,
-.jira-cal-card.is-moved {
-    border-color: var(--jira-amber);
-    border-style: dashed;
+.jira-save-item {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    display: grid;
+    font-size: var(--text-sm);
+    gap: 2px var(--space-2);
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: var(--space-2);
 }
 
-#jira-auto-search-grid .tabulator-row.is-edited {
-    box-shadow: inset 3px 0 0 var(--jira-amber);
+    .jira-save-item.is-ok {
+        background: var(--success-tint);
+    }
+
+    .jira-save-item.is-error {
+        background: var(--danger-tint);
+    }
+
+.jira-save-key {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
 }
 
-.jira-board-card-moved {
-    color: var(--jira-amber);
-    font-size: 12px;
-    font-weight: 600;
-    margin-top: 4px;
+.jira-save-summary {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.jira-save-dates,
+.jira-save-result {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    grid-column: 1 / -1;
+}
+
+    .jira-save-result:empty {
+        display: none;
+    }
+
+.jira-save-item.is-ok .jira-save-result {
+    color: var(--success);
+}
+
+.jira-save-item.is-error .jira-save-result {
+    color: var(--danger);
+}
+
+@media (max-width: 899.98px) {
+    .jira-board-legend {
+        margin-left: 0;
+    }
+
+    .jira-board-daystrip:not([hidden]) {
+        display: flex;
+        gap: var(--space-1);
+        margin-bottom: var(--space-2);
+    }
+
+    .jira-week {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+        .jira-week .jira-day:not(.is-selected) {
+            display: none;
+        }
+
+    .jira-day {
+        min-height: 160px;
+    }
+}
+
+/* Phone month: a compact calendar; each day opens its cards in the side panel. */
+@media (max-width: 599.98px) {
+    .jira-cal {
+        min-width: 0;
+    }
+
+    .jira-cal-weekdays,
+    .jira-cal-grid {
+        gap: 2px;
+    }
+
+    .jira-cal-cell {
+        min-height: 56px;
+        padding: 2px var(--space-1);
+    }
+
+    .jira-cal-head {
+        flex-wrap: wrap;
+    }
+
+        .jira-cal-head .tbx-pill,
+        .jira-cal-chips,
+        .jira-cal-open-wide {
+            display: none;
+        }
+
+    .jira-cal-hours {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .jira-cal-open-narrow {
+        display: inline;
+    }
 }
 
 /* ===== Tab: Sắp xếp công việc tự động ===== */
@@ -3062,10 +3385,6 @@ a.jira-board-card-key {
 }
 
 @media (max-width: 991.98px) {
-    .jira-board-columns {
-        gap: 10px;
-    }
-
     .jira-auto-filter-row {
         align-items: stretch;
         flex-direction: column;

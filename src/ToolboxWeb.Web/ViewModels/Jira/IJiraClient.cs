@@ -10,4 +10,7 @@ public interface IJiraClient : IDisposable
     Task<List<JiraFilter>> GetFavouriteFiltersAsync(CancellationToken cancellationToken = default);
     Task<List<JiraUser>> GetUsersAsync(CancellationToken cancellationToken = default);
     Task<List<JiraIssue>> SearchIssuesAsync(string jql, bool includeWorklogs = true, CancellationToken cancellationToken = default);
+
+    /// <summary>Sets (or clears, with null) the due date of one issue.</summary>
+    Task UpdateDueDateAsync(string issueKey, DateTime? dueDate, CancellationToken cancellationToken = default);
 }

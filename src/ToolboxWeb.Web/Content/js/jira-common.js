@@ -173,8 +173,23 @@
             return result;
         }
 
+        /** Today in the app time zone (App:TimeZone), as a local Date at midnight. */
+        function today() {
+            try {
+                const text = new Intl.DateTimeFormat("en-CA", {
+                    timeZone: window.Toolbox?.format?.timeZone || undefined,
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit"
+                }).format(new Date());
+                return parseIsoDate(text) || startOfDay(new Date());
+            } catch {
+                return startOfDay(new Date());
+            }
+        }
+
         return {
-            DAY_MS, pad2, isValid, startOfDay, addDays, sameDay,
+            DAY_MS, pad2, isValid, startOfDay, addDays, sameDay, today,
             parseIsoDate, formatIsoDate, parseIsoMonth, formatIsoMonth,
             isoWeekMonday, parseIsoWeek, formatIsoWeek, parseYear, formatYear,
             parsePeriod, formatPeriod, shiftPeriod

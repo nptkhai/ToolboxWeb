@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IJiraClientFactory, JiraClientFactory>();
         services.AddSingleton<IJiraSessionStore, JiraSessionStore>();
         services.AddScoped<IJiraAuthService, JiraAuthService>();
+        services.AddScoped<IJiraDueDateService, JiraDueDateService>();
         services.AddScoped<IUserClaimsPrincipalFactory<Domain.ApplicationUser>, ToolboxUserClaimsPrincipalFactory>();
 
         services.AddOptions<SqlSchemaOptions>().BindConfiguration("SchemaCompare");
