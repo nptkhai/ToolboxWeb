@@ -1,43 +1,64 @@
-/* SQL profiler page: capture stored procedure activity while using another app. */
+/* SQL capture (Views/SqlProfiler/Index.cshtml): record which stored procedures run while the
+   user works in another app. Built on .tbx-steps, .tbx-field, .tbx-chip, .tbx-pill, the shared
+   states and .tbx-sidepanel; this file lays them out and shades rows by how long a call took.
+   Every value comes from tokens.css. */
 
 .sp-page {
     display: grid;
-    gap: 18px;
+    grid-template-columns: minmax(0, 1fr);
 }
 
-.sp-howto {
-    margin: 14px 0 12px;
-}
-
-.sp-toolbar {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-    .sp-toolbar .spacer {
-        flex: 1 1 auto;
+    .sp-page input {
+        max-width: 100%;
+        min-width: 0;
     }
 
-.sp-minutes {
-    max-width: 100px;
+.sp-howto,
+.sp-note {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+    margin: 0 0 var(--space-3);
 }
 
+.sp-tab-content {
+    padding-top: var(--space-3);
+}
+
+/* ---------------------------------------------------------------- step 2: record */
+
+.sp-run-bar {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+}
+
+    .sp-run-bar > .btn,
+    .sp-run-bar > span {
+        align-self: center;
+    }
+
 .sp-clock {
-    font-family: Consolas, "Cascadia Mono", monospace;
-    font-size: 1.05rem;
-    font-weight: 700;
-    letter-spacing: .04em;
+    font-family: var(--font-mono);
+    font-size: var(--text-md);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-semibold);
+}
+
+.sp-countdown {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
 }
 
 .sp-live {
     align-items: center;
     color: var(--danger);
     display: inline-flex;
-    font-weight: 700;
-    gap: 6px;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    gap: var(--space-1);
 }
 
     .sp-live::before {
@@ -45,155 +66,373 @@
         background: var(--danger);
         border-radius: 50%;
         content: "";
-        height: 9px;
-        width: 9px;
+        height: 8px;
+        width: 8px;
+    }
+
+    .sp-live[hidden] {
+        display: none;
     }
 
 @keyframes sp-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: .25; }
-}
+    0%, 100% {
+        opacity: 1;
+    }
 
-@media (prefers-reduced-motion: reduce) {
-    .sp-live::before {
-        animation: none;
+    50% {
+        opacity: .25;
     }
 }
 
-.sp-filters {
-    display: grid;
-    gap: 10px;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    margin-bottom: 12px;
+/* Why Start is still disabled. Reserved height, so the layout does not jump when it clears. */
+.sp-ready {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin: var(--space-2) 0 0;
+    min-height: 1.45em;
 }
 
-    .sp-filters .form-label {
-        font-size: .78rem;
-        margin-bottom: 2px;
+    .sp-ready.warn {
+        background: var(--warning-tint);
+        border-radius: var(--radius-control);
+        color: var(--text);
+        padding: var(--space-2) var(--space-3);
+    }
+
+.sp-error {
+    margin-top: var(--space-3);
+}
+
+    .sp-error[hidden] {
+        display: none;
+    }
+
+.sp-main-options,
+.sp-filters {
+    display: grid;
+    gap: var(--space-2) var(--space-3);
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    margin-top: var(--space-3);
+}
+
+.sp-minutes {
+    width: 160px;
+}
+
+.sp-advanced-head {
+    align-items: center;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: space-between;
+    margin-top: var(--space-4);
+    padding-top: var(--space-2);
+}
+
+.sp-advanced-toggle {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: var(--accent);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+    gap: var(--space-2);
+    min-height: 40px;
+    padding: 0;
+}
+
+    .sp-advanced-toggle .sp-caret {
+        transition: transform var(--duration) var(--ease);
+    }
+
+    .sp-advanced-toggle[aria-expanded="true"] .sp-caret {
+        transform: rotate(90deg);
+    }
+
+.sp-advanced-count {
+    background: var(--accent-tint);
+    border-radius: var(--radius-chip);
+    color: var(--accent-strong);
+    font-size: var(--text-xs);
+    padding: 0 var(--space-2);
+}
+
+    .sp-advanced-count[hidden],
+    .sp-advanced[hidden] {
+        display: none;
     }
 
 .sp-checks {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 20px;
-    margin-bottom: 14px;
+    gap: var(--space-1) var(--space-5);
+    margin-top: var(--space-3);
 }
+
+    .sp-checks .form-check {
+        font-size: var(--text-md);
+        margin: 0;
+    }
+
+/* ---------------------------------------------------------------- step 3: result */
 
 .sp-summary {
     background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 24px;
-    margin-bottom: 12px;
-    padding: 10px 14px;
+    border-radius: var(--radius-control);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) var(--space-3);
 }
 
-    .sp-summary span strong {
-        font-size: 1.05rem;
+    .sp-summary strong {
+        font-weight: var(--weight-semibold);
     }
 
 .sp-warning {
-    background: rgba(217, 119, 6, .12);
-    border: 1px solid rgba(217, 119, 6, .4);
-    border-radius: 8px;
-    color: #b45309;
-    margin-bottom: 12px;
-    padding: 8px 14px;
+    background: var(--warning-tint);
+    border-radius: var(--radius-control);
+    color: var(--text);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) var(--space-3);
 }
 
-.sp-grid {
-    min-height: 240px;
-}
+    .sp-summary[hidden],
+    .sp-warning[hidden],
+    .sp-new-rows[hidden] {
+        display: none;
+    }
 
-/* Rows shade by how long the call took, so a slow one is visible without reading numbers. */
-.tabulator-row.sp-warn {
-    background: rgba(217, 119, 6, .14) !important;
-}
-
-.tabulator-row.sp-danger {
-    background: rgba(190, 18, 60, .14) !important;
-}
-
-.tabulator-row.sp-failed {
-    background: rgba(190, 18, 60, .26) !important;
-    font-weight: 700;
-}
-
-.sp-kind {
-    border-radius: 999px;
-    font-size: .74rem;
-    font-weight: 700;
-    padding: 2px 9px;
-}
-
-    .sp-kind.Procedure { background: rgba(37, 99, 235, .14); color: #1d4ed8; }
-    .sp-kind.Trigger   { background: rgba(147, 51, 234, .14); color: #7e22ce; }
-    .sp-kind.Function  { background: rgba(15, 118, 110, .14); color: #0f766e; }
-    .sp-kind.Error     { background: rgba(190, 18, 60, .18); color: #be123c; }
-
-/* ------------------------------------------------------------------ detail */
-
-.sp-detail {
-    border-top: 1px solid var(--line);
-    margin-top: 16px;
-    padding-top: 14px;
-}
-
-.sp-detail-header {
+.sp-toolbar {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 10px;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
 }
 
-    .sp-detail-header .spacer {
-        flex: 1 1 auto;
+.sp-spacer {
+    flex: 1 1 auto;
+}
+
+.sp-search {
+    flex: 1 1 240px;
+    max-width: 420px;
+    min-width: 0;
+    position: relative;
+}
+
+.sp-search-icon {
+    color: var(--muted);
+    left: var(--space-3);
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Five classes: the field padding in vendor-sync.css would otherwise put the text under the icon. */
+.content-area .sp-page .sp-search .form-control#sp-search {
+    padding-left: calc(var(--space-3) + 16px + var(--space-2));
+}
+
+.sp-view-switch,
+.sp-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+#sp-pause .sp-icon-play,
+#sp-pause[aria-pressed="true"] .sp-icon-pause {
+    display: none;
+}
+
+#sp-pause[aria-pressed="true"] .sp-icon-play {
+    display: inline-block;
+}
+
+.sp-filter-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+/* A small square in the shade the rows of that chip carry. */
+.sp-mark {
+    border-radius: 2px;
+    display: inline-block;
+    height: 10px;
+    width: 10px;
+}
+
+    .sp-mark.is-slow {
+        background: var(--warning);
     }
 
-.sp-detail-body {
-    max-height: 380px;
-    overflow: auto;
+    .sp-mark.is-error {
+        background: var(--danger);
+    }
+
+.sp-keys {
+    align-items: center;
+    color: var(--muted);
+    display: inline-flex;
+    font-size: var(--text-xs);
+    gap: var(--space-1);
 }
 
-.sp-exec {
+.sp-new-rows {
+    align-items: center;
+    background: var(--accent-tint);
+    border-radius: var(--radius-control);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--text-sm);
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+}
+
+.sp-grid {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    overflow: hidden;
+}
+
+    .sp-grid[hidden] {
+        display: none;
+    }
+
+    .sp-grid .tabulator {
+        border: 0;
+    }
+
+    .sp-grid .tabulator-row {
+        cursor: pointer;
+    }
+
+    /* Rows shade by how long the call took, so a slow one shows without reading numbers.
+       Five classes: the zebra and hover rules in vendor-sync.css would otherwise win. The grid
+       element itself carries .tabulator. */
+    .content-area .sp-grid.tabulator .tabulator-row.sp-warn {
+        background: var(--warning-tint);
+    }
+
+    .content-area .sp-grid.tabulator .tabulator-row.sp-danger {
+        background: var(--danger-tint);
+    }
+
+    .content-area .sp-grid.tabulator .tabulator-row.sp-failed {
+        background: var(--danger-tint);
+        box-shadow: inset 3px 0 0 var(--danger);
+        font-weight: var(--weight-semibold);
+    }
+
+    .content-area .sp-grid.tabulator .tabulator-row.sp-selected {
+        box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    .sp-grid .tabulator-placeholder .tbx-empty {
+        white-space: normal;
+    }
+
+.sp-loading {
+    padding: var(--space-4);
+}
+
+/* ---------------------------------------------------------------- detail panel */
+
+.sp-panel .offcanvas-title {
+    font-family: var(--font-mono);
+    font-size: var(--text-md);
+    overflow-wrap: anywhere;
+}
+
+.sp-panel .offcanvas-body {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+}
+
+.sp-detail-meta {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+}
+
+.sp-meta {
+    display: grid;
+    gap: var(--space-1) var(--space-4);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+    width: 100%;
+}
+
+    .sp-meta dt {
+        color: var(--muted);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-regular);
+    }
+
+    .sp-meta dd {
+        font-size: var(--text-sm);
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+.sp-code {
     background: var(--surface-2);
     border: 1px solid var(--line);
-    border-radius: 8px;
-    font-family: Consolas, "Cascadia Mono", monospace;
-    font-size: .82rem;
-    margin-bottom: 12px;
-    padding: 10px 12px;
+    border-radius: var(--radius-control);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    margin: 0;
+    max-height: 260px;
+    overflow: auto;
+    padding: var(--space-2) var(--space-3);
     white-space: pre-wrap;
     word-break: break-word;
 }
 
+.sp-definition {
+    max-height: 360px;
+    white-space: pre;
+}
+
 .sp-param-table {
     border-collapse: collapse;
-    font-size: .84rem;
-    margin-bottom: 12px;
+    font-size: var(--text-sm);
     width: 100%;
 }
 
     .sp-param-table th {
         background: var(--surface-2);
         border: 1px solid var(--line);
-        padding: 6px 9px;
+        color: var(--muted);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+        padding: var(--space-1) var(--space-2);
         text-align: center;
     }
 
     .sp-param-table td {
         border: 1px solid var(--line);
-        padding: 5px 9px;
+        padding: var(--space-1) var(--space-2);
         vertical-align: top;
         word-break: break-word;
     }
 
         .sp-param-table td.name,
         .sp-param-table td.value {
-            font-family: Consolas, "Cascadia Mono", monospace;
+            font-family: var(--font-mono);
             text-align: left;
         }
 
@@ -201,23 +440,68 @@
             text-align: center;
         }
 
-.sp-definition {
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    font-family: Consolas, "Cascadia Mono", monospace;
-    font-size: .8rem;
-    max-height: 260px;
-    overflow: auto;
-    padding: 10px 12px;
-    white-space: pre;
+.sp-detail-status {
+    font-size: var(--text-sm);
+    margin: 0;
 }
 
-.sp-error-box {
-    background: rgba(190, 18, 60, .1);
-    border: 1px solid rgba(190, 18, 60, .35);
-    border-radius: 8px;
-    color: #be123c;
-    margin-bottom: 12px;
-    padding: 8px 12px;
+    .sp-detail-status:empty {
+        display: none;
+    }
+
+    .sp-detail-status.ok {
+        color: var(--success);
+    }
+
+    .sp-detail-status.error {
+        color: var(--danger);
+    }
+
+/* ---------------------------------------------------------------- phone */
+
+@media (max-width: 599.98px) {
+    .sp-run-bar > .btn-primary {
+        flex: 1 1 100%;
+    }
+
+    .sp-minutes {
+        width: 100%;
+    }
+
+    .sp-search {
+        flex-basis: 100%;
+        max-width: none;
+    }
+
+    .sp-spacer,
+    .sp-keys {
+        display: none;
+    }
+
+    .sp-filter-chips {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: var(--space-1);
+    }
+
+        .sp-filter-chips .tbx-chip {
+            flex: none;
+        }
+}
+
+@media (pointer: coarse) {
+    .sp-view-switch .tbx-chip,
+    .sp-filter-chips .tbx-chip {
+        min-height: 44px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sp-live::before {
+        animation: none;
+    }
+
+    .sp-advanced-toggle .sp-caret {
+        transition: none;
+    }
 }
