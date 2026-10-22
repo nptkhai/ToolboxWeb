@@ -4,32 +4,32 @@
     var server = Model.Server;
 }
 <fieldset class="nv-server" data-server-fields>
-    <legend class="nv-label">@T["Notes.Server.Legend"]</legend>
+    <legend class="tbx-field-label">@T["Notes.Server.Legend"]</legend>
 
     <div class="nv-server-grid">
-        <div class="nv-field nv-field-host">
-            <label class="nv-label" for="@(p)-host">@T["Notes.Server.Host"]</label>
+        <div class="tbx-field nv-field-host">
+            <label class="tbx-field-label" for="@(p)-host">@T["Notes.Server.Host"]</label>
             <input class="form-control" id="@(p)-host" name="Host" value="@server.Host" maxlength="200"
                    autocomplete="off" spellcheck="false" placeholder="192.168.0.10" data-field="host"
                    required="@Model.RequireHost" />
         </div>
-        <div class="nv-field nv-field-port">
-            <label class="nv-label" for="@(p)-port">@T["Notes.Server.Port"]</label>
+        <div class="tbx-field nv-field-port">
+            <label class="tbx-field-label" for="@(p)-port">@T["Notes.Server.Port"]</label>
             <input class="form-control" id="@(p)-port" name="Port" value="@server.Port" type="number"
                    min="1" max="65535" inputmode="numeric" placeholder="1433" data-field="port" />
         </div>
-        <div class="nv-field">
-            <label class="nv-label" for="@(p)-user">@T["Notes.Server.Username"]</label>
+        <div class="tbx-field">
+            <label class="tbx-field-label" for="@(p)-user">@T["Notes.Server.Username"]</label>
             <input class="form-control" id="@(p)-user" name="Username" value="@server.Username" maxlength="128"
                    autocomplete="off" spellcheck="false" data-field="user" />
         </div>
-        <div class="nv-field">
-            <label class="nv-label" for="@(p)-db">@T["Notes.Server.Database"]</label>
+        <div class="tbx-field">
+            <label class="tbx-field-label" for="@(p)-db">@T["Notes.Server.Database"]</label>
             <input class="form-control" id="@(p)-db" name="Database" value="@server.Database" maxlength="128"
                    autocomplete="off" spellcheck="false" data-field="db" />
         </div>
-        <div class="nv-field nv-field-password">
-            <label class="nv-label" for="@(p)-pass">@T["Notes.Server.Password"]</label>
+        <div class="tbx-field nv-field-password">
+            <label class="tbx-field-label" for="@(p)-pass">@T["Notes.Server.Password"]</label>
             @* Write-only: the stored password is never put into the page. *@
             <input class="form-control" id="@(p)-pass" name="NewPassword" type="password" maxlength="512"
                    autocomplete="new-password" data-field="password"
@@ -43,17 +43,17 @@
             @if (server.HasPassword)
             {
                 <span class="nv-secret" data-role="secret-value" aria-live="polite">••••••••</span>
-                <button class="nv-btn nv-btn-ghost nv-btn-sm" type="button" data-secret-action="reveal">
-                    <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-eye" /></svg>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-secret-action="reveal">
+                    <tbx-icon name="eye" />
                     <span data-role="reveal-label">@T["Notes.Server.Reveal"]</span>
                 </button>
-                <button class="nv-btn nv-btn-ghost nv-btn-sm" type="button" data-secret-action="copy">
-                    <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-secret-action="copy">
+                    <tbx-icon name="copy" />
                     <span>@T["Notes.Server.CopyPassword"]</span>
                 </button>
             }
-            <button class="nv-btn nv-btn-ghost nv-btn-sm" type="button" data-secret-action="connection">
-                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-plug" /></svg>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-secret-action="connection">
+                <tbx-icon name="plug" />
                 <span>@T["Notes.Server.CopyConnectionString"]</span>
             </button>
             @if (server.HasPassword)
@@ -67,7 +67,7 @@
     }
 
     <p class="nv-hint">
-        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-lock" /></svg>
+        <tbx-icon name="lock" />
         @T["Notes.Server.EncryptedHint"]
     </p>
 </fieldset>

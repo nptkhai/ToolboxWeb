@@ -2,11 +2,10 @@
    Notes — feature stylesheet.
 
    Scoped to the page root (.nv-page) and to the page's own dialogs (.nv-modal), which
-   Bootstrap renders outside that root. Colours come from the site tokens (--surface, --text,
-   --accent, ...) so the light/dark toggle and the animated sky behind the page keep working;
-   only the eight format colours are local, and each has a dark-mode value.
-
-   Spacing is an 8px scale (--nv-1 = 4px half-step, then 8/12/16/24/32).
+   Bootstrap renders outside that root. Every value comes from Content/css/tokens.css: colours
+   (including the nine --format-* colours, one per note format), type sizes, spacing, radius
+   and motion. --nv-fmt (format colour of an element) and --nv-row (state colour of a checklist
+   row) are set per element, not aliases.
 
    Layout by width:
      < 768px   list and detail are two steps; the detail has a "back to the list" link
@@ -14,202 +13,33 @@
      >= 1200px wider list
    ============================================================================ */
 
-:is(.nv-page, .nv-modal) {
-    --nv-1: var(--space-1);
-    --nv-2: var(--space-2);
-    --nv-3: var(--space-3);
-    --nv-4: var(--space-4);
-    --nv-6: var(--space-5);
-    --nv-8: var(--space-6);
-    --nv-radius: var(--radius-panel);
-    --nv-radius-sm: var(--radius-control);
-    --nv-mono: var(--font-mono);
-    --nv-ok: var(--success);
-    --nv-danger: var(--danger);
-
-    /* One colour per format; the dot, badge and tints all derive from it. */
-    --nv-c-txt: #64748b;
-    --nv-c-js: #a16207;
-    --nv-c-css: #2563eb;
-    --nv-c-json: #0f766e;
-    --nv-c-xml: #9333ea;
-    --nv-c-url: #4f46e5;
-    --nv-c-srv: #dc2626;
-    --nv-c-chk: #db2777;
-    --nv-c-mix: #15803d;
-
-    /* One colour per checklist state. Each state also has a name, so colour is never the only clue. */
-    --nv-st-todo: var(--muted);
-    --nv-st-doing: var(--accent);
-    --nv-st-review: #9333ea;
-    --nv-st-wait: var(--warning);
-    --nv-st-high: #ea580c;
-    --nv-st-done: var(--success);
-    --nv-st-drop: var(--danger);
-}
-
-:root[data-theme="dark"] :is(.nv-page, .nv-modal) {
-    --nv-c-txt: #94a3b8;
-    --nv-c-js: #facc15;
-    --nv-c-css: #60a5fa;
-    --nv-c-json: #2dd4bf;
-    --nv-c-xml: #c084fc;
-    --nv-c-url: #a5b4fc;
-    --nv-c-srv: #f87171;
-    --nv-c-chk: #f472b6;
-    --nv-c-mix: #4ade80;
-
-    --nv-st-review: #c084fc;
-    --nv-st-high: #fb923c;
-}
-
-:is(.nv-page, .nv-modal) .nv-fmt-txt { --nv-fmt: var(--nv-c-txt); }
-:is(.nv-page, .nv-modal) .nv-fmt-js { --nv-fmt: var(--nv-c-js); }
-:is(.nv-page, .nv-modal) .nv-fmt-css { --nv-fmt: var(--nv-c-css); }
-:is(.nv-page, .nv-modal) .nv-fmt-json { --nv-fmt: var(--nv-c-json); }
-:is(.nv-page, .nv-modal) .nv-fmt-xml { --nv-fmt: var(--nv-c-xml); }
-:is(.nv-page, .nv-modal) .nv-fmt-url { --nv-fmt: var(--nv-c-url); }
-:is(.nv-page, .nv-modal) .nv-fmt-srv { --nv-fmt: var(--nv-c-srv); }
-:is(.nv-page, .nv-modal) .nv-fmt-chk { --nv-fmt: var(--nv-c-chk); }
-:is(.nv-page, .nv-modal) .nv-fmt-mix { --nv-fmt: var(--nv-c-mix); }
-
-/* The icon sprite is a hidden sibling of the page. */
-.nv-sprite {
-    height: 0;
-    overflow: hidden;
-    position: absolute;
-    width: 0;
-}
+:is(.nv-page, .nv-modal) .nv-fmt-txt { --nv-fmt: var(--format-text); }
+:is(.nv-page, .nv-modal) .nv-fmt-js { --nv-fmt: var(--format-js); }
+:is(.nv-page, .nv-modal) .nv-fmt-css { --nv-fmt: var(--format-css); }
+:is(.nv-page, .nv-modal) .nv-fmt-json { --nv-fmt: var(--format-json); }
+:is(.nv-page, .nv-modal) .nv-fmt-xml { --nv-fmt: var(--format-xml); }
+:is(.nv-page, .nv-modal) .nv-fmt-url { --nv-fmt: var(--format-link); }
+:is(.nv-page, .nv-modal) .nv-fmt-srv { --nv-fmt: var(--format-server); }
+:is(.nv-page, .nv-modal) .nv-fmt-chk { --nv-fmt: var(--format-checklist); }
+:is(.nv-page, .nv-modal) .nv-fmt-mix { --nv-fmt: var(--format-mixed); }
 
 /* ---------------------------------------------------------------- primitives */
-
-:is(.nv-page, .nv-modal) .nv-icon {
-    fill: none;
-    flex: none;
-    height: 16px;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.8;
-    width: 16px;
-}
-
-:is(.nv-page, .nv-modal) .nv-btn {
-    align-items: center;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--nv-radius-sm);
-    color: var(--text);
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: .875rem;
-    font-weight: 600;
-    gap: var(--nv-2);
-    justify-content: center;
-    line-height: 1.2;
-    min-height: 40px;
-    padding: var(--nv-2) var(--nv-4);
-    text-decoration: none;
-    transition: background .12s, border-color .12s, color .12s, opacity .12s;
-    white-space: nowrap;
-}
-
-:is(.nv-page, .nv-modal) .nv-btn:hover:not(:disabled) {
-    border-color: var(--accent);
-    color: var(--accent);
-}
-
-:is(.nv-page, .nv-modal) .nv-btn:disabled {
-    cursor: default;
-    opacity: .45;
-}
-
-/* The filled button marks the action that matters on its part of the screen. */
-:is(.nv-page, .nv-modal) .nv-btn-primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
-}
-
-:is(.nv-page, .nv-modal) .nv-btn-primary:hover:not(:disabled) {
-    background: var(--accent-strong);
-    border-color: var(--accent-strong);
-    color: var(--on-accent);
-}
-
-:is(.nv-page, .nv-modal) .nv-btn-ghost {
-    background: var(--surface);
-}
-
-:is(.nv-page, .nv-modal) .nv-btn-sm {
-    font-size: .8rem;
-    min-height: 34px;
-    padding: var(--nv-1) var(--nv-3);
-}
-
-:is(.nv-page, .nv-modal) .nv-btn-icon {
-    min-height: 36px;
-    padding: 0;
-    width: 36px;
-}
-
-:is(.nv-page, .nv-modal) .nv-btn-icon.nv-btn-sm {
-    min-height: 32px;
-    width: 32px;
-}
-
-:is(.nv-page, .nv-modal) .nv-btn-icon.is-on {
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
-    border-color: var(--accent);
-    color: var(--accent);
-}
-
-:is(.nv-page, .nv-modal) .nv-btn-danger:hover:not(:disabled) {
-    border-color: var(--nv-danger);
-    color: var(--nv-danger);
-}
-
-:is(.nv-page, .nv-modal) .nv-btn-danger-solid {
-    background: var(--nv-danger);
-    border-color: var(--nv-danger);
-    color: var(--on-danger);
-}
-
-:is(.nv-page, .nv-modal) .nv-btn-danger-solid:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--nv-danger) 88%, var(--text));
-    color: var(--on-danger);
-}
-
-:is(.nv-page, .nv-modal) .nv-label {
-    color: var(--muted);
-    font-size: .75rem;
-    font-weight: 600;
-    margin: 0;
-}
 
 :is(.nv-page, .nv-modal) .nv-hint {
     align-items: center;
     color: var(--muted);
     display: flex;
-    font-size: .78rem;
-    gap: var(--nv-2);
+    font-size: var(--text-xs);
+    gap: var(--space-2);
     margin: 0;
-}
-
-:is(.nv-page, .nv-modal) .nv-field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--nv-1);
-    min-width: 0;
 }
 
 :is(.nv-page, .nv-modal) .nv-check {
     align-items: center;
     cursor: pointer;
     display: inline-flex;
-    font-size: .85rem;
-    gap: var(--nv-2);
+    font-size: var(--text-sm);
+    gap: var(--space-2);
     margin: 0;
     min-height: 36px;
 }
@@ -223,7 +53,7 @@
 
 :is(.nv-page, .nv-modal) .nv-dot {
     background: var(--nv-fmt, var(--muted));
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
     flex: none;
     height: 9px;
     width: 9px;
@@ -231,14 +61,14 @@
 
 :is(.nv-page, .nv-modal) .nv-badge {
     background: color-mix(in srgb, var(--nv-fmt, var(--muted)) 14%, var(--surface));
-    border-radius: 5px;
+    border-radius: var(--radius-pill);
     color: var(--nv-fmt, var(--muted));
     flex: none;
-    font-family: var(--nv-mono);
-    font-size: .72rem;
-    font-weight: 700;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
     line-height: 1.5;
-    padding: 0 var(--nv-2);
+    padding: 0 var(--space-2);
 }
 
 /* Grid and flex children default to min-width:auto, so one long unbroken line (a URL, a
@@ -254,34 +84,35 @@
 .nv-page {
     display: flex;
     flex-direction: column;
-    gap: var(--nv-4);
+    gap: var(--space-4);
 }
 
 .nv-page .nv-head {
     align-items: center;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: var(--nv-radius);
+    border-radius: var(--radius-panel);
     box-shadow: var(--shadow);
     display: flex;
     flex-wrap: wrap;
-    gap: var(--nv-3) var(--nv-4);
-    padding: var(--nv-3) var(--nv-4);
+    gap: var(--space-3) var(--space-4);
+    padding: var(--space-3) var(--space-4);
 }
 
+/* Totals in body text colour, numbers in semibold, so the line reads at a glance. */
 .nv-page .nv-summary {
-    color: var(--muted);
-    font-size: .9rem;
+    color: var(--text);
+    font-size: var(--text-md);
     margin: 0;
 }
 
 .nv-page .nv-summary strong {
-    color: var(--text);
     font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-semibold);
 }
 
 .nv-page .nv-sep {
-    margin: 0 var(--nv-1);
+    margin: 0 var(--space-1);
 }
 
 .nv-page .nv-search {
@@ -307,51 +138,68 @@
     z-index: 1;
 }
 
-/* ---------------------------------------------------------------- format chips */
+/* ---------------------------------------------------------------- format chips + sort */
 
-.nv-page .nv-formats {
+.nv-page .nv-filter-bar {
+    align-items: center;
     display: flex;
-    gap: var(--nv-2);
+    flex-wrap: nowrap;
+    gap: var(--space-2) var(--space-4);
+    justify-content: space-between;
+}
+
+/* The shared chips (.tbx-chip), one line that scrolls sideways on a phone. */
+.nv-page .nv-formats {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    min-width: 0;
     overflow-x: auto;
-    padding: 2px 2px var(--nv-1);
+    padding: 2px 2px var(--space-1);
     scrollbar-width: thin;
 }
 
-.nv-page .nv-chip {
+    .nv-page .nv-formats .tbx-chip {
+        flex: none;
+        white-space: nowrap;
+    }
+
+    .nv-page .nv-formats .tbx-chip.is-empty:not(.is-selected) {
+        color: var(--muted);
+    }
+
+.nv-page .nv-sort {
     align-items: center;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--text);
     display: inline-flex;
     flex: none;
-    font-size: .84rem;
-    font-weight: 600;
-    gap: var(--nv-2);
-    min-height: 36px;
-    padding: var(--nv-1) var(--nv-3);
-    text-decoration: none;
-    transition: border-color .12s, background .12s;
+    gap: var(--space-2);
+    margin: 0;
 }
 
-.nv-page .nv-chip:hover {
-    border-color: var(--nv-fmt, var(--accent));
+    .nv-page .nv-sort .tbx-field-label {
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    .nv-page .nv-sort .form-select {
+        min-width: 170px;
+        width: auto;
+    }
+
+/* Phones: the sort goes under the chips. */
+@media (max-width: 599.98px) {
+    .nv-page .nv-filter-bar {
+        flex-wrap: wrap;
+    }
+
+    .nv-page .nv-formats {
+        flex-basis: 100%;
+    }
 }
 
-.nv-page .nv-chip.is-active {
-    background: color-mix(in srgb, var(--nv-fmt, var(--accent)) 12%, var(--surface));
-    border-color: var(--nv-fmt, var(--accent));
-    box-shadow: inset 0 0 0 1px var(--nv-fmt, var(--accent));
-}
-
-.nv-page .nv-chip.is-empty:not(.is-active) {
-    color: var(--muted);
-}
-
-.nv-page .nv-chip-count {
-    color: var(--muted);
-    font-size: .74rem;
-    font-variant-numeric: tabular-nums;
+/* Icon buttons that stay "on" (pinned). */
+:is(.nv-page, .nv-modal) .tbx-icon-button.btn.is-on {
+    background: var(--accent-tint);
+    color: var(--accent-strong);
 }
 
 /* ---------------------------------------------------------------- list + detail */
@@ -359,7 +207,7 @@
 .nv-page .nv-body {
     align-items: start;
     display: grid;
-    gap: var(--nv-4);
+    gap: var(--space-4);
     grid-template-columns: minmax(0, 1fr);
 }
 
@@ -367,7 +215,7 @@
 .nv-page .nv-detail {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: var(--nv-radius);
+    border-radius: var(--radius-panel);
     box-shadow: var(--shadow);
 }
 
@@ -387,14 +235,48 @@
     color: var(--text);
     display: flex;
     flex-direction: column;
-    gap: var(--nv-1);
-    padding: var(--nv-3) var(--nv-4) var(--nv-3) calc(var(--nv-4) - 3px);
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4) var(--space-3) calc(var(--space-4) - 3px);
     text-decoration: none;
-    transition: background .12s;
+    transition: background var(--duration) var(--ease);
 }
 
 .nv-page .nv-items li:last-child .nv-item {
     border-bottom: 0;
+}
+
+/* Each row carries a pin button beside its link; room is kept for it on the right. */
+.nv-page .nv-item-row {
+    position: relative;
+}
+
+    .nv-page .nv-item-row .nv-item {
+        padding-right: calc(var(--space-4) + 32px);
+    }
+
+.nv-page .nv-row-pin {
+    margin: 0;
+    position: absolute;
+    right: var(--space-2);
+    top: var(--space-2);
+}
+
+/* With a mouse the pin shows on hover or focus; a pinned row always shows it. */
+@media (hover: hover) {
+    .nv-page .nv-item-row:not(.is-pinned) .nv-row-pin {
+        opacity: 0;
+        transition: opacity var(--duration) var(--ease);
+    }
+
+    .nv-page .nv-item-row:hover .nv-row-pin,
+    .nv-page .nv-item-row:focus-within .nv-row-pin {
+        opacity: 1;
+    }
+}
+
+.nv-page .nv-item:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--accent);
+    outline: none;
 }
 
 .nv-page .nv-item:hover {
@@ -409,34 +291,28 @@
 .nv-page .nv-item-head {
     align-items: center;
     display: flex;
-    gap: var(--nv-2);
+    gap: var(--space-2);
     min-width: 0;
 }
 
 .nv-page .nv-item-title {
     flex: 1;
-    font-size: .9rem;
-    font-weight: 700;
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.nv-page .nv-pin-mark {
-    color: var(--accent);
-    height: 14px;
-    width: 14px;
-}
-
 .nv-page .nv-count-pill {
     background: var(--surface-2);
-    border-radius: 999px;
+    border-radius: var(--radius-chip);
     color: var(--muted);
     flex: none;
-    font-size: .7rem;
-    font-weight: 700;
-    padding: 1px var(--nv-2);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    padding: 1px var(--space-2);
 }
 
 .nv-page .nv-item-preview {
@@ -444,7 +320,7 @@
     -webkit-line-clamp: 2;
     color: var(--muted);
     display: -webkit-box;
-    font-size: .8rem;
+    font-size: var(--text-xs);
     line-height: 1.45;
     overflow: hidden;
     overflow-wrap: anywhere;
@@ -454,8 +330,8 @@
     color: var(--muted);
     display: flex;
     flex-wrap: wrap;
-    font-size: .74rem;
-    gap: var(--nv-2);
+    font-size: var(--text-xs);
+    gap: var(--space-2);
 }
 
 .nv-page .nv-match-note {
@@ -463,7 +339,7 @@
 }
 
 .nv-page .nv-detail {
-    padding: var(--nv-4) var(--nv-6) var(--nv-6);
+    padding: var(--space-4) var(--space-5) var(--space-5);
 }
 
 /* Only a phone needs a way back; there the list is hidden while a note is open. */
@@ -476,13 +352,13 @@
     border-bottom: 1px solid var(--line);
     display: flex;
     flex-wrap: wrap;
-    gap: var(--nv-2);
-    padding-bottom: var(--nv-3);
+    gap: var(--space-2);
+    padding-bottom: var(--space-3);
 }
 
 .nv-page .nv-meta {
     color: var(--muted);
-    font-size: .8rem;
+    font-size: var(--text-xs);
 }
 
 .nv-page .nv-spacer {
@@ -498,15 +374,15 @@
 .nv-page .nv-title-input {
     background: transparent;
     border: 1px solid transparent;
-    border-radius: var(--nv-radius-sm);
+    border-radius: var(--radius-control);
     color: var(--text);
     display: block;
-    font-size: 1.4rem;
-    font-weight: 700;
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
     line-height: 1.3;
-    margin: var(--nv-3) calc(-1 * var(--nv-2)) var(--nv-2);
-    padding: var(--nv-1) var(--nv-2);
-    width: calc(100% + var(--nv-4));
+    margin: var(--space-3) calc(-1 * var(--space-2)) var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    width: calc(100% + var(--space-4));
 }
 
 .nv-page .nv-title-input:hover {
@@ -515,7 +391,7 @@
 
 .nv-page .nv-title-input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+    box-shadow: var(--focus-ring);
     outline: none;
 }
 
@@ -523,8 +399,8 @@
     align-items: flex-end;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--nv-3);
-    margin-bottom: var(--nv-3);
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
 }
 
 :is(.nv-page, .nv-modal) .nv-field-format {
@@ -541,15 +417,15 @@
 :is(.nv-page, .nv-modal) .nv-block {
     display: flex;
     flex-direction: column;
-    gap: var(--nv-2);
-    margin: var(--nv-3) 0;
+    gap: var(--space-2);
+    margin: var(--space-3) 0;
 }
 
 :is(.nv-page, .nv-modal) .nv-block-head {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--nv-2);
+    gap: var(--space-2);
     justify-content: space-between;
 }
 
@@ -563,16 +439,16 @@
     align-items: center;
     background: none;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--radius-control);
     color: var(--muted);
     cursor: pointer;
     display: inline-flex;
     font: inherit;
-    font-size: .78rem;
-    font-weight: 600;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
     gap: 6px;
     min-height: 32px;
-    padding: var(--nv-1) var(--nv-2);
+    padding: var(--space-1) var(--space-2);
 }
 
 :is(.nv-page, .nv-modal) .nv-tool:hover {
@@ -581,29 +457,29 @@
 }
 
 :is(.nv-page, .nv-modal) .nv-tool.is-done,
-:is(.nv-page, .nv-modal) .nv-btn.is-done {
-    border-color: var(--nv-ok);
-    color: var(--nv-ok);
+:is(.nv-page, .nv-modal) .btn.is-done {
+    border-color: var(--success);
+    color: var(--success);
 }
 
 /* Outranks vendor-sync.css, which loads after this file and resets form-control fonts. */
 .content-area :is(.nv-page, .nv-modal) textarea.form-control.nv-content:not(.k-input-inner):not(.k-input) {
-    font-size: .9rem;
+    font-size: var(--text-md);
     line-height: 1.55;
     min-height: 120px;
 }
 
 .content-area :is(.nv-page, .nv-modal) textarea.form-control.nv-content.is-code:not(.k-input-inner):not(.k-input) {
     background-color: color-mix(in srgb, var(--nv-fmt, var(--accent)) 6%, var(--surface));
-    font-family: var(--nv-mono);
-    font-size: .84rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
     overflow-wrap: normal;
     tab-size: 4;
     white-space: pre;
 }
 
 :is(.nv-page, .nv-modal) .nv-code-status {
-    font-size: .78rem;
+    font-size: var(--text-xs);
     margin: 0;
     overflow-wrap: anywhere;
 }
@@ -613,7 +489,7 @@
 }
 
 :is(.nv-page, .nv-modal) .nv-code-status.is-ok {
-    color: var(--nv-ok);
+    color: var(--success);
 }
 
 :is(.nv-page, .nv-modal) .nv-code-status.is-ok::before {
@@ -621,7 +497,7 @@
 }
 
 :is(.nv-page, .nv-modal) .nv-code-status.is-error {
-    color: var(--nv-danger);
+    color: var(--danger);
 }
 
 :is(.nv-page, .nv-modal) .nv-code-status.is-error::before {
@@ -631,7 +507,7 @@
 .nv-page .nv-links {
     display: flex;
     flex-direction: column;
-    gap: var(--nv-1);
+    gap: var(--space-1);
     list-style: none;
     margin: 0;
     padding: 0;
@@ -641,7 +517,7 @@
     align-items: center;
     color: var(--accent);
     display: inline-flex;
-    font-size: .85rem;
+    font-size: var(--text-sm);
     gap: 6px;
     overflow-wrap: anywhere;
 }
@@ -650,23 +526,23 @@
 
 :is(.nv-page, .nv-modal) .nv-server {
     border: 1px solid var(--line);
-    border-radius: var(--nv-radius-sm);
-    margin: 0 0 var(--nv-3);
+    border-radius: var(--radius-control);
+    margin: 0 0 var(--space-3);
     min-width: 0;
-    padding: var(--nv-3) var(--nv-4) var(--nv-4);
+    padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
 /* Bootstrap floats legends and stretches them to full width. */
 :is(.nv-page, .nv-modal) .nv-server > legend {
     float: none;
     margin: 0;
-    padding: 0 var(--nv-1);
+    padding: 0 var(--space-1);
     width: auto;
 }
 
 :is(.nv-page, .nv-modal) .nv-server-grid {
     display: grid;
-    gap: var(--nv-3);
+    gap: var(--space-3);
     grid-template-columns: minmax(0, 1fr);
 }
 
@@ -674,34 +550,34 @@
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--nv-2);
-    margin-top: var(--nv-3);
+    gap: var(--space-2);
+    margin-top: var(--space-3);
 }
 
 :is(.nv-page, .nv-modal) .nv-secret {
     background: var(--surface-2);
     border: 1px solid var(--line);
-    border-radius: 6px;
-    font-family: var(--nv-mono);
-    font-size: .85rem;
+    border-radius: var(--radius-control);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
     min-width: 120px;
     overflow-wrap: anywhere;
-    padding: 6px var(--nv-3);
+    padding: 6px var(--space-3);
 }
 
 :is(.nv-page, .nv-modal) .nv-server .nv-hint {
-    margin-top: var(--nv-3);
+    margin-top: var(--space-3);
 }
 
 /* A value the browser refuses (a port above 65535, an empty required title) is marked on the
    field itself, not only in the browser's passing tooltip. :user-invalid waits until the user
    has typed or tried to save, so an untouched form is not red. */
 .content-area :is(.nv-page, .nv-modal) .form-control:not(.k-input-inner):not(.k-input):user-invalid {
-    border-color: var(--nv-danger);
+    border-color: var(--danger);
 }
 
 .content-area :is(.nv-page, .nv-modal) .form-control:not(.k-input-inner):not(.k-input):user-invalid:focus {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--nv-danger) 22%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 22%, transparent);
 }
 
 /* ---------------------------------------------------------------- row editors */
@@ -712,20 +588,20 @@
 
 .nv-page .nv-rows {
     border: 1px solid var(--line);
-    border-radius: var(--nv-radius-sm);
+    border-radius: var(--radius-control);
     display: flex;
     flex-direction: column;
-    gap: var(--nv-2);
-    margin: 0 0 var(--nv-3);
+    gap: var(--space-2);
+    margin: 0 0 var(--space-3);
     min-width: 0;
-    padding: var(--nv-3) var(--nv-4) var(--nv-4);
+    padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
 /* Bootstrap floats legends and stretches them to full width. */
 .nv-page .nv-rows > legend {
     float: none;
     margin: 0;
-    padding: 0 var(--nv-1);
+    padding: 0 var(--space-1);
     width: auto;
 }
 
@@ -735,11 +611,11 @@
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--nv-2);
+    gap: var(--space-2);
     min-width: 0;
 }
 
-.nv-page .nv-row .nv-btn {
+.nv-page .nv-row .btn {
     flex: none;
 }
 
@@ -747,7 +623,7 @@
 .nv-page .nv-row-actions {
     display: flex;
     flex: none;
-    gap: var(--nv-1);
+    gap: var(--space-1);
     margin-left: auto;
 }
 
@@ -767,8 +643,8 @@
 }
 
 .content-area .nv-page .nv-row .form-control.nv-row-url:not(.k-input-inner):not(.k-input) {
-    font-family: var(--nv-mono);
-    font-size: .82rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
 }
 
 /* Nothing to open until what is typed is a web address. */
@@ -779,7 +655,7 @@
 
 .nv-page .nv-rows-foot {
     display: flex;
-    margin-top: var(--nv-1);
+    margin-top: var(--space-1);
 }
 
 /* ---------------------------------------------------------------- checklist states */
@@ -788,12 +664,12 @@
     align-items: center;
     display: inline-flex;
     flex: none;
-    gap: var(--nv-2);
+    gap: var(--space-2);
 }
 
 .nv-page .nv-swatch {
     background: var(--nv-row, var(--muted));
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     flex: none;
     height: 16px;
     width: 16px;
@@ -802,19 +678,19 @@
 .content-area .nv-page .nv-status-box .form-select {
     background-color: color-mix(in srgb, var(--nv-row, var(--muted)) 12%, var(--surface));
     border-color: color-mix(in srgb, var(--nv-row, var(--muted)) 45%, var(--line));
-    font-size: .82rem;
+    font-size: var(--text-sm);
     min-width: 132px;
-    padding-right: var(--nv-8);
+    padding-right: var(--space-6);
     width: auto;
 }
 
-.nv-page .nv-task-row:has(option[value="todo"]:checked) { --nv-row: var(--nv-st-todo); }
-.nv-page .nv-task-row:has(option[value="doing"]:checked) { --nv-row: var(--nv-st-doing); }
-.nv-page .nv-task-row:has(option[value="review"]:checked) { --nv-row: var(--nv-st-review); }
-.nv-page .nv-task-row:has(option[value="wait"]:checked) { --nv-row: var(--nv-st-wait); }
-.nv-page .nv-task-row:has(option[value="high"]:checked) { --nv-row: var(--nv-st-high); }
-.nv-page .nv-task-row:has(option[value="done"]:checked) { --nv-row: var(--nv-st-done); }
-.nv-page .nv-task-row:has(option[value="drop"]:checked) { --nv-row: var(--nv-st-drop); }
+.nv-page .nv-task-row:has(option[value="todo"]:checked) { --nv-row: var(--muted); }
+.nv-page .nv-task-row:has(option[value="doing"]:checked) { --nv-row: var(--accent); }
+.nv-page .nv-task-row:has(option[value="review"]:checked) { --nv-row: var(--state-review); }
+.nv-page .nv-task-row:has(option[value="wait"]:checked) { --nv-row: var(--warning); }
+.nv-page .nv-task-row:has(option[value="high"]:checked) { --nv-row: var(--state-high); }
+.nv-page .nv-task-row:has(option[value="done"]:checked) { --nv-row: var(--success); }
+.nv-page .nv-task-row:has(option[value="drop"]:checked) { --nv-row: var(--danger); }
 
 /* A finished row reads as finished at a glance, without hiding what it says. */
 .content-area .nv-page .nv-task-row:has(option[value="done"]:checked) .form-control.nv-row-text:not(.k-input-inner):not(.k-input) {
@@ -825,7 +701,7 @@
 /* On a phone the row has little width to give away. */
 @media (max-width: 600px) {
     .nv-page .nv-rows {
-        padding: var(--nv-3);
+        padding: var(--space-3);
     }
 
     .content-area .nv-page .nv-status-box .form-select {
@@ -838,39 +714,39 @@
 :is(.nv-page, .nv-modal) .nv-form-foot {
     align-items: center;
     display: flex;
-    gap: var(--nv-3);
+    gap: var(--space-3);
     justify-content: flex-end;
-    margin-top: var(--nv-2);
+    margin-top: var(--space-2);
 }
 
 /* ---------------------------------------------------------------- sub-notes */
 
 .nv-page .nv-children {
     border-top: 1px solid var(--line);
-    margin-top: var(--nv-6);
-    padding-top: var(--nv-4);
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
 }
 
 .nv-page .nv-children-title {
-    font-size: 1rem;
-    font-weight: 700;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
     margin: 0;
 }
 
 .nv-page .nv-count {
     color: var(--muted);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
 }
 
 .nv-page .nv-children-head .nv-hint {
-    margin: var(--nv-1) 0 var(--nv-3);
+    margin: var(--space-1) 0 var(--space-3);
 }
 
 .nv-page .nv-child {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: var(--nv-radius-sm);
-    margin-bottom: var(--nv-2);
+    border-radius: var(--radius-control);
+    margin-bottom: var(--space-2);
     position: relative;
 }
 
@@ -878,11 +754,11 @@
     align-items: center;
     cursor: pointer;
     display: flex;
-    gap: var(--nv-2);
+    gap: var(--space-2);
     list-style: none;
     min-height: 44px;
     /* Room on the right for the copy and delete buttons laid over this row. */
-    padding: var(--nv-2) 92px var(--nv-2) var(--nv-3);
+    padding: var(--space-2) 92px var(--space-2) var(--space-3);
 }
 
 .nv-page .nv-child > details > summary::-webkit-details-marker {
@@ -891,7 +767,7 @@
 
 .nv-page .nv-chevron {
     color: var(--muted);
-    transition: transform .15s;
+    transition: transform var(--duration) var(--ease);
 }
 
 .nv-page .nv-child > details[open] .nv-chevron {
@@ -912,33 +788,33 @@
 }
 
 .nv-page .nv-child-title {
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
 }
 
 /* user@host:port · database, under a connection's title. */
 .nv-page .nv-child-sub {
     color: var(--muted);
-    font-family: var(--nv-mono);
-    font-size: .75rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
 }
 
 .nv-page .nv-child summary time {
     color: var(--muted);
     flex: none;
-    font-size: .75rem;
+    font-size: var(--text-xs);
 }
 
 .nv-page .nv-child-actions {
     display: flex;
-    gap: var(--nv-1);
+    gap: var(--space-1);
     position: absolute;
-    right: var(--nv-2);
+    right: var(--space-2);
     top: 6px;
 }
 
 .nv-page .nv-child-form {
     border-top: 1px dashed var(--line);
-    padding: var(--nv-3);
+    padding: var(--space-3);
 }
 
 .nv-page .nv-child:target,
@@ -949,9 +825,9 @@
 .nv-page .nv-child-add {
     background: var(--surface-2);
     border: 1px dashed var(--line);
-    border-radius: var(--nv-radius-sm);
-    margin-top: var(--nv-3);
-    padding: var(--nv-3);
+    border-radius: var(--radius-control);
+    margin-top: var(--space-3);
+    padding: var(--space-3);
 }
 
 /* In a Mixed group every editor is rendered and the picked format decides which one shows.
@@ -974,62 +850,15 @@
     display: none;
 }
 
-/* ---------------------------------------------------------------- empty states */
-
-.nv-page .nv-onboard {
-    align-items: center;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--nv-radius);
-    box-shadow: var(--shadow);
-    display: flex;
-    flex-direction: column;
-    gap: var(--nv-3);
-    padding: var(--nv-8) var(--nv-4);
-    text-align: center;
-}
-
-.nv-page .nv-onboard h2 {
-    font-size: 1.15rem;
-    font-weight: 700;
-    margin: 0;
-}
-
-.nv-page .nv-onboard p {
-    color: var(--muted);
-    margin: 0;
-    max-width: 52ch;
-}
-
-.nv-page .nv-onboard-icon {
-    color: var(--accent);
-    fill: none;
-    height: 48px;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.4;
-    width: 48px;
-}
-
-.nv-page .nv-empty {
-    align-items: center;
-    color: var(--muted);
-    display: flex;
-    flex-direction: column;
-    gap: var(--nv-3);
-    margin: 0;
-    padding: var(--nv-8) var(--nv-4);
-    text-align: center;
-}
-
-.nv-page .nv-empty-title {
-    font-weight: 600;
-    margin: 0;
-}
-
+/* Keyboard line under the list. */
 .nv-page .nv-shortcuts {
-    justify-content: flex-end;
+    border-top: 1px solid var(--line);
+    padding: var(--space-2) var(--space-4);
+}
+
+.nv-page .nv-list .tbx-empty,
+.nv-page .nv-detail .tbx-empty {
+    border: 0;
 }
 
 /* ---------------------------------------------------------------- dialogs */
@@ -1042,7 +871,7 @@
 .nv-modal .modal-content {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: var(--nv-radius);
+    border-radius: var(--radius-panel);
     color: var(--text);
 }
 
@@ -1052,8 +881,8 @@
 }
 
 .nv-modal .modal-title {
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
 }
 
 :root[data-theme="dark"] .nv-modal .btn-close {
@@ -1063,7 +892,7 @@
 .nv-modal .modal-body {
     display: flex;
     flex-direction: column;
-    gap: var(--nv-4);
+    gap: var(--space-4);
 }
 
 .nv-modal .nv-format-picker {
@@ -1075,26 +904,26 @@
 
 .nv-modal .nv-format-picker > legend {
     float: none;
-    margin-bottom: var(--nv-2);
+    margin-bottom: var(--space-2);
     width: auto;
 }
 
 .nv-modal .nv-picks {
     display: grid;
-    gap: var(--nv-2);
+    gap: var(--space-2);
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 
 .nv-modal .nv-pick {
     align-items: center;
     border: 1px solid var(--line);
-    border-radius: var(--nv-radius-sm);
+    border-radius: var(--radius-control);
     cursor: pointer;
     display: flex;
-    gap: var(--nv-2);
+    gap: var(--space-2);
     margin: 0;
     min-height: 44px;
-    padding: var(--nv-2) var(--nv-3);
+    padding: var(--space-2) var(--space-3);
     position: relative;
 }
 
@@ -1124,20 +953,20 @@
 
 .nv-modal .nv-pick-name {
     flex: 1;
-    font-size: .88rem;
-    font-weight: 600;
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
 }
 
 .nv-modal .nv-pick-ext {
     color: var(--muted);
-    font-family: var(--nv-mono);
-    font-size: .75rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
 }
 
 /* Code formats get the monospace editor as soon as they are picked. */
 .content-area .nv-modal .nv-create:has(input[name="Format"]:is([value="2"], [value="3"], [value="4"], [value="5"]):checked) textarea.form-control.nv-content:not(.k-input-inner):not(.k-input) {
-    font-family: var(--nv-mono);
-    font-size: .84rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
     white-space: pre;
 }
 
@@ -1147,22 +976,17 @@
 }
 
 .nv-modal .nv-form-errors ul {
-    background: color-mix(in srgb, var(--nv-danger) 10%, var(--surface));
-    border: 1px solid color-mix(in srgb, var(--nv-danger) 40%, transparent);
-    border-radius: var(--nv-radius-sm);
-    color: var(--nv-danger);
-    font-size: .85rem;
+    background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+    border-radius: var(--radius-control);
+    color: var(--danger);
+    font-size: var(--text-sm);
     margin: 0;
-    padding: var(--nv-3) var(--nv-3) var(--nv-3) var(--nv-8);
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-6);
 }
 
 .nv-modal .nv-form-errors.validation-summary-valid {
     display: none;
-}
-
-.nv-modal .nv-delete-message {
-    margin: 0;
-    overflow-wrap: anywhere;
 }
 
 /* ============================================================================
@@ -1197,7 +1021,7 @@
         overflow-y: auto;
         position: sticky;
         scrollbar-width: thin;
-        top: var(--nv-3);
+        top: var(--space-3);
     }
 }
 
@@ -1232,20 +1056,20 @@
         align-items: center;
         color: var(--accent);
         display: inline-flex;
-        font-size: .88rem;
-        font-weight: 600;
-        gap: var(--nv-2);
-        margin-bottom: var(--nv-3);
+        font-size: var(--text-md);
+        font-weight: var(--weight-semibold);
+        gap: var(--space-2);
+        margin-bottom: var(--space-3);
         min-height: 44px;
         text-decoration: none;
     }
 
     .nv-page .nv-detail {
-        padding: var(--nv-3) var(--nv-4) var(--nv-4);
+        padding: var(--space-3) var(--space-4) var(--space-4);
     }
 
     .nv-page .nv-title-input {
-        font-size: 1.2rem;
+        font-size: var(--text-xl);
     }
 
     :is(.nv-page, .nv-modal) .nv-field-format {
@@ -1255,15 +1079,15 @@
 
 /* Touch screens: nothing tapped is smaller than about 44px, and keyboard hints go away. */
 @media (pointer: coarse) {
-    :is(.nv-page, .nv-modal) .nv-btn,
+    :is(.nv-page, .nv-modal) .btn,
     :is(.nv-page, .nv-modal) .nv-tool,
-    .nv-page .nv-chip,
+    .nv-page .tbx-chip,
     :is(.nv-page, .nv-modal) .nv-check {
         min-height: 44px;
     }
 
-    :is(.nv-page, .nv-modal) .nv-btn-icon,
-    :is(.nv-page, .nv-modal) .nv-btn-icon.nv-btn-sm {
+    :is(.nv-page, .nv-modal) .tbx-icon-button.btn {
+        height: 44px;
         min-height: 44px;
         width: 44px;
     }

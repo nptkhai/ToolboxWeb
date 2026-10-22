@@ -6,7 +6,7 @@
 }
 <div class="nv-slot nv-slot-task@(Model.Conditional ? " is-conditional" : null)" data-slot="task">
     <fieldset class="nv-rows" data-rows="task">
-        <legend class="nv-label">@T["Notes.Task.Rows"]</legend>
+        <legend class="tbx-field-label">@T["Notes.Task.Rows"]</legend>
 
         @foreach (var row in rows)
         {
@@ -24,12 +24,12 @@
                     </select>
                 </span>
                 <span class="nv-row-actions">
-                    <button class="nv-btn nv-btn-icon nv-btn-sm" type="button" data-row-copy data-row-field="text" title="@T["Action.Copy"]">
-                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                    <button class="btn btn-sm tbx-icon-button" type="button" data-row-copy data-row-field="text" title="@T["Action.Copy"]">
+                        <tbx-icon name="copy" />
                         <span class="visually-hidden">@T["Action.Copy"]</span>
                     </button>
-                    <button class="nv-btn nv-btn-icon nv-btn-sm nv-btn-danger" type="button" data-row-remove title="@T["Notes.Row.Remove"]">
-                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-close" /></svg>
+                    <button class="btn btn-sm tbx-icon-button is-danger" type="button" data-row-remove title="@T["Notes.Row.Remove"]">
+                        <tbx-icon name="x" />
                         <span class="visually-hidden">@T["Notes.Row.Remove"]</span>
                     </button>
                 </span>
@@ -51,12 +51,12 @@
                     </select>
                 </span>
                 <span class="nv-row-actions">
-                    <button class="nv-btn nv-btn-icon nv-btn-sm" type="button" data-row-copy data-row-field="text" title="@T["Action.Copy"]">
-                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-copy" /></svg>
+                    <button class="btn btn-sm tbx-icon-button" type="button" data-row-copy data-row-field="text" title="@T["Action.Copy"]">
+                        <tbx-icon name="copy" />
                         <span class="visually-hidden">@T["Action.Copy"]</span>
                     </button>
-                    <button class="nv-btn nv-btn-icon nv-btn-sm nv-btn-danger" type="button" data-row-remove title="@T["Notes.Row.Remove"]">
-                        <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-close" /></svg>
+                    <button class="btn btn-sm tbx-icon-button is-danger" type="button" data-row-remove title="@T["Notes.Row.Remove"]">
+                        <tbx-icon name="x" />
                         <span class="visually-hidden">@T["Notes.Row.Remove"]</span>
                     </button>
                 </span>
@@ -64,8 +64,8 @@
         </template>
 
         <div class="nv-rows-foot">
-            <button class="nv-btn nv-btn-sm" type="button" data-add-row>
-                <svg class="nv-icon" aria-hidden="true"><use href="#nv-i-plus" /></svg>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-add-row>
+                <tbx-icon name="plus" />
                 @T["Notes.Task.AddRow"]
             </button>
         </div>

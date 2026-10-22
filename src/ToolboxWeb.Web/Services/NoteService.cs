@@ -11,7 +11,23 @@ using ToolboxWeb.Web.ViewModels;
 namespace ToolboxWeb.Web.Services;
 
 /// <summary>What the notes page is asked to show. Everything travels on the query string.</summary>
-public sealed record NotePageQuery(string? FormatSlug, string? Search, int? SelectedId, int? FocusChildId = null);
+public sealed record NotePageQuery(string? FormatSlug, string? Search, int? SelectedId, int? FocusChildId = null, string? Sort = null);
+
+/// <summary>List orders of the notes page; pinned notes stay on top in each.</summary>
+public static class NoteSorts
+{
+    public const string Updated = "updated";
+    public const string Title = "title";
+    public const string Created = "created";
+
+    public static string? Normalize(string? value) => value?.Trim().ToLowerInvariant() switch
+    {
+        Updated => Updated,
+        Title => Title,
+        Created => Created,
+        _ => null
+    };
+}
 
 /// <summary>Outcome of a create or update. <see cref="GroupId"/> is the top-level note to show next.</summary>
 public sealed record NoteSaveResult(bool Succeeded, int? GroupId = null, int? NoteId = null, string? Error = null)
@@ -137,10 +153,16 @@ public class NoteService : INoteService
             })
             .ToArray();
 
-        var visible = hits
+        var sort = NoteSorts.Normalize(query.Sort) ?? NoteSorts.Updated;
+        var pinnedFirst = hits
             .Where(hit => activeFormat is null || hit.Group.Format == activeFormat.Format)
-            .OrderByDescending(hit => hit.Group.IsPinned)
-            .ThenByDescending(hit => Touched(hit.Group))
+            .OrderByDescending(hit => hit.Group.IsPinned);
+        var visible = (sort switch
+            {
+                NoteSorts.Title => pinnedFirst.ThenBy(hit => hit.Group.Title, StringComparer.CurrentCultureIgnoreCase),
+                NoteSorts.Created => pinnedFirst.ThenByDescending(hit => hit.Group.CreatedAt),
+                _ => pinnedFirst.ThenByDescending(hit => Touched(hit.Group))
+            })
             .ThenByDescending(hit => hit.Group.Id)
             .ToList();
 
@@ -165,7 +187,8 @@ public class NoteService : INoteService
             Search = query.Search?.Trim(),
             ActiveFormat = activeFormat,
             TotalCount = all.Count,
-            FormatsInUse = groups.Select(x => x.Format).Distinct().Count(),
+            PinnedCount = groups.Count(x => x.IsPinned),
+            Sort = sort,
             MatchingCount = hits.Count,
             FormatCounts = formatCounts,
             Items = visible.Select(hit => ToListItem(

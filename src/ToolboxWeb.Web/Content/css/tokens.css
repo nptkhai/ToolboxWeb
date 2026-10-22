@@ -81,6 +81,20 @@
     /* Motion */
     --duration: 140ms;
     --ease: cubic-bezier(.2, 0, 0, 1);
+
+    /* Notes: one colour per note format and two checklist states without a status token.
+       Used by Content/css/notes.css for the format dot, badge and tints. */
+    --format-text: #64748B;
+    --format-js: #A16207;
+    --format-css: #2563EB;
+    --format-json: #0F766E;
+    --format-xml: #9333EA;
+    --format-link: #4F46E5;
+    --format-server: #DC2626;
+    --format-checklist: #DB2777;
+    --format-mixed: #15803D;
+    --state-review: #9333EA;
+    --state-high: #EA580C;
 }
 
 :root[data-theme="dark"] {
@@ -107,6 +121,18 @@
     --shadow: none;
     --shadow-popup: 0 12px 32px -12px color-mix(in srgb, #000000 70%, transparent);
     --backdrop: color-mix(in srgb, #000000 60%, transparent);
+
+    --format-text: #94A3B8;
+    --format-js: #FACC15;
+    --format-css: #60A5FA;
+    --format-json: #2DD4BF;
+    --format-xml: #C084FC;
+    --format-link: #A5B4FC;
+    --format-server: #F87171;
+    --format-checklist: #F472B6;
+    --format-mixed: #4ADE80;
+    --state-review: #C084FC;
+    --state-high: #FB923C;
 }
 
 @media (prefers-reduced-motion: reduce) {
