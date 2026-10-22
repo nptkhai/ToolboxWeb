@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using ToolboxWeb.Web.ViewModels.Jira;
 using ToolboxWeb.Web.Extensions;
 using ToolboxWeb.Web.Infrastructure.Time;
+using ToolboxWeb.Web.Services;
 
 namespace ToolboxWeb.Web.Infrastructure.Jira;
 
@@ -87,6 +88,27 @@ public sealed partial class FakeJiraClient : IJiraClient
         if (jql.Contains("subTaskIssueTypes", StringComparison.OrdinalIgnoreCase))
         {
             issues = issues.Where(x => x.Type == SubTaskType).ToList();
+        }
+
+        // Status category and project, as auto-schedule asks for them.
+        if (jql.Contains("statusCategory != Done", StringComparison.OrdinalIgnoreCase))
+        {
+            issues = issues.Where(x => JiraStatus.Tone(x.Status) != "done").ToList();
+        }
+
+        if (jql.Contains("statusCategory = \"To Do\"", StringComparison.OrdinalIgnoreCase))
+        {
+            issues = issues.Where(x => JiraStatus.Tone(x.Status) == "todo").ToList();
+        }
+        else if (jql.Contains("statusCategory = \"In Progress\"", StringComparison.OrdinalIgnoreCase))
+        {
+            issues = issues.Where(x => JiraStatus.Tone(x.Status) == "doing").ToList();
+        }
+
+        var project = ProjectInJql().Match(jql);
+        if (project.Success)
+        {
+            issues = issues.Where(x => x.IssueKey.StartsWith(project.Groups[1].Value + "-", StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         var dates = DateInJql().Matches(jql)
@@ -208,4 +230,7 @@ public sealed partial class FakeJiraClient : IJiraClient
 
     [GeneratedRegex(@"\d{4}-\d{2}-\d{2}")]
     private static partial Regex DateInJql();
+
+    [GeneratedRegex("project = \"([^\"]+)\"")]
+    private static partial Regex ProjectInJql();
 }

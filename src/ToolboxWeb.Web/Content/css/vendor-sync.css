@@ -657,6 +657,20 @@
     color: var(--ui-control-muted);
 }
 
+/* NumericTextBox: the two spin buttons share the input's height instead of each taking a
+   full button height (which made the box about twice as tall as the other inputs). */
+.content-area .k-numerictextbox .k-input-spinner {
+    border-left: 1px solid color-mix(in srgb, var(--ui-control-border) 80%, transparent);
+}
+
+    .content-area .k-numerictextbox .k-input-spinner .k-button {
+        border: 0;
+        border-radius: 0;
+        flex: 1 1 0;
+        min-height: 0;
+        padding: 0 var(--space-1);
+    }
+
 .content-area .k-picker .k-input-button,
 .content-area .k-dropdownlist .k-input-button,
 .content-area .k-combobox .k-input-button {

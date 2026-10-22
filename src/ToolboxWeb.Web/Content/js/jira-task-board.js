@@ -120,10 +120,10 @@
             return rows.filter((row) => dueIso(row) === iso && filterRow(row));
         }
 
-        // Done work counts its logged time; open work its estimate.
+        // Done work counts its logged time; open work what is left of its estimate.
         function summarise(dayRows) {
-            const done = dayRows.filter(isDone).reduce((sum, row) => sum + (Number(row.loggedHours) || 0), 0);
-            const open = dayRows.filter((row) => !isDone(row)).reduce((sum, row) => sum + (Number(row.estimateHours) || 0), 0);
+            const done = dayRows.filter(isDone).reduce((sum, row) => sum + jira.loadHours(row), 0);
+            const open = dayRows.filter((row) => !isDone(row)).reduce((sum, row) => sum + jira.loadHours(row), 0);
             return { done, open, total: done + open };
         }
 
@@ -306,7 +306,7 @@
 
             const all = rows;
             const logged = all.reduce((sum, row) => sum + (Number(row.loggedHours) || 0), 0);
-            const open = all.filter((row) => !isDone(row)).reduce((sum, row) => sum + (Number(row.estimateHours) || 0), 0);
+            const open = all.filter((row) => !isDone(row)).reduce((sum, row) => sum + jira.remainingHours(row), 0);
             const capacity = daysBetween(rangeStart, rangeEnd).filter((day) => !isWeekend(day)).length * (config.dayCapacityHours || 8);
             totalsEl.innerHTML = [
                 [text.totalsLogged, hours(logged)],
