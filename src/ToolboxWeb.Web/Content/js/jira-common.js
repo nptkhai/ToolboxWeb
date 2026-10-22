@@ -218,6 +218,19 @@
         return fmt() ? fmt().hours(value) : `${Number(value) || 0}h`;
     }
 
+    /** Hours of open work still to do: estimate minus logged, never below zero. */
+    function remainingHours(row) {
+        return Math.max(0, (Number(row?.estimateHours) || 0) - (Number(row?.loggedHours) || 0));
+    }
+
+    /**
+     * Hours a subtask puts on its due day: logged time once it is done, the remaining estimate
+     * while it is open. The board and auto-schedule load bars both count this way.
+     */
+    function loadHours(row) {
+        return row?.statusTone === "done" ? Number(row.loggedHours) || 0 : remainingHours(row);
+    }
+
     // ------------------------------------------------------------ status
     // One mapping for every Jira screen. Tones come from Services/JiraStatus.cs; the server
     // side of this mapping is JiraStatus.PillClass.
@@ -772,6 +785,8 @@
         displayDate,
         shortDate,
         displayHours,
+        remainingHours,
+        loadHours,
         statusPill,
         browseUrl,
         issueLink,

@@ -302,6 +302,66 @@
         display: inline-block;
     }
 
+/* ---------------------------------------------------------------- steps */
+/* A flow done in order (1-2-3), each step on its own surface with one primary action.
+   Markup: <ol class="tbx-steps"><li class="tbx-step"><div class="tbx-step-head">
+   <span class="tbx-step-no">1</span><h2 class="tbx-step-title">…</h2><span class="tbx-step-hint">…</span>
+   </div>…</li></ol>. First user: Jira auto-schedule. */
+.tbx-steps {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: minmax(0, 1fr);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tbx-step {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow);
+    min-width: 0;
+    padding: var(--space-4);
+}
+
+    .tbx-step[hidden] {
+        display: none;
+    }
+
+.tbx-step-head {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.tbx-step-no {
+    align-self: center;
+    background: var(--accent-tint);
+    border-radius: 50%;
+    color: var(--accent-strong);
+    display: grid;
+    flex: none;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    height: 24px;
+    place-items: center;
+    width: 24px;
+}
+
+.tbx-step-title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    margin: 0;
+}
+
+.tbx-step-hint {
+    color: var(--muted);
+    font-size: var(--text-sm);
+}
+
 /* ---------------------------------------------------------------- side panel */
 /* Bootstrap offcanvas with the app's surface, used for detail and edit panels. */
 .offcanvas.tbx-sidepanel {

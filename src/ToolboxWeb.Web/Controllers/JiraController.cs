@@ -22,6 +22,9 @@ public class JiraController : Controller
     private const string MyOpenSubtasksBaseJql =
         MySubtasksBaseJql + " AND statusCategory != Done";
 
+    // Auto-schedule asks for the days it may fill: about three months from the start date.
+    private const int MaxScheduledRangeDays = 120;
+
     private readonly IJiraAuthService _jiraAuth;
     private readonly IJiraDueDateService _dueDates;
     private readonly ICurrentUserService _currentUser;
@@ -300,13 +303,51 @@ public class JiraController : Controller
         }));
     }
 
+    /// <summary>
+    /// My subtasks due between two dates (any status). Auto-schedule reads them to know how many
+    /// hours each day already holds before it adds more.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> ScheduledSubtasks([FromQuery] DateTime from, [FromQuery] DateTime to)
+    {
+        var session = await GetSessionOrSignOutAsync();
+        if (session is null)
+        {
+            return Json(JiraApiResponse<object>.LoginRequired(_localizer["Jira.SessionExpired"].Value));
+        }
+
+        if (from == default || to < from || (to - from).TotalDays > MaxScheduledRangeDays)
+        {
+            return Json(JiraApiResponse<object>.Fail(_localizer["Jira.InvalidRequest"].Value));
+        }
+
+        var jql = string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"{MySubtasksBaseJql} AND duedate >= \"{from:yyyy-MM-dd}\" AND duedate <= \"{to:yyyy-MM-dd}\" ORDER BY duedate ASC");
+
+        try
+        {
+            var issues = await session.Client.SearchIssuesAsync(jql, includeWorklogs: true);
+            return Json(JiraApiResponse<object>.Ok(new { rows = MapSubtaskRows(issues) }));
+        }
+        catch (Exception ex)
+        {
+            return Json(JiraApiResponse<object>.Fail(JiraErrorHelper.ToUserMessage(
+                ex,
+                _localizer["Jira.AutoSchedule.ExistingLoadFailed"].Value,
+                _localizer["Jira.SessionExpired"].Value,
+                _localizer["Jira.NotFound"].Value,
+                _localizer["Jira.InvalidRequest"].Value)));
+        }
+    }
+
     private static string BuildAutoScheduleJql(JiraAutoScheduleSearchRequest request)
     {
         var parts = new List<string> { MyOpenSubtasksBaseJql };
 
         if (!string.IsNullOrWhiteSpace(request.Project))
         {
-            parts.Add($"project = \"{request.Project.Trim()}\"");
+            parts.Add($"project = \"{request.Project.Trim().Replace("\"", "\\\"")}\"");
         }
 
         switch (request.Status?.Trim().ToLowerInvariant())

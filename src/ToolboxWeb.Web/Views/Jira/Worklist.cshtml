@@ -12,7 +12,6 @@
     {
         currentCulture,
         taskBoardApiUrl = Url.Action("TaskBoard", "Jira"),
-        autoScheduleApiUrl = Url.Action("AutoScheduleSearch", "Jira"),
         loginUrl = Url.Page("/Account/Login", new { area = "Identity" }),
         browseBaseUrl = Model.Session.BaseUrl?.TrimEnd('/'),
         dayCapacityHours = 8,
@@ -150,19 +149,42 @@
     };
     var autoScheduleConfigJson = JsonSerializer.Serialize(new
     {
+        apiUrl = Url.Action("AutoScheduleSearch", "Jira"),
+        existingUrl = Url.Action("ScheduledSubtasks", "Jira"),
         error = T["Jira.AutoSchedule.Error"].Value,
-        resultEmpty = T["Jira.AutoSchedule.ResultGridEmpty"].Value,
-        dueEditedToast = T["Jira.AutoSchedule.DueEditedToast"].Value,
-        savedToast = T["Jira.AutoSchedule.SavedToast"].Value,
-        discardedToast = T["Jira.AutoSchedule.DiscardedToast"].Value,
-        groupSummary = T["Jira.AutoSchedule.GroupSummary"].Value,
-        noEligibleTasks = T["Jira.AutoSchedule.NoEligibleTasks"].Value,
-        configSummary = T["Jira.AutoSchedule.ConfigSummary"].Value,
-        configSummarySkipped = T["Jira.AutoSchedule.ConfigSummarySkipped"].Value,
-        noDueWarning = T["Jira.AutoSchedule.NoDueWarning"].Value,
+        retry = T["Jira.Search.Retry"].Value,
+        loading = T["Jira.AutoSchedule.Loading"].Value,
+        empty = T["Jira.AutoSchedule.Empty"].Value,
+        editFilters = T["Jira.Search.EditFilters"].Value,
+        listTitle = T["Jira.AutoSchedule.ListTitle"].Value,
+        noEstimate = T["Jira.Dashboard.NoEstimate"].Value,
+        late = T["Jira.Dashboard.DaysLate"].Value,
+        noEstimateWarning = T["Jira.AutoSchedule.NoEstimateWarning"].Value,
+        noParent = T["Jira.Dashboard.Group.NoParent"].Value,
+        groupMeta = T["Jira.Search.GroupMeta"].Value,
+        waiting = T["Jira.AutoSchedule.Step2Waiting"].Value,
+        settingsSummary = T["Jira.AutoSchedule.SettingsSummary"].Value,
+        settingsWeekendOff = T["Jira.AutoSchedule.SettingsWeekendOff"].Value,
+        settingsExisting = T["Jira.AutoSchedule.SettingsExisting"].Value,
+        hoursRange = T["Jira.AutoSchedule.ConfigHoursRange"].Value,
         startDateRequired = T["Jira.AutoSchedule.StartDateRequired"].Value,
-        noProposalsToast = T["Jira.AutoSchedule.NoProposalsToast"].Value,
+        noProposals = T["Jira.AutoSchedule.NoProposalsToast"].Value,
         proposalsToast = T["Jira.AutoSchedule.ProposalsToast"].Value,
+        resultMeta = T["Jira.AutoSchedule.ResultMeta"].Value,
+        unchanged = T["Jira.AutoSchedule.Unchanged"].Value,
+        dayGroup = T["Jira.AutoSchedule.DayGroup"].Value,
+        load = T["Jira.Board.Load"].Value,
+        over = T["Jira.Board.Over"].Value,
+        existingLine = T["Jira.AutoSchedule.ExistingLine"].Value,
+        movedToast = T["Jira.AutoSchedule.MovedToast"].Value,
+        moveButton = T["Jira.AutoSchedule.MoveButton"].Value,
+        moveItem = T["Jira.AutoSchedule.MoveItem"].Value,
+        nothingToWrite = T["Jira.AutoSchedule.NothingToWrite"].Value,
+        written = T["Jira.Save.ItemOk"].Value,
+        saveError = T["Jira.Save.CardError"].Value,
+        moveUp = T["Jira.AutoSchedule.MoveUp"].Value,
+        moveDown = T["Jira.AutoSchedule.MoveDown"].Value,
+        directionOf = T["Jira.AutoSchedule.DirectionOf"].Value,
         criteria = new
         {
             dueDate = T["Jira.AutoSchedule.CriteriaDueDate"].Value,
@@ -177,6 +199,17 @@
             todoFirst = T["Jira.AutoSchedule.DirTodoFirst"].Value,
             createOldestFirst = T["Jira.AutoSchedule.DirCreateOldestFirst"].Value,
             createNewestFirst = T["Jira.AutoSchedule.DirCreateNewestFirst"].Value
+        },
+        columns = new
+        {
+            key = T["Jira.Table.Key"].Value,
+            summary = T["Jira.Table.Summary"].Value,
+            status = T["Jira.Table.Status"].Value,
+            dueDate = T["Jira.Table.DueDate"].Value,
+            estimate = T["Jira.Table.Estimate"].Value,
+            logged = T["Jira.Table.LogTime"].Value,
+            remaining = T["Jira.AutoSchedule.ColumnRemaining"].Value,
+            dueChange = T["Jira.AutoSchedule.ColumnDueChange"].Value
         }
     }, jsonOptions);
 }
@@ -410,122 +443,173 @@
         </div>
 
         <div class="tab-pane fade" id="jira-tab-auto-pane" role="tabpanel" aria-labelledby="jira-tab-auto">
-            <section class="panel jira-panel">
-                <div class="jira-auto-filter-card" data-jira-auto-filter>
-                    <div class="jira-auto-filter-row">
-                        <div class="jira-auto-filter-group">
-                            <label class="form-label">@T["Jira.AutoSchedule.Project"]</label>
-                            <select class="form-select" id="jira-auto-project">
+            @* Stage 5.4: three steps. 1 find the open subtasks, 2 schedule them day by day, 3 review the
+               proposal (table or calendar), change any date, write it to Jira through the same dialog as
+               the board. Content/js/jira-auto-schedule.js *@
+            <ol class="tbx-steps jira-auto" data-jira-auto>
+                <li class="tbx-step" data-auto-step="1">
+                    <div class="tbx-step-head">
+                        <span class="tbx-step-no" aria-hidden="true">1</span>
+                        <h2 class="tbx-step-title">@T["Jira.AutoSchedule.Step1Title"]</h2>
+                        <span class="tbx-step-hint">@T["Jira.AutoSchedule.Step1Hint"]</span>
+                    </div>
+                    <form class="jira-auto-filter" data-auto-filter novalidate>
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="jira-auto-project">@T["Jira.AutoSchedule.Project"]</label>
+                            <select class="form-select" id="jira-auto-project" data-auto-field="project">
                                 <option value="">@T["Jira.AutoSchedule.ProjectAll"]</option>
                             </select>
                         </div>
-                        <div class="jira-auto-filter-group">
-                            <label class="form-label">@T["Jira.AutoSchedule.Status"]</label>
-                            <select class="form-select" id="jira-auto-status">
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="jira-auto-status">@T["Jira.AutoSchedule.Status"]</label>
+                            <select class="form-select" id="jira-auto-status" data-auto-field="status">
                                 <option value="all">@T["Jira.AutoSchedule.StatusAll"]</option>
                                 <option value="todo">@T["Jira.AutoSchedule.StatusTodo"]</option>
                                 <option value="doing">@T["Jira.AutoSchedule.StatusDoing"]</option>
                             </select>
                         </div>
-                        <div class="jira-auto-filter-group jira-auto-filter-grow">
-                            <label class="form-label">@T["Jira.AutoSchedule.Text"]</label>
-                            <input type="text" class="form-control" id="jira-auto-text" />
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="jira-auto-text">@T["Jira.AutoSchedule.Text"]</label>
+                            <input type="text" class="form-control" id="jira-auto-text" autocomplete="off" data-auto-field="text" placeholder="@T["Jira.AutoSchedule.TextExample"]" />
                         </div>
-                        <div class="jira-auto-filter-group">
-                            <label class="form-label">@T["Jira.AutoSchedule.DueFrom"]</label>
-                            <input type="date" class="form-control" id="jira-auto-due-from" />
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="jira-auto-due-from">@T["Jira.AutoSchedule.DueFrom"]</label>
+                            <input class="form-control" id="jira-auto-due-from" autocomplete="off" data-auto-field="dueFrom" data-auto-date />
                         </div>
-                        <div class="jira-auto-filter-group">
-                            <label class="form-label">@T["Jira.AutoSchedule.DueTo"]</label>
-                            <input type="date" class="form-control" id="jira-auto-due-to" />
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="jira-auto-due-to">@T["Jira.AutoSchedule.DueTo"]</label>
+                            <input class="form-control" id="jira-auto-due-to" autocomplete="off" data-auto-field="dueTo" data-auto-date />
                         </div>
-                        <button type="button" class="btn btn-primary" data-jira-auto-search>@T["Jira.AutoSchedule.SearchButton"]</button>
-                        <button type="button" class="btn btn-outline-secondary" data-jira-auto-sort disabled>@T["Jira.AutoSchedule.SortButton"]</button>
-                    </div>
-                </div>
+                        <div class="jira-auto-filter-actions">
+                            <button type="submit" class="btn btn-primary"><tbx-icon name="search" /><span>@T["Jira.AutoSchedule.SearchButton"]</span></button>
+                        </div>
+                    </form>
 
-                <div data-jira-auto-alert></div>
-
-                <div class="jira-auto-grids">
-                    <div class="jira-auto-grid-col">
-                        <div class="jira-auto-grid-head">
-                            <h3>@T["Jira.AutoSchedule.SearchGridTitle"]</h3>
-                            <span class="jira-auto-grid-count" data-jira-auto-count></span>
+                    <div class="jira-auto-list" data-auto-list>
+                        <h3 class="jira-auto-list-title" data-auto-list-title></h3>
+                        <div class="jira-auto-warning" role="note" data-auto-noestimate hidden>
+                            <tbx-icon name="triangle-alert" />
+                            <p><span data-auto-noestimate-text></span> <span data-auto-noestimate-keys></span></p>
                         </div>
-                        <div id="jira-auto-search-grid" class="jira-auto-grid-host"></div>
+                        <div data-auto-state></div>
+                        <div id="jira-auto-search-grid" class="jira-auto-grid" data-auto-grid></div>
                     </div>
-                    <div class="jira-auto-grid-col">
-                        <div class="jira-auto-grid-head">
-                            <h3>@T["Jira.AutoSchedule.ResultGridTitle"]</h3>
-                            <div class="jira-auto-grid-actions">
-                                <span class="jira-auto-grid-hint" data-jira-auto-result-hint></span>
-                                <button type="button" class="btn btn-outline-secondary" data-jira-auto-discard disabled>@T["Jira.AutoSchedule.DiscardProposal"]</button>
-                                <button type="button" class="btn btn-primary" data-jira-auto-save disabled>@T["Jira.AutoSchedule.SaveProposal"]</button>
-                            </div>
-                        </div>
-                        <div id="jira-auto-result-grid" class="jira-auto-grid-host"></div>
-                    </div>
-                </div>
-            </section>
+                </li>
 
-            <div class="modal fade" id="jira-auto-config-modal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
+                <li class="tbx-step" data-auto-step="2">
+                    <div class="tbx-step-head">
+                        <span class="tbx-step-no" aria-hidden="true">2</span>
+                        <h2 class="tbx-step-title">@T["Jira.AutoSchedule.Step2Title"]</h2>
+                        <span class="tbx-step-hint">@T["Jira.AutoSchedule.Step2Hint"]</span>
+                    </div>
+                    <div class="jira-auto-run">
+                        <button type="button" class="btn btn-primary" data-auto-schedule disabled>
+                            <tbx-icon name="calendar" /><span>@T["Jira.AutoSchedule.ScheduleButton"]</span>
+                        </button>
+                        <p class="jira-auto-run-summary" data-auto-settings-summary>@T["Jira.AutoSchedule.Step2Waiting"]</p>
+                    </div>
+                </li>
+
+                <li class="tbx-step" data-auto-step="3" hidden>
+                    <div class="tbx-step-head">
+                        <span class="tbx-step-no" aria-hidden="true">3</span>
+                        <h2 class="tbx-step-title">@T["Jira.AutoSchedule.Step3Title"]</h2>
+                        <span class="tbx-step-hint">@T["Jira.AutoSchedule.Step3Hint"]</span>
+                    </div>
+                    <div class="jira-auto-result-bar">
+                        <div class="jira-period-tabs" role="group" aria-label="@T["Jira.AutoSchedule.ViewLabel"]">
+                            <button type="button" class="jira-period-tab is-active" data-auto-view="table" aria-pressed="true">@T["Jira.AutoSchedule.ViewTable"]</button>
+                            <button type="button" class="jira-period-tab" data-auto-view="calendar" aria-pressed="false">@T["Jira.AutoSchedule.ViewCalendar"]</button>
+                        </div>
+                        <p class="jira-auto-result-meta" data-auto-result-meta></p>
+                        <ul class="jira-board-legend" aria-label="@T["Jira.Board.LegendLabel"]">
+                            <li><span class="jira-legend-swatch is-existing" aria-hidden="true"></span>@T["Jira.AutoSchedule.LegendExisting"]</li>
+                            <li><span class="jira-legend-swatch is-open" aria-hidden="true"></span>@T["Jira.AutoSchedule.LegendProposed"]</li>
+                            <li><span class="jira-legend-swatch is-over" aria-hidden="true"></span>@T["Jira.AutoSchedule.LegendOver"]</li>
+                        </ul>
+                    </div>
+                    <div class="jira-auto-warning jira-auto-result-warning" role="note" data-auto-existing-warning hidden>
+                        <tbx-icon name="triangle-alert" />
+                        <p>@T["Jira.AutoSchedule.ExistingLoadFailed"]</p>
+                    </div>
+                    <div id="jira-auto-result-grid" class="jira-auto-grid" data-auto-result-table></div>
+                    <div data-auto-calendar-wrap hidden>
+                        <p class="jira-board-help">@T["Jira.AutoSchedule.CalendarHint"]</p>
+                        <div class="jira-auto-days" data-auto-calendar></div>
+                    </div>
+                    <div class="jira-auto-result-actions">
+                        <button type="button" class="btn btn-outline-secondary" data-auto-discard>@T["Jira.AutoSchedule.DiscardProposal"]</button>
+                        <button type="button" class="btn btn-primary" data-auto-write>@T["Jira.Save.Button"]</button>
+                    </div>
+                </li>
+            </ol>
+
+            <div class="modal fade" id="jira-auto-config-modal" tabindex="-1" aria-labelledby="jira-auto-config-title" aria-hidden="true" data-auto-config-modal>
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                    <form class="modal-content" data-auto-config-form novalidate>
                         <div class="modal-header">
-                            <h5 class="modal-title">@T["Jira.AutoSchedule.ConfigTitle"]</h5>
+                            <h2 class="modal-title fs-5" id="jira-auto-config-title">@T["Jira.AutoSchedule.ConfigTitle"]</h2>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
                         </div>
-                        <div class="modal-body">
-                            <p class="jira-auto-config-summary" data-jira-auto-config-summary></p>
-                            <div class="alert alert-warning d-none" data-jira-auto-config-warning></div>
-
-                            <div class="jira-auto-config-section">
-                                <div class="jira-auto-config-title">@T["Jira.AutoSchedule.ConfigSectionManual"]</div>
-                                <p class="jira-auto-config-hint">@T["Jira.AutoSchedule.ConfigSectionManualHint"]</p>
-                                <div class="jira-auto-manual-list" data-jira-auto-manual-list></div>
-                            </div>
-
-                            <div class="jira-auto-config-section">
-                                <div class="jira-auto-config-title">@T["Jira.AutoSchedule.ConfigSectionCriteria"]</div>
-                                <p class="jira-auto-config-hint">@T["Jira.AutoSchedule.ConfigSectionCriteriaHint"]</p>
-                                <div data-jira-auto-criteria-list></div>
-                            </div>
-
-                            <div class="jira-auto-config-section">
-                                <div class="jira-auto-config-title">@T["Jira.AutoSchedule.ConfigSectionCapacity"]</div>
-                                <div class="jira-auto-cap-mode-row">
-                                    <label class="form-check"><input type="radio" class="form-check-input" name="jira-auto-cap-mode" id="jira-auto-cap-hours" checked /> <span class="form-check-label">@T["Jira.AutoSchedule.ConfigCapacityByHours"]</span></label>
-                                    <label class="form-check"><input type="radio" class="form-check-input" name="jira-auto-cap-mode" id="jira-auto-cap-percent" /> <span class="form-check-label">@T["Jira.AutoSchedule.ConfigCapacityByPercent"]</span></label>
+                        <div class="modal-body tbx-form-grid">
+                            <div class="jira-auto-config-pair">
+                                <div class="tbx-field">
+                                    <label class="tbx-field-label" for="jira-auto-cfg-start">@T["Jira.AutoSchedule.ConfigStartDate"]</label>
+                                    <input class="form-control" id="jira-auto-cfg-start" autocomplete="off" data-auto-cfg-start />
                                 </div>
-                                <div class="jira-auto-cap-row" data-jira-auto-cap-hours-row>
-                                    <input type="number" class="form-control jira-auto-cap-input" id="jira-auto-cap-hours-value" min="1" step="0.5" value="8" />
-                                </div>
-                                <div class="jira-auto-cap-row d-none" data-jira-auto-cap-percent-row>
-                                    <input type="number" class="form-control jira-auto-cap-input" id="jira-auto-cap-percent-value" min="1" max="100" step="5" value="100" />
-                                    <span class="jira-auto-cap-preview">(&asymp; <span data-jira-auto-cap-percent-preview>8</span>h)</span>
+                                <div class="tbx-field">
+                                    <label class="tbx-field-label" for="jira-auto-cfg-hours">@T["Jira.AutoSchedule.ConfigHoursPerDay"]</label>
+                                    <input class="form-control" id="jira-auto-cfg-hours" type="number" min="0.5" max="24" step="0.5" data-auto-cfg-hours />
                                 </div>
                             </div>
+                            <p class="tbx-field-error" data-auto-cfg-error role="alert"></p>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="jira-auto-cfg-weekend" data-auto-cfg-weekend />
+                                <label class="form-check-label" for="jira-auto-cfg-weekend">@T["Jira.AutoSchedule.ConfigSkipWeekend"]</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="jira-auto-cfg-existing" data-auto-cfg-existing />
+                                <label class="form-check-label" for="jira-auto-cfg-existing">@T["Jira.AutoSchedule.ConfigCountExisting"]</label>
+                            </div>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-auto-cfg-first">@T["Jira.AutoSchedule.ConfigPriority"]</label>
+                                <select id="jira-auto-cfg-first" multiple data-auto-cfg-first></select>
+                                <span class="tbx-field-hint">@T["Jira.AutoSchedule.ConfigPriorityHint"]</span>
+                            </div>
+                            <fieldset class="jira-auto-order">
+                                <legend class="tbx-field-label">@T["Jira.AutoSchedule.ConfigOrder"]</legend>
+                                <span class="tbx-field-hint">@T["Jira.AutoSchedule.ConfigOrderHint"]</span>
+                                <ol class="jira-auto-order-list" data-auto-cfg-order></ol>
+                            </fieldset>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                            <button type="submit" class="btn btn-primary">@T["Jira.AutoSchedule.ConfigRun"]</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-                            <div class="jira-auto-config-section">
-                                <div class="jira-auto-config-title">@T["Jira.AutoSchedule.ConfigSectionOther"]</div>
-                                <div class="jira-auto-config-row">
-                                    <div class="jira-auto-filter-group">
-                                        <label class="form-label">@T["Jira.AutoSchedule.ConfigStartDate"]</label>
-                                        <input type="date" class="form-control" id="jira-auto-cfg-start-date" required />
-                                    </div>
-                                    <label class="form-check jira-auto-config-checkbox"><input type="checkbox" class="form-check-input" id="jira-auto-cfg-skip-weekend" checked /> <span class="form-check-label">@T["Jira.AutoSchedule.ConfigSkipWeekend"]</span></label>
-                                </div>
-                                <div class="jira-auto-config-row">
-                                    <label class="form-check"><input type="radio" class="form-check-input" name="jira-auto-cfg-scope" id="jira-auto-scope-all" checked /> <span class="form-check-label">@T["Jira.AutoSchedule.ConfigScopeAll"]</span></label>
-                                    <label class="form-check"><input type="radio" class="form-check-input" name="jira-auto-cfg-scope" id="jira-auto-scope-unplanned" /> <span class="form-check-label">@T["Jira.AutoSchedule.ConfigScopeUnplanned"]</span></label>
-                                </div>
+            @* Change one proposed date (table and calendar). *@
+            <div class="modal fade" id="jira-auto-move" tabindex="-1" aria-labelledby="jira-auto-move-title" aria-hidden="true" data-auto-move-modal>
+                <div class="modal-dialog modal-dialog-centered">
+                    <form class="modal-content" data-auto-move-form novalidate>
+                        <div class="modal-header">
+                            <h2 class="modal-title fs-5" id="jira-auto-move-title">@T["Jira.AutoSchedule.MoveTitle"]</h2>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+                        </div>
+                        <div class="modal-body tbx-form-grid">
+                            <p class="jira-board-move-item" data-auto-move-item></p>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="jira-auto-move-date">@T["Jira.AutoSchedule.MoveDate"]</label>
+                                <input class="form-control" id="jira-auto-move-date" autocomplete="off" data-auto-move-date />
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Jira.AutoSchedule.ConfigCancel"]</button>
-                            <button type="button" class="btn btn-primary" data-jira-auto-config-run>@T["Jira.AutoSchedule.ConfigRun"]</button>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                            <button type="submit" class="btn btn-primary">@T["Jira.Board.Apply"]</button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>

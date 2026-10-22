@@ -71,6 +71,10 @@
             handlers[source] = sourceHandlers;
             renderBar();
         },
+        /** Opens the "Write to Jira" dialog for the tab with changes (same as the bar's button). */
+        save() {
+            openSave();
+        },
         unregister(source) {
             delete handlers[source];
             renderBar();
