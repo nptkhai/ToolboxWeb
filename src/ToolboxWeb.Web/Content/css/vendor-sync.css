@@ -472,50 +472,6 @@
     background: var(--surface-2);
 }
 
-/* Bare action buttons used by the existing Tabulator demo toolbars. */
-.content-area .tabulator-toolbar button {
-    align-items: center;
-    background: var(--ui-control-fill);
-    border: 1px solid var(--ui-control-border);
-    border-radius: var(--radius-control);
-    color: var(--text);
-    display: inline-flex;
-    font: inherit;
-    font-size: var(--text-md);
-    font-weight: var(--weight-medium);
-    justify-content: center;
-    min-height: var(--button-height);
-    padding: 0 var(--space-3);
-    transition: var(--ui-transition);
-}
-
-    .content-area .tabulator-toolbar button:hover:not(:disabled) {
-        background: var(--surface-2);
-        border-color: var(--line-strong);
-    }
-
-    .content-area .tabulator-toolbar button.primary {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: var(--on-accent);
-    }
-
-    .content-area .tabulator-toolbar button.primary:hover:not(:disabled) {
-        background: var(--accent-strong);
-        border-color: var(--accent-strong);
-    }
-
-    .content-area .tabulator-toolbar button.danger {
-        border-color: color-mix(in srgb, var(--danger) 52%, var(--ui-control-border));
-        color: var(--danger);
-    }
-
-    .content-area .tabulator-toolbar button:disabled {
-        cursor: not-allowed;
-        opacity: .5;
-        transform: none;
-    }
-
 /* Kendo UI Core: input shells, buttons, dropdown popups, and calendars. */
 .content-area .k-widget,
 .content-area .k-button,
@@ -584,6 +540,7 @@
 .content-area .k-multiselect,
 .content-area .k-combobox,
 .content-area .k-autocomplete,
+.content-area .k-maskedtextbox,
 .content-area .k-textbox,
 .content-area .k-numerictextbox,
 .content-area .k-datepicker,
@@ -605,6 +562,7 @@
     .content-area .k-multiselect:hover,
     .content-area .k-combobox:hover,
     .content-area .k-autocomplete:hover,
+    .content-area .k-maskedtextbox:hover,
     .content-area .k-textbox:hover,
     .content-area .k-numerictextbox:hover,
     .content-area .k-datepicker:hover,
@@ -631,6 +589,7 @@
     .content-area .k-multiselect:focus-within,
     .content-area .k-combobox:focus-within,
     .content-area .k-autocomplete:focus-within,
+    .content-area .k-maskedtextbox:focus-within,
     .content-area .k-picker:focus-within {
         border-color: var(--ui-accent);
         box-shadow: var(--ui-focus-ring);
@@ -648,8 +607,9 @@
     min-height: 0;
 }
 
-    /* AutoComplete keeps the text box's own padding, so it lines up with a plain input. */
-    .content-area .k-autocomplete .k-input-inner {
+    /* AutoComplete and MaskedTextBox keep the text box's own padding, so they line up with a plain input. */
+    .content-area .k-autocomplete .k-input-inner,
+    .content-area .k-maskedtextbox .k-input-inner {
         padding: var(--space-2) var(--space-3);
     }
 

@@ -1349,7 +1349,8 @@
 
                 function updateDirtyState() {
                     const dirty = hasPendingChanges();
-                    dirtyChipEl.textContent = dirty ? text.Tabulator.DirtyState : text.Tabulator.CleanState;
+                    const count = pending.created.size + pending.updated.size + pending.deletedIds.size;
+                    dirtyChipEl.textContent = dirty ? text.Tabulator.DirtyState.replace("{0}", count) : text.Tabulator.CleanState;
                     dirtyChipEl.classList.toggle("dirty", dirty);
                     updateRowCount();
                 }
