@@ -743,7 +743,11 @@
             const script = document.createElement('script');
             script.src = src;
             script.onload = function () { resolve(); };
-            script.onerror = function () { reject(new Error('Failed to load ' + src)); };
+            script.onerror = function () {
+                // Removed so a later call (back online) loads it again instead of trusting a dead tag.
+                script.remove();
+                reject(new Error('Failed to load ' + src));
+            };
             document.body.appendChild(script);
         });
     }
@@ -755,7 +759,15 @@
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = href;
-        document.head.appendChild(link);
+        // Like a failed script: drop the tag so the next try (back online) loads it again.
+        link.onerror = function () { link.remove(); };
+        // Vendor styles go before vendor-sync.css, as in _Layout.cshtml, so the app's skin wins.
+        const appSkin = document.querySelector('link[href*="/css/vendor-sync.css"]');
+        if (appSkin) {
+            appSkin.before(link);
+        } else {
+            document.head.appendChild(link);
+        }
     }
 
     let notificationWidgetPromise = null;
@@ -806,9 +818,38 @@
                         { type: 'error', template: notificationIconTemplate('k-i-x-circle') }
                     ]
                 }).data('kendoNotification');
+            })
+            .catch(function (error) {
+                // Kendo could not load (offline): forget the failure so the next notice tries again.
+                notificationWidgetPromise = null;
+                throw error;
             });
 
         return notificationWidgetPromise;
+    }
+
+    // Without Kendo (it could not load, e.g. offline) a notice still shows, in the same host and
+    // with the same look, and goes away on its own.
+    const PLAIN_NOTICE_ICONS = { info: 'info', success: 'check', warning: 'triangle-alert', error: 'circle-alert' };
+
+    function showPlainNotice(content, type) {
+        let host = document.getElementById('tbx-notification-host');
+        if (!host) {
+            host = document.createElement('div');
+            host.id = 'tbx-notification-host';
+            host.className = 'tbx-notification-host';
+            document.body.appendChild(host);
+        }
+
+        host.querySelectorAll('[data-plain-notice]').forEach(function (old) { old.remove(); });
+        const notice = document.createElement('div');
+        notice.className = 'k-notification k-notification-' + type;
+        notice.setAttribute('role', type === 'error' || type === 'warning' ? 'alert' : 'status');
+        notice.setAttribute('data-plain-notice', '');
+        notice.innerHTML = '<span class="k-notification-status">' + window.Toolbox.icon(PLAIN_NOTICE_ICONS[type] || 'info', 16) + '</span>'
+            + '<div class="k-notification-content">' + content + '</div>';
+        host.appendChild(notice);
+        window.setTimeout(function () { notice.remove(); }, 6000);
     }
 
     window.Toolbox = window.Toolbox || {};
@@ -825,9 +866,13 @@
     window.Toolbox.notify = function (message, type) {
         if (!message) return;
         const safeType = type || 'info';
+        const content = buildNotificationContent(message, safeType);
         getNotificationWidget().then(function (notification) {
             notification.hide();
-            notification.show(buildNotificationContent(message, safeType), safeType);
+            document.querySelectorAll('[data-plain-notice]').forEach(function (old) { old.remove(); });
+            notification.show(content, safeType);
+        }).catch(function () {
+            showPlainNotice(content, safeType);
         });
     };
 

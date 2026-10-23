@@ -117,7 +117,7 @@ public class QuickLinkService : IQuickLinkService
 
     public async Task<int> CreateAsync(string userId, QuickLinkFormViewModel model)
     {
-        var group = Group(model.GroupName);
+        var group = await ResolveGroupAsync(userId, model.GroupName);
         var link = new QuickLink
         {
             UserId = userId,
@@ -142,7 +142,7 @@ public class QuickLinkService : IQuickLinkService
             return false;
         }
 
-        var group = Group(model.GroupName);
+        var group = await ResolveGroupAsync(userId, model.GroupName);
         if (!string.Equals(GroupKey(link.GroupName), GroupKey(group), StringComparison.Ordinal))
         {
             // Moved to another group: it goes to the end of that group.
@@ -240,6 +240,7 @@ public class QuickLinkService : IQuickLinkService
         var existing = await _db.QuickLinks.AsNoTracking().Where(x => x.UserId == userId).Select(x => x.Url).ToListAsync();
         var seen = new HashSet<string>(existing.Select(QuickLinkUrl.Key), StringComparer.Ordinal);
         var nextOrder = new Dictionary<string, int>(StringComparer.Ordinal);
+        var groupNames = await GroupNamesAsync(userId);
 
         var created = 0;
         var skipped = Math.Max(0, entries.Count - MaxImportItems);
@@ -253,8 +254,14 @@ public class QuickLinkService : IQuickLinkService
                 continue;
             }
 
+            // A folder named like an existing group (any case) joins that group.
             var group = Group(entry.Folder is { Length: > 80 } folder ? folder[..80] : entry.Folder);
             var key = GroupKey(group);
+            if (group is not null)
+            {
+                group = groupNames.TryGetValue(key, out var existingName) ? existingName : groupNames[key] = group;
+            }
+
             if (!nextOrder.TryGetValue(key, out var order))
             {
                 order = await NextSortOrderAsync(userId, group);
@@ -300,13 +307,41 @@ public class QuickLinkService : IQuickLinkService
         _ => links.OrderBy(x => x.SortOrder).ThenBy(x => x.Title, StringComparer.CurrentCultureIgnoreCase)
     };
 
+    // Groups match ignoring case (GroupKey), as on the page, so "Dev" and "dev" share one order.
+    // SQLite's lower() only folds ASCII, so the comparison runs here, not in the query.
     private async Task<int> NextSortOrderAsync(string userId, string? group)
     {
-        var orders = await _db.QuickLinks.AsNoTracking()
-            .Where(x => x.UserId == userId && x.GroupName == group)
-            .Select(x => (int?)x.SortOrder)
-            .MaxAsync();
-        return (orders ?? -1) + 1;
+        var key = GroupKey(group);
+        var links = await _db.QuickLinks.AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .Select(x => new { x.GroupName, x.SortOrder })
+            .ToListAsync();
+        return links.Where(x => GroupKey(x.GroupName) == key).Select(x => (int?)x.SortOrder).Max() is int max ? max + 1 : 0;
+    }
+
+    /// <summary>The group name to store: the spelling the user already has when only the case differs.</summary>
+    private async Task<string?> ResolveGroupAsync(string userId, string? value)
+    {
+        var group = Group(value);
+        return group is not null && (await GroupNamesAsync(userId)).TryGetValue(GroupKey(group), out var existing)
+            ? existing
+            : group;
+    }
+
+    private async Task<Dictionary<string, string>> GroupNamesAsync(string userId)
+    {
+        var names = await _db.QuickLinks.AsNoTracking()
+            .Where(x => x.UserId == userId && x.GroupName != null)
+            .OrderBy(x => x.Id)
+            .Select(x => x.GroupName!)
+            .ToListAsync();
+        var byKey = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var name in names.Select(x => x.Trim()).Where(x => x.Length > 0))
+        {
+            byKey.TryAdd(GroupKey(name), name);
+        }
+
+        return byKey;
     }
 
     private static string? Group(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
