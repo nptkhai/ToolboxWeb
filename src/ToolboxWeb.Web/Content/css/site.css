@@ -1964,9 +1964,29 @@ a.jira-key {
 }
 
 .jira-kpi-label {
+    align-items: center;
     color: var(--muted);
+    display: flex;
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
+    gap: var(--space-1);
+    min-height: 24px;
+}
+
+    .jira-kpi-label .jira-kpi-info.btn {
+        height: 24px;
+        margin-left: auto;
+        width: 24px;
+    }
+
+.jira-kpi-help {
+    background: var(--surface-2);
+    border-radius: var(--radius-control);
+    color: var(--text);
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    margin: 0;
+    padding: var(--space-2);
 }
 
 .jira-kpi-value {

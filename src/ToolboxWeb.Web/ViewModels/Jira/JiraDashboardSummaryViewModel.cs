@@ -21,8 +21,22 @@ public sealed class JiraDashboardSummaryViewModel
     /// <summary>Working hours (Monday to Friday, 8 h a day) from the start of the period to today or its end.</summary>
     public decimal ExpectedHours { get; init; }
 
-    /// <summary>Logged as a percentage of the estimate; null without an estimate.</summary>
+    /// <summary>
+    /// "Logged against the estimate": only finished subtasks that have an estimate, with every hour
+    /// logged on them (not only inside the period), as a percentage of their estimate. Null when
+    /// no such subtask is in the list. Subtasks without an estimate are support work, counted apart.
+    /// </summary>
     public int? LogPercent { get; init; }
+
+    public int EstimatedDoneCount { get; init; }
+    public decimal EstimatedDoneLoggedHours { get; init; }
+    public decimal EstimatedDoneEstimateHours { get; init; }
+
+    /// <summary>Hours the user logged in the period on subtasks without an estimate (support work).</summary>
+    public decimal SupportHours { get; init; }
+
+    /// <summary>Subtasks without an estimate that have hours logged in the period.</summary>
+    public int SupportCount { get; init; }
 
     public int ProgressPercent { get; init; }
 

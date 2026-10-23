@@ -66,9 +66,15 @@
         return content ? `<span class="jira-kpi-note ${tone ? `is-${tone}` : ""}">${escapeHtml(content)}</span>` : "";
     }
 
-    function card(label, value, body) {
+    function card(label, value, body, help) {
+        // help: a short "how is this calculated" text behind an (i) button, opened in the card.
+        const helpButton = help
+            ? `<button type="button" class="btn btn-sm tbx-icon-button jira-kpi-info" aria-expanded="false" aria-controls="${help.id}"
+                       title="${escapeHtml(help.label)}" data-jira-kpi-info>${window.Toolbox?.icon ? window.Toolbox.icon("info", 14) : "i"}<span class="visually-hidden">${escapeHtml(help.label)}</span></button>`
+            : "";
         return `<div class="jira-kpi">
-            <span class="jira-kpi-label">${escapeHtml(label)}</span>
+            <span class="jira-kpi-label">${escapeHtml(label)}${helpButton}</span>
+            ${help ? `<p class="jira-kpi-help" id="${help.id}" hidden>${escapeHtml(help.text)}</p>` : ""}
             <strong class="jira-kpi-value">${escapeHtml(value)}</strong>
             ${body}
         </div>`;
@@ -93,16 +99,22 @@
         }
 
         const s = summary || {};
+        // Finished subtasks with an estimate only; subtasks without one are support work, shown apart.
         const logPercent = s.logPercent;
-        const over = logPercent !== null && logPercent !== undefined && logPercent > 100;
+        const hasPercent = logPercent !== null && logPercent !== undefined;
+        const over = hasPercent && logPercent > 100;
+        const supportHours = Number(s.supportHours) || 0;
+        const supportShare = Number(s.loggedHours) > 0 ? Math.round(supportHours / Number(s.loggedHours) * 100) : 0;
         const logCard = card(
             text.cardLogVsEstimate,
-            logPercent === null || logPercent === undefined ? "—" : `${number(logPercent)}%`,
-            (logPercent === null || logPercent === undefined ? "" : meter(logPercent, over ? "warning" : "accent", text.cardLogVsEstimate))
-            + `<span class="jira-kpi-detail">${escapeHtml(template(text.cardLogVsEstimateDetail, hours(s.loggedHours), hours(s.estimateHours)))}</span>`
-            + (logPercent === null || logPercent === undefined
-                ? note(text.cardNoEstimate)
-                : over ? note(template(text.cardOverEstimate, number(logPercent - 100)), "warning") : note(text.cardWithinEstimate)));
+            hasPercent ? `${number(logPercent)}%` : "—",
+            (hasPercent
+                ? meter(logPercent, over ? "warning" : "accent", text.cardLogVsEstimate)
+                    + `<span class="jira-kpi-detail">${escapeHtml(template(text.cardLogVsEstimateDetail, hours(s.estimatedDoneLoggedHours), hours(s.estimatedDoneEstimateHours), number(s.estimatedDoneCount || 0)))}</span>`
+                    + (over ? note(template(text.cardOverEstimate, number(logPercent - 100)), "warning") : note(text.cardWithinEstimate))
+                : note(text.cardNoEstimate))
+            + (supportHours > 0 ? note(template(text.cardSupport, hours(supportHours), number(s.supportCount || 0), number(supportShare))) : ""),
+            { id: "jira-kpi-help-log", label: text.cardLogVsEstimateInfo, text: text.cardLogVsEstimateHelp });
 
         const progressCard = card(
             text.cardProgress,
@@ -139,6 +151,17 @@
             tableCount.textContent = template(text.tableCount, number(s.subtaskCount || 0), number(s.issueCount || 0));
         }
     }
+
+    // The (i) button on a card shows or hides how the figure is calculated.
+    kpiHost?.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-jira-kpi-info]");
+        const help = button && document.getElementById(button.getAttribute("aria-controls"));
+        if (help) {
+            const open = button.getAttribute("aria-expanded") !== "true";
+            button.setAttribute("aria-expanded", String(open));
+            help.hidden = !open;
+        }
+    });
 
     // ------------------------------------------------------------------ chart
 

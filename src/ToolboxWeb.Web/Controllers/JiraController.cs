@@ -442,6 +442,7 @@ public class JiraController : Controller
                 LoggedTimeText = FormatHours(loggedHours),
                 EstimateHours = estimateHours,
                 LoggedHours = loggedHours,
+                TotalLoggedHours = loggedHours,
                 IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < AppClock.Today && !isDone,
                 DaysOverdue = JiraDashboardMetrics.DaysOverdue(issue.DueDate, isDone, AppClock.Today)
             };
@@ -579,6 +580,7 @@ public class JiraController : Controller
             var estimateHours = ParseHours(issue.Estimate);
             var loggedHours = JiraDashboardMetrics.OwnWorklogs(issue.Worklogs, rangeStart, rangeEnd, currentUsername)
                 .Sum(x => ParseHours(x.TimeSpent));
+            var totalLoggedHours = issue.Worklogs.Sum(x => ParseHours(x.TimeSpent));
             var isDone = IsDoneStatus(status);
 
             return new JiraDashboardRowViewModel
@@ -597,6 +599,7 @@ public class JiraController : Controller
                 LoggedTimeText = FormatHours(loggedHours),
                 EstimateHours = estimateHours,
                 LoggedHours = loggedHours,
+                TotalLoggedHours = totalLoggedHours,
                 IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < AppClock.Today && !isDone,
                 DaysOverdue = JiraDashboardMetrics.DaysOverdue(issue.DueDate, isDone, AppClock.Today)
             };
@@ -661,6 +664,7 @@ public class JiraController : Controller
             LoggedTimeText = row.LoggedTimeText,
             EstimateHours = row.EstimateHours,
             LoggedHours = row.LoggedHours,
+            TotalLoggedHours = row.TotalLoggedHours,
             IsOverdue = row.IsOverdue,
             DaysOverdue = row.DaysOverdue
         };

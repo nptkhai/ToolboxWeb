@@ -118,6 +118,13 @@ public static partial class JiraDashboardMetrics
         var estimate = rows.Sum(x => x.EstimateHours);
         var logged = rows.Sum(x => x.LoggedHours);
 
+        // The estimate is for the whole subtask, so it is compared with every hour logged on it,
+        // and only once the subtask is finished. Subtasks without an estimate are support work.
+        var estimatedDone = rows.Where(x => x.EstimateHours > 0 && JiraStatus.IsDone(x.Status)).ToArray();
+        var doneEstimate = estimatedDone.Sum(x => x.EstimateHours);
+        var doneLogged = estimatedDone.Sum(x => x.TotalLoggedHours);
+        var support = rows.Where(x => x.EstimateHours <= 0 && x.LoggedHours > 0).ToArray();
+
         return new JiraDashboardSummaryViewModel
         {
             SubtaskCount = rows.Count,
@@ -132,7 +139,12 @@ public static partial class JiraDashboardMetrics
             EstimateHours = estimate,
             LoggedHours = logged,
             ExpectedHours = ExpectedHours(rangeStart, rangeEnd, today),
-            LogPercent = estimate > 0 ? (int)Math.Round(logged / estimate * 100m, MidpointRounding.AwayFromZero) : null,
+            LogPercent = doneEstimate > 0 ? (int)Math.Round(doneLogged / doneEstimate * 100m, MidpointRounding.AwayFromZero) : null,
+            EstimatedDoneCount = estimatedDone.Length,
+            EstimatedDoneLoggedHours = doneLogged,
+            EstimatedDoneEstimateHours = doneEstimate,
+            SupportHours = support.Sum(x => x.LoggedHours),
+            SupportCount = support.Length,
             ProgressPercent = rows.Count > 0 ? (int)Math.Round(done * 100m / rows.Count, MidpointRounding.AwayFromZero) : 0,
             PreviousLoggedHours = previousRows?.Sum(x => x.LoggedHours),
             PreviousDoneCount = previousRows?.Count(x => JiraStatus.IsDone(x.Status)),
