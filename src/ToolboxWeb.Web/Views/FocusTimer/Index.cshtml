@@ -1,52 +1,256 @@
-@model FocusSessionFormViewModel
+@using System.Text.Json
+@using ToolboxWeb.Web.Infrastructure.Time
+@model FocusTimerPageViewModel
+@*
+    Focus timer, stage 5.12. The countdown itself is Content/js/focus-clock.js (every page, so it
+    keeps running elsewhere); this page adds the ring, the phase and length choices, the to-do
+    and note of the session, the options, today's and this week's minutes with a 7-day chart,
+    and the history grouped by day with note editing and delete. Behavior: Content/js/focus-timer.js.
+*@
 @{
     ViewData["Title"] = T["FocusTimer.Title"];
-    var sessions = ViewBag.RecentSessions as IReadOnlyList<FocusSession> ?? [];
+    var stats = Model.Stats;
+    var today = AppClock.Today;
+    string DayLabel(DateTime day) => day == today ? T["FocusTimer.Today"].Value
+        : day == today.AddDays(-1) ? T["FocusTimer.Yesterday"].Value
+        : day.ToDisplayDate();
+
+    var json = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var chartData = JsonSerializer.Serialize(stats.LastSevenDays.Select(x => new
+    {
+        label = x.Date == today ? T["FocusTimer.Today"].Value : x.Date.ToString("ddd dd", CultureInfo.CurrentCulture),
+        minutes = x.Minutes
+    }), json);
+    var todoData = JsonSerializer.Serialize(Model.Todos.Select(x => new { id = x.Id, title = x.Title }), json);
+    var emptyState = new EmptyStateViewModel(T["FocusTimer.Empty"].Value, "timer");
+    var noteError = ViewData.ModelState["Note"]?.Errors.FirstOrDefault()?.ErrorMessage;
 }
 
-<div class="tool-grid">
-    <section class="panel span-6">
-        <div class="panel-header"><h2>@T["FocusTimer.Timer"]</h2></div>
-        <form asp-action="Complete" method="post" class="form-grid">
-            <div data-focus-timer data-minutes="@Model.DurationMinutes" data-autostart="@(ViewBag.AutoStart == true ? "true" : "false")" data-finished-message="@T["FocusTimer.Finished"]">
-                <div class="timer-display" data-timer-display>25:00</div>
-                <div class="inline-actions justify-content-center mt-3">
-                    <button class="btn btn-primary" type="button" data-timer-start>@T["Action.Start"]</button>
-                    <button class="btn btn-outline-secondary" type="button" data-timer-pause>@T["Action.Pause"]</button>
-                    <button class="btn btn-outline-secondary" type="button" data-timer-reset>@T["Action.Reset"]</button>
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/focus-timer.css" asp-append-version="true" />
+}
+
+<div class="focus-page" data-focus-page
+     data-autostart="@(Model.AutoStart ? "true" : "false")" data-requested-minutes="@Model.RequestedMinutes"
+     data-today-minutes="@stats.TodayMinutes"
+     data-text-session="@T["FocusTimer.Session"]" data-text-goal="@T["FocusTimer.GoalProgress"]"
+     data-text-goal-done="@T["FocusTimer.GoalDone"]" data-text-notify-blocked="@T["FocusTimer.NotifyBlocked"]"
+     data-text-start="@T["FocusTimer.Start"]" data-text-resume="@T["FocusTimer.Resume"]" data-text-pause="@T["Action.Pause"]"
+     data-text-start-break="@T["FocusTimer.StartBreak"]" data-text-minutes="@T["Common.Minutes"]">
+    @Html.AntiForgeryToken()
+
+    <section class="tbx-panel focus-timer" aria-labelledby="focus-timer-title">
+        <h2 class="visually-hidden" id="focus-timer-title">@T["FocusTimer.Timer"]</h2>
+
+        <div class="focus-phases" role="group" aria-label="@T["FocusTimer.PhaseLabel"]">
+            <button class="tbx-chip" type="button" data-phase="focus" aria-pressed="true">@T["FocusTimer.Phase.Focus"]</button>
+            <button class="tbx-chip" type="button" data-phase="short" aria-pressed="false">@T["FocusTimer.Phase.Short"]</button>
+            <button class="tbx-chip" type="button" data-phase="long" aria-pressed="false">@T["FocusTimer.Phase.Long"]</button>
+        </div>
+
+        <div class="focus-ring" data-focus-ring>
+            <svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+                <circle class="focus-ring-track" cx="100" cy="100" r="90" />
+                <circle class="focus-ring-bar" cx="100" cy="100" r="90" data-focus-ring-bar />
+            </svg>
+            <div class="focus-ring-center">
+                <span class="focus-time" data-focus-time role="timer" aria-live="off">25:00</span>
+                <span class="focus-phase-label" data-focus-phase-label>@T["FocusTimer.Phase.Focus"]</span>
+                <span class="focus-cycle" data-focus-cycle></span>
+            </div>
+        </div>
+
+        <div class="focus-controls">
+            <button class="btn btn-primary focus-main" type="button" data-focus-toggle>
+                <tbx-icon name="play" class="focus-icon-play" /><tbx-icon name="pause" class="focus-icon-pause" />
+                <span data-focus-toggle-text>@T["FocusTimer.Start"]</span>
+            </button>
+            <button class="btn btn-outline-secondary" type="button" data-focus-stop hidden>
+                <tbx-icon name="check" />@T["FocusTimer.Stop"]
+            </button>
+            <button class="btn btn-outline-secondary" type="button" data-focus-reset>
+                <tbx-icon name="refresh-cw" />@T["Action.Reset"]
+            </button>
+        </div>
+        <p class="focus-hint" data-focus-hint>@T["FocusTimer.AutoSaveHint"]</p>
+
+        <div class="focus-length" data-focus-length>
+            <div class="focus-presets" role="group" aria-label="@T["FocusTimer.Presets"]">
+                @foreach (var preset in new[] { 15, 25, 50 })
+                {
+                    <button class="tbx-chip" type="button" data-preset="@preset" aria-pressed="false">@T["Common.Minutes", preset]</button>
+                }
+            </div>
+            <div class="tbx-field focus-minutes">
+                <label class="tbx-field-label" for="focus-minutes">@T["FocusTimer.DurationMinutes"]</label>
+                <input class="form-control" id="focus-minutes" type="number" min="1" max="240" step="1" value="25" data-focus-minutes />
+            </div>
+        </div>
+
+        <div class="tbx-form-grid focus-session-fields">
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="focus-todo">@T["FocusTimer.Todo"]</label>
+                <input class="form-control" id="focus-todo" autocomplete="off" placeholder="@T["FocusTimer.TodoPlaceholder"]" aria-describedby="focus-todo-hint" data-focus-todo />
+                <span class="tbx-field-hint" id="focus-todo-hint">@(Model.Todos.Count == 0 ? T["FocusTimer.TodoNone"] : T["FocusTimer.TodoHint"])</span>
+            </div>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="focus-note">@T["FocusTimer.SessionNote"]</label>
+                <textarea class="form-control" id="focus-note" rows="2" maxlength="500" placeholder="@T["FocusTimer.NotePlaceholder"]" aria-describedby="focus-note-hint" data-focus-note></textarea>
+                <span class="tbx-field-hint" id="focus-note-hint">@T["FocusTimer.NoteHint"]</span>
+            </div>
+        </div>
+
+        <details class="focus-options" data-focus-options>
+            <summary><tbx-icon name="settings" />@T["FocusTimer.Options"]</summary>
+            <div class="focus-options-grid">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="focus-short">@T["FocusTimer.ShortMinutes"]</label>
+                    <input class="form-control" id="focus-short" type="number" min="1" max="60" data-setting="short" />
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="focus-long">@T["FocusTimer.LongMinutes"]</label>
+                    <input class="form-control" id="focus-long" type="number" min="1" max="120" data-setting="long" />
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="focus-every">@T["FocusTimer.LongEvery"]</label>
+                    <input class="form-control" id="focus-every" type="number" min="2" max="10" data-setting="longEvery" />
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="focus-goal">@T["FocusTimer.GoalMinutes"]</label>
+                    <input class="form-control" id="focus-goal" type="number" min="0" max="960" step="15" data-setting="goal" />
                 </div>
             </div>
-            <label>
-                @T["FocusTimer.DurationMinutes"]
-                <input asp-for="DurationMinutes" class="form-control" />
-            </label>
-            <label>
-                @T["FocusTimer.SessionNote"]
-                <textarea asp-for="Note" class="form-control" rows="3"></textarea>
-            </label>
-            @* Enabled by site.js once the countdown reaches zero, so only finished sessions are saved. *@
-            <button class="btn btn-primary" type="submit" data-timer-save disabled aria-describedby="focus-save-hint">@T["FocusTimer.SaveCompletedSession"]</button>
-            <div class="form-text" id="focus-save-hint">@T["FocusTimer.SaveHint"]</div>
-        </form>
+            <div class="focus-toggles">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="focus-sound" data-setting="sound" />
+                    <label class="form-check-label" for="focus-sound">@T["FocusTimer.Sound"]</label>
+                </div>
+                <button class="btn btn-link btn-sm" type="button" data-focus-test-sound>@T["FocusTimer.TestSound"]</button>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="focus-notify" data-setting="notify" aria-describedby="focus-notify-hint" />
+                    <label class="form-check-label" for="focus-notify">@T["FocusTimer.Notify"]</label>
+                </div>
+            </div>
+            <p class="focus-hint" id="focus-notify-hint" data-focus-notify-hint>@T["FocusTimer.NotifyHint"]</p>
+        </details>
+
+        <p class="tbx-shortcuts">@T["FocusTimer.Shortcuts"]</p>
     </section>
 
-    <section class="panel span-6">
-        <div class="panel-header"><h2>@T["FocusTimer.RecentSessions"]</h2></div>
-        <div class="stack">
-            @foreach (var session in sessions)
-            {
-                <div class="item-row">
-                    <div>
-                        <div class="item-title">@T["Common.Minutes", session.DurationMinutes]</div>
-                        <div class="item-meta">@session.CompletedAt.ToDisplayAppDateTime()</div>
-                        <div>@session.Note</div>
-                    </div>
+    <div class="focus-side">
+        <section class="tbx-panel focus-stats" aria-labelledby="focus-stats-title">
+            <h2 class="focus-panel-title" id="focus-stats-title">@T["FocusTimer.Stats"]</h2>
+            <div class="focus-numbers">
+                <div>
+                    <span class="focus-number-label">@T["FocusTimer.Today"]</span>
+                    <strong class="focus-number" data-focus-today>@T["Common.Minutes", stats.TodayMinutes]</strong>
                 </div>
+                <div>
+                    <span class="focus-number-label">@T["FocusTimer.ThisWeek"]</span>
+                    <strong class="focus-number">@T["Common.Minutes", stats.WeekMinutes]</strong>
+                </div>
+            </div>
+            <div class="focus-goal" data-focus-goal>
+                <div class="focus-goal-bar" aria-hidden="true"><span data-focus-goal-fill></span></div>
+                <span class="focus-goal-text" data-focus-goal-text></span>
+            </div>
+            <div class="focus-chart" data-focus-chart role="img" aria-label="@T["FocusTimer.ChartLabel"]"></div>
+        </section>
+
+        <section class="tbx-panel focus-history" aria-labelledby="focus-history-title">
+            <h2 class="focus-panel-title" id="focus-history-title">@T["FocusTimer.RecentSessions"]</h2>
+            @if (stats.History.Count == 0)
+            {
+                <partial name="_EmptyState" model="emptyState" />
             }
-        </div>
-    </section>
+            else
+            {
+                foreach (var day in stats.History)
+                {
+                    <h3 class="focus-day">@DayLabel(day.Date) <span class="focus-day-total">@T["Common.Minutes", day.Minutes]</span></h3>
+                    <ul class="tbx-list focus-list">
+                        @foreach (var session in day.Sessions)
+                        {
+                            var started = session.StartedAt.ToAppTime();
+                            var ended = session.CompletedAt.ToAppTime();
+                            <li class="tbx-row tbx-row--two-line focus-row">
+                                <span class="tbx-pill is-accent focus-row-minutes">@T["Common.Minutes", session.DurationMinutes]</span>
+                                <div class="tbx-row-main">
+                                    <span class="tbx-row-title">@(session.ChecklistItem?.Title ?? T["FocusTimer.NoTodo"].Value)</span>
+                                    <span class="tbx-row-sub">@(string.IsNullOrWhiteSpace(session.Note) ? T["FocusTimer.NoNote"].Value : session.Note)</span>
+                                </div>
+                                <span class="tbx-row-meta">@started.ToDisplayTime()–@ended.ToDisplayTime()</span>
+                                <div class="tbx-row-actions">
+                                    <button class="btn btn-sm tbx-icon-button" type="button" title="@T["FocusTimer.EditNote"]"
+                                            data-focus-edit-note data-id="@session.Id" data-note="@session.Note">
+                                        <tbx-icon name="pencil" label="@T["FocusTimer.EditNote"]" />
+                                    </button>
+                                    <form asp-action="Delete" method="post">
+                                        <input type="hidden" name="id" value="@session.Id" />
+                                        <button class="btn btn-sm tbx-icon-button is-danger" type="submit" title="@T["Action.Delete"]"
+                                                data-confirm="@T["FocusTimer.DeleteConfirm", session.DurationMinutes, started.ToDisplayDateTime()]"
+                                                data-confirm-title="@T["Confirm.DeleteTitle"]" data-confirm-ok="@T["Action.Delete"]">
+                                            <tbx-icon name="trash-2" label="@T["FocusTimer.DeleteSession"]" />
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            }
+        </section>
+    </div>
 </div>
 
+@* Stopping a focus session early: keep the minutes, throw them away, or go on. *@
+<div class="modal fade" id="focus-stop" tabindex="-1" aria-labelledby="focus-stop-title" aria-hidden="true" data-focus-stop-modal>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="focus-stop-title">@T["FocusTimer.StopTitle"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <p class="m-0" data-focus-stop-text data-template="@T["FocusTimer.StopText"]" data-template-short="@T["FocusTimer.StopTextShort"]"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["FocusTimer.Continue"]</button>
+                <button type="button" class="btn btn-outline-danger" data-focus-discard>@T["FocusTimer.Discard"]</button>
+                <button type="button" class="btn btn-primary" data-focus-save-stop data-template="@T["FocusTimer.SaveMinutes"]"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="focus-note-modal" tabindex="-1" aria-labelledby="focus-note-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form asp-action="UpdateNote" method="post" class="modal-content">
+            <input type="hidden" name="Id" data-note-id />
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="focus-note-title">@T["FocusTimer.EditNote"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body tbx-field">
+                <label class="tbx-field-label" for="focus-note-edit">@T["FocusTimer.SessionNote"]</label>
+                <textarea class="form-control" id="focus-note-edit" name="Note" rows="3" maxlength="500" aria-describedby="focus-note-edit-error" data-note-text></textarea>
+                <span class="tbx-field-error" id="focus-note-edit-error">@noteError</span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary">@T["FocusTimer.SaveNote"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script id="focus-chart-data" type="application/json">@Html.Raw(chartData)</script>
+<script id="focus-todo-data" type="application/json">@Html.Raw(todoData)</script>
+
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <partial name="_KendoScripts" />
+    <script src="~/vendor/echarts/js/echarts.min.js" asp-append-version="true"></script>
+    <script src="~/js/charts.js" asp-append-version="true"></script>
+    <script src="~/js/focus-timer.js" asp-append-version="true"></script>
 }

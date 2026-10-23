@@ -202,6 +202,21 @@
                     <h1 class="topbar-title@(isAuthenticated ? null : " tbx-visually-hidden")">@pageTitle</h1>
                 </nav>
                 <div class="topbar-actions">
+                    @if (isAuthenticated)
+                    {
+                        @* The focus timer keeps running on every page (Content/js/focus-clock.js); while it
+                           runs, this shows the time left and leads back to the timer. *@
+                        <a class="focus-chip" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html")" data-focus-chip hidden
+                           data-complete-url="@Url.Action("Complete", "FocusTimer")"
+                           data-text-focus="@T["FocusTimer.Phase.Focus"]" data-text-short="@T["FocusTimer.Phase.Short"]" data-text-long="@T["FocusTimer.Phase.Long"]"
+                           data-text-focus-done="@T["FocusTimer.Done.Focus"]" data-text-break-done="@T["FocusTimer.Done.Break"]"
+                           data-text-saved="@T["FocusTimer.Done.Saved"]" data-text-save-failed="@T["FocusTimer.Done.SaveFailed"]">
+                            <tbx-icon name="timer" />
+                            <span data-focus-chip-time></span>
+                            <span class="visually-hidden" data-focus-chip-phase></span>
+                        </a>
+                        <span hidden data-focus-token>@Html.AntiForgeryToken()</span>
+                    }
                     <partial name="_EnvironmentSummary" />
                     @if (!isAuthenticated)
                     {
@@ -233,6 +248,10 @@
         <partial name="_KendoScripts" />
     }
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (isAuthenticated)
+    {
+        <script src="~/js/focus-clock.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

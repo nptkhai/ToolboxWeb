@@ -69,6 +69,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.Property(x => x.Note).HasMaxLength(500);
             entity.HasIndex(x => new { x.UserId, x.CompletedAt });
+            entity.HasOne(x => x.ChecklistItem)
+                .WithMany()
+                .HasForeignKey(x => x.ChecklistItemId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<QuickLink>(entity =>
