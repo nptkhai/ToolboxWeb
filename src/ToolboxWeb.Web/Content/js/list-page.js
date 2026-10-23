@@ -1,5 +1,7 @@
 // Behavior of the list page template (docs/LIST_PAGE_TEMPLATE.md), shared by list screens:
-// dialogs marked data-list-modal move to <body>, "/" focuses the search box, "N" opens the primary modal, a modal marked
+// dialogs marked data-list-modal move to <body>, "/" focuses the search box and "N" opens the
+// primary modal (registered with Toolbox.keys, Content/js/shortcuts.js), "?new=1" in the address
+// opens the primary modal once (the command palette's "New …" commands), a modal marked
 // data-open-on-load reopens after a failed submit, and [data-date-picker] inputs become
 // Kendo DatePickers that post an ISO date through a hidden field.
 (function (window, document) {
@@ -23,30 +25,15 @@
         document.body.appendChild(host);
     }
 
-    function isTyping(target) {
-        return target && (target.isContentEditable || /^(input|textarea|select)$/i.test(target.tagName));
+    const keys = window.Toolbox?.keys;
+    const search = root.querySelector('[data-list-search]');
+    const newButton = root.querySelector('[data-list-new]');
+    if (keys && search) {
+        keys.add({ keys: '/', label: keys.label('search'), button: search, run: function () { search.focus(); search.select(); } });
     }
-
-    document.addEventListener('keydown', function (event) {
-        if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target) || document.querySelector('.modal.show')) {
-            return;
-        }
-
-        if (event.key === '/') {
-            const search = root.querySelector('[data-list-search]');
-            if (search) {
-                event.preventDefault();
-                search.focus();
-                search.select();
-            }
-        } else if (event.key === 'n' || event.key === 'N') {
-            const button = root.querySelector('[data-list-new]');
-            if (button) {
-                event.preventDefault();
-                button.click();
-            }
-        }
-    });
+    if (keys && newButton) {
+        keys.add({ keys: 'n', label: keys.label('new'), button: newButton, run: function () { newButton.click(); } });
+    }
 
     function pad2(value) {
         return String(value).padStart(2, '0');
@@ -102,5 +89,12 @@
     const pending = document.querySelector('.modal[data-open-on-load="true"]');
     if (pending && window.bootstrap) {
         window.bootstrap.Modal.getOrCreateInstance(pending).show();
+    } else if (newButton && new URLSearchParams(window.location.search).get('new') === '1') {
+        // Opened from the command palette ("New …"): open the form once, then drop the flag so a
+        // reload does not open it again.
+        const url = new URL(window.location.href);
+        url.searchParams.delete('new');
+        window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+        window.setTimeout(function () { newButton.click(); }, 0);
     }
 })(window, document);

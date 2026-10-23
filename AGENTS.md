@@ -50,6 +50,7 @@
 
 - Public pages should follow the `.html` route convention used by the current source.
 - Use `ToolboxRouteSlugs` for canonical page and tab routes instead of scattering hardcoded URLs.
+- `ViewModels/AppNavigation.cs` is the one list of the app's pages: the sidebar, the breadcrumb, the Ctrl+K command palette and the "G then letter" shortcuts all read it. A new page gets one entry there (key, route, Lucide icon, label key, a free G letter or none, the group); do not add sidebar links or palette entries by hand.
 - `Content/` is the real web root. Do not assume `wwwroot/`.
 - User-facing text should prefer localization keys in:
   - `src/ToolboxWeb.Web/Localization/vi-VN.json`
@@ -103,6 +104,10 @@
 - SQL Server connection forms use `Views/Shared/_SqlConnectionForm.cshtml` with `SqlConnectionFormViewModel` and `Content/js/sql-connection.js` (`ToolboxSqlConnection.init(panel, options)`; `read`, `set`, `test`, `setStatus`, `status`, `remember`, `databases`, `setDatabases`). Pages add their own rules through `onTested`, `onChange`, and `beforeTest` instead of copying the form. `recent: true` turns on the shared "Recent" menu (`toolbox.sqlConnection.recent.v1`, never the password). "Trust the server certificate" is off by default and shows a warning when ticked; keep it that way. Schema compare locks Compare until both sides passed a test; a page that writes to SQL Server confirms in a modal that names the statements.
 - Jira screens share `Content/js/jira-common.js` (`window.ToolboxJira`): ISO period dates, status pills (`statusPill`; server side `JiraStatus.PillClass`), Tabulator defaults and formatters (`grid.options`, `grid.formatters`), the period picker (`Views/Jira/_JiraPeriodPicker.cshtml` + `periodPicker`), the filter chip bar (`chipBar`, `statusFilters`, `statusCounts`), grouping by parent issue (`grid.parentGroupHeader`), "late by N days" and "not estimated" cells (`grid.formatters.dueWithLate`, `grid.formatters.estimate`), the phone "+" column (`grid.isNarrow`, `grid.collapseColumn`) and the JQL block (`Views/Jira/_JiraJqlBlock.cshtml` + `jql.update`, `jql.format`). New Jira screens use these instead of copying date, status, or picker code. Load it after `format.js` and before the page script.
 - Due-date changes on the Jira Worklist tabs stay in the browser until the user writes them to Jira. A tab reports its count with `window.ToolboxJiraUnsaved.set(source, n)` and registers `{ changes, applyResults, discard }` with `register(source, …)`; the floating bar in `Content/js/jira-worklist-tabs.js` then offers "Write to Jira", shows the confirmation dialog listing every issue (old → new due date), posts to `POST /Jira/UpdateDueDates`, and reports the result per issue. The server side is `IJiraDueDateService` (validation, one activity log entry per issue written). Reuse this flow for any new screen that writes due dates; `ToolboxJiraUnsaved.save()` opens the same dialog from a page button. Day loads count `ToolboxJira.loadHours(row)` (logged hours when done, remaining estimate when open) on every Jira screen.
+
+- Keyboard shortcuts: `Content/js/shortcuts.js` (`Toolbox.keys`) is the only shortcut listener. Page scripts register with `Toolbox.keys.add({ keys, label, run, when, button, inInputs, inModal })` and use `Toolbox.keys.label(name)` for the shared words; do not add a `document` keydown listener for shortcuts. Registered shortcuts show in the `?` help dialog and in the page line (`<p class="tbx-shortcuts" data-shortcuts-line>`), and `button:` puts the key hint on that button. Reserved app-wide: Ctrl/⌘+K (palette), `?` (help), G then a letter (go to a page); list pages use `/` (search) and `N` (new) from `list-page.js`.
+- Command palette (`Views/Shared/_CommandPalette.cshtml`, `Content/js/command-palette.js`): pages come from `AppNavigation`, commands are listed in the partial. A list page opens its create form on `?new=1`; the to-do list highlights `?focus=<id>` and the prompt page opens `?open=<id>`. Searching the user's own data goes through `IQuickSearchService` (`GET /Search/Mine`, filtered by `UserId`); a new kind of user data that people look for is added there.
+- Static files: link every local script and stylesheet with `asp-append-version="true"`; versioned URLs are cached for a year, unversioned files under `/vendor` and `/lib` for seven days (`Infrastructure/Web/StaticAssetDelivery.cs`). Only CSS, JS and SVG are compressed; do not add HTML or JSON responses to the compressed types. `Content/lib` keeps only the files the pages load plus their LICENSE files.
 
 ## Preferred Controls
 
@@ -219,7 +224,8 @@ Approved by the owner on 2026-10-21 (`docs/DESIGN_DECISIONS.md`). They live in `
 - Prompt variables use the `{{variable_name}}` form, in English snake_case in every language. List the same names in `InputVariables`.
 - A seeded prompt's `Content` must be self-contained: include the stack context and the expected output format. The copy button copies only `Content`.
 - On the prompt page, copying counts one use (`MarkUsed`, called in the background), and "Fill in and copy" asks for each `{{variable}}` in `Content`, using the `{{name}}: description` lines of `InputVariables` as hints. The page flags a prompt whose two lists differ. Export/import uses the JSON format `toolboxweb.prompts`.
-- `Data/SeedData.cs` only inserts a seeded prompt when the user has no prompt in that category. Changing seed text therefore does not update existing users. Mention this in the change summary.
+- The seeded prompts are listed in `SeedData.PromptSeeds`. Every prompt starts with the shared context block in `docs/FEATURE_PROMPTS.md`; when a convention in this file changes (design tokens, shared helpers, navigation, shortcuts, verification), update that block and the checks inside the prompts in the same change, so a new or reworked screen built from a prompt still matches the agreed design. The `NewScreen` prompt is the checklist for a new screen.
+- `Data/SeedData.cs` only inserts a seeded prompt when the user has no prompt in that category. Changing seed text therefore does not update existing users. They get it with "Restore built-in prompts" on the prompt page (`IPromptTemplateService.RestoreSeedsAsync`: adds the missing ones; replaces changed ones only when ticked, matched by name, keeping the pin and use count). Mention this in the change summary.
 
 ## Components Hub Appendix
 
@@ -258,6 +264,7 @@ Approved by the owner on 2026-10-21 (`docs/DESIGN_DECISIONS.md`). They live in `
   - confirm tab switches inside `Account/Manage` do not fall back to a different embedded layout,
   - confirm schema-backed fields used by account pages exist in the actual runtime SQLite file.
 - UI change: run the UI check in `tests/ui/` (see `tests/ui/README.md`) against a locally running app, and compare the screenshots with the previous baseline.
+- New page: it is in `AppNavigation` (sidebar, palette, G letter), in `tests/ui/pages.spec.js`, and its shortcuts appear in the `?` help.
 - Jira screens cannot be checked without a Jira account. In Development, start the app with `Jira__UseFakeData=true` and sign in on the Jira tab with any URL, username, and password to get sample data. The owner still does the final check against the real Jira.
 - License-affecting change: `THIRD-PARTY-NOTICES.md` is updated in the same change.
 

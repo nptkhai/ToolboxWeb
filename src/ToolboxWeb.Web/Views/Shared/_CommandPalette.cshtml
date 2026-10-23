@@ -1,0 +1,131 @@
+@using System.Text.Json
+@model IReadOnlyList<AppNavGroup>
+@*
+    Command palette (Ctrl/⌘+K) and the shortcut help (?), for signed-in pages. The pages come from
+    ViewModels/AppNavigation.cs (the same list as the sidebar); the commands and texts are below.
+    Behavior: Content/js/shortcuts.js (Toolbox.keys) and Content/js/command-palette.js.
+*@
+@{
+    var json = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var currentCulture = CultureInfo.CurrentUICulture.Name;
+    var notesHref = Url.RouteUrl(ToolboxWeb.Web.Constants.ToolboxRouteSlugs.RouteNames.NotesHtml) ?? "/notes.html";
+    var checklistHref = Url.RouteUrl(ToolboxWeb.Web.Constants.ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html";
+    var linksHref = Url.RouteUrl(ToolboxWeb.Web.Constants.ToolboxRouteSlugs.RouteNames.QuickLinksHtml) ?? "/quick-links.html";
+    var promptsHref = Url.RouteUrl(ToolboxWeb.Web.Constants.ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml) ?? "/prompt-templates.html";
+
+    // Commands: "href" goes to a page ("?new=1" opens its form), "action" is done in the browser
+    // by command-palette.js. Keywords help matching ("add", "create" …) in the current language.
+    var commands = new List<object>
+    {
+        new { Id = "new-note", Label = T["Palette.Cmd.NewNote"].Value, Icon = "plus", Href = notesHref + "?new=1", Keywords = T["Palette.Kw.New"].Value },
+        new { Id = "new-todo", Label = T["Palette.Cmd.NewTodo"].Value, Icon = "plus", Href = checklistHref + "?new=1", Keywords = T["Palette.Kw.New"].Value },
+        new { Id = "new-link", Label = T["Palette.Cmd.NewLink"].Value, Icon = "plus", Href = linksHref + "?new=1", Keywords = T["Palette.Kw.New"].Value },
+        new { Id = "new-prompt", Label = T["Palette.Cmd.NewPrompt"].Value, Icon = "plus", Href = promptsHref + "?new=1", Keywords = T["Palette.Kw.New"].Value },
+        new { Id = "focus-toggle", Label = T["Palette.Cmd.FocusStart"].Value, Icon = "timer", Action = "focus", Keywords = T["Palette.Kw.Focus"].Value },
+        new { Id = "theme-light", Label = T["Palette.Cmd.ThemeLight"].Value, Icon = "sun", Action = "theme:light", Keywords = T["Palette.Kw.Theme"].Value },
+        new { Id = "theme-dark", Label = T["Palette.Cmd.ThemeDark"].Value, Icon = "moon", Action = "theme:dark", Keywords = T["Palette.Kw.Theme"].Value },
+        new { Id = "theme-system", Label = T["Palette.Cmd.ThemeSystem"].Value, Icon = "monitor", Action = "theme:system", Keywords = T["Palette.Kw.Theme"].Value }
+    };
+    if (currentCulture != "vi-VN")
+    {
+        commands.Add(new { Id = "lang-vi", Label = T["Palette.Cmd.LanguageVi"].Value, Icon = "languages", Action = "culture:vi-VN", Keywords = T["Palette.Kw.Language"].Value });
+    }
+    if (currentCulture != "en-US")
+    {
+        commands.Add(new { Id = "lang-en", Label = T["Palette.Cmd.LanguageEn"].Value, Icon = "languages", Action = "culture:en-US", Keywords = T["Palette.Kw.Language"].Value });
+    }
+    commands.Add(new { Id = "shortcuts", Label = T["Palette.Cmd.Shortcuts"].Value, Icon = "keyboard", Action = "shortcuts", Keywords = T["Palette.Kw.Shortcuts"].Value });
+    commands.Add(new { Id = "sign-out", Label = T["Auth.Logout"].Value, Icon = "log-out", Action = "sign-out", Keywords = "" });
+
+    var data = JsonSerializer.Serialize(new
+    {
+        Pages = Model.SelectMany(g => g.Items.Select(i => new { i.Key, i.Label, Group = g.Label, i.Icon, i.Href, Go = i.GoKey })),
+        Commands = commands,
+        SearchUrl = Url.Action("Mine", "Search"),
+        LinkOpenedUrl = Url.Action("MarkOpened", "QuickLinks"),
+        MinQuery = ToolboxWeb.Web.Services.QuickSearchService.MinQueryLength,
+        Labels = new
+        {
+            Palette = T["Shortcut.Palette"].Value,
+            Help = T["Shortcut.Help"].Value,
+            Search = T["Shortcut.Search"].Value,
+            New = T["Shortcut.New"].Value,
+            Move = T["Shortcut.Move"].Value,
+            Open = T["Shortcut.Open"].Value,
+            Edit = T["Shortcut.Edit"].Value,
+            Copy = T["Shortcut.Copy"].Value,
+            CopyAddress = T["Shortcut.CopyAddress"].Value,
+            Reorder = T["Shortcut.Reorder"].Value,
+            Done = T["Shortcut.Done"].Value,
+            Delete = T["Shortcut.Delete"].Value,
+            SelectMany = T["Shortcut.SelectMany"].Value,
+            ExitSelect = T["Shortcut.ExitSelect"].Value,
+            Save = T["Shortcut.Save"].Value,
+            StartPause = T["Shortcut.StartPause"].Value,
+            Reset = T["Shortcut.Reset"].Value,
+            NextPrevious = T["Shortcut.NextPrevious"].Value
+        },
+        Text = new
+        {
+            HelpApp = T["Shortcut.Section.App"].Value,
+            HelpPage = T["Shortcut.Section.Page"].Value,
+            HelpGo = T["Shortcut.Section.Go"].Value,
+            AllShortcuts = T["Shortcut.All"].Value,
+            ShortcutsPrefix = T["Shortcut.LinePrefix"].Value,
+            Recent = T["Palette.Group.Recent"].Value,
+            Pages = T["Palette.Group.Pages"].Value,
+            Commands = T["Palette.Group.Commands"].Value,
+            Data = T["Palette.Group.Data"].Value,
+            Searching = T["Palette.Searching"].Value,
+            SearchFailed = T["Palette.SearchFailed"].Value,
+            NoResults = T["Palette.NoResults"].Value,
+            TypeMore = T["Palette.TypeMore"].Value,
+            FocusStart = T["Palette.Cmd.FocusStart"].Value,
+            FocusPause = T["Palette.Cmd.FocusPause"].Value,
+            FocusResume = T["Palette.Cmd.FocusResume"].Value,
+            Kind = new
+            {
+                Note = T["Palette.Kind.Note"].Value,
+                Todo = T["Palette.Kind.Todo"].Value,
+                Link = T["Palette.Kind.Link"].Value,
+                Prompt = T["Palette.Kind.Prompt"].Value
+            }
+        }
+    }, json);
+}
+
+<script id="tbx-command-data" type="application/json">@Html.Raw(data)</script>
+
+<div class="modal tbx-palette-modal" id="tbx-palette" tabindex="-1" aria-labelledby="tbx-palette-title" aria-hidden="true">
+    <div class="modal-dialog tbx-palette-dialog">
+        <div class="modal-content tbx-palette">
+            <h2 class="visually-hidden" id="tbx-palette-title">@T["Palette.Title"]</h2>
+            <div class="tbx-palette-search">
+                <tbx-icon name="search" />
+                <label class="visually-hidden" for="tbx-palette-input">@T["Palette.Label"]</label>
+                <input id="tbx-palette-input" class="tbx-palette-input" type="text" autocomplete="off" spellcheck="false"
+                       role="combobox" aria-expanded="true" aria-controls="tbx-palette-list" aria-autocomplete="list"
+                       placeholder="@T["Palette.Placeholder"]" data-palette-input />
+                <kbd class="tbx-kbd">Esc</kbd>
+            </div>
+            <div class="tbx-palette-list" id="tbx-palette-list" role="listbox" aria-label="@T["Palette.Label"]" data-palette-list></div>
+            <p class="tbx-palette-foot">
+                <span><kbd>↑</kbd><kbd>↓</kbd> @T["Palette.Foot.Move"]</span>
+                <span><kbd>Enter</kbd> @T["Palette.Foot.Run"]</span>
+                <span><kbd>?</kbd> @T["Palette.Foot.Shortcuts"]</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="tbx-shortcuts" tabindex="-1" aria-labelledby="tbx-shortcuts-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="tbx-shortcuts-title">@T["Shortcut.HelpTitle"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body tbx-shortcuts-body" data-shortcuts-body></div>
+        </div>
+    </div>
+</div>

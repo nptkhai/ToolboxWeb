@@ -52,6 +52,10 @@
         ActionTarget = "#prompt-form"
     };
 
+    var missingSeeds = Model.Seeds.Where(x => x.State == PromptSeedState.Missing).ToList();
+    var changedSeeds = Model.Seeds.Where(x => x.State == PromptSeedState.Changed).ToList();
+    var currentSeeds = Model.Seeds.Where(x => x.State == PromptSeedState.Current).ToList();
+
     string? Error(string key) => ViewData.ModelState[key]?.Errors.FirstOrDefault()?.ErrorMessage;
     var nameError = Error("Name");
     var contentError = Error("Content");
@@ -98,6 +102,9 @@
             <button type="button" class="btn btn-link btn-sm" data-bs-toggle="modal" data-bs-target="#prompt-import">
                 <tbx-icon name="upload" />@T["PromptTemplates.Import"]
             </button>
+            <button type="button" class="btn btn-link btn-sm" data-bs-toggle="modal" data-bs-target="#prompt-restore">
+                <tbx-icon name="history" />@T["PromptTemplates.Restore"]
+            </button>
         </p>
     }
     else
@@ -126,6 +133,10 @@
                         </li>
                         <li>
                             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#prompt-import"><tbx-icon name="upload" />@T["PromptTemplates.Import"]</button>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#prompt-restore"><tbx-icon name="history" />@T["PromptTemplates.Restore"]</button>
                         </li>
                     </ul>
                 </div>
@@ -203,7 +214,7 @@
             </ul>
         }
 
-        <p class="tbx-shortcuts">@T["PromptTemplates.Shortcuts"]</p>
+        <p class="tbx-shortcuts" data-shortcuts-line></p>
     }
 </div>
 
@@ -352,6 +363,64 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
                 <button type="submit" class="btn btn-primary"><tbx-icon name="upload" />@T["PromptTemplates.ImportSubmit"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Built-in prompts: add the missing ones back, or put the current text back into changed ones. *@
+<div class="modal fade" id="prompt-restore" data-list-modal tabindex="-1" aria-labelledby="prompt-restore-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <form asp-action="RestoreSeeds" method="post" class="modal-content" data-prompt-restore>
+            @{ await Keep(query); }
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="prompt-restore-title">@T["PromptTemplates.Restore"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body tbx-form-grid">
+                <p class="prompt-import-text">@T["PromptTemplates.RestoreHelp"]</p>
+                @if (missingSeeds.Count > 0)
+                {
+                    <fieldset class="prompt-restore-group">
+                        <legend class="prompt-section-title">@T["PromptTemplates.RestoreAdd"]</legend>
+                        @foreach (var seed in missingSeeds)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="add" value="@seed.Key" id="restore-add-@seed.Key" checked />
+                                <label class="form-check-label" for="restore-add-@seed.Key">@seed.Name</label>
+                            </div>
+                        }
+                    </fieldset>
+                }
+                @if (changedSeeds.Count > 0)
+                {
+                    <fieldset class="prompt-restore-group">
+                        <legend class="prompt-section-title">@T["PromptTemplates.RestoreReplace"]</legend>
+                        @foreach (var seed in changedSeeds)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="replace" value="@seed.Key" id="restore-replace-@seed.Key" />
+                                <label class="form-check-label" for="restore-replace-@seed.Key">@seed.Name</label>
+                            </div>
+                        }
+                        <p class="tbx-field-hint prompt-restore-warning"><tbx-icon name="triangle-alert" />@T["PromptTemplates.RestoreReplaceWarning"]</p>
+                    </fieldset>
+                }
+                @if (currentSeeds.Count > 0)
+                {
+                    <p class="tbx-field-hint">@T["PromptTemplates.RestoreCurrent", string.Join(", ", currentSeeds.Select(x => x.Name))]</p>
+                }
+                @if (missingSeeds.Count + changedSeeds.Count == 0)
+                {
+                    <p class="prompt-import-text" role="status">@T["PromptTemplates.RestoreNothing"]</p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                @if (missingSeeds.Count + changedSeeds.Count > 0)
+                {
+                    <button type="submit" class="btn btn-primary" data-restore-submit><tbx-icon name="history" />@T["PromptTemplates.RestoreSubmit"]</button>
+                }
             </div>
         </form>
     </div>

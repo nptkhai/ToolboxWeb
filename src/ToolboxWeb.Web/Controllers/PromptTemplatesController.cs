@@ -49,6 +49,7 @@ public class PromptTemplatesController : Controller
         }
 
         var page = await _prompts.GetListAsync(_currentUser.UserId, Query(category, search, chosen));
+        page.Seeds = await _prompts.GetSeedStatusAsync(_currentUser.UserId);
 
         // An old link (?editId=…) still opens the edit dialog.
         if (editId is int id && await _prompts.GetByIdAsync(_currentUser.UserId, id) is { } template)
@@ -182,6 +183,20 @@ public class PromptTemplatesController : Controller
         return RedirectToList(category, search);
     }
 
+    /// <summary>
+    /// "Restore built-in prompts": adds the missing ones that were ticked and puts the current text
+    /// back into the changed ones that were ticked (the dialog names each of them).
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RestoreSeeds(string[]? add, string[]? replace, string? category = null, string? search = null)
+    {
+        var result = await _prompts.RestoreSeedsAsync(_currentUser.UserId, add ?? [], replace ?? []);
+        TempData[result.Added + result.Replaced > 0 ? TempDataKeys.SuccessMessage : TempDataKeys.ErrorMessage] =
+            _localizer["Flash.PromptSeedsRestored", result.Added, result.Replaced].Value;
+        return RedirectToList(category, search);
+    }
+
     // Accepts the file Export writes, or a bare array of prompts.
     private static async Task<IReadOnlyList<PromptExportItem>?> ReadImportAsync(IFormFile? file)
     {
@@ -216,6 +231,7 @@ public class PromptTemplatesController : Controller
     {
         // Reopen the dialog with what was typed instead of throwing it away.
         var page = await _prompts.GetListAsync(_currentUser.UserId, Query(form.ReturnCategory, form.ReturnSearch, null));
+        page.Seeds = await _prompts.GetSeedStatusAsync(_currentUser.UserId);
         page.Form = form;
         page.OpenForm = true;
         return View("Index", page);

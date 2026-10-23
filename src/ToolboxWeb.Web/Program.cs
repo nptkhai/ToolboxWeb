@@ -18,6 +18,7 @@ using ToolboxWeb.Web.Infrastructure.Jira;
 using ToolboxWeb.Web.Infrastructure.Logging;
 using ToolboxWeb.Web.Infrastructure.Storage;
 using ToolboxWeb.Web.Infrastructure.Time;
+using ToolboxWeb.Web.Infrastructure.Web;
 using ToolboxWeb.Web.Localization;
 using ToolboxWeb.Web.ViewModels.Jira;
 
@@ -147,6 +148,8 @@ if (useFakeJiraData)
     builder.Services.Replace(ServiceDescriptor.Singleton<IJiraClientFactory, FakeJiraClientFactory>());
 }
 
+builder.Services.AddStaticAssetCompression();
+
 var app = builder.Build();
 if (useFakeJiraData)
 {
@@ -179,12 +182,14 @@ else
 
 app.UseRequestLocalization(localizationOptions);
 app.UseHttpsRedirection();
+// Before the static files, so CSS, JS and SVG go out compressed (StaticAssetDelivery).
+app.UseResponseCompression();
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(runtimeStorage.UploadsPath),
     RequestPath = "/uploads"
 });
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = StaticAssetDelivery.SetCacheHeaders });
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();

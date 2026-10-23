@@ -45,7 +45,26 @@ public class PromptTemplatesIndexViewModel
     public bool OpenForm { get; set; }
 
     public bool IsEditing => Form.Id.HasValue;
+
+    /// <summary>The built-in prompts and how the user's copy compares (the "Restore built-in prompts" dialog).</summary>
+    public IReadOnlyList<PromptSeedStatus> Seeds { get; set; } = [];
 }
+
+public enum PromptSeedState
+{
+    /// <summary>The user has no prompt with this name.</summary>
+    Missing,
+
+    /// <summary>The user has it, with a text other than the current built-in one.</summary>
+    Changed,
+
+    /// <summary>The user has the current built-in text.</summary>
+    Current
+}
+
+public sealed record PromptSeedStatus(string Key, string Name, PromptSeedState State);
+
+public sealed record PromptRestoreResult(int Added, int Replaced);
 
 /// <summary>The JSON file "Export" writes and "Import" reads.</summary>
 public sealed class PromptExportFile

@@ -40,11 +40,6 @@
         }
     }
 
-    function isTyping(target) {
-        return target instanceof HTMLElement
-            && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
-    }
-
     // ------------------------------------------------------------ variables
 
     /** Names used as {{name}}, in order of first use. */
@@ -438,47 +433,60 @@
         sort.submit();
     });
 
-    // Up/Down move between rows, Enter opens the prompt, C copies, E edits. "/" and "N" come
-    // from list-page.js.
-    document.addEventListener('keydown', function (event) {
-        if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target) || document.querySelector('.modal.show')) {
-            return;
-        }
+    // Shortcuts (Toolbox.keys, Content/js/shortcuts.js): ↑ ↓ move between rows, Enter opens the
+    // prompt, C copies, E edits. "/" and "N" come from list-page.js.
+    const keys = window.Toolbox?.keys;
+    if (keys) {
+        const allRows = function () { return Array.from(page.querySelectorAll('[data-prompt-row]')); };
+        const activeRow = function () {
+            return document.activeElement?.closest?.('[data-prompt-row]') || page.querySelector('[data-prompt-row].is-selected');
+        };
+        const activePrompt = function () { const row = activeRow(); return row ? byId.get(row.dataset.id) : null; };
 
-        const rows = Array.from(page.querySelectorAll('[data-prompt-row]'));
-        if (!rows.length) {
-            return;
-        }
-
-        const active = document.activeElement?.closest?.('[data-prompt-row]')
-            || page.querySelector('[data-prompt-row].is-selected');
-        const index = active ? rows.indexOf(active) : -1;
-        const key = event.key;
-
-        if (key === 'ArrowDown' || key === 'ArrowUp') {
-            event.preventDefault();
-            const next = rows[Math.min(rows.length - 1, Math.max(0, index + (key === 'ArrowDown' ? 1 : -1)))] || rows[0];
-            next.focus();
-            if (panelElement.classList.contains('show')) {
-                showDetail(byId.get(next.dataset.id));
+        keys.add({
+            keys: ['arrowdown', 'arrowup'],
+            label: keys.label('move'),
+            display: ['↑ ↓'],
+            when: function () { return allRows().length > 0; },
+            run: function (event) {
+                const rows = allRows();
+                const index = rows.indexOf(activeRow());
+                const next = rows[Math.min(rows.length - 1, Math.max(0, index + (event.key === 'ArrowDown' ? 1 : -1)))] || rows[0];
+                next.focus();
+                if (panelElement.classList.contains('show')) {
+                    showDetail(byId.get(next.dataset.id));
+                }
             }
-            return;
-        }
+        });
+        keys.add({
+            keys: 'enter',
+            label: keys.label('open'),
+            when: function () { const row = activeRow(); return Boolean(row && document.activeElement === row); },
+            run: function () { showDetail(activePrompt()); }
+        });
+        keys.add({ keys: 'c', label: keys.label('copy'), when: activePrompt, run: function () { copyPrompt(activePrompt()); } });
+        keys.add({ keys: 'e', label: keys.label('edit'), when: activePrompt, run: function () { openEdit(activePrompt()); } });
+    }
 
-        const prompt = active ? byId.get(active.dataset.id) : null;
-        if (!prompt) {
-            return;
-        }
+    // ------------------------------------------------------------ restore built-in prompts
 
-        if (key === 'Enter' && document.activeElement === active) {
-            event.preventDefault();
-            showDetail(prompt);
-        } else if (key === 'c' || key === 'C') {
-            event.preventDefault();
-            copyPrompt(prompt);
-        } else if (key === 'e' || key === 'E') {
-            event.preventDefault();
-            openEdit(prompt);
-        }
-    });
+    // "Restore" stays off until at least one prompt is ticked.
+    const restore = document.querySelector('[data-prompt-restore]');
+    const restoreSubmit = restore?.querySelector('[data-restore-submit]');
+    if (restoreSubmit) {
+        const syncRestore = function () {
+            restoreSubmit.disabled = !restore.querySelector('input[type="checkbox"]:checked');
+        };
+        restore.addEventListener('change', syncRestore);
+        syncRestore();
+    }
+
+    // Opened from the command palette on one prompt (?open=<id>): show it in the side panel.
+    const openId = new URLSearchParams(window.location.search).get('open');
+    if (openId && byId.has(openId)) {
+        showDetail(byId.get(openId));
+        const url = new URL(window.location.href);
+        url.searchParams.delete('open');
+        window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
 })(window, document);

@@ -1,0 +1,277 @@
+/*
+ * Command palette (Ctrl/⌘+K), the shortcut help dialog (?) and key hints (Content/js/shortcuts.js,
+ * Content/js/command-palette.js, Views/Shared/_CommandPalette.cshtml). Colors come from tokens.css.
+ */
+
+/* ---------------------------------------------------------------- header button */
+.topbar-command {
+    align-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    color: var(--muted);
+    display: inline-flex;
+    font-size: var(--text-sm);
+    gap: var(--space-2);
+    height: 32px;
+    padding: 0 var(--space-2);
+    transition: border-color var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+
+    .topbar-command:hover,
+    .topbar-command:focus-visible {
+        border-color: var(--line-strong);
+        color: var(--text);
+    }
+
+    .topbar-command:focus-visible {
+        box-shadow: var(--focus-ring);
+        outline: 0;
+    }
+
+/* ---------------------------------------------------------------- key hints */
+.tbx-kbd,
+.tbx-palette kbd,
+.tbx-shortcuts-body kbd {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-pill);
+    color: var(--muted);
+    display: inline-block;
+    font-family: inherit;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    line-height: 1.4;
+    padding: 0 var(--space-1);
+    white-space: nowrap;
+}
+
+.btn .tbx-kbd {
+    margin-left: var(--space-1);
+}
+
+.btn-primary .tbx-kbd {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--on-accent) 45%, transparent);
+    color: var(--on-accent);
+}
+
+.tbx-kbd-host {
+    position: relative;
+}
+
+.tbx-kbd--field {
+    pointer-events: none;
+    position: absolute;
+    right: var(--space-2);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Hints are for keyboards: none on touch screens or narrow windows. */
+@media (hover: none), (max-width: 899.98px) {
+    .tbx-kbd,
+    .tbx-palette .tbx-kbd {
+        display: none;
+    }
+
+    .topbar-command-text {
+        display: none;
+    }
+
+    .topbar-command {
+        background: transparent;
+        border-color: transparent;
+        justify-content: center;
+        padding: 0;
+        width: 32px;
+    }
+}
+
+/* ---------------------------------------------------------------- palette */
+.tbx-palette-dialog {
+    margin-top: 12vh;
+    max-width: 640px;
+}
+
+.tbx-palette {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-popup);
+    overflow: hidden;
+}
+
+.tbx-palette-search {
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    display: flex;
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+}
+
+.tbx-palette-input {
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    flex: 1 1 auto;
+    font-size: var(--text-lg);
+    height: 52px;
+    min-width: 0;
+    outline: 0;
+}
+
+    .tbx-palette-input::placeholder {
+        color: var(--muted);
+    }
+
+.tbx-palette-list {
+    max-height: min(60vh, 440px);
+    overflow-y: auto;
+    padding: var(--space-1) 0;
+}
+
+.tbx-palette-group + .tbx-palette-group {
+    border-top: 1px solid var(--line);
+    margin-top: var(--space-1);
+    padding-top: var(--space-1);
+}
+
+.tbx-palette-group-title {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: .04em;
+    margin: 0;
+    padding: var(--space-2) var(--space-3) var(--space-1);
+    text-transform: uppercase;
+}
+
+.tbx-palette-option {
+    align-items: center;
+    border-radius: var(--radius-control);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    gap: var(--space-3);
+    margin: 0 var(--space-2);
+    min-height: var(--row-height-comfortable);
+    padding: var(--space-1) var(--space-2);
+}
+
+    .tbx-palette-option.is-active {
+        background: var(--accent-tint);
+        color: var(--accent-strong);
+    }
+
+    .tbx-palette-option .tbx-icon {
+        color: var(--muted);
+        flex: none;
+    }
+
+    .tbx-palette-option.is-active .tbx-icon {
+        color: var(--accent-strong);
+    }
+
+.tbx-palette-icon {
+    align-items: center;
+    display: inline-flex;
+}
+
+.tbx-palette-text {
+    display: grid;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tbx-palette-label,
+.tbx-palette-detail {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tbx-palette-detail {
+    color: var(--muted);
+    font-size: var(--text-xs);
+}
+
+.tbx-palette-state {
+    align-items: center;
+    color: var(--muted);
+    display: flex;
+    font-size: var(--text-sm);
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+}
+
+    .tbx-palette-state .tbx-skeleton {
+        width: 48px;
+    }
+
+    .tbx-palette-state.is-error {
+        color: var(--danger);
+    }
+
+.tbx-palette-foot {
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--text-xs);
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+}
+
+    .tbx-palette-foot kbd + kbd {
+        margin-left: 2px;
+    }
+
+@media (max-width: 599.98px) {
+    .tbx-palette-dialog {
+        margin: var(--space-2);
+    }
+
+    .tbx-palette-foot {
+        display: none;
+    }
+}
+
+/* ---------------------------------------------------------------- help dialog */
+.tbx-shortcuts-title {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: .04em;
+    margin: var(--space-3) 0 var(--space-2);
+    text-transform: uppercase;
+}
+
+    .tbx-shortcuts-body section:first-child .tbx-shortcuts-title {
+        margin-top: 0;
+    }
+
+.tbx-shortcut-list {
+    display: grid;
+    gap: var(--space-1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .tbx-shortcut-list li {
+        align-items: center;
+        display: grid;
+        font-size: var(--text-md);
+        gap: var(--space-3);
+        grid-template-columns: minmax(96px, max-content) minmax(0, 1fr);
+    }
+
+.tbx-shortcut-keys {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}

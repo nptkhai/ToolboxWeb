@@ -200,6 +200,25 @@
     margin: 0;
 }
 
+.prompt-restore-group {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+}
+
+    .prompt-restore-group .prompt-section-title {
+        float: none;
+        margin-bottom: var(--space-1);
+    }
+
+.prompt-restore-warning {
+    align-items: flex-start;
+    color: var(--warning);
+    display: flex;
+    gap: var(--space-1);
+    margin-top: var(--space-1);
+}
+
 @media (max-width: 599.98px) {
     /* Pin and text on the first line; the use count and the actions on a second one, so the
        name keeps the width. 40px = the pin button plus the row gap. */
