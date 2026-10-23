@@ -17,6 +17,9 @@ public sealed class JiraDashboardRowViewModel
     public string LoggedTimeText { get; init; } = "-";
     public decimal EstimateHours { get; init; }
     public decimal LoggedHours { get; init; }
+
+    /// <summary>Every hour logged on the subtask, by anyone and at any time: what the estimate is compared with.</summary>
+    public decimal TotalLoggedHours { get; init; }
     public bool IsOverdue { get; init; }
 
     /// <summary>Days past the due date while still open; 0 when not overdue.</summary>
