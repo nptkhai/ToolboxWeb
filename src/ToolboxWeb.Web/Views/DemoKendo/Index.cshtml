@@ -1,4 +1,12 @@
+@using System.Text.Json
 @using ToolboxWeb.Web.Constants
+@using ToolboxWeb.Web.Infrastructure.Time
+@*
+    Kendo UI Core demo, a developer page ([DevToolsOnly]), stage 5.13. Every card shows the
+    widget's status from ViewModels/ComponentCatalog.cs (_DemoCardHead). Layout comes from
+    component-hub.css and dev-demo.css; behavior from Content/js/kendo-demo.js. The sample rows
+    live in the browser only: deleting one asks first and is gone after a reload.
+*@
 @{
     ViewData["Title"] = T["Nav.KendoDemo"];
     var activeTab = ViewData["ActiveTab"] as string ?? ToolboxRouteSlugs.KendoDemoTabs.Default;
@@ -6,1056 +14,334 @@
     bool IsActiveTab(string tab) => string.Equals(activeTab, tab, StringComparison.OrdinalIgnoreCase);
     string TabButtonClass(string tab) => IsActiveTab(tab) ? "nav-link active" : "nav-link";
     string TabPaneClass(string tab) => IsActiveTab(tab) ? "tab-pane fade show active" : "tab-pane fade";
+    string TabSelected(string tab) => IsActiveTab(tab) ? "true" : "false";
     string TabRoute(string tab) => Url.RouteUrl(ToolboxRouteSlugs.RouteNames.KendoDemoTabHtml, new { tab }) ?? $"/demo-kendo/{tab}.html";
+
+    var componentsHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ComponentsHtml) ?? "/component.html";
+    var tabulatorHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.TabulatorDemoHtml) ?? "/tabulator-demo.html";
+
+    var tabs = new[]
+    {
+        (Key: ToolboxRouteSlugs.KendoDemoTabs.DataSourceListView, Id: "data", Label: T["KendoDemo.Tab.Data"].Value),
+        (Key: ToolboxRouteSlugs.KendoDemoTabs.Selection, Id: "selection", Label: T["KendoDemo.Tab.Selection"].Value),
+        (Key: ToolboxRouteSlugs.KendoDemoTabs.FormCulture, Id: "form", Label: T["KendoDemo.Tab.Form"].Value),
+        (Key: ToolboxRouteSlugs.KendoDemoTabs.LayoutPopup, Id: "layout", Label: T["KendoDemo.Tab.Layout"].Value)
+    };
+
+    string Category(string code) => T["TabulatorTaskCategory." + code].Value;
+    string Status(string code) => T["TabulatorTaskStatus." + code].Value;
+    string Priority(string code) => T["TabulatorTaskPriority." + code].Value;
+
+    // Sample rows: due dates count from today in the app time zone, so the demo never looks stale.
+    var today = AppClock.Today;
+    var samples = new[]
+    {
+        (Id: 1, Owner: "Khai", Category: "Ui", Status: "InProgress", StatusCode: "doing", Priority: "High", Progress: 72, Budget: 1250000, Days: 1),
+        (Id: 2, Owner: "Frontend", Category: "Localization", Status: "Done", StatusCode: "done", Priority: "High", Progress: 100, Budget: 980000, Days: 2),
+        (Id: 3, Owner: "Khai", Category: "Culture", Status: "Review", StatusCode: "review", Priority: "Medium", Progress: 84, Budget: 620000, Days: 3),
+        (Id: 4, Owner: "Backend", Category: "Operations", Status: "Todo", StatusCode: "todo", Priority: "Medium", Progress: 10, Budget: 750000, Days: 5),
+        (Id: 5, Owner: "QA", Category: "Testing", Status: "Review", StatusCode: "review", Priority: "Low", Progress: 48, Budget: 420000, Days: 6),
+        (Id: 6, Owner: "DevOps", Category: "Operations", Status: "Done", StatusCode: "done", Priority: "Low", Progress: 100, Budget: 350000, Days: 8)
+    };
+
+    var json = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var pageData = JsonSerializer.Serialize(new
+    {
+        Tasks = samples.Select(x => new
+        {
+            x.Id,
+            Name = T[$"KendoDemo.Sample.{x.Id}.Name"].Value,
+            Note = T[$"KendoDemo.Sample.{x.Id}.Note"].Value,
+            x.Owner,
+            x.Category,
+            CategoryLabel = Category(x.Category),
+            x.StatusCode,
+            StatusLabel = Status(x.Status),
+            PriorityCode = x.Priority.ToLowerInvariant(),
+            PriorityLabel = Priority(x.Priority),
+            x.Progress,
+            x.Budget,
+            Due = today.AddDays(x.Days).ToString("yyyy-MM-dd")
+        }),
+        Categories = new[] { "Ui", "Localization", "Culture", "Testing", "Operations" }.Select(x => new { Value = x, Text = Category(x) }),
+        Priorities = new[] { "High", "Medium", "Low" }.Select(x => new { Value = x.ToLowerInvariant(), Text = Priority(x) }),
+        Text = new
+        {
+            Summary = T["KendoDemo.Summary"].Value,
+            Detail = T["KendoDemo.Detail"].Value,
+            DetailTitle = T["KendoDemo.DetailTitle"].Value,
+            Owner = T["KendoDemo.Owner"].Value,
+            Due = T["KendoDemo.Due"].Value,
+            Budget = T["KendoDemo.Budget"].Value,
+            Progress = T["TabulatorDemo.Columns.Progress"].Value,
+            Delete = T["Action.Delete"].Value,
+            DeleteTitle = T["Confirm.DeleteTitle"].Value,
+            DeleteConfirm = T["KendoDemo.DeleteConfirm"].Value,
+            Deleted = T["KendoDemo.Deleted"].Value,
+            Missing = T["KendoDemo.Missing"].Value,
+            ValidOk = T["KendoDemo.ValidOk"].Value,
+            ValidFail = T["KendoDemo.ValidFail"].Value,
+            EmailRequired = T["KendoDemo.EmailRequired"].Value,
+            WindowTitle = T["KendoDemo.WindowTitle"].Value,
+            Tooltip = T["KendoDemo.TooltipText"].Value,
+            NotifyInfo = T["KendoDemo.NotifyInfo"].Value,
+            NotifySuccess = T["KendoDemo.NotifySuccess"].Value,
+            NotifyError = T["KendoDemo.NotifyError"].Value,
+            MultiSelectPlaceholder = T["KendoDemo.MultiSelectPlaceholder"].Value,
+            ComboPlaceholder = T["KendoDemo.ComboPlaceholder"].Value
+        }
+    }, json);
+
+    var emptyState = new EmptyStateViewModel(T["KendoDemo.NoMatch"].Value, "search");
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/vendor/kendo/icons/index.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
-    <style>
-        .kendo-demo-page {
-            --demo-bg: linear-gradient(135deg, rgba(37, 99, 235, .12), rgba(15, 118, 110, .10));
-            --demo-card: color-mix(in srgb, var(--surface) 94%, #ffffff 6%);
-            --demo-soft: color-mix(in srgb, var(--surface-2) 88%, #ffffff 12%);
-            background:
-                radial-gradient(circle at 15% 0%, rgba(37, 99, 235, .12), transparent 24%),
-                radial-gradient(circle at 100% 0%, rgba(15, 118, 110, .10), transparent 20%);
-            color: var(--text);
-        }
-
-        :root[data-theme="dark"] .kendo-demo-page {
-            --demo-bg: linear-gradient(135deg, rgba(96, 165, 250, .14), rgba(45, 212, 191, .11));
-            --demo-card: color-mix(in srgb, var(--surface) 90%, #0f172a 10%);
-            --demo-soft: color-mix(in srgb, var(--surface-2) 82%, #0f172a 18%);
-        }
-
-        .kendo-demo-hero,
-        .demo-tab-shell,
-        .demo-card,
-        .summary-card,
-        .core-warning {
-            border: 1px solid var(--line);
-            border-radius: 18px;
-        }
-
-        .kendo-demo-hero {
-            background: var(--demo-bg);
-            overflow: hidden;
-            padding: clamp(20px, 4vw, 32px);
-            position: relative;
-        }
-
-        .kendo-demo-hero h2 {
-            font-size: clamp(1.45rem, 3vw, 2.2rem);
-            letter-spacing: -.03em;
-            margin: 0 0 8px;
-        }
-
-        .kendo-demo-hero p {
-            color: var(--muted);
-            margin: 0;
-            max-width: 900px;
-        }
-
-        .kendo-meta-row,
-        .summary-grid,
-        .demo-card-grid,
-        .kendo-toolbar-row,
-        .layout-playground {
-            display: grid;
-            gap: 12px;
-        }
-
-        .kendo-meta-row {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            margin-top: 18px;
-        }
-
-        .kendo-meta-pill,
-        .core-warning,
-        .demo-card,
-        .summary-card {
-            background: var(--demo-card);
-        }
-
-        .kendo-meta-pill {
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            padding: 12px 14px;
-        }
-
-        .kendo-meta-pill span,
-        .summary-card span,
-        .demo-card label {
-            color: var(--muted);
-            display: block;
-            font-size: .8rem;
-            font-weight: 750;
-            text-transform: uppercase;
-        }
-
-        .kendo-meta-pill strong,
-        .summary-card strong {
-            display: block;
-            margin-top: 4px;
-        }
-
-        .core-warning {
-            color: var(--muted);
-            margin-top: 16px;
-            padding: 14px 16px;
-        }
-
-        .core-warning strong {
-            color: var(--text);
-        }
-
-        .demo-tab-shell {
-            background: var(--demo-card);
-            overflow: hidden;
-        }
-
-        .demo-tab-nav {
-            border-bottom: 1px solid var(--line);
-            gap: 8px;
-            padding: 14px 14px 0;
-        }
-
-        .demo-tab-nav .nav-link {
-            border: 1px solid transparent;
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
-            color: var(--muted);
-            font-weight: 800;
-            transform: translateY(0);
-            transition: color .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
-            will-change: transform;
-        }
-
-        .demo-tab-nav .nav-link:hover,
-        .demo-tab-nav .nav-link:focus {
-            border-color: transparent transparent var(--line);
-            color: var(--text);
-            transform: translateY(-1px);
-        }
-
-        .demo-tab-nav .nav-link.active {
-            background: var(--demo-card);
-            border-color: var(--line) var(--line) var(--demo-card);
-            color: var(--text);
-        }
-
-        .demo-tab-content-shell {
-            padding: 18px;
-        }
-
-        .demo-tab-content-shell > .tab-pane.fade {
-            transform: translateY(8px);
-            transition: opacity .2s ease, transform .22s ease;
-        }
-
-        .demo-tab-content-shell > .tab-pane.fade.show {
-            transform: translateY(0);
-        }
-
-        .kendo-toolbar-row {
-            align-items: end;
-            grid-template-columns: 1.4fr .9fr .9fr auto;
-            margin-bottom: 16px;
-        }
-
-        .summary-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            margin-bottom: 16px;
-        }
-
-        .summary-card {
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            padding: 13px 14px;
-        }
-
-        .summary-card strong {
-            font-size: 1.22rem;
-        }
-
-        .demo-card-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .demo-card {
-            padding: 16px;
-        }
-
-        .demo-card h3 {
-            font-size: 1rem;
-            margin: 0 0 12px;
-        }
-
-        .demo-card .hint,
-        .muted {
-            color: var(--muted);
-            font-size: .88rem;
-        }
-
-        .demo-card .hint {
-            margin-top: 8px;
-        }
-
-        .core-table {
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            overflow: hidden;
-        }
-
-        .core-table-head,
-        .core-table-row {
-            display: grid;
-            gap: 12px;
-            grid-template-columns: minmax(220px, 1.45fr) minmax(120px, .7fr) minmax(116px, .62fr) minmax(112px, .58fr) minmax(130px, .72fr) 98px;
-        }
-
-        .core-table-head {
-            background: var(--demo-soft);
-            color: var(--muted);
-            font-size: .78rem;
-            font-weight: 800;
-            padding: 12px 14px;
-            text-transform: uppercase;
-        }
-
-        .core-table-row {
-            align-items: center;
-            background: var(--demo-card);
-            border-top: 1px solid var(--line);
-            padding: 13px 14px;
-        }
-
-        .core-table-title {
-            font-weight: 800;
-        }
-
-        .core-table-subtitle {
-            color: var(--muted);
-            font-size: .85rem;
-            margin-top: 3px;
-        }
-
-        .status-pill,
-        .priority-pill {
-            border-radius: 999px;
-            display: inline-flex;
-            font-size: .78rem;
-            font-weight: 800;
-            justify-content: center;
-            padding: 5px 9px;
-        }
-
-        .status-done {
-            background: rgba(22, 163, 74, .14);
-            color: #15803d;
-        }
-
-        .status-doing {
-            background: rgba(37, 99, 235, .14);
-            color: #2563eb;
-        }
-
-        .status-review {
-            background: rgba(217, 119, 6, .16);
-            color: #b45309;
-        }
-
-        .priority-high {
-            background: rgba(180, 35, 24, .13);
-            color: var(--danger);
-        }
-
-        .priority-medium {
-            background: rgba(37, 99, 235, .13);
-            color: var(--accent);
-        }
-
-        .priority-low {
-            background: rgba(15, 118, 110, .13);
-            color: var(--accent-2);
-        }
-
-        .progress-mini {
-            background: var(--surface-2);
-            border-radius: 999px;
-            height: 8px;
-            overflow: hidden;
-        }
-
-        .progress-mini span {
-            background: linear-gradient(90deg, var(--accent), var(--accent-2));
-            display: block;
-            height: 100%;
-        }
-
-        .native-color-input {
-            background: transparent;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            height: 42px;
-            padding: 4px;
-            width: 100%;
-        }
-
-        .layout-playground {
-            grid-template-columns: minmax(0, 1fr) minmax(280px, .82fr);
-        }
-
-        #kendo-splitter {
-            height: 270px;
-        }
-
-        #kendo-splitter .split-pane {
-            color: var(--text);
-            padding: 16px;
-        }
-
-        .widget-missing {
-            border: 1px dashed var(--danger);
-            border-radius: 12px;
-            color: var(--danger);
-            font-size: .86rem;
-            margin-top: 8px;
-            padding: 9px 10px;
-        }
-
-        .kendo-demo-page .k-widget,
-        .kendo-demo-page .k-input,
-        .kendo-demo-page .k-picker,
-        .kendo-demo-page .k-dropdownlist,
-        .kendo-demo-page .k-multiselect,
-        .kendo-demo-page .k-combobox {
-            width: 100%;
-        }
-
-        .kendo-demo-page .k-listview {
-            border: 0;
-        }
-
-        .kendo-demo-page .k-pager {
-            border: 0;
-            border-top: 1px solid var(--line);
-        }
-
-        .kendo-demo-page .k-window,
-        .k-popup,
-        .k-list-container,
-        .k-calendar-container,
-        .k-notification-container {
-            z-index: 3000;
-        }
-
-        .k-animation-container,
-        body > .k-animation-container {
-            z-index: 3000 !important;
-        }
-
-        @@media (max-width: 1100px) {
-            .kendo-meta-row,
-            .summary-grid,
-            .demo-card-grid,
-            .layout-playground,
-            .kendo-toolbar-row {
-                grid-template-columns: 1fr;
-            }
-
-            .core-table-head {
-                display: none;
-            }
-
-            .core-table-row {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @@media (prefers-reduced-motion: reduce) {
-            .demo-tab-nav .nav-link,
-            .demo-tab-content-shell > .tab-pane.fade {
-                transition: none;
-                transform: none;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="~/css/component-hub.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dev-demo.css" asp-append-version="true" />
 }
 
-<div class="tool-grid kendo-demo-page">
-    <section class="span-12 kendo-demo-hero">
-        <h2>@T["Nav.KendoDemo"]</h2>
-        <p>
-            Màn này dùng bộ <strong>Kendo UI Core</strong> self-host có sẵn trong ToolboxWeb để demo các widget
-            miễn phí dùng được trên ASP.NET Core MVC. Những thành phần thương mại như Grid, Scheduler, Chart,
-            ProgressBar, ColorPicker hoặc Dialog không được gọi ở đây để tránh lỗi runtime và giữ source chạy sạch.
-        </p>
-
-        <div class="kendo-meta-row">
-            <div class="kendo-meta-pill">
-                <span>Bundle</span>
-                <strong>Kendo UI Core</strong>
-            </div>
-            <div class="kendo-meta-pill">
-                <span>Theme</span>
-                <strong>Default Main</strong>
-            </div>
-            <div class="kendo-meta-pill">
-                <span>Culture</span>
-                <strong>vi-VN</strong>
-            </div>
-            <div class="kendo-meta-pill">
-                <span>Tích hợp</span>
-                <strong>Client-side jQuery</strong>
-            </div>
-        </div>
-
-        <div class="core-warning">
-            <strong>Lưu ý:</strong>
-            trang này chủ động chỉ demo các widget có thật trong file <code>kendo.ui.core.min.js</code> hiện có của
-            source mới. Nếu sau này bạn có license thương mại hợp lệ, khi đó mới nên nâng màn này lên Grid hoặc các wrapper server-side khác.
+<div class="component-hub dev-demo kendo-demo" data-kendo-demo>
+    <section class="tbx-panel component-intro">
+        <p>@T["KendoDemo.Intro"]</p>
+        <div class="component-intro-links">
+            <a class="btn btn-outline-secondary btn-sm" href="@componentsHref"><tbx-icon name="layout-grid" />@T["Nav.Components"]</a>
+            <a class="btn btn-outline-secondary btn-sm" href="@tabulatorHref"><tbx-icon name="table" />@T["Nav.TabulatorDemo"]</a>
         </div>
     </section>
 
-    <section class="panel span-12">
-        <div class="demo-tab-shell">
-            <ul class="nav nav-tabs demo-tab-nav" id="kendo-demo-tabs" role="tablist">
+    <div class="component-tabs-shell">
+        <ul class="nav nav-tabs component-tab-nav" id="kendo-demo-tabs" role="tablist">
+            @foreach (var tab in tabs)
+            {
                 <li class="nav-item" role="presentation">
-                    <button class="@TabButtonClass(ToolboxRouteSlugs.KendoDemoTabs.DataSourceListView)" id="tab-core-table" data-bs-toggle="tab" data-bs-target="#pane-core-table" data-route-url="@TabRoute(ToolboxRouteSlugs.KendoDemoTabs.DataSourceListView)" type="button" role="tab" aria-controls="pane-core-table" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.KendoDemoTabs.DataSourceListView).ToString().ToLowerInvariant())">
-                        DataSource & ListView
-                    </button>
+                    <button class="@TabButtonClass(tab.Key)" id="kd-tab-@tab.Id" type="button" role="tab"
+                            data-bs-toggle="tab" data-bs-target="#kd-pane-@tab.Id" aria-controls="kd-pane-@tab.Id"
+                            aria-selected="@TabSelected(tab.Key)" data-route-url="@TabRoute(tab.Key)">@tab.Label</button>
                 </li>
-                <li class="nav-item" role="presentation">
-                    <button class="@TabButtonClass(ToolboxRouteSlugs.KendoDemoTabs.Selection)" id="tab-selection" data-bs-toggle="tab" data-bs-target="#pane-selection" data-route-url="@TabRoute(ToolboxRouteSlugs.KendoDemoTabs.Selection)" type="button" role="tab" aria-controls="pane-selection" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.KendoDemoTabs.Selection).ToString().ToLowerInvariant())">
-                        Chọn dữ liệu
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="@TabButtonClass(ToolboxRouteSlugs.KendoDemoTabs.FormCulture)" id="tab-inputs" data-bs-toggle="tab" data-bs-target="#pane-inputs" data-route-url="@TabRoute(ToolboxRouteSlugs.KendoDemoTabs.FormCulture)" type="button" role="tab" aria-controls="pane-inputs" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.KendoDemoTabs.FormCulture).ToString().ToLowerInvariant())">
-                        Form & Culture
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="@TabButtonClass(ToolboxRouteSlugs.KendoDemoTabs.LayoutPopup)" id="tab-layout" data-bs-toggle="tab" data-bs-target="#pane-layout" data-route-url="@TabRoute(ToolboxRouteSlugs.KendoDemoTabs.LayoutPopup)" type="button" role="tab" aria-controls="pane-layout" aria-selected="@(IsActiveTab(ToolboxRouteSlugs.KendoDemoTabs.LayoutPopup).ToString().ToLowerInvariant())">
-                        Layout & Popup
-                    </button>
-                </li>
-            </ul>
+            }
+        </ul>
 
-            <div class="tab-content demo-tab-content-shell">
-                <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.DataSourceListView)" id="pane-core-table" role="tabpanel" aria-labelledby="tab-core-table" tabindex="0">
-                    <div class="kendo-toolbar-row">
-                        <div>
-                            <label for="table-search">Tìm nhanh</label>
-                            <input id="table-search" />
-                        </div>
-                        <div>
-                            <label for="table-category">Danh mục</label>
-                            <input id="table-category" />
-                        </div>
-                        <div>
-                            <label for="table-sort">Sắp xếp</label>
-                            <input id="table-sort" />
-                        </div>
-                        <button id="table-reset" type="button">Đặt lại</button>
-                    </div>
+        <div class="tab-content component-tab-content">
+            @* ------------------------------------------------------------ data *@
+            <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.DataSourceListView)" id="kd-pane-data" role="tabpanel" aria-labelledby="kd-tab-data" tabindex="0">
+                <article class="component-card">
+                    <partial name="_DemoCardHead" model="@(("kendo-listview", "Kendo DataSource + ListView + Pager", T["KendoDemo.Card.ListView"].Value))" />
 
-                    <div class="summary-grid">
-                        <div class="summary-card">
-                            <span>Tổng dòng</span>
-                            <strong id="summary-total">0</strong>
+                    <div class="tbx-form-grid demo-filters">
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="kd-search">@T["Action.Search"]</label>
+                            <input class="form-control" id="kd-search" type="search" autocomplete="off" placeholder="@T["KendoDemo.SearchPlaceholder"]" data-kd-search />
                         </div>
-                        <div class="summary-card">
-                            <span>Sau lọc</span>
-                            <strong id="summary-visible">0</strong>
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="kd-category">@T["TabulatorDemo.Columns.Category"]</label>
+                            <input id="kd-category" placeholder="@T["KendoDemo.AllCategories"]" data-kd-category />
                         </div>
-                        <div class="summary-card">
-                            <span>Hoàn tất</span>
-                            <strong id="summary-done">0</strong>
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="kd-sort">@T["KendoDemo.SortLabel"]</label>
+                            <select class="form-select" id="kd-sort" data-kd-sort>
+                                <option value="due-asc">@T["KendoDemo.Sort.Due"]</option>
+                                <option value="progress-desc">@T["KendoDemo.Sort.Progress"]</option>
+                                <option value="name-asc">@T["KendoDemo.Sort.Name"]</option>
+                            </select>
                         </div>
-                        <div class="summary-card">
-                            <span>Tiến độ TB</span>
-                            <strong id="summary-progress">0%</strong>
+                        <div class="demo-filters-reset">
+                            <button class="btn btn-outline-secondary" type="button" data-kd-reset><tbx-icon name="refresh-cw" />@T["Action.Reset"]</button>
                         </div>
                     </div>
 
-                    <div class="core-table">
-                        <div class="core-table-head">
-                            <div>Công việc</div>
-                            <div>Danh mục</div>
-                            <div>Trạng thái</div>
-                            <div>Ưu tiên</div>
-                            <div>Tiến độ</div>
-                            <div>Thao tác</div>
-                        </div>
-                        <div id="task-listview"></div>
-                        <div id="task-pager"></div>
+                    <p class="tbx-toolbar-summary demo-summary" data-kd-summary aria-live="polite"></p>
+                    <div class="tbx-list demo-list" id="kd-listview" role="list" aria-label="@T["KendoDemo.ListLabel"]"></div>
+                    <div class="demo-list-empty" data-kd-empty hidden>
+                        <partial name="_EmptyState" model="emptyState" />
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-kd-reset>@T["KendoDemo.ClearFilters"]</button>
                     </div>
+                    <div id="kd-pager"></div>
+                </article>
+            </div>
+
+            @* ------------------------------------------------------------ selection *@
+            <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.Selection)" id="kd-pane-selection" role="tabpanel" aria-labelledby="kd-tab-selection" tabindex="0">
+                <div class="component-card-grid">
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-autocomplete", "Kendo AutoComplete", T["KendoDemo.Card.AutoComplete"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-autocomplete">@T["KendoDemo.Keyword"]</label>
+                            <input id="kd-autocomplete" placeholder="UI, API, SQL…" />
+                        </div>
+                    </article>
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-multiselect", "Kendo MultiSelect", T["KendoDemo.Card.MultiSelect"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-multiselect">@T["TabulatorDemo.Columns.Category"]</label>
+                            <select id="kd-multiselect" multiple></select>
+                        </div>
+                    </article>
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-combobox", "Kendo ComboBox", T["KendoDemo.Card.ComboBox"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-combobox">@T["KendoDemo.Language"]</label>
+                            <input id="kd-combobox" />
+                        </div>
+                    </article>
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-dropdownlist", "Kendo DropDownList", T["KendoDemo.Card.DropDownList"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-dropdownlist">@T["TabulatorDemo.Columns.Priority"]</label>
+                            <input id="kd-dropdownlist" />
+                        </div>
+                    </article>
+                    <article class="component-card component-card-wide">
+                        <partial name="_DemoCardHead" model="@(("kendo-listbox", "Kendo ListBox", T["KendoDemo.Card.ListBox"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-listbox">@T["KendoDemo.ListBoxLabel"]</label>
+                            <select id="kd-listbox"></select>
+                        </div>
+                    </article>
                 </div>
+            </div>
 
-                <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.Selection)" id="pane-selection" role="tabpanel" aria-labelledby="tab-selection" tabindex="0">
-                    <div class="demo-card-grid">
-                        <div class="demo-card">
-                            <h3>AutoComplete</h3>
-                            <label for="kendo-autocomplete">Gợi ý từ khóa</label>
-                            <input id="kendo-autocomplete" placeholder="Gõ UI, API, SQL..." />
-                            <div class="hint">Phù hợp cho tìm nhanh, ô tag hoặc hỗ trợ nhập có gợi ý.</div>
+            @* ------------------------------------------------------------ dates, numbers, form *@
+            <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.FormCulture)" id="kd-pane-form" role="tabpanel" aria-labelledby="kd-tab-form" tabindex="0">
+                <div class="component-card-grid">
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-datepicker", "Kendo DatePicker", T["KendoDemo.Card.DatePicker"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-datepicker">@T["KendoDemo.Due"]</label>
+                            <input id="kd-datepicker" />
                         </div>
-
-                        <div class="demo-card">
-                            <h3>MultiSelect</h3>
-                            <label for="kendo-multiselect">Chọn nhiều danh mục</label>
-                            <input id="kendo-multiselect" />
-                            <div class="hint">Đã bật filter và giữ popup mở để thao tác chọn nhiều mục nhanh hơn.</div>
+                    </article>
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-datetimepicker", "Kendo DateTimePicker", T["KendoDemo.Card.DateTimePicker"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-datetimepicker">@T["KendoDemo.Meeting"]</label>
+                            <input id="kd-datetimepicker" />
                         </div>
-
-                        <div class="demo-card">
-                            <h3>ComboBox</h3>
-                            <label for="kendo-combobox">Nhập hoặc chọn tỉnh/thành</label>
-                            <input id="kendo-combobox" />
+                    </article>
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-timepicker", "Kendo TimePicker", T["KendoDemo.Card.TimePicker"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-timepicker">@T["KendoDemo.Reminder"]</label>
+                            <input id="kd-timepicker" />
                         </div>
-
-                        <div class="demo-card">
-                            <h3>DropDownList + ListBox</h3>
-                            <label for="kendo-dropdownlist">Mức ưu tiên</label>
-                            <input id="kendo-dropdownlist" />
-                            <div class="mt-3">
-                                <label for="kendo-listbox">Nhóm việc cần xử lý</label>
-                                <select id="kendo-listbox"></select>
+                    </article>
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-numeric", "Kendo NumericTextBox", T["KendoDemo.Card.Numeric"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-numeric">@T["KendoDemo.Budget"]</label>
+                            <input id="kd-numeric" />
+                        </div>
+                    </article>
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-slider", "Kendo Slider", T["KendoDemo.Card.Slider"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-slider">@T["KendoDemo.ProgressPercent"]</label>
+                            <input id="kd-slider" />
+                        </div>
+                    </article>
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-masked", "Kendo MaskedTextBox", T["KendoDemo.Card.Masked"].Value))" />
+                        <div class="component-sample">
+                            <label class="form-label" for="kd-phone">@T["KendoDemo.Phone"]</label>
+                            <input id="kd-phone" />
+                        </div>
+                    </article>
+                    <article class="component-card component-card-wide">
+                        <partial name="_DemoCardHead" model="@(("kendo-validator", "Kendo Validator", T["KendoDemo.Card.Validator"].Value))" />
+                        <form class="component-sample demo-validator" id="kd-validation-form" novalidate>
+                            <div class="tbx-field">
+                                <label class="tbx-field-label" for="kd-email">@T["KendoDemo.Email"]</label>
+                                <input class="form-control" id="kd-email" name="Email" type="email" required autocomplete="off"
+                                       placeholder="@T["KendoDemo.EmailPlaceholder"]" />
+                                <span class="k-invalid-msg" data-for="Email"></span>
                             </div>
-                        </div>
-                    </div>
+                            <button class="btn btn-outline-secondary" type="submit">@T["KendoDemo.Validate"]</button>
+                            <p class="demo-validator-result" data-kd-validate-result aria-live="polite"></p>
+                        </form>
+                    </article>
                 </div>
+            </div>
 
-                <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.FormCulture)" id="pane-inputs" role="tabpanel" aria-labelledby="tab-inputs" tabindex="0">
-                    <div class="demo-card-grid">
-                        <div class="demo-card">
-                            <h3>DatePicker & DateTimePicker</h3>
-                            <label for="kendo-datepicker">Ngày theo định dạng Việt Nam</label>
-                            <input id="kendo-datepicker" />
-                            <div class="mt-3">
-                                <label for="kendo-datetimepicker">Ngày giờ</label>
-                                <input id="kendo-datetimepicker" />
-                            </div>
-                        </div>
-
-                        <div class="demo-card">
-                            <h3>NumericTextBox & Slider</h3>
-                            <label for="kendo-numeric">Ngân sách VNĐ</label>
-                            <input id="kendo-numeric" />
-                            <div class="mt-3">
-                                <label for="kendo-slider">Mức hoàn thành</label>
-                                <input id="kendo-slider" />
-                            </div>
-                        </div>
-
-                        <div class="demo-card">
-                            <h3>MaskedTextBox & TimePicker</h3>
-                            <label for="kendo-phone">Số điện thoại</label>
-                            <input id="kendo-phone" />
-                            <div class="mt-3">
-                                <label for="kendo-timepicker">Giờ nhắc việc</label>
-                                <input id="kendo-timepicker" />
-                            </div>
-                        </div>
-
-                        <div class="demo-card">
-                            <h3>Validator</h3>
-                            <label for="native-color">Màu nhấn giao diện</label>
-                            <input id="native-color" class="native-color-input" type="color" value="#2563eb" />
-                            <div class="hint">ColorPicker không nằm trong bundle Core hiện có, nên phần này dùng native input để demo phối hợp giao diện.</div>
-                            <form id="kendo-validation-form" class="mt-3">
-                                <label for="kendo-email">Email nhận thông báo</label>
-                                <input id="kendo-email" name="Email" type="email" required validationMessage="Vui lòng nhập email hợp lệ" />
-                                <button id="validate-form-btn" class="mt-3" type="button">Kiểm tra form</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.LayoutPopup)" id="pane-layout" role="tabpanel" aria-labelledby="tab-layout" tabindex="0">
-                    <div class="layout-playground">
-                        <div class="demo-card">
-                            <h3>Splitter, Menu, PanelBar</h3>
-                            <ul id="kendo-menu">
-                                <li>
-                                    Công cụ
+            @* ------------------------------------------------------------ layout, popup *@
+            <div class="@TabPaneClass(ToolboxRouteSlugs.KendoDemoTabs.LayoutPopup)" id="kd-pane-layout" role="tabpanel" aria-labelledby="kd-tab-layout" tabindex="0">
+                <div class="component-card-grid">
+                    <article class="component-card component-card-wide">
+                        <partial name="_DemoCardHead" model="@(("kendo-menu", "Kendo Menu", T["KendoDemo.Card.Menu"].Value))" />
+                        <div class="component-sample">
+                            <ul id="kd-menu">
+                                <li>@T["Nav.Group.Personal"]
                                     <ul>
-                                        <li>Quản lý việc</li>
-                                        <li>Lịch cá nhân</li>
-                                        <li>Nhắc hạn</li>
+                                        <li>@T["Nav.Notes"]</li>
+                                        <li>@T["Nav.Checklist"]</li>
+                                        <li>@T["Nav.FocusTimer"]</li>
                                     </ul>
                                 </li>
-                                <li>
-                                    Dữ liệu
+                                <li>@T["Nav.Group.Database"]
                                     <ul>
-                                        <li>Import Excel</li>
-                                        <li>Export mẫu</li>
+                                        <li>@T["Nav.SchemaCompare"]</li>
+                                        <li>@T["Nav.SqlProfiler"]</li>
                                     </ul>
                                 </li>
-                                <li>Thiết lập</li>
+                                <li>@T["Nav.Dashboard"]</li>
                             </ul>
-
-                            <div id="kendo-splitter" class="mt-3">
-                                <div class="split-pane">
-                                    <strong>Vùng nội dung chính</strong>
-                                    <p class="muted mb-0">Splitter cho phép kéo giãn và collapse vùng hiển thị trong bản Core.</p>
-                                </div>
-                                <div class="split-pane">
-                                    <ul id="kendo-panelbar">
-                                        <li expanded="true">
-                                            Mẫu áp dụng
-                                            <div class="mt-2">
-                                                <div>Danh sách công việc theo DataSource</div>
-                                                <div>Form nhập liệu theo culture vi-VN</div>
-                                                <div>Popup thao tác không phụ thuộc Telerik CDN</div>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            Gợi ý dùng thực tế
-                                            <div class="mt-2">
-                                                <div>Dùng ListView + Pager khi không có Grid thương mại</div>
-                                                <div>Dùng Window/Tooltip/Notification cho UX nhanh</div>
-                                            </div>
-                                        </li>
-                                    </ul>
-                                </div>
+                        </div>
+                    </article>
+                    <article class="component-card component-card-wide">
+                        <partial name="_DemoCardHead" model="@(("kendo-splitter", "Kendo Splitter + PanelBar", T["KendoDemo.Card.Splitter"].Value))" />
+                        <div id="kd-splitter" class="demo-splitter">
+                            <div class="demo-split-pane">
+                                <strong>@T["KendoDemo.SplitMain"]</strong>
+                                <p>@T["KendoDemo.SplitMainText"]</p>
+                            </div>
+                            <div class="demo-split-pane">
+                                <ul id="kd-panelbar">
+                                    <li class="k-state-active">@T["KendoDemo.Panel1"]
+                                        <div class="demo-panel-body">@T["KendoDemo.Panel1Text"]</div>
+                                    </li>
+                                    <li>@T["KendoDemo.Panel2"]
+                                        <div class="demo-panel-body">@T["KendoDemo.Panel2Text"]</div>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
-
-                        <div class="demo-card">
-                            <h3>Window, Tooltip, Notification</h3>
-                            <button id="show-window-btn" type="button">Mở Window</button>
-                            <button id="show-notification-btn" class="mt-2" type="button">Hiện Notification</button>
-                            <div id="tooltip-target" class="mt-3 p-3 rounded border" style="cursor: help;">
-                                Rê chuột vào đây để xem Tooltip.
-                            </div>
-                            <div class="hint mt-3">
-                                Bundle Core hiện tại có <code>Window</code>, <code>Tooltip</code>, <code>Notification</code>,
-                                nhưng không có <code>Dialog</code> hay <code>ProgressBar</code>.
-                            </div>
+                    </article>
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-window", "Kendo Window", T["KendoDemo.Card.Window"].Value))" />
+                        <div class="component-sample">
+                            <button class="btn btn-outline-secondary" type="button" data-kd-open-window>@T["KendoDemo.OpenWindow"]</button>
                         </div>
-                    </div>
+                    </article>
+                    <article class="component-card">
+                        <partial name="_DemoCardHead" model="@(("kendo-tooltip", "Kendo Tooltip", T["KendoDemo.Card.Tooltip"].Value))" />
+                        <div class="component-sample">
+                            <button class="btn btn-outline-secondary" type="button" id="kd-tooltip-target">@T["KendoDemo.TooltipTarget"]</button>
+                        </div>
+                    </article>
+                    <article class="component-card component-card-wide">
+                        <partial name="_DemoCardHead" model="@(("kendo-notification", "Kendo Notification", T["KendoDemo.Card.Notification"].Value))" />
+                        <div class="component-sample demo-buttons">
+                            <button class="btn btn-outline-secondary" type="button" data-kd-notify="info">@T["KendoDemo.NotifyInfoButton"]</button>
+                            <button class="btn btn-outline-secondary" type="button" data-kd-notify="success">@T["KendoDemo.NotifySuccessButton"]</button>
+                            <button class="btn btn-outline-secondary" type="button" data-kd-notify="error">@T["KendoDemo.NotifyErrorButton"]</button>
+                        </div>
+                    </article>
                 </div>
             </div>
         </div>
-    </section>
-</div>
-
-<div id="task-detail-window" style="display:none;"></div>
-<div id="kendo-window" style="display:none;">
-    <div class="p-3">
-        <h5>Kendo Window trong bản Core</h5>
-        <p class="mb-0">Window hỗ trợ kéo, resize, minimize, maximize và modal mà không cần wrapper server-side.</p>
     </div>
 </div>
-<div id="kendo-notification"></div>
 
-<script id="task-row-template" type="text/x-kendo-template">
-    <div class="core-table-row">
-        <div>
-            <div class="core-table-title">#: name #</div>
-            <div class="core-table-subtitle">#: owner # · Hạn: #= kendo.toString(due, "dd/MM/yyyy") #</div>
-        </div>
-        <div>#: category #</div>
-        <div><span class="status-pill status-#: statusCode #">#: status #</span></div>
-        <div><span class="priority-pill priority-#: priorityCode #">#: priority #</span></div>
-        <div>
-            <div class="progress-mini" aria-label="Tiến độ #: progress #%">
-                <span style="width: #: progress #%"></span>
-            </div>
-            <div class="core-table-subtitle">#: progress #% · #: kendo.toString(budget, "c0") #</div>
-        </div>
-        <div>
-            <button class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-primary" type="button" data-task-detail data-task-id="#: id #">Chi tiết</button>
-        </div>
+<div id="kd-detail-window" class="demo-window-source"></div>
+<div id="kd-window" class="demo-window-source">
+    <div class="demo-window-body">
+        <p>@T["KendoDemo.WindowText"]</p>
     </div>
-</script>
+</div>
+
+<script id="kendo-demo-data" type="application/json">@Html.Raw(pageData)</script>
 
 @section Scripts {
-    @{ ViewData["KendoForceVietnamese"] = true; }
     <partial name="_KendoScripts" />
-    <script>
-        (function ($) {
-            function bindTabRoutes(containerSelector) {
-                document.querySelectorAll(containerSelector + " [data-route-url]").forEach(function (trigger) {
-                    trigger.addEventListener("shown.bs.tab", function (event) {
-                        const routeUrl = event.target.getAttribute("data-route-url");
-                        if (!routeUrl || !window.history || typeof window.history.replaceState !== "function") {
-                            return;
-                        }
-
-                        const nextUrl = new URL(routeUrl, window.location.origin);
-                        const currentUrl = new URL(window.location.href);
-                        if (nextUrl.pathname === currentUrl.pathname && nextUrl.search === currentUrl.search) {
-                            return;
-                        }
-
-                        window.history.replaceState(window.history.state, "", nextUrl.pathname + nextUrl.search + nextUrl.hash);
-                    });
-                });
-            }
-
-            bindTabRoutes("#kendo-demo-tabs");
-
-            if (!window.kendo) {
-                $(".kendo-demo-hero").append("<div class='widget-missing'>Không tải được Kendo UI Core self-host. Hãy kiểm tra lại static file hoặc CSP.</div>");
-                return;
-            }
-
-            kendo.culture("vi-VN");
-
-            const popupOptions = {
-                appendTo: $(document.body),
-                collision: "fit flip"
-            };
-
-            function initWidget(selector, pluginName, options) {
-                const element = $(selector);
-                if (!element.length) {
-                    return null;
-                }
-
-                if (typeof $.fn[pluginName] !== "function") {
-                    element.after("<div class='widget-missing'>" + pluginName + " chưa có trong bundle Kendo UI Core hiện tại.</div>");
-                    return null;
-                }
-
-                element[pluginName](options || {});
-                return element.data(pluginName);
-            }
-
-            const tasks = [
-                { id: 1, name: "Chuẩn hóa popup Kendo", owner: "Khai", category: "UI", status: "Đang làm", statusCode: "doing", priority: "Cao", priorityCode: "high", progress: 72, budget: 1250000, due: new Date(2026, 5, 18), note: "Kiểm tra AutoComplete, MultiSelect và z-index popup." },
-                { id: 2, name: "Tách localization JSON", owner: "ToolboxWeb", category: "Localization", status: "Hoàn tất", statusCode: "done", priority: "Cao", priorityCode: "high", progress: 100, budget: 980000, due: new Date(2026, 5, 19), note: "Cho phép chỉnh ngôn ngữ sau khi publish." },
-                { id: 3, name: "Rà culture vi-VN", owner: "Khai", category: "Culture", status: "Review", statusCode: "review", priority: "Trung bình", priorityCode: "medium", progress: 84, budget: 620000, due: new Date(2026, 5, 20), note: "Kiểm tra ngày giờ, tiền tệ và hiển thị tiếng Việt." },
-                { id: 4, name: "Bổ sung demo DataSource", owner: "Codex", category: "Kendo Core", status: "Đang làm", statusCode: "doing", priority: "Trung bình", priorityCode: "medium", progress: 66, budget: 750000, due: new Date(2026, 5, 21), note: "Dùng ListView và Pager thay cho Grid thương mại." },
-                { id: 5, name: "Tạo checklist test UI", owner: "QA", category: "Testing", status: "Review", statusCode: "review", priority: "Thấp", priorityCode: "low", progress: 48, budget: 420000, due: new Date(2026, 5, 22), note: "Kiểm thử desktop, mobile và dark mode." },
-                { id: 6, name: "Rà gói self-host Kendo", owner: "DevOps", category: "Kendo Core", status: "Hoàn tất", statusCode: "done", priority: "Trung bình", priorityCode: "medium", progress: 100, budget: 350000, due: new Date(2026, 5, 23), note: "Dùng asset local, không phụ thuộc Telerik CDN." },
-                { id: 7, name: "Tinh chỉnh responsive", owner: "Frontend", category: "UI", status: "Đang làm", statusCode: "doing", priority: "Thấp", priorityCode: "low", progress: 54, budget: 560000, due: new Date(2026, 5, 24), note: "Bảng chuyển thành layout card trên màn hình nhỏ." },
-                { id: 8, name: "Kiểm tra validator", owner: "ToolboxWeb", category: "Testing", status: "Hoàn tất", statusCode: "done", priority: "Thấp", priorityCode: "low", progress: 100, budget: 300000, due: new Date(2026, 5, 25), note: "Đảm bảo validator chạy cùng theme và culture hiện tại." }
-            ];
-
-            const taskDataSource = new kendo.data.DataSource({
-                data: tasks,
-                pageSize: 5,
-                sort: { field: "due", dir: "asc" },
-                schema: {
-                    model: {
-                        id: "id",
-                        fields: {
-                            id: { type: "number" },
-                            progress: { type: "number" },
-                            budget: { type: "number" },
-                            due: { type: "date" }
-                        }
-                    }
-                },
-                change: updateSummary
-            });
-
-            function updateSummary() {
-                const fullData = taskDataSource.data().toJSON();
-                const totalProgress = fullData.reduce(function (sum, item) { return sum + item.progress; }, 0);
-                const doneCount = fullData.filter(function (item) { return item.statusCode === "done"; }).length;
-                const averageProgress = fullData.length ? Math.round(totalProgress / fullData.length) : 0;
-
-                $("#summary-total").text(fullData.length);
-                $("#summary-visible").text(taskDataSource.total());
-                $("#summary-done").text(doneCount);
-                $("#summary-progress").text(averageProgress + "%");
-            }
-
-            initWidget("#task-listview", "kendoListView", {
-                dataSource: taskDataSource,
-                template: kendo.template($("#task-row-template").html())
-            });
-
-            initWidget("#task-pager", "kendoPager", {
-                dataSource: taskDataSource,
-                buttonCount: 5,
-                pageSizes: [5, 10, 20],
-                refresh: true
-            });
-
-            initWidget("#table-search", "kendoTextBox", {
-                placeholder: "Nhập tên, người phụ trách hoặc ghi chú..."
-            });
-
-            initWidget("#table-category", "kendoDropDownList", {
-                optionLabel: "Tất cả",
-                dataTextField: "text",
-                dataValueField: "value",
-                dataSource: [
-                    { text: "UI", value: "UI" },
-                    { text: "Localization", value: "Localization" },
-                    { text: "Culture", value: "Culture" },
-                    { text: "Kendo Core", value: "Kendo Core" },
-                    { text: "Testing", value: "Testing" }
-                ],
-                change: applyTableState,
-                popup: popupOptions
-            });
-
-            initWidget("#table-sort", "kendoDropDownList", {
-                dataTextField: "text",
-                dataValueField: "value",
-                dataSource: [
-                    { text: "Hạn gần nhất", value: "due-asc", field: "due", dir: "asc" },
-                    { text: "Tiến độ cao nhất", value: "progress-desc", field: "progress", dir: "desc" },
-                    { text: "Ngân sách cao nhất", value: "budget-desc", field: "budget", dir: "desc" },
-                    { text: "Tên A-Z", value: "name-asc", field: "name", dir: "asc" }
-                ],
-                value: "due-asc",
-                change: function () {
-                    const item = this.dataItem();
-                    if (item) {
-                        taskDataSource.sort({ field: item.field, dir: item.dir });
-                    }
-                },
-                popup: popupOptions
-            });
-
-            initWidget("#table-reset", "kendoButton", {
-                themeColor: "secondary",
-                click: function () {
-                    $("#table-search").val("");
-                    $("#table-category").data("kendoDropDownList")?.value("");
-                    $("#table-sort").data("kendoDropDownList")?.value("due-asc");
-                    taskDataSource.filter({});
-                    taskDataSource.sort({ field: "due", dir: "asc" });
-                }
-            });
-
-            let searchTimer = null;
-            $("#table-search").on("input", function () {
-                window.clearTimeout(searchTimer);
-                searchTimer = window.setTimeout(applyTableState, 180);
-            });
-
-            function applyTableState() {
-                const search = ($("#table-search").val() || "").trim();
-                const category = $("#table-category").data("kendoDropDownList")?.value();
-                const filters = [];
-
-                if (search) {
-                    filters.push({
-                        logic: "or",
-                        filters: [
-                            { field: "name", operator: "contains", value: search },
-                            { field: "owner", operator: "contains", value: search },
-                            { field: "note", operator: "contains", value: search }
-                        ]
-                    });
-                }
-
-                if (category) {
-                    filters.push({ field: "category", operator: "eq", value: category });
-                }
-
-                taskDataSource.filter(filters.length ? { logic: "and", filters: filters } : {});
-            }
-
-            const detailWindow = initWidget("#task-detail-window", "kendoWindow", {
-                width: "460px",
-                title: "Chi tiết công việc",
-                visible: false,
-                modal: true,
-                actions: ["Minimize", "Maximize", "Close"]
-            });
-
-            $("#task-listview").on("click", "[data-task-detail]", function () {
-                const item = taskDataSource.get(Number($(this).data("task-id")));
-                if (!item || !detailWindow) {
-                    return;
-                }
-
-                detailWindow.content(
-                    "<div class='p-3'>" +
-                    "<h5>" + kendo.htmlEncode(item.name) + "</h5>" +
-                    "<p class='muted mb-2'>" + kendo.htmlEncode(item.note) + "</p>" +
-                    "<div><strong>Người phụ trách:</strong> " + kendo.htmlEncode(item.owner) + "</div>" +
-                    "<div><strong>Hạn:</strong> " + kendo.toString(item.due, "dd/MM/yyyy") + "</div>" +
-                    "<div><strong>Ngân sách:</strong> " + kendo.toString(item.budget, "c0") + "</div>" +
-                    "</div>"
-                );
-                detailWindow.center().open();
-            });
-
-            initWidget("#kendo-autocomplete", "kendoAutoComplete", {
-                dataSource: ["UI", "API", "SQL", "Localization", "Kendo Core", "Popup", "Culture", "Testing", "Dashboard"],
-                filter: "contains",
-                minLength: 1,
-                suggest: true,
-                height: 260,
-                popup: popupOptions
-            });
-
-            initWidget("#kendo-multiselect", "kendoMultiSelect", {
-                placeholder: "Chọn các danh mục...",
-                dataTextField: "text",
-                dataValueField: "value",
-                dataSource: [
-                    { text: "Giao diện UI", value: "ui" },
-                    { text: "Cơ sở dữ liệu", value: "database" },
-                    { text: "Đa ngôn ngữ", value: "localization" },
-                    { text: "Bảo mật", value: "security" },
-                    { text: "Kiểm thử", value: "testing" }
-                ],
-                value: ["ui", "localization"],
-                autoClose: false,
-                filter: "contains",
-                height: 260,
-                popup: popupOptions
-            });
-
-            initWidget("#kendo-combobox", "kendoComboBox", {
-                placeholder: "Chọn hoặc nhập tỉnh/thành...",
-                dataTextField: "text",
-                dataValueField: "value",
-                dataSource: [
-                    { text: "Hà Nội", value: "HN" },
-                    { text: "TP. Hồ Chí Minh", value: "HCM" },
-                    { text: "Đà Nẵng", value: "DN" },
-                    { text: "Hải Phòng", value: "HP" },
-                    { text: "Cần Thơ", value: "CT" }
-                ],
-                filter: "contains",
-                suggest: true,
-                popup: popupOptions
-            });
-
-            initWidget("#kendo-dropdownlist", "kendoDropDownList", {
-                dataTextField: "text",
-                dataValueField: "value",
-                dataSource: [
-                    { text: "Ưu tiên cao", value: "high" },
-                    { text: "Ưu tiên trung bình", value: "medium" },
-                    { text: "Ưu tiên thấp", value: "low" }
-                ],
-                popup: popupOptions
-            });
-
-            initWidget("#kendo-listbox", "kendoListBox", {
-                dataTextField: "text",
-                dataValueField: "value",
-                dataSource: [
-                    { text: "Thiết kế form", value: "form" },
-                    { text: "Sửa popup", value: "popup" },
-                    { text: "Kiểm tra responsive", value: "responsive" },
-                    { text: "Build release", value: "build" }
-                ],
-                selectable: "multiple"
-            });
-
-            initWidget("#kendo-datepicker", "kendoDatePicker", {
-                value: new Date(),
-                format: "dd/MM/yyyy",
-                popup: popupOptions
-            });
-
-            initWidget("#kendo-datetimepicker", "kendoDateTimePicker", {
-                value: new Date(),
-                format: "dd/MM/yyyy HH:mm",
-                timeFormat: "HH:mm",
-                popup: popupOptions
-            });
-
-            initWidget("#kendo-numeric", "kendoNumericTextBox", {
-                format: "c0",
-                value: 5000000,
-                min: 0,
-                step: 100000
-            });
-
-            initWidget("#kendo-slider", "kendoSlider", {
-                min: 0,
-                max: 100,
-                smallStep: 5,
-                largeStep: 20,
-                value: 65,
-                showButtons: true
-            });
-
-            initWidget("#kendo-phone", "kendoMaskedTextBox", {
-                mask: "0000 000 000",
-                value: "0900000000"
-            });
-
-            initWidget("#kendo-timepicker", "kendoTimePicker", {
-                value: new Date(2026, 5, 17, 9, 30),
-                format: "HH:mm",
-                interval: 15,
-                popup: popupOptions
-            });
-
-            initWidget("#kendo-email", "kendoTextBox", {
-                placeholder: "ten@congty.vn"
-            });
-
-            let notification = null;
-            const validator = initWidget("#kendo-validation-form", "kendoValidator");
-            initWidget("#validate-form-btn", "kendoButton", {
-                themeColor: "primary",
-                click: function () {
-                    const valid = validator ? validator.validate() : false;
-                    notification?.show(valid ? "Form hợp lệ." : "Form chưa hợp lệ, vui lòng kiểm tra email.", valid ? "success" : "error");
-                }
-            });
-
-            initWidget("#kendo-menu", "kendoMenu", {
-                animation: { open: { effects: "fadeIn" } },
-                popupCollision: "fit flip"
-            });
-
-            initWidget("#kendo-splitter", "kendoSplitter", {
-                panes: [
-                    { size: "54%", collapsible: true },
-                    { collapsible: true }
-                ]
-            });
-
-            initWidget("#kendo-panelbar", "kendoPanelBar", {
-                expandMode: "multiple"
-            });
-
-            const demoWindow = initWidget("#kendo-window", "kendoWindow", {
-                width: "460px",
-                title: "Kendo Window",
-                visible: false,
-                modal: true,
-                actions: ["Pin", "Minimize", "Maximize", "Close"]
-            });
-
-            notification = initWidget("#kendo-notification", "kendoNotification", {
-                position: { pinned: true, top: 88, right: 28 },
-                stacking: "down",
-                autoHideAfter: 2600
-            });
-
-            initWidget("#show-window-btn", "kendoButton", {
-                themeColor: "primary",
-                click: function () {
-                    demoWindow?.center().open();
-                }
-            });
-
-            initWidget("#show-notification-btn", "kendoButton", {
-                themeColor: "base",
-                click: function () {
-                    notification?.show("Kendo Notification đang hoạt động trong ToolboxWeb.", "info");
-                }
-            });
-
-            initWidget("#tooltip-target", "kendoTooltip", {
-                content: "Tooltip này dùng bundle Core self-host và vẫn nằm trên layer popup chuẩn của app.",
-                position: "bottom",
-                width: 300
-            });
-
-            taskDataSource.read();
-        })(jQuery);
-    </script>
+    <script src="~/js/kendo-demo.js" asp-append-version="true"></script>
 }

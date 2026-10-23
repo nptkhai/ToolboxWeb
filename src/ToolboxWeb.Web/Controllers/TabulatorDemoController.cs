@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Infrastructure.Security;
 using ToolboxWeb.Web.Services;
@@ -13,11 +14,13 @@ public class TabulatorDemoController : Controller
 {
     private readonly ITabulatorTaskService _tasks;
     private readonly ICurrentUserService _currentUser;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public TabulatorDemoController(ITabulatorTaskService tasks, ICurrentUserService currentUser)
+    public TabulatorDemoController(ITabulatorTaskService tasks, ICurrentUserService currentUser, IStringLocalizer<SharedResource> localizer)
     {
         _tasks = tasks;
         _currentUser = currentUser;
+        _localizer = localizer;
     }
 
     [HttpGet("/" + ToolboxRouteSlugs.Pages.TabulatorDemo)]
@@ -41,13 +44,13 @@ public class TabulatorDemoController : Controller
         {
             var errors = ModelState.Values
                 .SelectMany(x => x.Errors)
-                .Select(x => string.IsNullOrWhiteSpace(x.ErrorMessage) ? "Invalid request." : x.ErrorMessage)
+                .Select(x => string.IsNullOrWhiteSpace(x.ErrorMessage) ? _localizer["TabulatorDemo.SaveValidationFailed"].Value : x.ErrorMessage)
                 .Distinct()
                 .ToList();
 
             return BadRequest(new
             {
-                message = "Validation failed.",
+                message = _localizer["TabulatorDemo.SaveValidationFailed"].Value,
                 errors
             });
         }

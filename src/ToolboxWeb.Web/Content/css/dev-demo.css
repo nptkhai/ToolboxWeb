@@ -1,0 +1,316 @@
+/*
+ * Developer demo pages: Kendo Demo (Views/DemoKendo) and Tabulator Demo (Views/TabulatorDemo).
+ * They reuse the component hub layout (component-hub.css); this file adds only what those pages
+ * need on top. Colors come from tokens.css.
+ */
+
+.demo-catalog-note {
+    color: var(--text);
+    display: block;
+    margin-top: var(--space-1);
+}
+
+.demo-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* ---------------------------------------------------------------- Kendo: list demo */
+.demo-filters {
+    align-items: end;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+    margin-bottom: var(--space-3);
+}
+
+    .demo-filters .k-combobox {
+        width: 100%;
+    }
+
+.demo-filters-reset .btn {
+    align-items: center;
+    display: inline-flex;
+    gap: var(--space-1);
+    min-height: var(--input-height);
+}
+
+.demo-summary {
+    margin-bottom: var(--space-2);
+}
+
+.demo-list .k-listview-content {
+    display: block;
+}
+
+/* Kendo's ListView item reset would remove the shared row padding and divider. */
+.demo-list .tbx-row.k-listview-item {
+    border-bottom: 1px solid var(--line);
+    padding: var(--space-2) var(--space-3);
+}
+
+    .demo-list .tbx-row.k-listview-item:last-child {
+        border-bottom: 0;
+    }
+
+.component-sample .k-listbox,
+.component-sample .k-slider {
+    width: 100%;
+}
+
+.component-sample .k-listbox .k-list-scroller {
+    min-height: 168px;
+}
+
+.demo-list.k-listview {
+    border: 1px solid var(--line);
+}
+
+.demo-row-progress {
+    align-items: center;
+    display: inline-flex;
+    flex: none;
+    gap: var(--space-2);
+    width: 112px;
+}
+
+    .demo-row-progress .mini-progress {
+        background: var(--surface-2);
+        flex: 1 1 auto;
+    }
+
+    .demo-row-progress .tbx-row-meta {
+        min-width: 4ch;
+        text-align: right;
+    }
+
+.demo-row .tbx-pill {
+    flex: none;
+}
+
+.demo-list-empty {
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    display: grid;
+    justify-items: center;
+    padding-bottom: var(--space-4);
+}
+
+    .demo-list-empty .tbx-empty {
+        border: 0;
+    }
+
+#kd-pager {
+    border: 0;
+    margin-top: var(--space-2);
+}
+
+/* ---------------------------------------------------------------- Kendo: form, layout, popup */
+.demo-validator {
+    align-items: end;
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+    .demo-validator .k-invalid-msg {
+        color: var(--danger);
+        font-size: var(--text-xs);
+        min-height: calc(var(--text-xs) * 1.5);
+    }
+
+    .demo-validator .btn {
+        margin-bottom: calc(var(--text-xs) * 1.5 + var(--space-1));
+    }
+
+.demo-validator-result {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    grid-column: 1 / -1;
+    margin: 0;
+    min-height: calc(var(--text-sm) * 1.5);
+}
+
+    .demo-validator-result.is-valid {
+        color: var(--success);
+    }
+
+    .demo-validator-result.is-invalid {
+        color: var(--danger);
+    }
+
+.demo-splitter {
+    border-radius: var(--radius-control);
+    height: 240px;
+}
+
+.demo-split-pane {
+    color: var(--text);
+    padding: var(--space-3);
+}
+
+    .demo-split-pane p {
+        color: var(--muted);
+        font-size: var(--text-sm);
+        margin: var(--space-1) 0 0;
+    }
+
+.demo-panel-body {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    padding: var(--space-2) var(--space-3);
+}
+
+/* Window contents stay out of the page until Kendo opens them. */
+.demo-window-source {
+    display: none;
+}
+
+.demo-window-body {
+    padding: var(--space-2);
+}
+
+    .demo-window-body p {
+        color: var(--muted);
+        margin: 0 0 var(--space-3);
+    }
+
+.demo-window-title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    margin: 0 0 var(--space-2);
+}
+
+.demo-facts {
+    display: grid;
+    gap: var(--space-1) var(--space-3);
+    grid-template-columns: max-content minmax(0, 1fr);
+    margin: 0;
+}
+
+    .demo-facts dt {
+        color: var(--muted);
+        font-weight: var(--weight-medium);
+    }
+
+    .demo-facts dd {
+        margin: 0;
+    }
+
+/* ---------------------------------------------------------------- Tabulator demo */
+.demo-grid-shell {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    overflow: hidden;
+}
+
+.demo-grid-toolbar {
+    border-bottom: 1px solid var(--line);
+    padding: var(--space-2) var(--space-3);
+}
+
+    .demo-grid-toolbar .btn {
+        align-items: center;
+        display: inline-flex;
+        gap: var(--space-1);
+    }
+
+.demo-grid-state {
+    align-items: center;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-left: var(--space-2);
+}
+
+.demo-grid-loading {
+    padding: var(--space-4);
+}
+
+    .demo-grid-loading[hidden] {
+        display: none;
+    }
+
+.demo-grid-error {
+    align-items: center;
+    border-radius: 0;
+    border-width: 0 0 1px;
+    flex-wrap: wrap;
+}
+
+    .demo-grid-error .btn {
+        margin-left: auto;
+    }
+
+.demo-grid.tabulator {
+    border: 0;
+    border-radius: 0;
+}
+
+.demo-grid-shell[data-state="loading"] .demo-grid,
+.demo-grid-shell[data-state="error"] .demo-grid {
+    display: none;
+}
+
+    .demo-grid.tabulator .tabulator-placeholder .tbx-empty {
+        font-weight: var(--weight-regular);
+        padding: var(--space-5) var(--space-4);
+    }
+
+.demo-grid-muted {
+    color: var(--muted);
+    font-style: italic;
+}
+
+.demo-grid-feedback {
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin: 0;
+    min-height: calc(var(--text-sm) * 1.5 + var(--space-2) * 2);
+    padding: var(--space-2) var(--space-3);
+}
+
+    .demo-grid-feedback.is-success {
+        color: var(--success);
+    }
+
+    .demo-grid-feedback.is-error {
+        color: var(--danger);
+    }
+
+/* ---------------------------------------------------------------- responsive */
+@media (max-width: 899.98px) {
+    .demo-filters {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 599.98px) {
+    .demo-grid-state {
+        margin-left: 0;
+    }
+
+    .demo-filters,
+    .demo-validator {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .demo-validator .btn {
+        justify-self: start;
+        margin-bottom: 0;
+    }
+
+    .demo-row {
+        flex-wrap: wrap;
+        row-gap: var(--space-1);
+    }
+
+        .demo-row .tbx-row-main {
+            flex-basis: 100%;
+        }
+
+    .demo-row .tbx-row-actions {
+        margin-left: auto;
+    }
+}

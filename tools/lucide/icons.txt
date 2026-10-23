@@ -33,6 +33,7 @@ kanban
 key-round
 languages
 layout-dashboard
+layout-grid
 link
 list-checks
 loader-circle
@@ -52,12 +53,14 @@ play
 plug
 plus
 refresh-cw
+save
 search
 settings
 shield-check
 smartphone
 sticky-note
 sun
+table
 timer
 trash-2
 triangle-alert

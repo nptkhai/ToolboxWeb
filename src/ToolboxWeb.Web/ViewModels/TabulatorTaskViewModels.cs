@@ -26,8 +26,8 @@ public class TabulatorTaskInputViewModel
 {
     public int? Id { get; set; }
 
-    [Required]
-    [StringLength(180)]
+    [Required(ErrorMessage = "TabulatorDemo.ValidationTitleRequired")]
+    [StringLength(180, ErrorMessage = "Validation.MaxLength")]
     public string Title { get; set; } = string.Empty;
 
     [Required]
@@ -45,15 +45,15 @@ public class TabulatorTaskInputViewModel
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public TabulatorTaskPriority Priority { get; set; }
 
-    [Range(0, 100)]
+    [Range(0, 100, ErrorMessage = "TabulatorDemo.ValidationProgressRange")]
     public int Progress { get; set; }
 
-    [Range(typeof(decimal), "0", "999999999999")]
+    [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Validation.Range")]
     public decimal Budget { get; set; }
 
     public DateTime? DueDate { get; set; }
 
-    [StringLength(1000)]
+    [StringLength(1000, ErrorMessage = "Validation.MaxLength")]
     public string? Note { get; set; }
 }
 

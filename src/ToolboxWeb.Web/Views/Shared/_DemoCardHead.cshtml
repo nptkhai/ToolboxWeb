@@ -1,0 +1,21 @@
+@using ToolboxWeb.Web.ViewModels
+@model (string Key, string Title, string Description)
+@* Head of a demo card on the developer pages (Kendo Demo, Tabulator Demo): name, library,
+   status pill from ViewModels/ComponentCatalog.cs, one sentence, and the catalog note if any. *@
+@{
+    var entry = ComponentCatalog.Get(Model.Key);
+}
+<div class="component-card-head">
+    <div>
+        <h4>@Model.Title</h4>
+        <div class="component-meta-line">@T["Components.LibraryLabel"]: @entry.Library.Name</div>
+    </div>
+    <tbx-component-status key="@Model.Key" />
+</div>
+<p class="component-note">
+    @Model.Description
+    @if (!string.IsNullOrEmpty(entry.NoteKey))
+    {
+        <span class="demo-catalog-note">@T[entry.NoteKey]</span>
+    }
+</p>

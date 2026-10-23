@@ -227,6 +227,7 @@ Approved by the owner on 2026-10-21 (`docs/DESIGN_DECISIONS.md`). They live in `
 - The hub is the style guide for developers. It, `DemoKendo` and `TabulatorDemo` carry `[DevToolsOnly]`: open in Development or to the `Developer` role, 404 elsewhere. The sidebar DEV group uses the same check (`Infrastructure/Security/DevToolsAccess.cs`).
 - `ViewModels/ComponentCatalog.cs` is the single source for component status and license. The catalog tab and every demo card pill (`<tbx-component-status key="…" />`) read it. When you add a demo or change a component's status, update the catalog, not the markup. Statuses: Usable (preferred control set), Available (shipped but not adopted), CommercialDependency, NotInKendoCore.
 - The `Component` page is grouped by component family, not by library.
+- The Kendo Demo and Tabulator Demo pages reuse the hub layout (`component-hub.css` plus `Content/css/dev-demo.css`); their scripts are `Content/js/kendo-demo.js` and `Content/js/tabulator-demo.js`. Every demo card starts with `Views/Shared/_DemoCardHead.cshtml` (`(key, title, description)`), which reads the status pill and note from `ComponentCatalog`.
 - Add live demos only to the matching family tab. Do not place a demo in a nearby tab just because it reuses the same library.
 - Family mapping:
   - `Foundations` (default tab): tokens, type, buttons, form field, pills, chips, list rows, empty/error/loading states, confirm, side panel, icons.
