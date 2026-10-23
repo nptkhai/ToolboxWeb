@@ -4,6 +4,7 @@ activity
 arrow-left
 arrow-left-right
 blocks
+braces
 calendar
 check
 chevron-down
@@ -14,6 +15,7 @@ circle-alert
 circle-check
 clock
 copy
+copy-plus
 database
 download
 ellipsis
@@ -58,6 +60,7 @@ sun
 timer
 trash-2
 triangle-alert
+upload
 user
 user-x
 wand-sparkles

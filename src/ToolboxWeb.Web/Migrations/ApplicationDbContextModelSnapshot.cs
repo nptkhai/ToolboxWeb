@@ -411,6 +411,9 @@ namespace ToolboxWeb.Web.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("LastUsedAt")
                         .HasColumnType("TEXT");
 
