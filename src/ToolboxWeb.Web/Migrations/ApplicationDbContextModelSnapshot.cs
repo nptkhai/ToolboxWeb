@@ -456,6 +456,15 @@ namespace ToolboxWeb.Web.Data.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LastOpenedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("OpenCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("INTEGER");
 

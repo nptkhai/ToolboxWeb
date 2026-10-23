@@ -1,58 +1,310 @@
+@using System.Text.Json
+@using ToolboxWeb.Web.Constants
+@using ToolboxWeb.Web.Services
 @model QuickLinksIndexViewModel
+@*
+    List page template (docs/LIST_PAGE_TEMPLATE.md), stage 5.11: toolbar with totals, search and
+    "Add link"; group chips and the sort order; the links in blocks (pinned, then each group),
+    each row with a letter tile, the short address and how often it was opened; drag to reorder
+    in the manual order; add and edit in a modal; import and export browser bookmarks.
+    Behavior: Content/js/quick-links.js.
+*@
 @{
     ViewData["Title"] = T["QuickLinks.Title"];
+    var query = Model.Query;
+
+    string ListUrl(string? group, string? search) => Url.RouteUrl(ToolboxRouteSlugs.RouteNames.QuickLinksHtml, new
+    {
+        group = string.IsNullOrWhiteSpace(group) ? null : group,
+        search = string.IsNullOrWhiteSpace(search) ? null : search
+    }) ?? "/quick-links.html";
+
+    string GroupLabel(string? name) => name ?? T["QuickLinks.NoGroup"].Value;
+
+    var toolbar = new ListToolbarViewModel
+    {
+        Summary = T["QuickLinks.Summary", Model.Total, Model.PinnedCount].Value,
+        SearchAction = ListUrl(null, null),
+        SearchValue = query.Search,
+        SearchLabel = T["QuickLinks.SearchLabel"].Value,
+        SearchKeep = new Dictionary<string, string?> { ["group"] = query.Group },
+        PrimaryText = T["QuickLinks.AddLink"].Value,
+        PrimaryModal = "#link-form"
+    };
+
+    var chipList = new List<FilterChipViewModel>
+    {
+        new(T["QuickLinks.AllGroups"].Value, ListUrl(null, query.Search), Model.SearchCount, query.Group is null)
+    };
+    foreach (var group in Model.Groups)
+    {
+        chipList.Add(new(GroupLabel(group.GroupName), ListUrl(group.Key, query.Search), group.Count, query.Group == group.Key));
+    }
+    var chips = new FilterChipsViewModel { Label = T["QuickLinks.FilterLabel"].Value, Chips = chipList };
+
+    var emptyState = new EmptyStateViewModel(T["QuickLinks.Empty"].Value, "link")
+    {
+        ActionText = T["QuickLinks.AddLink"].Value,
+        ActionTarget = "#link-form"
+    };
+
+    string? Error(string key) => ViewData.ModelState[key]?.Errors.FirstOrDefault()?.ErrorMessage;
+    var titleError = Error("Title");
+    var urlError = Error("Url");
+    var groupError = Error("GroupName");
+
+    static string Host(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.IsFile)
+        {
+            return url;
+        }
+
+        var host = uri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? uri.Host[4..] : uri.Host;
+        var path = uri.PathAndQuery == "/" ? string.Empty : uri.PathAndQuery;
+        return host + (uri.IsDefaultPort ? string.Empty : ":" + uri.Port) + path;
+    }
+
+    // The tile shows the first letter of the title, or of the address when the title has none.
+    static string Initial(string title, string url)
+    {
+        var letter = title.FirstOrDefault(char.IsLetterOrDigit);
+        if (letter == default)
+        {
+            letter = Host(url).FirstOrDefault(char.IsLetterOrDigit);
+        }
+
+        return letter == default ? "#" : char.ToUpper(letter, CultureInfo.CurrentCulture).ToString();
+    }
+
+    var json = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var linkData = JsonSerializer.Serialize(Model.Sections.SelectMany(x => x.Links).Select(x => new
+    {
+        id = x.Id,
+        title = x.Title,
+        url = x.Url,
+        groupName = x.GroupName
+    }), json);
 }
 
-<div class="tool-grid">
-    <section class="panel span-4">
-        <div class="panel-header"><h2>@T["QuickLinks.AddLink"]</h2></div>
-        <form asp-action="Create" method="post" class="form-grid">
-            <div class="d-grid gap-1">
-                <label class="form-label mb-0" for="ql-title">@T["QuickLinks.LabelTitle"]</label>
-                <input asp-for="Form.Title" id="ql-title" name="Title" class="form-control" placeholder="@T["QuickLinks.LinkTitlePlaceholder"]" />
-            </div>
-            <div class="d-grid gap-1">
-                <label class="form-label mb-0" for="ql-url">@T["QuickLinks.LabelUrl"]</label>
-                <input asp-for="Form.Url" id="ql-url" name="Url" class="form-control" placeholder="@T["QuickLinks.LinkUrlPlaceholder"]" />
-            </div>
-            <div class="d-grid gap-1">
-                <label class="form-label mb-0" for="ql-group">@T["QuickLinks.LabelGroup"]</label>
-                <input asp-for="Form.GroupName" id="ql-group" name="GroupName" class="form-control" placeholder="@T["QuickLinks.LinkGroupPlaceholder"]" />
-            </div>
-            <div class="d-grid gap-1">
-                <label class="form-label mb-0" for="ql-sort">@T["QuickLinks.LabelSortOrder"]</label>
-                <input asp-for="Form.SortOrder" id="ql-sort" name="SortOrder" class="form-control" placeholder="@T["QuickLinks.LinkSortOrderPlaceholder"]" />
-            </div>
-            <button class="btn btn-primary" type="submit">@T["Action.Create"]</button>
-        </form>
-    </section>
+@functions {
+    // The filter and search every write posts back, so the list returns as it was.
+    private async Task Keep(QuickLinkListQuery query)
+    {
+        <input type="hidden" name="group" value="@query.Group" />
+        <input type="hidden" name="search" value="@query.Search" />
+    }
+}
 
-    <section class="panel span-8">
-        <div class="panel-header"><h2>@T["QuickLinks.Links"]</h2></div>
-        <div class="stack">
-            @foreach (var link in Model.Links)
-            {
-                <div class="item-row">
-                    <div>
-                        <a class="item-title" href="@link.Url" target="_blank" rel="noopener">@link.Title</a>
-                        <div class="item-meta">
-                            @if (!string.IsNullOrWhiteSpace(link.GroupName))
-                            {
-                                @($"{link.GroupName} · ")
-                            }
-                            @link.Url
-                        </div>
-                    </div>
-                    <form asp-action="Delete" method="post">
-                        <input type="hidden" name="id" value="@link.Id" />
-                        <button class="btn btn-sm btn-outline-danger" type="submit" data-confirm="@T["Confirm.DeleteMessage", link.Title]" data-confirm-title="@T["Confirm.DeleteTitle"]" data-confirm-ok="@T["Action.Delete"]">@T["Action.Delete"]</button>
-                    </form>
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/quick-links.css" asp-append-version="true" />
+}
+
+<div class="tbx-list-page link-page" data-list-page data-link-page
+     data-opened-url="@Url.Action("MarkOpened")" data-reorder-url="@Url.Action("Reorder")" data-check-url="@Url.Action("CheckUrl")"
+     data-can-reorder="@(Model.CanReorder ? "true" : "false")">
+    @Html.AntiForgeryToken()
+    <partial name="_ListToolbar" model="toolbar" />
+
+    @if (Model.Total == 0)
+    {
+        <partial name="_EmptyState" model="emptyState" />
+        <p class="link-empty-import">
+            <button type="button" class="btn btn-link btn-sm" data-bs-toggle="modal" data-bs-target="#link-import">
+                <tbx-icon name="upload" />@T["QuickLinks.Import"]
+            </button>
+        </p>
+    }
+    else
+    {
+        <div class="link-bar">
+            <partial name="_FilterChips" model="chips" />
+            <div class="link-bar-tools">
+                <form method="get" action="@ListUrl(null, null)" class="link-sort" data-link-sort>
+                    <input type="hidden" name="group" value="@query.Group" />
+                    <input type="hidden" name="search" value="@query.Search" />
+                    <label class="tbx-field-label" for="link-sort">@T["QuickLinks.Sort.Label"]</label>
+                    <select class="form-select form-select-sm" id="link-sort" name="sort">
+                        <option value="@QuickLinkSorts.Manual" selected="@(query.Sort == QuickLinkSorts.Manual)">@T["QuickLinks.Sort.Manual"]</option>
+                        <option value="@QuickLinkSorts.Name" selected="@(query.Sort == QuickLinkSorts.Name)">@T["QuickLinks.Sort.Name"]</option>
+                        <option value="@QuickLinkSorts.MostOpened" selected="@(query.Sort == QuickLinkSorts.MostOpened)">@T["QuickLinks.Sort.MostOpened"]</option>
+                    </select>
+                    <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">@T["QuickLinks.Sort.Apply"]</button></noscript>
+                </form>
+                <div class="dropdown">
+                    <button class="btn btn-sm tbx-icon-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="@T["QuickLinks.MoreActions"]">
+                        <tbx-icon name="ellipsis" label="@T["QuickLinks.MoreActions"]" />
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="@Url.Action("Export")"><tbx-icon name="download" />@T["QuickLinks.Export"]</a></li>
+                        <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#link-import"><tbx-icon name="upload" />@T["QuickLinks.Import"]</button></li>
+                    </ul>
                 </div>
-            }
+            </div>
         </div>
-    </section>
+
+        @if (Model.Sections.Count == 0)
+        {
+            <div class="tbx-empty" role="status">
+                <span class="tbx-empty-icon"><tbx-icon name="search" size="20" /></span>
+                <p class="tbx-empty-text">@T["QuickLinks.NoMatch"]</p>
+                <a class="btn btn-outline-secondary btn-sm" href="@ListUrl(null, null)"><tbx-icon name="x" />@T["QuickLinks.ClearFilter"]</a>
+            </div>
+        }
+        else
+        {
+            var sectionIndex = 0;
+            foreach (var block in Model.Sections)
+            {
+                var sectionId = "link-group-" + sectionIndex++;
+                // Dragging is per block; the pinned block keeps its own order too.
+                var draggable = Model.CanReorder;
+                <section class="link-group" aria-labelledby="@sectionId">
+                    <h2 class="link-group-title" id="@sectionId">
+                        @if (block.Pinned)
+                        {
+                            <tbx-icon name="pin" />@T["QuickLinks.Pinned"]
+                        }
+                        else
+                        {
+                            @GroupLabel(block.GroupName)
+                        }
+                        <span class="link-group-count">@block.Links.Count</span>
+                    </h2>
+                    <ul class="tbx-list link-list" data-link-list>
+                        @foreach (var link in block.Links)
+                        {
+                            <li class="tbx-row tbx-row--two-line link-row" tabindex="0" data-link-row data-id="@link.Id"
+                                aria-label="@link.Title" draggable="@(draggable ? "true" : "false")">
+                                @if (draggable)
+                                {
+                                    <span class="link-grip" title="@T["QuickLinks.DragHint"]" aria-hidden="true"><tbx-icon name="grip-vertical" /></span>
+                                }
+                                <span class="link-tile" aria-hidden="true">@Initial(link.Title, link.Url)</span>
+                                <div class="tbx-row-main">
+                                    <a class="tbx-row-title link-title" href="@link.Url" target="_blank" rel="noopener noreferrer" tabindex="-1" data-link-open>@link.Title</a>
+                                    <span class="tbx-row-sub link-host" title="@link.Url">@Host(link.Url)</span>
+                                </div>
+                                <span class="tbx-row-meta link-opened" data-link-opened>@T["QuickLinks.OpenedCount", link.OpenCount]@(link.LastOpenedAt is null ? null : " · " + link.LastOpenedAt.Value.ToDisplayAppDateTime())</span>
+                                <div class="tbx-row-actions">
+                                    <button class="btn btn-sm tbx-icon-button" type="button" title="@T["QuickLinks.CopyUrl"]" tabindex="-1" data-link-copy>
+                                        <tbx-icon name="copy" label="@T["QuickLinks.CopyUrlItem", link.Title]" />
+                                    </button>
+                                    <form asp-action="TogglePin" method="post">
+                                        @{ await Keep(query); }
+                                        <input type="hidden" name="id" value="@link.Id" />
+                                        <button class="btn btn-sm tbx-icon-button @(link.IsPinned ? "is-on" : null)" type="submit" tabindex="-1"
+                                                aria-pressed="@(link.IsPinned ? "true" : "false")" title="@(link.IsPinned ? T["QuickLinks.Unpin"] : T["QuickLinks.Pin"])">
+                                            <tbx-icon name="@(link.IsPinned ? "pin-off" : "pin")" label="@(link.IsPinned ? T["QuickLinks.UnpinItem", link.Title] : T["QuickLinks.PinItem", link.Title])" />
+                                        </button>
+                                    </form>
+                                    <button class="btn btn-sm tbx-icon-button" type="button" title="@T["Action.Edit"]" tabindex="-1" data-link-edit>
+                                        <tbx-icon name="pencil" label="@T["QuickLinks.EditItem", link.Title]" />
+                                    </button>
+                                    <form asp-action="Delete" method="post">
+                                        @{ await Keep(query); }
+                                        <input type="hidden" name="id" value="@link.Id" />
+                                        <button class="btn btn-sm tbx-icon-button is-danger" type="submit" title="@T["Action.Delete"]" tabindex="-1"
+                                                data-confirm="@T["Confirm.DeleteMessage", link.Title]" data-confirm-title="@T["Confirm.DeleteTitle"]" data-confirm-ok="@T["Action.Delete"]">
+                                            <tbx-icon name="trash-2" label="@T["QuickLinks.DeleteItem", link.Title]" />
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </section>
+            }
+        }
+
+        <p class="tbx-shortcuts">@(Model.CanReorder ? T["QuickLinks.ShortcutsReorder"] : T["QuickLinks.Shortcuts"])</p>
+    }
 </div>
 
+<div class="modal fade" id="link-form" data-list-modal tabindex="-1" aria-labelledby="link-form-title" aria-hidden="true"
+     data-open-on-load="@(Model.OpenForm ? "true" : "false")" data-link-form
+     data-create-title="@T["QuickLinks.AddLink"]" data-edit-title="@T["QuickLinks.EditLink"]"
+     data-create-submit="@T["QuickLinks.Add"]" data-edit-submit="@T["QuickLinks.SaveChanges"]"
+     data-create-action="@Url.Action("Create")" data-edit-action="@Url.Action("Update")"
+     data-required-text="@T["Validation.Required"]" data-url-text="@T["QuickLinks.Validation.Url"]">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="@(Model.IsEditing ? Url.Action("Update") : Url.Action("Create"))" method="post" class="modal-content" novalidate data-link-form-element>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ReturnGroup" value="@query.Group" />
+            <input type="hidden" name="ReturnSearch" value="@query.Search" />
+            <input type="hidden" name="Id" value="@Model.Form.Id" data-field="id" />
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="link-form-title" data-link-form-title>@(Model.IsEditing ? T["QuickLinks.EditLink"] : T["QuickLinks.AddLink"])</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body tbx-form-grid">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="link-url">@T["QuickLinks.LabelUrl"]<span class="tbx-required" aria-hidden="true">*</span></label>
+                    <input class="form-control" id="link-url" name="Url" value="@Model.Form.Url" maxlength="1000" autocomplete="off" inputmode="url" required data-field="url"
+                           placeholder="@T["QuickLinks.LinkUrlPlaceholder"]" aria-describedby="link-url-error link-url-hint" aria-invalid="@(urlError is null ? null : "true")" />
+                    <span class="tbx-field-error" id="link-url-error">@urlError</span>
+                    <span class="tbx-field-hint" id="link-url-hint" data-url-hint>@T["QuickLinks.UrlHint"]</span>
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="link-title">@T["QuickLinks.LabelTitle"]<span class="tbx-required" aria-hidden="true">*</span></label>
+                    <input class="form-control" id="link-title" name="Title" value="@Model.Form.Title" maxlength="120" autocomplete="off" required data-field="title"
+                           placeholder="@T["QuickLinks.LinkTitlePlaceholder"]" aria-describedby="link-title-error" aria-invalid="@(titleError is null ? null : "true")" />
+                    <span class="tbx-field-error" id="link-title-error">@titleError</span>
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="link-group">@T["QuickLinks.LabelGroup"]</label>
+                    <input class="form-control" id="link-group" name="GroupName" value="@Model.Form.GroupName" maxlength="80" autocomplete="off" data-field="groupName"
+                           placeholder="@T["QuickLinks.LinkGroupPlaceholder"]" aria-describedby="link-group-error link-group-hint"
+                           data-groups="@JsonSerializer.Serialize(Model.GroupNames)" />
+                    <span class="tbx-field-error" id="link-group-error">@groupError</span>
+                    <span class="tbx-field-hint" id="link-group-hint">@T["QuickLinks.GroupHint"]</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary" data-link-form-submit>@(Model.IsEditing ? T["QuickLinks.SaveChanges"] : T["QuickLinks.Add"])</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="link-import" data-list-modal tabindex="-1" aria-labelledby="link-import-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form asp-action="Import" method="post" enctype="multipart/form-data" class="modal-content">
+            @{ await Keep(query); }
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="link-import-title">@T["QuickLinks.Import"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body tbx-form-grid">
+                <p class="link-import-text">@T["QuickLinks.ImportHelp"]</p>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="link-import-file">@T["QuickLinks.ImportFile"]</label>
+                    <input class="form-control" id="link-import-file" name="file" type="file" accept=".html,.htm,text/html" required aria-describedby="link-import-hint" />
+                    <span class="tbx-field-hint" id="link-import-hint">@T["QuickLinks.ImportHint"]</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary"><tbx-icon name="upload" />@T["QuickLinks.ImportSubmit"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script id="link-data" type="application/json">@Html.Raw(linkData)</script>
+<script id="link-text" type="application/json">@Html.Raw(JsonSerializer.Serialize(new
+{
+    copied = T["QuickLinks.Copied"].Value,
+    copyFailed = T["SchemaCompare.Message.CopyFailed"].Value,
+    urlCompleted = T["QuickLinks.UrlCompleted"].Value,
+    reorderFailed = T["QuickLinks.ReorderFailed"].Value,
+    moved = T["QuickLinks.Moved"].Value
+}, json))</script>
+
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <partial name="_KendoScripts" />
+    <script src="~/js/list-page.js" asp-append-version="true"></script>
+    <script src="~/js/quick-links.js" asp-append-version="true"></script>
 }

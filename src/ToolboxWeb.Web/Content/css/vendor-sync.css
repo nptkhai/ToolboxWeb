@@ -583,6 +583,7 @@
 .content-area .k-dropdownlist,
 .content-area .k-multiselect,
 .content-area .k-combobox,
+.content-area .k-autocomplete,
 .content-area .k-textbox,
 .content-area .k-numerictextbox,
 .content-area .k-datepicker,
@@ -603,6 +604,7 @@
     .content-area .k-dropdownlist:hover,
     .content-area .k-multiselect:hover,
     .content-area .k-combobox:hover,
+    .content-area .k-autocomplete:hover,
     .content-area .k-textbox:hover,
     .content-area .k-numerictextbox:hover,
     .content-area .k-datepicker:hover,
@@ -628,6 +630,7 @@
     .content-area .k-dropdownlist:focus-within,
     .content-area .k-multiselect:focus-within,
     .content-area .k-combobox:focus-within,
+    .content-area .k-autocomplete:focus-within,
     .content-area .k-picker:focus-within {
         border-color: var(--ui-accent);
         box-shadow: var(--ui-focus-ring);
@@ -644,6 +647,11 @@
     font-size: .95rem;
     min-height: 0;
 }
+
+    /* AutoComplete keeps the text box's own padding, so it lines up with a plain input. */
+    .content-area .k-autocomplete .k-input-inner {
+        padding: var(--space-2) var(--space-3);
+    }
 
     .content-area .k-input-inner::placeholder {
         color: var(--ui-control-muted);

@@ -25,6 +25,7 @@ eye-off
 file-text
 gauge
 git-compare
+grip-vertical
 image
 inbox
 info
