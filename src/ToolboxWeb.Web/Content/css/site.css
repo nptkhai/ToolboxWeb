@@ -881,24 +881,6 @@ a {
     text-align: center;
 }
 
-.prompt-content {
-    background: var(--surface-2);
-    border-radius: 8px;
-    max-height: 180px;
-    overflow: auto;
-    padding: 10px;
-    white-space: pre-wrap;
-}
-
-.prompt-section-label {
-    color: var(--muted);
-    font-size: .78rem;
-    font-weight: 700;
-    letter-spacing: .02em;
-    margin: 10px 0 6px;
-    text-transform: uppercase;
-}
-
 .tbx-upload-control {
     display: grid;
     gap: 10px;

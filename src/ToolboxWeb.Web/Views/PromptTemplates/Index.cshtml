@@ -1,86 +1,377 @@
+@using System.Text.Json
+@using ToolboxWeb.Web.Constants
+@using ToolboxWeb.Web.Enums
 @model PromptTemplatesIndexViewModel
+@*
+    List page template (docs/LIST_PAGE_TEMPLATE.md), stage 5.10: toolbar with totals, search and
+    the primary action; category chips and the sort order; dense rows with pin, copy, fill,
+    edit, duplicate and delete; the full prompt in a side panel; create and edit in a modal;
+    variables filled in a modal before copying; export and import as JSON.
+    Behavior: Content/js/prompts.js.
+*@
 @{
     ViewData["Title"] = T["PromptTemplates.Title"];
-    var categories = Enum.GetValues<PromptCategory>()
-        .Select(category => new SelectListItem(T[$"PromptCategory.{category}"].Value, category.ToString(), category == Model.Form.Category))
-        .ToList();
-    var formAction = Model.IsEditing ? "Update" : "Create";
-    var submitLabel = Model.IsEditing ? T["Action.Update"] : T["Action.Create"];
-    var formTitle = Model.IsEditing ? T["PromptTemplates.EditPrompt"] : T["PromptTemplates.CreatePrompt"];
+    var query = Model.Query;
+    var categoryKey = query.Category?.ToString();
+
+    string ListUrl(string? category, string? search) => Url.RouteUrl(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml, new
+    {
+        category = string.IsNullOrWhiteSpace(category) ? null : category,
+        search = string.IsNullOrWhiteSpace(search) ? null : search
+    }) ?? "/prompt-templates.html";
+
+    var toolbar = new ListToolbarViewModel
+    {
+        Summary = T["PromptTemplates.Summary", Model.Total, Model.PinnedCount].Value,
+        SearchAction = ListUrl(null, null),
+        SearchValue = query.Search,
+        SearchLabel = T["PromptTemplates.SearchLabel"].Value,
+        SearchKeep = new Dictionary<string, string?> { ["category"] = categoryKey },
+        PrimaryText = T["PromptTemplates.CreatePrompt"].Value,
+        PrimaryModal = "#prompt-form"
+    };
+
+    var chipList = new List<FilterChipViewModel>
+    {
+        new(T["PromptTemplates.AllCategories"].Value, ListUrl(null, query.Search), Model.SearchCount, query.Category is null)
+    };
+    foreach (var category in Enum.GetValues<PromptCategory>())
+    {
+        var count = Model.CategoryCounts.GetValueOrDefault(category);
+        // Empty categories stay out of the way, unless it is the one being looked at.
+        if (count > 0 || query.Category == category)
+        {
+            chipList.Add(new(T[$"PromptCategory.{category}"].Value, ListUrl(category.ToString(), query.Search), count, query.Category == category));
+        }
+    }
+    var chips = new FilterChipsViewModel { Label = T["PromptTemplates.FilterLabel"].Value, Chips = chipList };
+
+    var emptyState = new EmptyStateViewModel(T["PromptTemplates.Empty"].Value, "message-square-text")
+    {
+        ActionText = T["PromptTemplates.CreatePrompt"].Value,
+        ActionTarget = "#prompt-form"
+    };
+
+    string? Error(string key) => ViewData.ModelState[key]?.Errors.FirstOrDefault()?.ErrorMessage;
+    var nameError = Error("Name");
+    var contentError = Error("Content");
+
+    var json = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var promptData = JsonSerializer.Serialize(Model.Templates.Select(x => new
+    {
+        id = x.Id,
+        name = x.Name,
+        category = x.Category.ToString(),
+        categoryText = x.Category.Localize(T),
+        description = x.Description,
+        inputVariables = x.InputVariables,
+        outputFormat = x.OutputFormat,
+        content = x.Content,
+        isPinned = x.IsPinned,
+        usedText = T["PromptTemplates.UsedCount", x.UseCount].Value,
+        lastUsed = x.LastUsedAt?.ToDisplayAppDateTime()
+    }), json);
 }
 
-<div class="tool-grid">
-    <section class="panel span-4">
-        <div class="panel-header">
-            <h2>@formTitle</h2>
-            @if (Model.IsEditing)
-            {
-                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">@T["Action.Cancel"]</a>
-            }
-        </div>
-        <form asp-action="@formAction" method="post" class="form-grid">
-            <input asp-for="Form.Id" name="Id" type="hidden" />
-            <input asp-for="Form.Name" name="Name" class="form-control" placeholder="@T["PromptTemplates.NamePlaceholder"]" />
-            <span asp-validation-for="Form.Name" class="text-danger"></span>
-            <select asp-for="Form.Category" name="Category" asp-items="categories" class="form-select"></select>
-            <input asp-for="Form.Description" name="Description" class="form-control" placeholder="@T["PromptTemplates.DescriptionPlaceholder"]" />
-            <span asp-validation-for="Form.Description" class="text-danger"></span>
-            <textarea asp-for="Form.InputVariables" name="InputVariables" class="form-control" rows="4" placeholder="@T["PromptTemplates.InputVariablesPlaceholder"]"></textarea>
-            <span asp-validation-for="Form.InputVariables" class="text-danger"></span>
-            <textarea asp-for="Form.OutputFormat" name="OutputFormat" class="form-control" rows="4" placeholder="@T["PromptTemplates.OutputFormatPlaceholder"]"></textarea>
-            <span asp-validation-for="Form.OutputFormat" class="text-danger"></span>
-            <textarea asp-for="Form.Content" name="Content" class="form-control" rows="10" placeholder="@T["PromptTemplates.ContentPlaceholder"]"></textarea>
-            <span asp-validation-for="Form.Content" class="text-danger"></span>
-            <button class="btn btn-primary" type="submit">@submitLabel</button>
-        </form>
-    </section>
+@functions {
+    // The filter and search every write posts back, so the list returns as it was.
+    private async Task Keep(PromptListQuery query)
+    {
+        <input type="hidden" name="category" value="@query.Category" />
+        <input type="hidden" name="search" value="@query.Search" />
+    }
+}
 
-    <section class="panel span-8">
-        <div class="panel-header"><h2>@T["PromptTemplates.Templates"]</h2></div>
-        <div class="stack">
-            @for (var index = 0; index < Model.Templates.Count; index++)
-            {
-                var template = Model.Templates[index];
-                var contentId = $"prompt-{template.Id}";
-                <div class="item-row">
-                    <div>
-                        <div class="item-title">@template.Name</div>
-                        <div class="item-meta">@template.Category.Localize(T) &middot; @T["PromptTemplates.UsedCount", template.UseCount]</div>
-                        @if (!string.IsNullOrWhiteSpace(template.Description))
-                        {
-                            <div class="item-content muted">@template.Description</div>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(template.InputVariables))
-                        {
-                            <div class="prompt-section-label">@T["PromptTemplates.InputVariablesLabel"]</div>
-                            <div class="prompt-content">@template.InputVariables</div>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(template.OutputFormat))
-                        {
-                            <div class="prompt-section-label">@T["PromptTemplates.OutputFormatLabel"]</div>
-                            <div class="prompt-content">@template.OutputFormat</div>
-                        }
-                        <div class="prompt-section-label">@T["PromptTemplates.ContentLabel"]</div>
-                        <div class="prompt-content" id="@contentId">@template.Content</div>
-                    </div>
-                    <div class="inline-actions">
-                        <button class="btn btn-sm btn-outline-secondary" type="button" data-copy-target="#@contentId" data-default-text="@T["Action.Copy"]" data-copied-text="@T["Action.Copied"]">@T["Action.Copy"]</button>
-                        <a asp-action="Index" asp-route-editId="@template.Id" class="btn btn-sm btn-outline-secondary">@T["Action.Edit"]</a>
-                        <form asp-action="MarkUsed" method="post">
-                            <input type="hidden" name="id" value="@template.Id" />
-                            <button class="btn btn-sm btn-outline-secondary" type="submit">@T["Action.MarkUsed"]</button>
-                        </form>
-                        <form asp-action="Delete" method="post">
-                            <input type="hidden" name="id" value="@template.Id" />
-                            <button class="btn btn-sm btn-outline-danger" type="submit" data-confirm="@T["Confirm.DeleteMessage", template.Name]" data-confirm-title="@T["Confirm.DeleteTitle"]" data-confirm-ok="@T["Action.Delete"]">@T["Action.Delete"]</button>
-                        </form>
-                    </div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/prompts.css" asp-append-version="true" />
+}
+
+<div class="tbx-list-page prompt-page" data-list-page data-prompt-page
+     data-mark-used-url="@Url.Action("MarkUsed")">
+    @Html.AntiForgeryToken()
+    <partial name="_ListToolbar" model="toolbar" />
+
+    @if (Model.Total == 0)
+    {
+        <partial name="_EmptyState" model="emptyState" />
+        <p class="prompt-empty-import">
+            <button type="button" class="btn btn-link btn-sm" data-bs-toggle="modal" data-bs-target="#prompt-import">
+                <tbx-icon name="upload" />@T["PromptTemplates.Import"]
+            </button>
+        </p>
+    }
+    else
+    {
+        <div class="prompt-bar">
+            <partial name="_FilterChips" model="chips" />
+            <div class="prompt-bar-tools">
+                <form method="get" action="@ListUrl(null, null)" class="prompt-sort" data-prompt-sort>
+                    <input type="hidden" name="category" value="@categoryKey" />
+                    <input type="hidden" name="search" value="@query.Search" />
+                    <label class="tbx-field-label" for="prompt-sort">@T["PromptTemplates.Sort.Label"]</label>
+                    <select class="form-select form-select-sm" id="prompt-sort" name="sort">
+                        <option value="@PromptSorts.Name" selected="@(query.Sort == PromptSorts.Name)">@T["PromptTemplates.Sort.Name"]</option>
+                        <option value="@PromptSorts.MostUsed" selected="@(query.Sort == PromptSorts.MostUsed)">@T["PromptTemplates.Sort.MostUsed"]</option>
+                        <option value="@PromptSorts.RecentlyUsed" selected="@(query.Sort == PromptSorts.RecentlyUsed)">@T["PromptTemplates.Sort.RecentlyUsed"]</option>
+                    </select>
+                    <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">@T["PromptTemplates.Sort.Apply"]</button></noscript>
+                </form>
+                <div class="dropdown">
+                    <button class="btn btn-sm tbx-icon-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="@T["PromptTemplates.MoreActions"]">
+                        <tbx-icon name="ellipsis" label="@T["PromptTemplates.MoreActions"]" />
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="@Url.Action("Export")"><tbx-icon name="download" />@T["PromptTemplates.Export"]</a>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#prompt-import"><tbx-icon name="upload" />@T["PromptTemplates.Import"]</button>
+                        </li>
+                    </ul>
                 </div>
-            }
+            </div>
         </div>
-    </section>
+
+        @if (Model.Templates.Count == 0)
+        {
+            <div class="tbx-empty" role="status">
+                <span class="tbx-empty-icon"><tbx-icon name="search" size="20" /></span>
+                <p class="tbx-empty-text">@T["PromptTemplates.NoMatch"]</p>
+                <a class="btn btn-outline-secondary btn-sm" href="@ListUrl(null, null)"><tbx-icon name="x" />@T["PromptTemplates.ClearFilter"]</a>
+            </div>
+        }
+        else
+        {
+            <ul class="tbx-list prompt-list" data-prompt-list>
+                @foreach (var template in Model.Templates)
+                {
+                    var summary = string.IsNullOrWhiteSpace(template.Description)
+                        ? template.Content.Split('\n', 2)[0].Trim()
+                        : template.Description;
+                    <li class="tbx-row tbx-row--two-line prompt-row @(template.IsPinned ? "is-pinned" : null)" tabindex="0"
+                        data-prompt-row data-id="@template.Id" aria-label="@template.Name">
+                        <form asp-action="TogglePin" method="post" class="prompt-pin">
+                            @{ await Keep(query); }
+                            <input type="hidden" name="id" value="@template.Id" />
+                            <button type="submit" class="btn btn-sm tbx-icon-button @(template.IsPinned ? "is-on" : null)" tabindex="-1"
+                                    aria-pressed="@(template.IsPinned ? "true" : "false")"
+                                    title="@(template.IsPinned ? T["PromptTemplates.Unpin"] : T["PromptTemplates.Pin"])">
+                                <tbx-icon name="@(template.IsPinned ? "pin-off" : "pin")"
+                                          label="@(template.IsPinned ? T["PromptTemplates.UnpinItem", template.Name] : T["PromptTemplates.PinItem", template.Name])" />
+                            </button>
+                        </form>
+
+                        <div class="tbx-row-main">
+                            <span class="prompt-title-line">
+                                <span class="tbx-row-title">@template.Name</span>
+                                <span class="tbx-pill is-neutral">@template.Category.Localize(T)</span>
+                                <span class="tbx-pill is-warning" data-prompt-mismatch hidden>@T["PromptTemplates.Mismatch.Pill"]</span>
+                            </span>
+                            <span class="tbx-row-sub">@summary</span>
+                        </div>
+
+                        <span class="tbx-row-meta prompt-used" data-prompt-used>@T["PromptTemplates.UsedCount", template.UseCount]<span class="prompt-last-used">@(template.LastUsedAt is null ? null : " · " + template.LastUsedAt.Value.ToDisplayAppDateTime())</span></span>
+
+                        <div class="tbx-row-actions">
+                            <button class="btn btn-sm tbx-icon-button" type="button" title="@T["Action.Copy"]" tabindex="-1" data-prompt-copy>
+                                <tbx-icon name="copy" label="@T["PromptTemplates.CopyItem", template.Name]" />
+                            </button>
+                            <button class="btn btn-sm tbx-icon-button" type="button" title="@T["PromptTemplates.Fill"]" tabindex="-1" data-prompt-fill hidden>
+                                <tbx-icon name="braces" label="@T["PromptTemplates.FillItem", template.Name]" />
+                            </button>
+                            <button class="btn btn-sm tbx-icon-button" type="button" title="@T["Action.Edit"]" tabindex="-1" data-prompt-edit>
+                                <tbx-icon name="pencil" label="@T["PromptTemplates.EditItem", template.Name]" />
+                            </button>
+                            <form asp-action="Duplicate" method="post">
+                                @{ await Keep(query); }
+                                <input type="hidden" name="id" value="@template.Id" />
+                                <button class="btn btn-sm tbx-icon-button" type="submit" title="@T["PromptTemplates.Duplicate"]" tabindex="-1">
+                                    <tbx-icon name="copy-plus" label="@T["PromptTemplates.DuplicateItem", template.Name]" />
+                                </button>
+                            </form>
+                            <form asp-action="Delete" method="post">
+                                @{ await Keep(query); }
+                                <input type="hidden" name="id" value="@template.Id" />
+                                <button class="btn btn-sm tbx-icon-button is-danger" type="submit" title="@T["Action.Delete"]" tabindex="-1"
+                                        data-confirm="@T["Confirm.DeleteMessage", template.Name]" data-confirm-title="@T["Confirm.DeleteTitle"]" data-confirm-ok="@T["Action.Delete"]">
+                                    <tbx-icon name="trash-2" label="@T["PromptTemplates.DeleteItem", template.Name]" />
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+
+        <p class="tbx-shortcuts">@T["PromptTemplates.Shortcuts"]</p>
+    }
 </div>
 
+@* The whole prompt. No backdrop, so the list stays usable and the arrow keys move through it. *@
+<div class="offcanvas offcanvas-end tbx-sidepanel prompt-panel" tabindex="-1" id="prompt-detail" aria-labelledby="prompt-detail-title"
+     data-bs-backdrop="false" data-bs-scroll="true">
+    <div class="offcanvas-header">
+        <h2 class="offcanvas-title" id="prompt-detail-title" data-detail="name"></h2>
+        <button type="button" class="btn btn-sm tbx-icon-button" data-bs-dismiss="offcanvas" aria-label="@T["Action.Close"]"><tbx-icon name="x" /></button>
+    </div>
+    <div class="offcanvas-body">
+        <p class="prompt-detail-meta"><span class="tbx-pill is-neutral" data-detail="category"></span> <span data-detail="used"></span></p>
+        <p class="prompt-detail-text" data-detail="description"></p>
+        <div class="tbx-error-state prompt-warning" data-detail="mismatch" hidden></div>
+        <section data-detail-section="inputVariables">
+            <h3 class="prompt-section-title">@T["PromptTemplates.InputVariablesLabel"]</h3>
+            <pre class="prompt-code" data-detail="inputVariables"></pre>
+        </section>
+        <section data-detail-section="outputFormat">
+            <h3 class="prompt-section-title">@T["PromptTemplates.OutputFormatLabel"]</h3>
+            <pre class="prompt-code" data-detail="outputFormat"></pre>
+        </section>
+        <section>
+            <h3 class="prompt-section-title">@T["PromptTemplates.ContentLabel"]</h3>
+            <pre class="prompt-code prompt-content-code" data-detail="content"></pre>
+        </section>
+    </div>
+    <div class="tbx-sidepanel-footer">
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-detail-action="edit"><tbx-icon name="pencil" />@T["Action.Edit"]</button>
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-detail-action="fill" hidden><tbx-icon name="braces" />@T["PromptTemplates.Fill"]</button>
+        <button class="btn btn-primary btn-sm" type="button" data-detail-action="copy"><tbx-icon name="copy" />@T["Action.Copy"]</button>
+    </div>
+</div>
+
+<div class="modal fade" id="prompt-form" data-list-modal tabindex="-1" aria-labelledby="prompt-form-title" aria-hidden="true"
+     data-open-on-load="@(Model.OpenForm ? "true" : "false")" data-prompt-form
+     data-create-title="@T["PromptTemplates.CreatePrompt"]" data-edit-title="@T["PromptTemplates.EditPrompt"]"
+     data-create-submit="@T["Action.Create"]" data-edit-submit="@T["PromptTemplates.SaveChanges"]"
+     data-create-action="@Url.Action("Create")" data-edit-action="@Url.Action("Update")"
+     data-required-text="@T["Validation.Required"]">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <form action="@(Model.IsEditing ? Url.Action("Update") : Url.Action("Create"))" method="post" class="modal-content" novalidate data-prompt-form-element>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ReturnCategory" value="@categoryKey" />
+            <input type="hidden" name="ReturnSearch" value="@query.Search" />
+            <input type="hidden" name="Id" value="@Model.Form.Id" data-field="id" />
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="prompt-form-title" data-prompt-form-title>@(Model.IsEditing ? T["PromptTemplates.EditPrompt"] : T["PromptTemplates.CreatePrompt"])</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body tbx-form-grid">
+                <div class="tbx-form-grid is-two">
+                    <div class="tbx-field">
+                        <label class="tbx-field-label" for="prompt-name">@T["PromptTemplates.Field.Name"]<span class="tbx-required" aria-hidden="true">*</span></label>
+                        <input class="form-control" id="prompt-name" name="Name" value="@Model.Form.Name" maxlength="140" autocomplete="off" required data-field="name"
+                               placeholder="@T["PromptTemplates.Field.NameExample"]" aria-describedby="prompt-name-error" aria-invalid="@(nameError is null ? null : "true")" />
+                        <span class="tbx-field-error" id="prompt-name-error">@nameError</span>
+                    </div>
+                    <div class="tbx-field">
+                        <label class="tbx-field-label" for="prompt-category">@T["PromptTemplates.Field.Category"]</label>
+                        <select class="form-select" id="prompt-category" name="Category" data-field="category">
+                            @foreach (var category in Enum.GetValues<PromptCategory>())
+                            {
+                                <option value="@category" selected="@(Model.Form.Category == category)">@T[$"PromptCategory.{category}"]</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="prompt-description">@T["PromptTemplates.Field.Description"]</label>
+                    <input class="form-control" id="prompt-description" name="Description" value="@Model.Form.Description" maxlength="500" autocomplete="off" data-field="description"
+                           data-count-max="500" aria-describedby="prompt-description-hint" />
+                    <span class="tbx-field-hint" id="prompt-description-hint" data-count-for="prompt-description"></span>
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="prompt-content">@T["PromptTemplates.Field.Content"]<span class="tbx-required" aria-hidden="true">*</span></label>
+                    <textarea class="form-control prompt-mono" id="prompt-content" name="Content" rows="10" required spellcheck="false" data-field="content"
+                              placeholder="@T["PromptTemplates.Field.ContentExample"]" aria-describedby="prompt-content-error prompt-content-hint"
+                              aria-invalid="@(contentError is null ? null : "true")">@Model.Form.Content</textarea>
+                    <span class="tbx-field-error" id="prompt-content-error">@contentError</span>
+                    <span class="tbx-field-hint" id="prompt-content-hint" data-content-stats></span>
+                </div>
+                <div class="tbx-form-grid is-two">
+                    <div class="tbx-field">
+                        <label class="tbx-field-label" for="prompt-variables">@T["PromptTemplates.Field.InputVariables"]</label>
+                        <textarea class="form-control prompt-mono" id="prompt-variables" name="InputVariables" rows="4" maxlength="1000" spellcheck="false" data-field="inputVariables"
+                                  data-count-max="1000" placeholder="@T["PromptTemplates.Field.InputVariablesExample"]" aria-describedby="prompt-variables-hint">@Model.Form.InputVariables</textarea>
+                        <span class="tbx-field-hint" id="prompt-variables-hint" data-count-for="prompt-variables"></span>
+                    </div>
+                    <div class="tbx-field">
+                        <label class="tbx-field-label" for="prompt-output">@T["PromptTemplates.Field.OutputFormat"]</label>
+                        <textarea class="form-control" id="prompt-output" name="OutputFormat" rows="4" maxlength="1000" data-field="outputFormat"
+                                  data-count-max="1000" aria-describedby="prompt-output-hint">@Model.Form.OutputFormat</textarea>
+                        <span class="tbx-field-hint" id="prompt-output-hint" data-count-for="prompt-output"></span>
+                    </div>
+                </div>
+                @* Variables used in the prompt and the ones declared above should be the same names. *@
+                <div class="prompt-form-warning" data-form-mismatch role="status" aria-live="polite" hidden></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary" data-prompt-form-submit>@(Model.IsEditing ? T["PromptTemplates.SaveChanges"] : T["Action.Create"])</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="prompt-fill" data-list-modal tabindex="-1" aria-labelledby="prompt-fill-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="prompt-fill-title" data-fill-title></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body prompt-fill-body">
+                <div class="tbx-form-grid" data-fill-fields></div>
+                <div class="prompt-fill-preview">
+                    <h3 class="prompt-section-title">@T["PromptTemplates.Fill.Preview"] <span class="prompt-fill-missing" data-fill-missing></span></h3>
+                    <pre class="prompt-code" data-fill-preview></pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="button" class="btn btn-primary" data-fill-copy><tbx-icon name="copy" />@T["PromptTemplates.Fill.Copy"]</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="prompt-import" data-list-modal tabindex="-1" aria-labelledby="prompt-import-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form asp-action="Import" method="post" enctype="multipart/form-data" class="modal-content">
+            @{ await Keep(query); }
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="prompt-import-title">@T["PromptTemplates.Import"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body tbx-form-grid">
+                <p class="prompt-import-text">@T["PromptTemplates.ImportHelp"]</p>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="prompt-import-file">@T["PromptTemplates.ImportFile"]</label>
+                    <input class="form-control" id="prompt-import-file" name="file" type="file" accept=".json,application/json" required aria-describedby="prompt-import-hint" />
+                    <span class="tbx-field-hint" id="prompt-import-hint">@T["PromptTemplates.ImportHint"]</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary"><tbx-icon name="upload" />@T["PromptTemplates.ImportSubmit"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script id="prompt-data" type="application/json">@Html.Raw(promptData)</script>
+<script id="prompt-text" type="application/json">@Html.Raw(JsonSerializer.Serialize(new
+{
+    copied = T["PromptTemplates.Copied"].Value,
+    copyFailed = T["SchemaCompare.Message.CopyFailed"].Value,
+    stats = T["PromptTemplates.ContentStats"].Value,
+    count = T["PromptTemplates.CharCount"].Value,
+    mismatchUndeclared = T["PromptTemplates.Mismatch.Undeclared"].Value,
+    mismatchUnused = T["PromptTemplates.Mismatch.Unused"].Value,
+    fillTitle = T["PromptTemplates.Fill.Title"].Value,
+    fillMissing = T["PromptTemplates.Fill.Missing"].Value,
+    fillDone = T["PromptTemplates.Fill.Done"].Value
+}, json))</script>
+
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/list-page.js" asp-append-version="true"></script>
+    <script src="~/js/prompts.js" asp-append-version="true"></script>
 }

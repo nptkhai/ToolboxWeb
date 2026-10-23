@@ -216,6 +216,7 @@ Approved by the owner on 2026-10-21 (`docs/DESIGN_DECISIONS.md`). They live in `
 - When changing one, update the others in the same change.
 - Prompt variables use the `{{variable_name}}` form, in English snake_case in every language. List the same names in `InputVariables`.
 - A seeded prompt's `Content` must be self-contained: include the stack context and the expected output format. The copy button copies only `Content`.
+- On the prompt page, copying counts one use (`MarkUsed`, called in the background), and "Fill in and copy" asks for each `{{variable}}` in `Content`, using the `{{name}}: description` lines of `InputVariables` as hints. The page flags a prompt whose two lists differ. Export/import uses the JSON format `toolboxweb.prompts`.
 - `Data/SeedData.cs` only inserts a seeded prompt when the user has no prompt in that category. Changing seed text therefore does not update existing users. Mention this in the change summary.
 
 ## Components Hub Appendix

@@ -13,6 +13,9 @@ public class PromptTemplate
     public string? OutputFormat { get; set; }
     public string Content { get; set; } = string.Empty;
     public int UseCount { get; set; }
+
+    /// <summary>Pinned prompts stay at the top of the list whatever the sort order.</summary>
+    public bool IsPinned { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public DateTime? LastUsedAt { get; set; }
