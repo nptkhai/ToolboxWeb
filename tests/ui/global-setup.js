@@ -34,12 +34,14 @@ async function seedSampleData(page, baseURL) {
     }
   }
   await page.goto(`${baseURL}/quick-links.html`);
-  if (await page.locator('.item-row').count() === 0) {
+  if (await page.locator('[data-link-row]').count() === 0) {
+    // The link form sits in a modal too.
     for (const [title, url, group] of [['Jira', 'https://jira.example.local', 'Work'], ['GitHub', 'https://github.com', 'Dev']]) {
-      await page.fill('input[name="Title"]', title);
-      await page.fill('input[name="Url"]', url);
-      await page.fill('input[name="GroupName"]', group);
-      await Promise.all([page.waitForLoadState('networkidle'), page.click('form[action*="Create"] button[type="submit"]')]);
+      await page.click('[data-list-new]');
+      await page.fill('#link-url', url);
+      await page.fill('#link-title', title);
+      await page.fill('#link-group', group);
+      await Promise.all([page.waitForNavigation(), page.click('[data-link-form-submit]')]);
     }
   }
 }

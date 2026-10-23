@@ -92,7 +92,7 @@ public class DashboardService : IDashboardService
             RecentFocusSessions = await _focusSessions.GetRecentAsync(userId, 3),
             HasJiraSession = hasJiraSession,
             RecentNotes = await _notes.GetAsync(userId, take: 5),
-            QuickLinks = await _quickLinks.GetAsync(userId, 8),
+            QuickLinks = await _quickLinks.GetTopAsync(userId, 8),
             PromptTemplates = await _prompts.GetTopAsync(userId, 5),
             RecentActivity = await _activity.GetRecentAsync(userId, 5)
         };

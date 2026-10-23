@@ -69,6 +69,7 @@
 - Jira accounts have no ToolboxWeb password: the password and two-factor tabs are hidden for them.
 - No email sender is configured, so there is no "forgot password" and the email cannot be changed. Do not add flows that depend on sending email until a sender exists.
 - Deleting a to-do is soft: `ChecklistItem.DeletedAt` is set so "Undo" can restore it, and `ChecklistService` purges it after a day. Every to-do query goes through `ChecklistService` and skips rows with `DeletedAt`.
+- Quick links: addresses go through `QuickLinkUrl` (adds `https://` when missing, accepts http, https, ftp and file, compares without scheme, `www.` and a trailing slash). Browser bookmark files are read and written by `Infrastructure/Bookmarks/BookmarkHtml`. Opening a link from the page counts it (`MarkOpened`).
 - Deleting an account goes through `IAccountService.DeleteAccountAsync`, which also deletes every user-owned row and the profile images. A new user-owned table must be added there.
 
 ## Third-Party License Policy
