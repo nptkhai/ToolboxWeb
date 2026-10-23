@@ -32,10 +32,14 @@
     <link rel="preload" href="~/vendor/fonts/inter/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="~/vendor/fonts/inter/inter.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/adaptive-background.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    @if (isAuthenticated)
+    {
+        <link rel="stylesheet" href="~/css/shortcuts.css" asp-append-version="true" />
+    }
     @if (hasFlashNotification)
     {
         <link rel="stylesheet" href="~/vendor/kendo/icons/index.css" asp-append-version="true" />
@@ -75,37 +79,25 @@
     @{
         var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html";
         var jiraDashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html";
-        var jiraWorklistHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraWorklistHtml) ?? "/jira-worklist.html";
-        var notesHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.NotesHtml) ?? "/notes.html";
-        var checklistHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ChecklistHtml) ?? "/checklist.html";
-        var focusTimerHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html";
-        var quickLinksHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.QuickLinksHtml) ?? "/quick-links.html";
-        var promptTemplatesHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml) ?? "/prompt-templates.html";
-        var componentsHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ComponentsHtml) ?? "/component.html";
-        var schemaCompareHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SchemaCompareHtml) ?? "/schema-compare.html";
-        var sqlProfilerHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SqlProfilerHtml) ?? "/sql-profiler.html";
         var brandHref = CurrentUser.IsJiraUser ? jiraDashboardHref : dashboardHref;
         // The DEV group (component hub and demos) is a developer tool, not part of the product.
         var showDevGroup = ToolboxWeb.Web.Infrastructure.Security.DevToolsAccess.IsAllowed(HostEnvironment, User);
+        // One list of pages (ViewModels/AppNavigation.cs) feeds the sidebar, the command palette
+        // and the "G then letter" shortcuts.
+        var navGroups = AppNavigation.Build(Url, T, CurrentUser.IsJiraUser, showDevGroup);
 
         // Current sidebar item, by controller/action so it also holds after a POST round-trip
         // and on sub-routes such as /component/{tab}.html.
         var navController = ViewContext.RouteData.Values["controller"] as string ?? string.Empty;
         var navAction = ViewContext.RouteData.Values["action"] as string ?? string.Empty;
         var navArea = ViewContext.RouteData.Values["area"] as string ?? string.Empty;
-        bool IsNav(params string[] controllers) => controllers.Any(c => string.Equals(c, navController, StringComparison.OrdinalIgnoreCase));
-        var jiraDashboardActive = IsNav("Jira") && string.Equals(navAction, "DashboardPage", StringComparison.OrdinalIgnoreCase);
-        var jiraWorklistActive = IsNav("Jira") && !jiraDashboardActive;
-        var personalControllers = new[] { "Dashboard", "Activity", "Notes", "Checklist", "FocusTimer", "QuickLinks", "PromptTemplates" };
-        var devControllers = new[] { "Components", "DemoKendo", "TabulatorDemo" };
 
-        // Breadcrumb: the sidebar group of the current page, then the page title.
-        string? breadcrumbGroup = null;
-        if (IsNav("Jira")) breadcrumbGroup = T["Nav.Group.Jira"].Value;
-        else if (IsNav(personalControllers)) breadcrumbGroup = T["Nav.Group.Personal"].Value;
-        else if (IsNav("SchemaCompare", "SqlProfiler")) breadcrumbGroup = T["Nav.Group.Database"].Value;
-        else if (IsNav(devControllers)) breadcrumbGroup = T["Nav.Group.Dev"].Value;
-        else if (string.Equals(navArea, "Identity", StringComparison.OrdinalIgnoreCase) && isAuthenticated) breadcrumbGroup = T["Nav.Group.Account"].Value;
+        // Breadcrumb: the menu group of the current page, then the page title.
+        var breadcrumbGroup = navGroups.FirstOrDefault(g => g.Items.Any(i => i.IsActive(navController, navAction)))?.Label;
+        if (breadcrumbGroup is null && string.Equals(navArea, "Identity", StringComparison.OrdinalIgnoreCase) && isAuthenticated)
+        {
+            breadcrumbGroup = T["Nav.Group.Account"].Value;
+        }
         var pageTitle = ViewData["Title"]?.ToString() ?? T["Dashboard.Title"].Value;
     }
     @functions {
@@ -135,40 +127,21 @@
                     </button>
                 </div>
                 <nav class="side-nav" aria-label="@T["Nav.Label"]">
-                    @if (CurrentUser.IsJiraUser)
+                    @foreach (var group in navGroups)
                     {
+                        var sidebarItems = group.Items.Where(i => i.InSidebar).ToList();
+                        if (sidebarItems.Count == 0)
+                        {
+                            continue;
+                        }
+
                         <div class="nav-group">
-                            <p class="nav-group-label" id="nav-group-jira">@T["Nav.Group.Jira"]</p>
-                            <ul aria-labelledby="nav-group-jira">
-                                @{ await NavItem(jiraDashboardHref, "gauge", T["Nav.JiraDashboard"].Value, jiraDashboardActive); }
-                                @{ await NavItem(jiraWorklistHref, "kanban", T["Nav.JiraWorklist"].Value, jiraWorklistActive); }
-                            </ul>
-                        </div>
-                    }
-                    <div class="nav-group">
-                        <p class="nav-group-label" id="nav-group-personal">@T["Nav.Group.Personal"]</p>
-                        <ul aria-labelledby="nav-group-personal">
-                            @{ await NavItem(dashboardHref, "layout-dashboard", T["Nav.Dashboard"].Value, IsNav("Dashboard", "Activity")); }
-                            @{ await NavItem(notesHref, "sticky-note", T["Nav.Notes"].Value, IsNav("Notes")); }
-                            @{ await NavItem(checklistHref, "list-checks", T["Nav.Checklist"].Value, IsNav("Checklist")); }
-                            @{ await NavItem(focusTimerHref, "timer", T["Nav.FocusTimer"].Value, IsNav("FocusTimer")); }
-                            @{ await NavItem(quickLinksHref, "link", T["Nav.QuickLinks"].Value, IsNav("QuickLinks")); }
-                            @{ await NavItem(promptTemplatesHref, "message-square-text", T["Nav.PromptTemplates"].Value, IsNav("PromptTemplates")); }
-                        </ul>
-                    </div>
-                    <div class="nav-group">
-                        <p class="nav-group-label" id="nav-group-database">@T["Nav.Group.Database"]</p>
-                        <ul aria-labelledby="nav-group-database">
-                            @{ await NavItem(schemaCompareHref, "git-compare", T["Nav.SchemaCompare"].Value, IsNav("SchemaCompare")); }
-                            @{ await NavItem(sqlProfilerHref, "activity", T["Nav.SqlProfiler"].Value, IsNav("SqlProfiler")); }
-                        </ul>
-                    </div>
-                    @if (showDevGroup)
-                    {
-                        <div class="nav-group">
-                            <p class="nav-group-label" id="nav-group-dev">@T["Nav.Group.Dev"]</p>
-                            <ul aria-labelledby="nav-group-dev">
-                                @{ await NavItem(componentsHref, "blocks", T["Nav.Components"].Value, IsNav(devControllers)); }
+                            <p class="nav-group-label" id="nav-group-@group.Key">@group.Label</p>
+                            <ul aria-labelledby="nav-group-@group.Key">
+                                @foreach (var item in sidebarItems)
+                                {
+                                    await NavItem(item.Href, item.Icon, item.Label, item.IsActive(navController, navAction));
+                                }
                             </ul>
                         </div>
                     }
@@ -204,6 +177,11 @@
                 <div class="topbar-actions">
                     @if (isAuthenticated)
                     {
+                        @* Opens the command palette (Ctrl/⌘+K): pages, quick commands, search in my data. *@
+                        <button class="topbar-command" type="button" data-palette-open aria-haspopup="dialog" aria-controls="tbx-palette">
+                            <tbx-icon name="search" />
+                            <span class="topbar-command-text">@T["Palette.Trigger"]</span>
+                        </button>
                         @* The focus timer keeps running on every page (Content/js/focus-clock.js); while it
                            runs, this shows the time left and leads back to the timer. *@
                         <a class="focus-chip" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html")" data-focus-chip hidden
@@ -240,8 +218,12 @@
         </div>
     </div>
     <partial name="_ConfirmModal" />
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @if (isAuthenticated)
+    {
+        <partial name="_CommandPalette" model="navGroups" />
+    }
+    <script src="~/lib/jquery/dist/jquery.min.js" asp-append-version="true"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
     <script src="~/js/adaptive-background.js" asp-append-version="true"></script>
     @if (hasFlashNotification)
     {
@@ -250,6 +232,8 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     @if (isAuthenticated)
     {
+        <script src="~/js/shortcuts.js" asp-append-version="true"></script>
+        <script src="~/js/command-palette.js" asp-append-version="true"></script>
         <script src="~/js/focus-clock.js" asp-append-version="true"></script>
     }
     @await RenderSectionAsync("Scripts", required: false)

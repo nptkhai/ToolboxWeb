@@ -1141,11 +1141,6 @@
         loadDetail(id);
     }
 
-    function isTyping(target) {
-        return target instanceof HTMLElement
-            && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
-    }
-
     // ---------------------------------------------------------------- detail
 
     async function loadDetail(id) {
@@ -1631,19 +1626,19 @@
         }
     });
 
-    document.addEventListener('keydown', function (event) {
-        const key = event.key ? event.key.toLowerCase() : '';
-        if ((key !== 'j' && key !== 'k') || event.ctrlKey || event.metaKey || event.altKey
-            || isTyping(event.target) || document.querySelector('.modal.show')
-            || document.getElementById('sc-results').hidden
-            || !document.getElementById('sc-pane-result').classList.contains('active')
-            || !state.rows.length) {
-            return;
-        }
-
-        event.preventDefault();
-        stepRow(key === 'j' ? 1 : -1);
-    });
+    // J / K step through the differences of the result list (Toolbox.keys, Content/js/shortcuts.js).
+    if (window.Toolbox?.keys) {
+        window.Toolbox.keys.add({
+            keys: ['j', 'k'],
+            label: window.Toolbox.keys.label('nextPrevious'),
+            when: function () {
+                return !document.getElementById('sc-results').hidden
+                    && document.getElementById('sc-pane-result').classList.contains('active')
+                    && state.rows.length > 0;
+            },
+            run: function (event) { stepRow(event.key.toLowerCase() === 'j' ? 1 : -1); }
+        });
+    }
 
     document.getElementById('sc-refresh-script').addEventListener('click', function () {
         loadScript(true);

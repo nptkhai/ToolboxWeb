@@ -45,10 +45,6 @@
         return input ? input.value : '';
     }
 
-    function isTyping(target) {
-        return target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
-    }
-
     // navigator.clipboard needs a secure context; the site may be served over plain http on a
     // LAN address, so fall back to the old selection-based copy there.
     async function copyText(text) {
@@ -539,47 +535,42 @@
         }
     });
 
-    document.addEventListener('keydown', function (event) {
-        const key = event.key;
+    // Shortcuts (Toolbox.keys, Content/js/shortcuts.js): Ctrl/⌘+S saves, ↑ ↓ move between notes
+    // in the list (Enter opens the one in focus, it is a link), "/" searches, N creates.
+    const keys = window.Toolbox?.keys;
+    if (keys) {
+        const searchBox = root.querySelector('[data-shortcut-target="search"]');
+        const newButton = root.querySelector('[data-shortcut-target="new"]');
+        const createModal = document.getElementById('nv-create');
+        const focusedItem = function (event) { return event.target.closest && event.target.closest('.nv-item'); };
 
-        if ((event.ctrlKey || event.metaKey) && (key === 's' || key === 'S')) {
-            event.preventDefault();
-            saveCurrent();
-            return;
-        }
-
-        if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)
-            || document.querySelector('.modal.show')) {
-            return;
-        }
-
-        // ↑ ↓ move between notes in the list; Enter opens the one in focus (it is a link).
-        const item = event.target.closest && event.target.closest('.nv-item');
-        if (item && (key === 'ArrowDown' || key === 'ArrowUp')) {
-            const items = Array.from(root.querySelectorAll('[data-nv-items] .nv-item'));
-            const next = items[items.indexOf(item) + (key === 'ArrowDown' ? 1 : -1)];
-            if (next) {
-                event.preventDefault();
-                next.focus();
+        keys.add({ keys: 'mod+s', label: keys.label('save'), inInputs: true, inModal: true, run: saveCurrent });
+        keys.add({
+            keys: ['arrowdown', 'arrowup'],
+            label: keys.label('move'),
+            display: ['↑ ↓'],
+            when: focusedItem,
+            run: function (event) {
+                const items = Array.from(root.querySelectorAll('[data-nv-items] .nv-item'));
+                const item = focusedItem(event);
+                items[items.indexOf(item) + (event.key === 'ArrowDown' ? 1 : -1)]?.focus();
             }
-            return;
+        });
+        if (searchBox) {
+            keys.add({ keys: '/', label: keys.label('search'), button: searchBox, run: function () { searchBox.focus(); searchBox.select(); } });
         }
+        if (createModal && window.bootstrap) {
+            keys.add({ keys: 'n', label: keys.label('new'), button: newButton, run: function () { bootstrap.Modal.getOrCreateInstance(createModal).show(); } });
 
-        if (key === '/') {
-            const search = root.querySelector('[data-shortcut-target="search"]');
-            if (search) {
-                event.preventDefault();
-                search.focus();
-                search.select();
-            }
-        } else if ((key === 'n' || key === 'N') && window.bootstrap) {
-            const modal = document.getElementById('nv-create');
-            if (modal) {
-                event.preventDefault();
-                bootstrap.Modal.getOrCreateInstance(modal).show();
+            // Opened from the command palette ("New note"): open the form once, then drop the flag.
+            if (new URLSearchParams(window.location.search).get('new') === '1') {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('new');
+                window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+                bootstrap.Modal.getOrCreateInstance(createModal).show();
             }
         }
-    });
+    }
 
     // In a Mixed group the editor follows the picked format. CSS shows the right block; this
     // switches the other blocks off so a hidden editor cannot overwrite what is being saved.

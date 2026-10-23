@@ -36,11 +36,6 @@
         }
     }
 
-    function isTyping(target) {
-        return target instanceof HTMLElement
-            && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
-    }
-
     function token() {
         return page.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
     }
@@ -362,51 +357,42 @@
         sort.submit();
     });
 
-    // Up/Down move between links, Enter opens, C copies the address, E edits, Alt+Up/Down
-    // reorders. "/" and "N" come from list-page.js.
-    document.addEventListener('keydown', function (event) {
-        if (event.ctrlKey || event.metaKey || isTyping(event.target) || document.querySelector('.modal.show')) {
-            return;
-        }
+    // Shortcuts (Toolbox.keys, Content/js/shortcuts.js): ↑ ↓ move between links, Enter opens,
+    // C copies the address, E edits, Alt+↑/↓ reorders. "/" and "N" come from list-page.js.
+    const keys = window.Toolbox?.keys;
+    if (keys) {
+        const allRows = function () { return Array.from(page.querySelectorAll('[data-link-row]')); };
+        const activeRow = function () { return document.activeElement?.closest?.('[data-link-row]') || null; };
+        const activeLink = function () { const row = activeRow(); return row ? byId.get(row.dataset.id) : null; };
 
-        const rows = Array.from(page.querySelectorAll('[data-link-row]'));
-        if (!rows.length) {
-            return;
-        }
-
-        const active = document.activeElement?.closest?.('[data-link-row]');
-        const key = event.key;
-
-        if (event.altKey) {
-            if (active && canReorder && (key === 'ArrowUp' || key === 'ArrowDown')) {
-                event.preventDefault();
-                moveRow(active, key === 'ArrowUp' ? -1 : 1);
+        keys.add({
+            keys: ['arrowdown', 'arrowup'],
+            label: keys.label('move'),
+            display: ['↑ ↓'],
+            when: function () { return allRows().length > 0; },
+            run: function (event) {
+                const rows = allRows();
+                const index = rows.indexOf(activeRow());
+                const next = rows[Math.min(rows.length - 1, Math.max(0, index + (event.key === 'ArrowDown' ? 1 : -1)))] || rows[0];
+                next.focus();
             }
-            return;
+        });
+        keys.add({
+            keys: 'enter',
+            label: keys.label('open'),
+            when: function () { const row = activeRow(); return Boolean(row && document.activeElement === row && activeLink()); },
+            run: function () { openLink(activeLink()); }
+        });
+        keys.add({ keys: 'c', label: keys.label('copyAddress'), when: activeLink, run: function () { copyUrl(activeLink()); } });
+        keys.add({ keys: 'e', label: keys.label('edit'), when: activeLink, run: function () { openEdit(activeLink()); } });
+        if (canReorder) {
+            keys.add({
+                keys: ['alt+arrowup', 'alt+arrowdown'],
+                label: keys.label('reorder'),
+                display: [keys.display('alt+arrowup') + ' ' + keys.display('arrowdown')],
+                when: activeRow,
+                run: function (event) { moveRow(activeRow(), event.key === 'ArrowUp' ? -1 : 1); }
+            });
         }
-
-        if (key === 'ArrowDown' || key === 'ArrowUp') {
-            event.preventDefault();
-            const index = active ? rows.indexOf(active) : -1;
-            const next = rows[Math.min(rows.length - 1, Math.max(0, index + (key === 'ArrowDown' ? 1 : -1)))] || rows[0];
-            next.focus();
-            return;
-        }
-
-        const link = active ? byId.get(active.dataset.id) : null;
-        if (!link) {
-            return;
-        }
-
-        if (key === 'Enter' && document.activeElement === active) {
-            event.preventDefault();
-            openLink(link);
-        } else if (key === 'c' || key === 'C') {
-            event.preventDefault();
-            copyUrl(link);
-        } else if (key === 'e' || key === 'E') {
-            event.preventDefault();
-            openEdit(link);
-        }
-    });
+    }
 })(window, document);

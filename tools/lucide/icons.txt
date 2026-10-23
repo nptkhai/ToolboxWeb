@@ -16,6 +16,7 @@ circle-check
 clock
 copy
 copy-plus
+corner-down-left
 database
 download
 ellipsis
@@ -26,11 +27,13 @@ file-text
 gauge
 git-compare
 grip-vertical
+history
 image
 inbox
 info
 kanban
 key-round
+keyboard
 languages
 layout-dashboard
 layout-grid
@@ -58,6 +61,7 @@ search
 settings
 shield-check
 smartphone
+square-check
 sticky-note
 sun
 table

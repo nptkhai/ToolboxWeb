@@ -30,6 +30,12 @@ public interface IPromptTemplateService
     Task<bool> DeleteAsync(string userId, int id);
     Task<PromptExportFile> ExportAsync(string userId);
     Task<PromptImportResult> ImportAsync(string userId, IReadOnlyList<PromptExportItem> items);
+
+    /// <summary>Each built-in prompt and whether the user is missing it, has an older text, or has the current one.</summary>
+    Task<IReadOnlyList<PromptSeedStatus>> GetSeedStatusAsync(string userId);
+
+    /// <summary>Adds the missing built-in prompts in <paramref name="addKeys"/> and puts the current text back into those in <paramref name="replaceKeys"/>.</summary>
+    Task<PromptRestoreResult> RestoreSeedsAsync(string userId, IReadOnlyCollection<string> addKeys, IReadOnlyCollection<string> replaceKeys);
 }
 
 public class PromptTemplateService : IPromptTemplateService
@@ -288,6 +294,69 @@ public class PromptTemplateService : IPromptTemplateService
 
         return new PromptImportResult(created, skipped);
     }
+
+    public async Task<IReadOnlyList<PromptSeedStatus>> GetSeedStatusAsync(string userId)
+    {
+        var mine = await _db.PromptTemplates.AsNoTracking().Where(x => x.UserId == userId).OrderBy(x => x.Id).ToListAsync();
+        return SeedData.PromptSeeds.Select(seed =>
+        {
+            var current = SeedData.CreatePrompt(userId, _localizer, seed.Category, seed.Key);
+            var existing = FindByName(mine, current.Name);
+            var state = existing is null ? PromptSeedState.Missing
+                : SameText(existing, current) ? PromptSeedState.Current
+                : PromptSeedState.Changed;
+            return new PromptSeedStatus(seed.Key, current.Name, state);
+        }).ToList();
+    }
+
+    public async Task<PromptRestoreResult> RestoreSeedsAsync(string userId, IReadOnlyCollection<string> addKeys, IReadOnlyCollection<string> replaceKeys)
+    {
+        var mine = await _db.PromptTemplates.Where(x => x.UserId == userId).OrderBy(x => x.Id).ToListAsync();
+        var added = 0;
+        var replaced = 0;
+        foreach (var seed in SeedData.PromptSeeds)
+        {
+            var current = SeedData.CreatePrompt(userId, _localizer, seed.Category, seed.Key);
+            var existing = FindByName(mine, current.Name);
+            if (existing is null && addKeys.Contains(seed.Key))
+            {
+                _db.PromptTemplates.Add(current);
+                added++;
+            }
+            else if (existing is not null && replaceKeys.Contains(seed.Key) && !SameText(existing, current))
+            {
+                // The user's pin and use count stay; only the text goes back to the built-in one.
+                existing.Category = current.Category;
+                existing.Description = current.Description;
+                existing.InputVariables = current.InputVariables;
+                existing.OutputFormat = current.OutputFormat;
+                existing.Content = current.Content;
+                existing.UpdatedAt = DateTime.UtcNow;
+                replaced++;
+            }
+        }
+
+        if (added + replaced > 0)
+        {
+            await _db.SaveChangesAsync();
+            await _activityLog.LogAsync(userId, ActivityActionType.Update, ActivityEntityType.PromptTemplate, null,
+                _localizer["ActivityLog.PromptSeedsRestoredSummary", added, replaced].Value);
+        }
+
+        return new PromptRestoreResult(added, replaced);
+    }
+
+    private static PromptTemplate? FindByName(IEnumerable<PromptTemplate> prompts, string name) =>
+        prompts.FirstOrDefault(x => string.Equals(x.Name.Trim(), name.Trim(), StringComparison.CurrentCultureIgnoreCase));
+
+    private static bool SameText(PromptTemplate a, PromptTemplate b) =>
+        Text(a.Content) == Text(b.Content)
+        && Text(a.Description) == Text(b.Description)
+        && Text(a.InputVariables) == Text(b.InputVariables)
+        && Text(a.OutputFormat) == Text(b.OutputFormat);
+
+    // Line endings and outer spaces do not make a prompt "changed".
+    private static string Text(string? value) => (value ?? string.Empty).Replace("\r\n", "\n").Trim();
 
     private static string Key(string name, string content) => name.Trim().ToLowerInvariant() + "\n" + content.Trim();
 }

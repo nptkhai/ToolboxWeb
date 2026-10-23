@@ -15,13 +15,14 @@ Actual result: {{actual_result}}.
 Expected result: {{expected_result}}.
 User or data context: {{user_data_context}}.
 
-Find the root cause, fix it in the right layer with the smallest correct change, and avoid unrelated refactors. If the fix touches UI, follow the UI Standard in AGENTS.md.
+Find the root cause, fix it in the right layer with the smallest correct change, and avoid unrelated refactors. If the bug sits in a shared part (components.css, vendor-sync.css, site.js, list-page.js, shortcuts.js, a shared partial), fix it there instead of patching one page, and list the other screens it affects. If the fix touches UI, follow the UI Standard in AGENTS.md.
 
 Respond with:
 1. Root cause
 2. Proposed fix and files changed
-3. User isolation, validation and migration impact
-4. Tests to add or rerun, and what could not be verified
+3. Other screens that use the same code
+4. User isolation, validation and migration impact
+5. Tests to add or rerun (dotnet build, tests/ui), and what could not be verified
 ```
 
 ## Code Review (seed: CodeReview)
@@ -33,7 +34,13 @@ Variables: `{{change_to_review}}`
 
 Review this change: {{change_to_review}}.
 
-Prioritize, in order: bugs, security, user isolation (UserId filtering), validation, migration safety, third-party license policy (AGENTS.md), UI Standard violations (labels, confirmations, color literals, localization), and missing tests.
+Prioritize, in order: bugs and data loss, security, user isolation (UserId filtering), validation, migration safety, the third-party license policy (AGENTS.md), then drift from the design system:
+- color literals or new aliases instead of tokens; page CSS that repeats components.css; Kendo or Tabulator styled outside vendor-sync.css;
+- a page missing from ViewModels/AppNavigation.cs, or a second page title in the content;
+- a keydown listener instead of Toolbox.keys, window.confirm or a hand-made dialog instead of Toolbox.confirm, echarts.init instead of charts.js;
+- hard-coded or mixed-language text, dates or numbers not formatted for the UI culture;
+- a list or data area without empty, loading or error state; a delete or external write without a confirmation naming the item;
+- no tests/ui update, or no line in docs/UI_UX_REVIEW.md for a screen change.
 
 Respond with:
 1. Findings with file and line, most severe first
@@ -51,14 +58,15 @@ Summarize module {{module}} for a new maintainer.
 
 Respond with:
 1. Purpose
-2. Controller and actions
+2. Controller and actions, and its entry in ViewModels/AppNavigation.cs
 3. Services
 4. Domain entities
 5. ViewModels and Razor views
-6. Front-end assets (CSS, JS, third-party widgets) and their licenses
-7. Data flow
-8. Risks when changing it
-9. Verification checklist
+6. Shared building blocks it uses (components.css classes, partials, Toolbox helpers, keyboard shortcuts)
+7. Front-end assets (CSS, JS, third-party widgets) and their licenses
+8. Data flow
+9. Risks when changing it
+10. Verification checklist
 ```
 
 ## Third-Party License Check (docs only, not seeded yet)

@@ -8,6 +8,25 @@ namespace ToolboxWeb.Web.Data;
 
 public static class SeedData
 {
+    /// <summary>
+    /// The built-in prompts: category and localization key prefix (SeedPrompt.{Key}.*). The texts
+    /// live in docs/FEATURE_PROMPTS.md, docs/MAINTENANCE_PROMPTS.md and both localization files.
+    /// </summary>
+    public static readonly IReadOnlyList<(PromptCategory Category, string Key)> PromptSeeds =
+    [
+        (PromptCategory.FeatureRequest, "FeatureRequest"),
+        (PromptCategory.BugReport, "BugReport"),
+        (PromptCategory.Maintenance, "MaintenanceHandoff"),
+        (PromptCategory.CodeReview, "CodeReview"),
+        (PromptCategory.UiChange, "UiChange"),
+        (PromptCategory.UiChange, "NewScreen"),
+        (PromptCategory.DatabaseChange, "DatabaseChange")
+    ];
+
+    /// <summary>
+    /// Gives a user the built-in prompts of every category they have none in. A user who already
+    /// has prompts keeps them; "Restore built-in prompts" on the prompt page brings newer texts.
+    /// </summary>
     public static async Task EnsureUserDefaultsAsync(ApplicationDbContext db, string userId, IStringLocalizer<SharedResource> localizer)
     {
         var existingCategories = await db.PromptTemplates
@@ -15,13 +34,10 @@ public static class SeedData
             .Select(x => x.Category)
             .ToListAsync();
 
-        var promptsToAdd = new List<PromptTemplate>();
-        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.FeatureRequest, "SeedPrompt.FeatureRequest");
-        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.BugReport, "SeedPrompt.BugReport");
-        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.Maintenance, "SeedPrompt.MaintenanceHandoff");
-        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.CodeReview, "SeedPrompt.CodeReview");
-        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.UiChange, "SeedPrompt.UiChange");
-        AddIfMissing(promptsToAdd, existingCategories, userId, localizer, PromptCategory.DatabaseChange, "SeedPrompt.DatabaseChange");
+        var promptsToAdd = PromptSeeds
+            .Where(seed => !existingCategories.Contains(seed.Category))
+            .Select(seed => CreatePrompt(userId, localizer, seed.Category, seed.Key))
+            .ToList();
 
         if (promptsToAdd.Count == 0)
         {
@@ -33,18 +49,9 @@ public static class SeedData
         await db.SaveChangesAsync();
     }
 
-    private static void AddIfMissing(List<PromptTemplate> promptsToAdd, IReadOnlyCollection<PromptCategory> existingCategories, string userId, IStringLocalizer<SharedResource> localizer, PromptCategory category, string keyPrefix)
+    public static PromptTemplate CreatePrompt(string userId, IStringLocalizer<SharedResource> localizer, PromptCategory category, string key)
     {
-        if (existingCategories.Contains(category))
-        {
-            return;
-        }
-
-        promptsToAdd.Add(CreatePrompt(userId, localizer, category, keyPrefix));
-    }
-
-    private static PromptTemplate CreatePrompt(string userId, IStringLocalizer<SharedResource> localizer, PromptCategory category, string keyPrefix)
-    {
+        var keyPrefix = $"SeedPrompt.{key}";
         return new PromptTemplate
         {
             UserId = userId,

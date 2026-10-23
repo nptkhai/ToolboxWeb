@@ -164,43 +164,56 @@
     // ------------------------------------------------------------------ keyboard on rows
     const rows = function () { return Array.from(page.querySelectorAll('[data-todo-row]')); };
 
-    function isTyping(target) {
-        return target && (target.isContentEditable || /^(input|textarea|select)$/i.test(target.tagName));
-    }
+    // Row keys (Toolbox.keys, Content/js/shortcuts.js) act on the row that has the focus.
+    const keys = window.Toolbox?.keys;
+    if (keys) {
+        const focusedRow = function (event) {
+            const row = event.target.closest?.('[data-todo-row]');
+            return row && event.target === row ? row : null;
+        };
+        const onRow = function (handler) {
+            return { when: focusedRow, run: function (event) { handler(focusedRow(event), event); } };
+        };
 
-    page.addEventListener('keydown', function (event) {
-        const row = event.target.closest?.('[data-todo-row]');
-        if (!row || event.target !== row || event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) {
-            return;
-        }
-
-        const list = rows();
-        const index = list.indexOf(row);
-        const key = event.key;
-        if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'j' || key === 'k') {
-            event.preventDefault();
-            const next = list[index + (key === 'ArrowDown' || key === 'j' ? 1 : -1)];
-            next?.focus();
-        } else if (key === 'x' || key === 'X') {
-            event.preventDefault();
+        keys.add(Object.assign({ keys: ['arrowdown', 'arrowup', 'j', 'k'], label: keys.label('move'), display: ['↑ ↓'] }, onRow(function (row, event) {
+            const list = rows();
+            const down = event.key === 'ArrowDown' || event.key === 'j';
+            list[list.indexOf(row) + (down ? 1 : -1)]?.focus();
+        })));
+        keys.add(Object.assign({ keys: 'x', label: keys.label('done') }, onRow(function (row) {
             row.querySelector('[data-todo-toggle]')?.click();
-        } else if (key === 'e' || key === 'E' || key === 'Enter') {
-            event.preventDefault();
+        })));
+        keys.add(Object.assign({ keys: ['e', 'enter'], label: keys.label('edit') }, onRow(function (row) {
             openForm(rowData(row));
-        } else if (key === 'Delete' || key === 'Backspace') {
-            event.preventDefault();
+        })));
+        keys.add(Object.assign({ keys: ['delete', 'backspace'], label: keys.label('delete'), display: ['Delete'] }, onRow(function (row) {
             row.querySelector('[data-todo-delete]')?.click();
-        } else if (key === ' ') {
-            event.preventDefault();
+        })));
+        keys.add(Object.assign({ keys: 'space', label: keys.label('selectMany') }, onRow(function (row) {
             if (!page.classList.contains('is-selecting')) {
                 setSelecting(true);
             }
-
             const box = row.querySelector('[data-todo-select]');
             box.checked = !box.checked;
             updateBulk();
-        } else if (key === 'Escape' && page.classList.contains('is-selecting')) {
-            setSelecting(false);
-        }
-    });
+        })));
+        keys.add({
+            keys: 'escape',
+            label: keys.label('exitSelect'),
+            hidden: true,
+            when: function () { return page.classList.contains('is-selecting'); },
+            run: function () { setSelecting(false); }
+        });
+    }
+
+    // Opened from the command palette on one to-do (?focus=<id>): put the focus on its row.
+    const focusId = new URLSearchParams(window.location.search).get('focus');
+    if (focusId) {
+        const target = rows().find(function (row) { return String(rowData(row)?.id) === focusId; });
+        target?.focus();
+        target?.scrollIntoView({ block: 'center' });
+        const url = new URL(window.location.href);
+        url.searchParams.delete('focus');
+        window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
 })(window, document);

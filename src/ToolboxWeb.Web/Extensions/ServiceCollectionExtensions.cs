@@ -22,6 +22,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INoteService, NoteService>();
         services.AddScoped<IChecklistService, ChecklistService>();
         services.AddScoped<IQuickLinkService, QuickLinkService>();
+        services.AddScoped<IQuickSearchService, QuickSearchService>();
         services.AddScoped<IPromptTemplateService, PromptTemplateService>();
         services.AddScoped<IFocusSessionService, FocusSessionService>();
         services.AddScoped<IDashboardService, DashboardService>();

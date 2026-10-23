@@ -135,11 +135,6 @@
         return holder.firstElementChild;
     }
 
-    function isTyping(target) {
-        return target instanceof HTMLElement
-            && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
-    }
-
     // ---------------------------------------------------------- connection
 
     function loginSignature(value) {
@@ -1068,17 +1063,15 @@
         }
     });
 
-    document.addEventListener('keydown', function (event) {
-        const key = event.key ? event.key.toLowerCase() : '';
-        if ((key !== 'j' && key !== 'k') || event.ctrlKey || event.metaKey || event.altKey
-            || isTyping(event.target) || document.querySelector('.modal.show')
-            || root.querySelector('[data-results="capture"]').hidden) {
-            return;
-        }
-
-        event.preventDefault();
-        stepRow(key === 'j' ? 1 : -1);
-    });
+    // J / K step through the captured statements (Toolbox.keys, Content/js/shortcuts.js).
+    if (window.Toolbox?.keys) {
+        window.Toolbox.keys.add({
+            keys: ['j', 'k'],
+            label: window.Toolbox.keys.label('nextPrevious'),
+            when: function () { return !root.querySelector('[data-results="capture"]').hidden; },
+            run: function (event) { stepRow(event.key.toLowerCase() === 'j' ? 1 : -1); }
+        });
+    }
 
     // Closing the tab would otherwise leave an event session running on the server until the
     // auto-stop deadline. sendBeacon cannot carry the antiforgery header, so this posts to a

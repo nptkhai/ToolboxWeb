@@ -37,11 +37,6 @@
         return window.Toolbox?.format?.number ? window.Toolbox.format.number(value, 0) : String(value);
     }
 
-    function isTyping(target) {
-        return target instanceof HTMLElement
-            && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.closest('.k-input'));
-    }
-
     // ------------------------------------------------------------ controls
 
     const minutesInput = page.querySelector('[data-focus-minutes]');
@@ -365,19 +360,18 @@
         noteModalElement.querySelector('[data-note-text]').focus();
     });
 
-    // Space starts or pauses, R resets.
-    document.addEventListener('keydown', function (event) {
-        if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target) || document.querySelector('.modal.show')) {
-            return;
-        }
-        if (event.key === ' ' && !(event.target instanceof HTMLButtonElement)) {
-            event.preventDefault();
-            toggleButton.click();
-        } else if (event.key === 'r' || event.key === 'R') {
-            event.preventDefault();
-            focus.reset();
-        }
-    });
+    // Space starts or pauses, R resets (Toolbox.keys, Content/js/shortcuts.js).
+    const keys = window.Toolbox?.keys;
+    if (keys) {
+        keys.add({
+            keys: 'space',
+            label: keys.label('startPause'),
+            button: toggleButton,
+            when: function (event) { return !(event.target instanceof HTMLButtonElement); },
+            run: function () { toggleButton.click(); }
+        });
+        keys.add({ keys: 'r', label: keys.label('reset'), button: page.querySelector('[data-focus-reset]'), run: focus.reset });
+    }
 
     // ------------------------------------------------------------ start
 
