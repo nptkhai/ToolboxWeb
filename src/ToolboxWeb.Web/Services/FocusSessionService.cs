@@ -89,9 +89,14 @@ public class FocusSessionService : IFocusSessionService
 
     public async Task<int?> CompleteAsync(string userId, FocusSessionFormViewModel model)
     {
-        var completedAt = DateTime.UtcNow;
-        var startedAt = model.StartedAtMs is long ms && ms > 0
-            ? DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime
+        var now = DateTime.UtcNow;
+        // The browser's times are trusted only when they make sense: not in the future, the end
+        // after the start. Otherwise the session counts as ending now.
+        var completedAt = FromBrowserTime(model.EndedAtMs) is { } ended && ended <= now.AddMinutes(1)
+            ? (ended > now ? now : ended)
+            : now;
+        var startedAt = FromBrowserTime(model.StartedAtMs) is { } started && started <= completedAt
+            ? started
             : completedAt.AddMinutes(-model.DurationMinutes);
 
         // The timer runs in every open tab; when it ends, each tab may send the same session.
@@ -151,6 +156,14 @@ public class FocusSessionService : IFocusSessionService
         await _db.SaveChangesAsync();
         await _activityLog.LogAsync(userId, ActivityActionType.Delete, ActivityEntityType.FocusSession, session.Id.ToString(), _localizer["ActivityLog.FocusSessionDeletedSummary", session.DurationMinutes].Value);
         return true;
+    }
+
+    private static DateTime? FromBrowserTime(long? ms)
+    {
+        // Year 2000 to 9999: a value outside that is not a real time.
+        return ms is long value && value is > 946_684_800_000 and < 253_402_300_799_000
+            ? DateTimeOffset.FromUnixTimeMilliseconds(value).UtcDateTime
+            : null;
     }
 
     private static DateTime ToUtc(DateTime appDate)

@@ -243,6 +243,13 @@ public class PromptTemplateService : IPromptTemplateService
         var skipped = 0;
         foreach (var item in items.Take(MaxImportItems))
         {
+            // A JSON array may hold null or other junk entries; they are skipped, not an error.
+            if (item is null)
+            {
+                skipped++;
+                continue;
+            }
+
             var name = item.Name?.Trim() ?? string.Empty;
             var content = item.Content?.Trim() ?? string.Empty;
             if (name.Length is 0 or > 140 || content.Length == 0

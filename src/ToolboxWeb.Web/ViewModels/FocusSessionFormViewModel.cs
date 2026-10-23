@@ -18,6 +18,12 @@ public class FocusSessionFormViewModel
     /// two open tabs; the start time lets the server keep only one of them.
     /// </summary>
     public long? StartedAtMs { get; set; }
+
+    /// <summary>
+    /// When the session really ended, in ms since 1970 (browser clock). A session that ran out
+    /// while the browser was closed is sent later; this keeps it on the day it ended.
+    /// </summary>
+    public long? EndedAtMs { get; set; }
 }
 
 public class FocusSessionNoteViewModel

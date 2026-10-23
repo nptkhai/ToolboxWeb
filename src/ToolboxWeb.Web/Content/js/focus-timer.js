@@ -327,7 +327,8 @@
 
     stopModalElement.querySelector('[data-focus-save-stop]').addEventListener('click', async function () {
         stopModal?.hide();
-        if (await focus.stop(true)) {
+        // "queued": not stored yet, kept in the browser and sent again later (a notice says so).
+        if (await focus.stop(true) === 'saved') {
             window.location.reload();
         }
     });
@@ -338,8 +339,16 @@
     });
 
     // A session saved on this page (when it ran out) shows up in the numbers and the history.
+    // The reload waits for the chime, which a reload would cut off.
     window.addEventListener('toolbox:focus-saved', function () {
-        window.setTimeout(function () { window.location.reload(); }, 1500);
+        const reloadWhenQuiet = function () {
+            if (focus.isRinging()) {
+                window.setTimeout(reloadWhenQuiet, 500);
+            } else {
+                window.location.reload();
+            }
+        };
+        window.setTimeout(reloadWhenQuiet, 1500);
     });
 
     // Note editing in the history.
