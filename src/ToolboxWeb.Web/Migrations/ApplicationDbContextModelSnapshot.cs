@@ -312,6 +312,9 @@ namespace ToolboxWeb.Web.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("ChecklistItemId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("CompletedAt")
                         .HasColumnType("TEXT");
 
@@ -330,6 +333,8 @@ namespace ToolboxWeb.Web.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ChecklistItemId");
 
                     b.HasIndex("UserId", "CompletedAt");
 
@@ -614,11 +619,18 @@ namespace ToolboxWeb.Web.Data.Migrations
 
             modelBuilder.Entity("ToolboxWeb.Web.Domain.FocusSession", b =>
                 {
+                    b.HasOne("ToolboxWeb.Web.Domain.ChecklistItem", "ChecklistItem")
+                        .WithMany()
+                        .HasForeignKey("ChecklistItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("ToolboxWeb.Web.Domain.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("ChecklistItem");
 
                     b.Navigation("User");
                 });

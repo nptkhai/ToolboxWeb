@@ -685,3 +685,34 @@ kbd.tbx-kbd {
     font-variant-numeric: tabular-nums;
     text-align: right;
 }
+
+/* ---------------------------------------------------------------- focus timer chip */
+/* Header chip while the focus timer runs (_Layout.cshtml, Content/js/focus-clock.js). */
+
+.focus-chip {
+    align-items: center;
+    background: var(--accent-tint);
+    border-radius: var(--radius-chip);
+    color: var(--accent-strong);
+    display: inline-flex;
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-semibold);
+    gap: var(--space-1);
+    min-height: 28px;
+    padding: 0 var(--space-3);
+    text-decoration: none;
+}
+
+    .focus-chip[hidden] {
+        display: none;
+    }
+
+    .focus-chip.is-break {
+        background: var(--success-tint);
+        color: var(--success);
+    }
+
+    .focus-chip.is-paused {
+        opacity: .7;
+    }

@@ -9,5 +9,9 @@ public class FocusSession
     public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
     public string? Note { get; set; }
 
+    /// <summary>The to-do worked on, if one was picked; cleared when that to-do is purged.</summary>
+    public int? ChecklistItemId { get; set; }
+    public ChecklistItem? ChecklistItem { get; set; }
+
     public ApplicationUser? User { get; set; }
 }
