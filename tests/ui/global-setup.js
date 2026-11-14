@@ -18,7 +18,7 @@ async function register(page, baseURL) {
   await page.fill('#Input_Email', EMAIL);
   await page.fill('#Input_Password', PASSWORD);
   await page.fill('#Input_ConfirmPassword', PASSWORD);
-  await Promise.all([page.waitForLoadState('networkidle'), page.click('#registerSubmit')]);
+  await Promise.all([page.waitForLoadState('networkidle'), page.click('form button[type="submit"].auth-login-submit')]);
   // Registration signs the new user in and leaves the Identity pages.
   return !page.url().includes('/Identity/Account/');
 }
@@ -30,7 +30,7 @@ async function seedSampleData(page, baseURL) {
     for (const title of ['Review PR schema compare', 'Chuẩn bị báo cáo tuần', 'Fix bug login Jira']) {
       await page.click('[data-list-new]');
       await page.fill('#todo-title', title);
-      await Promise.all([page.waitForNavigation(), page.click('#todo-create button[type="submit"]')]);
+      await Promise.all([page.waitForNavigation(), page.click('[data-todo-form-submit]')]);
     }
   }
   await page.goto(`${baseURL}/quick-links.html`);

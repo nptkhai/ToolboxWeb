@@ -1,0 +1,11 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Toolkit mark for small sizes (favicon, sidebar): full-bleed tile, no outline, glyph 1.3x with thicker strokes. -->
+  <defs>
+    <linearGradient id="tkMarkGradient" gradientUnits="userSpaceOnUse" x1="20" y1="20" x2="180" y2="180">
+      <stop offset="0" stop-color="#8ED3F2"/>
+      <stop offset="1" stop-color="#4B87BB"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="40" fill="#0E1720"/>
+  <path d="M45.4 40.2H154.6L100 100M100 40.2V159.8M100 100L154.6 159.8" fill="none" stroke="url(#tkMarkGradient)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

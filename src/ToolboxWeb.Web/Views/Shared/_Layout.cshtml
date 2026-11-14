@@ -28,6 +28,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>@ViewData["Title"] - @T["App.Name"]</title>
+    <link rel="icon" href="~/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/svg+xml" href="~/brand/toolkit-mark.svg" asp-append-version="true" />
+    <link rel="apple-touch-icon" href="~/brand/apple-touch-icon.png" asp-append-version="true" />
     <script type="importmap"></script>
     <link rel="preload" href="~/vendor/fonts/inter/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="~/vendor/fonts/inter/inter.css" asp-append-version="true" />
@@ -119,7 +122,7 @@
             <aside class="app-sidebar" id="app-sidebar">
                 <div class="sidebar-head">
                     <a class="brand" href="@brandHref">
-                        <span class="brand-mark" aria-hidden="true">TW</span>
+                        <img class="brand-mark" src="~/brand/toolkit-mark.svg" asp-append-version="true" alt="" width="28" height="28" />
                         <span class="brand-name">@T["App.Name"]</span>
                     </a>
                     <button class="icon-button sidebar-close" type="button" data-sidebar-close aria-label="@T["Action.CloseMenu"]">
@@ -154,7 +157,7 @@
                 @if (!isAuthenticated)
                 {
                     <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">
-                        <span class="brand-mark" aria-hidden="true">TW</span>
+                        <img class="brand-mark" src="~/brand/toolkit-mark.svg" asp-append-version="true" alt="" width="28" height="28" />
                         <span class="brand-name">@T["App.Name"]</span>
                     </a>
                 }

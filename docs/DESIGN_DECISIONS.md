@@ -153,6 +153,18 @@ Riêng `#4B87BB` (3,8:1 trên nền trắng) và `#8ED3F2` (1,65:1 trên nền t
   3. **Bảng token:** màu (kèm độ tương phản), cỡ chữ, khoảng cách, bo góc, nút, ô nhập, nhãn trạng thái.
 - **Trạng thái:** Đã xem và duyệt 21/10/2026. Bản mẫu đã được cập nhật theo màu nhấn đã chọn.
 
+## 2.K Tên sản phẩm và logo
+
+- **Quyết định (14/11/2026):** tên hiển thị là **Toolkit**; mã nguồn giữ tên ToolboxWeb.
+- **Logo:** chữ TK chung nét trên khối tối, gradient `#8ED3F2` → `#4B87BB` (đúng hai giá trị `--accent-brand`). File gốc do chủ dự án cung cấp (`docs/brand/source/`).
+- **Đã chỉnh:**
+  - gom ba nét thành một path, hết chấm tối ở chỗ nối;
+  - gradient trải theo cả biểu tượng;
+  - thêm bản cho cỡ nhỏ (`toolkit-mark.svg`) để favicon 16px đọc được;
+  - ảnh chia sẻ dùng tên thật.
+- **Chi tiết và quy tắc dùng:** `docs/brand/README.md`.
+- **Trạng thái:** đã làm.
+
 ---
 
 ## Bước tiếp theo

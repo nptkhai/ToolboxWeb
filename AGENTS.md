@@ -9,6 +9,9 @@
   - `src/ToolboxWeb.Web/Program.cs` for runtime conventions such as `Content/` as web root and localization setup.
   - `src/ToolboxWeb.Web/Constants/ToolboxRouteSlugs.cs` for canonical page and tab slugs.
 - This repo is server-rendered MVC, not a SPA. Prefer thin controllers, service-driven behavior, and Razor-first changes.
+- Product name: users see **Toolkit** (owner decision 2026-11-14). Code keeps the ToolboxWeb names: repo, solution, project `src/ToolboxWeb.Web`, namespace `ToolboxWeb.Web`, CSS prefix `tbx-`, `window.Toolbox`, `localStorage` keys `toolbox.*`, cookies and `app.db`. Write "Toolkit" in user-facing text and new product names; do not rename code identifiers. Renaming the project folder first needs `.SetApplicationName("ToolboxWeb")` on Data Protection, or saved secrets stop decrypting.
+- Logo: `docs/brand/README.md`. In the app use `Content/brand/toolkit-mark.svg` (sidebar, sign-in header, SVG favicon) and `Content/favicon.ico`; do not draw the mark in CSS or change its colors.
+- The agreed target model (web without a database, Windows desktop with a database per device, a main server for licenses and releases) is in `docs/DEPLOYMENT_MODEL.md`. Work on it starts only when the owner picks a stage.
 
 ## CodeGraph Rules
 
