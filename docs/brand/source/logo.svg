@@ -1,0 +1,23 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tkGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8ED3F2"/>
+      <stop offset="1" stop-color="#4B87BB"/>
+    </linearGradient>
+  </defs>
+  <!-- container -->
+  <rect x="16" y="16" width="168" height="168" rx="26"
+        fill="#0e1720" stroke="url(#tkGradient)" stroke-width="2.2"/>
+  <!-- T crossbar + K upper arm (one continuous path) -->
+  <path d="M58,54 L142,54 L100,100"
+        fill="none" stroke="url(#tkGradient)" stroke-width="15"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- T stem -->
+  <path d="M100,54 L100,146"
+        fill="none" stroke="url(#tkGradient)" stroke-width="15"
+        stroke-linecap="round"/>
+  <!-- K lower arm -->
+  <path d="M100,100 L142,146"
+        fill="none" stroke="url(#tkGradient)" stroke-width="15"
+        stroke-linecap="round"/>
+</svg>
