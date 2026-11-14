@@ -102,22 +102,15 @@ a {
         text-decoration: none;
     }
 
+/* The Toolkit mark (Content/brand/toolkit-mark.svg, docs/brand/README.md): a dark tile that reads on both themes. */
 .brand-mark {
-    align-items: center;
-    background: var(--accent-brand);
     border-radius: var(--radius-control);
-    color: var(--on-accent);
-    display: inline-flex;
+    /* Keeps the tile's edge on the dark sidebar. */
+    box-shadow: 0 0 0 1px var(--line);
+    display: block;
     flex: 0 0 auto;
-    font-size: var(--text-xs);
-    font-weight: 700;
     height: 28px;
-    justify-content: center;
     width: 28px;
-}
-
-:root[data-theme="light"] .brand-mark {
-    background: var(--accent);
 }
 
 .brand-name {

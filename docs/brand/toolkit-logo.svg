@@ -1,0 +1,12 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Toolkit logo (full). Source: docs/brand/source/logo.svg; see docs/brand/README.md. -->
+  <defs>
+    <linearGradient id="tkGradient" gradientUnits="userSpaceOnUse" x1="16" y1="16" x2="184" y2="184">
+      <stop offset="0" stop-color="#8ED3F2"/>
+      <stop offset="1" stop-color="#4B87BB"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="168" height="168" rx="26" fill="#0E1720" stroke="url(#tkGradient)" stroke-width="2.2"/>
+  <!-- T crossbar into the K upper arm, the T stem, the K lower arm: one path, so the joins have no seams. -->
+  <path d="M58 54H142L100 100M100 54V146M100 100L142 146" fill="none" stroke="url(#tkGradient)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

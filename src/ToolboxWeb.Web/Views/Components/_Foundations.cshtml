@@ -37,6 +37,23 @@
 <div class="component-card-grid" data-foundations>
     <article class="component-card component-card-wide">
         <div class="component-card-head">
+            <h4>@T["Components.Foundations.Logo"]</h4>
+            <tbx-component-status key="logo" />
+        </div>
+        <p class="component-note">@T["Components.Foundations.LogoNote"]</p>
+        <ul class="foundation-logo">
+            @foreach (var size in new[] { 16, 28, 48, 96 })
+            {
+                <li>
+                    <img src="~/brand/toolkit-mark.svg" asp-append-version="true" alt="" width="@size" height="@size" />
+                    <code>@(size)px</code>
+                </li>
+            }
+        </ul>
+    </article>
+
+    <article class="component-card component-card-wide">
+        <div class="component-card-head">
             <h4>@T["Components.Foundations.Colors"]</h4>
             <tbx-component-status key="tokens" />
         </div>

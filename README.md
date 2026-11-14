@@ -1,6 +1,6 @@
-# ToolboxWeb
+# Toolkit
 
-ToolboxWeb is a personal productivity web app built with ASP.NET Core MVC, SQLite, ASP.NET Identity, and a compact dashboard-first interface.
+Toolkit (source repository: ToolboxWeb) is a personal productivity web app built with ASP.NET Core MVC, SQLite, ASP.NET Identity, and a compact dashboard-first interface. The code keeps the ToolboxWeb names; the brand assets are in `docs/brand/`, and the planned web/desktop/license-server model is in `docs/DEPLOYMENT_MODEL.md`.
 
 ## Current Stack
 

@@ -722,7 +722,7 @@ public sealed class SyncScriptGenerator : ISyncScriptGenerator
         if (options.IgnoreConstraintNames) enabled.Add("ignore constraint names");
 
         script.Append("/* ===========================================================").Append(Nl);
-        script.Append("   ToolboxWeb - SQL Server schema sync script").Append(Nl);
+        script.Append("   Toolkit - SQL Server schema sync script").Append(Nl);
         script.Append(CultureInfo.InvariantCulture, $"   Source    : {source.Label}").Append(Nl);
         script.Append(CultureInfo.InvariantCulture, $"   Target    : {target.Label}").Append(Nl);
         script.Append(CultureInfo.InvariantCulture,

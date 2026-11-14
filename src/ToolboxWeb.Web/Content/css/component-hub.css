@@ -401,7 +401,8 @@
 .foundation-type,
 .foundation-spacing,
 .foundation-radius,
-.foundation-icons {
+.foundation-icons,
+.foundation-logo {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -504,6 +505,20 @@
         min-width: 0;
         padding: var(--space-2) var(--space-1);
         text-align: center;
+    }
+
+.foundation-logo {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+}
+
+    .foundation-logo li {
+        align-items: center;
+        display: grid;
+        gap: var(--space-1);
+        justify-items: center;
     }
 
 /* ---------------------------------------------------------------- catalog */

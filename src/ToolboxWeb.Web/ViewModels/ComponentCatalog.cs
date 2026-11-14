@@ -42,7 +42,7 @@ public static class ComponentCatalog
 {
     public const string FoundationsFamily = ToolboxRouteSlugs.ComponentsTabs.Foundations;
 
-    public static readonly ComponentLibrary ToolboxWeb = new("ToolboxWeb", "", "");
+    public static readonly ComponentLibrary ToolboxWeb = new("Toolkit", "", "");
     public static readonly ComponentLibrary Bootstrap = new("Bootstrap", "5.3.3", "MIT");
     public static readonly ComponentLibrary KendoCore = new("Kendo UI Core", "2026.2.520", "Apache-2.0");
     public static readonly ComponentLibrary KendoCommercial = new("Kendo UI", "", "", Commercial: true);
@@ -65,6 +65,7 @@ public static class ComponentCatalog
     public static readonly IReadOnlyList<ComponentCatalogEntry> Entries =
     [
         // Foundations: ToolboxWeb's own building blocks (Content/css/components.css, shared partials).
+        new("logo", "Logo", FoundationsFamily, ToolboxWeb, ComponentStatus.Usable, HasDemo: true),
         new("tokens", "Design tokens", FoundationsFamily, ToolboxWeb, ComponentStatus.Usable, HasDemo: true),
         new("font", "Inter", FoundationsFamily, Inter, ComponentStatus.Usable, HasDemo: true),
         new("icons", "Lucide icons", FoundationsFamily, Lucide, ComponentStatus.Usable, HasDemo: true),

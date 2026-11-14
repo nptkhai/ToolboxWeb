@@ -353,7 +353,7 @@
             return;
         }
         try {
-            new Notification('ToolboxWeb', { body: message, tag: 'toolbox-focus' });
+            new Notification('Toolkit', { body: message, tag: 'toolbox-focus' });
         } catch (error) {
             // Notifications can be refused by the system even when the site may send them.
         }
