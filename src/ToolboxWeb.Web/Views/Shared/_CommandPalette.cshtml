@@ -35,7 +35,10 @@
         commands.Add(new { Id = "lang-en", Label = T["Palette.Cmd.LanguageEn"].Value, Icon = "languages", Action = "culture:en-US", Keywords = T["Palette.Kw.Language"].Value });
     }
     commands.Add(new { Id = "shortcuts", Label = T["Palette.Cmd.Shortcuts"].Value, Icon = "keyboard", Action = "shortcuts", Keywords = T["Palette.Kw.Shortcuts"].Value });
-    commands.Add(new { Id = "sign-out", Label = T["Auth.Logout"].Value, Icon = "log-out", Action = "sign-out", Keywords = "" });
+    // A desktop has no sign-out; it can quit instead (the form in _LoginPartial).
+    commands.Add(AppMode.IsDesktop
+        ? new { Id = "desktop-exit", Label = T["Desktop.Exit"].Value, Icon = "log-out", Action = "desktop-exit", Keywords = T["Palette.Kw.Exit"].Value }
+        : new { Id = "sign-out", Label = T["Auth.Logout"].Value, Icon = "log-out", Action = "sign-out", Keywords = "" });
 
     var data = JsonSerializer.Serialize(new
     {

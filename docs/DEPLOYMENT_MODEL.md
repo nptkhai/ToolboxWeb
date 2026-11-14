@@ -108,7 +108,7 @@ Một mã nguồn (repo ToolboxWeb), chọn chế độ bằng cấu hình `App:
 | GĐ | Việc | Công sức |
 |---|---|---|
 | R0 | Đổi tên hiển thị sang Toolkit, logo mới — **đã làm 14/11/2026** | S |
-| M0 | Chế độ `App:Mode`, đường dẫn dữ liệu Desktop, sao lưu trước migration, tự đăng nhập "chủ máy" | M |
+| M0 | Chế độ `App:Mode`, đường dẫn dữ liệu Desktop, sao lưu trước migration, tự đăng nhập "chủ máy" — **đã làm 14/11/2026** (xem "Trạng thái M0") | M |
 | M1 | Trang Cài đặt + Jira lưu trên máy (tự đăng nhập lại), bỏ đăng nhập Jira kiểu cũ ở Desktop | M |
 | M2 | Chế độ Web: cookie auth Jira không DB, ẩn module cần DB, no-op nhật ký, PWA + thanh phiên bản mới | M |
 | M3 | Máy chính Toolkit License: quản trị, API kích hoạt, ký license, phát hành phiên bản, heartbeat | L |
@@ -117,6 +117,37 @@ Một mã nguồn (repo ToolboxWeb), chọn chế độ bằng cấu hình `App:
 | Sau | Mobile có DB riêng (Blazor + MAUI) nếu thật sự cần | L+ |
 
 Mỗi giai đoạn: trước khi làm, liệt kê việc cụ thể trong hộp chọn để chủ dự án đánh dấu (quy trình đã thống nhất).
+
+## Trạng thái M0 (14/11/2026)
+
+Chủ dự án chốt: **bản Desktop chỉ phát hành cho người dùng ở M5** (`Setup.exe` tải từ máy chính, kích hoạt license, tự cập nhật). Trước đó chế độ Desktop chỉ để phát triển và chạy thử. Mobile: mở site trên điện thoại → "Thêm vào màn hình chính"; từ M2 là PWA.
+
+- **`App:Mode`** (`Infrastructure/Hosting/AppMode.cs`):
+  - `Server` (mặc định) giữ nguyên site IIS hiện tại;
+  - `Desktop` bật bằng `--desktop`, `TOOLKIT_DESKTOP=1` hoặc `App__Mode=Desktop`, và nạp thêm `appsettings.Desktop.json`.
+- **Dữ liệu Desktop** nằm trong `%LOCALAPPDATA%\Toolkit` (đổi được bằng `Desktop:DataRoot`): `app.db`, `uploads/`, `keys/`, `logs/`, `backups/`, `device.json` (id chủ máy), `instance.json` (bản đang chạy).
+- **Sao lưu DB** trước khi chạy migration mới, ở mọi chế độ (`Infrastructure/Storage/DatabaseBackup.cs`):
+  - ghi vào `backups/app-<thời gian>-before-<migration>.db`, giữ 5 bản;
+  - ở Server, thư mục `backups` nằm cạnh file DB, hoặc theo `Storage:BackupsPath`;
+  - sao lưu lỗi thì app không khởi động.
+- **Chủ máy** (`Services/DeviceOwnerService.cs`): chọn theo thứ tự
+  1. tài khoản ghi trong `device.json`;
+  2. tài khoản không phải Jira có sẵn trong DB (lấy tài khoản cũ nhất nếu có nhiều);
+  3. tạo tài khoản mới mang tên người dùng Windows, không mật khẩu.
+  
+  `DesktopOwnerSignInMiddleware` tự đăng nhập chủ máy cho mọi request.
+- **Ở Desktop:**
+  - trang đăng nhập, đăng ký, đăng xuất chuyển về Tổng quan;
+  - Email, Mật khẩu, Xác thực hai lớp trả 404 và không có trong menu;
+  - "Xóa tài khoản" thành "Xóa dữ liệu trên máy";
+  - menu tài khoản và Ctrl+K có "Thoát Toolkit" thay cho "Đăng xuất".
+- **Chỉ máy đó mở được:**
+  - nghe `127.0.0.1:5180`, hoặc cổng trống khác khi 5180 bận;
+  - từ chối kết nối không phải loopback, chỉ nhận Host `localhost`/`127.0.0.1`, không chuyển HTTPS;
+  - mở lần hai thì mở trình duyệt vào bản đang chạy rồi thoát (`/desktop/ping`, `instance.json`).
+- **Jira ở Desktop:** chưa có. Làm ở M1, ngay sau M0.
+- **Chạy thử:** `dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj -- --desktop`.
+
 
 ## File chính sẽ đụng tới
 

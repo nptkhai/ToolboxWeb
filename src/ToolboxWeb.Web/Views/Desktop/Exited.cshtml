@@ -1,0 +1,38 @@
+@*
+    Shown after "Quit Toolkit" (DesktopController.Exit): the app stops right after this page is
+    sent, so the page uses no layout and nothing that would call back to the app.
+*@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.Name">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>@T["Desktop.Exited.Title"] - @T["App.Name"]</title>
+    <link rel="icon" href="~/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="stylesheet" href="~/vendor/fonts/inter/inter.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <script>
+        (function () {
+            let theme = null;
+            try { theme = localStorage.getItem('toolbox.theme'); } catch (e) { }
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.dataset.theme = theme;
+        })();
+    </script>
+</head>
+<body class="desktop-exited">
+    <main class="tbx-panel desktop-exited-panel">
+        <img src="~/brand/toolkit-mark.svg" asp-append-version="true" alt="" width="48" height="48" />
+        <h1 class="desktop-exited-title">@T["Desktop.Exited.Title"]</h1>
+        <p class="desktop-exited-text">@T["Desktop.Exited.Text"]</p>
+    </main>
+</body>
+</html>

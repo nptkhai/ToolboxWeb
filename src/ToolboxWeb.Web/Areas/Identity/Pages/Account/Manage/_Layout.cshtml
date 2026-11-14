@@ -14,7 +14,9 @@
         _ => "profile"
     };
     // Jira accounts sign in with their Jira password, so there is no ToolboxWeb password or 2FA.
+    // A desktop owner is signed in automatically: no email, password or 2FA either.
     var isJiraUser = CurrentUser.IsJiraUser;
+    var hasSignInSettings = !isJiraUser && !AppMode.IsDesktop;
 
     string? Active(string key) => key == section ? "active" : null;
     string? Current(string key) => key == section ? "page" : null;
@@ -24,8 +26,11 @@
     <nav class="account-nav" aria-label="@T["Account.NavLabel"]">
         <ul>
             <li><a class="@Active("profile")" aria-current="@Current("profile")" asp-page="./Index"><tbx-icon name="user" />@T["Profile.Nav.Profile"]</a></li>
-            <li><a class="@Active("email")" aria-current="@Current("email")" asp-page="./Email"><tbx-icon name="mail" />@T["Profile.Nav.Email"]</a></li>
-            @if (!isJiraUser)
+            @if (!AppMode.IsDesktop)
+            {
+                <li><a class="@Active("email")" aria-current="@Current("email")" asp-page="./Email"><tbx-icon name="mail" />@T["Profile.Nav.Email"]</a></li>
+            }
+            @if (hasSignInSettings)
             {
                 <li><a class="@Active("password")" aria-current="@Current("password")" asp-page="./ChangePassword"><tbx-icon name="key-round" />@T["Profile.Nav.Password"]</a></li>
                 <li><a class="@Active("two-factor")" aria-current="@Current("two-factor")" asp-page="./TwoFactorAuthentication"><tbx-icon name="shield-check" />@T["Profile.Nav.TwoFactor"]</a></li>

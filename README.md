@@ -21,6 +21,12 @@ dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj
 
 Open the URL printed by `dotnet run`. Register a user, then the app opens the dashboard.
 
+Desktop mode (one person's computer, data in `%LOCALAPPDATA%\Toolkit`, no sign-in, http://localhost:5180; see `docs/DEPLOYMENT_MODEL.md`):
+
+```powershell
+dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj -- --desktop
+```
+
 ## Source Layout
 
 - `Controllers/`: request handling and redirects.

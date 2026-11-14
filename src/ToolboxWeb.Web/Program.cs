@@ -14,12 +14,14 @@ using ToolboxWeb.Web.Data;
 using ToolboxWeb.Web.Domain;
 using ToolboxWeb.Web.Extensions;
 using ToolboxWeb.Web.Infrastructure.DacFx;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 using ToolboxWeb.Web.Infrastructure.Jira;
 using ToolboxWeb.Web.Infrastructure.Logging;
 using ToolboxWeb.Web.Infrastructure.Storage;
 using ToolboxWeb.Web.Infrastructure.Time;
 using ToolboxWeb.Web.Infrastructure.Web;
 using ToolboxWeb.Web.Localization;
+using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels.Jira;
 
 if (await DacFxExtractWorker.TryRunAsync(args))
@@ -27,19 +29,40 @@ if (await DacFxExtractWorker.TryRunAsync(args))
     return;
 }
 
+// App:Mode (docs/DEPLOYMENT_MODEL.md): Server is the shared IIS site, as before; Desktop is one
+// person's computer (--desktop, appsettings.Desktop.json), see Infrastructure/Hosting/DesktopHost.
+var desktopRequested = DesktopHost.IsRequested(ref args);
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
-    WebRootPath = "Content"
+    WebRootPath = "Content",
+    ContentRootPath = desktopRequested ? DesktopHost.ContentRoot() : null
 });
+if (desktopRequested)
+{
+    DesktopHost.AddConfiguration(builder.Configuration, args);
+}
+
+var appMode = AppModeInfo.Create(builder.Configuration, builder.Environment.ContentRootPath);
+builder.Services.AddSingleton(appMode);
+if (appMode.IsDesktop)
+{
+    if (await DesktopHost.HandOverToRunningInstanceAsync(appMode))
+    {
+        return;
+    }
+
+    DesktopHost.ConfigureUrls(builder);
+}
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
 // Under IIS Express there is no console to read, so anything worth diagnosing after the fact
-// has to reach a file. See Logging:File in appsettings.json.
-builder.Logging.AddFile(builder.Configuration, builder.Environment.ContentRootPath);
+// has to reach a file. See Logging:File in appsettings.json. A desktop logs into its data folder.
+builder.Logging.AddFile(builder.Configuration, appMode.DataRoot);
 
-var runtimeStorage = RuntimeStoragePaths.Create(builder.Environment, builder.Configuration);
+var runtimeStorage = RuntimeStoragePaths.Create(builder.Configuration, appMode);
 runtimeStorage.Initialize(builder.Environment.ContentRootPath);
 builder.Services.AddSingleton(runtimeStorage);
 
@@ -138,6 +161,7 @@ if (builder.Environment.IsDevelopment())
     mvcBuilder.AddRazorRuntimeCompilation();
 }
 builder.Services.AddToolboxServices();
+builder.Services.AddSingleton<IDeviceOwnerService, DeviceOwnerService>();
 
 // Sample Jira data for checking the Jira screens without a Jira account. Development only:
 // the flag is ignored in every other environment so it can never reach real users.
@@ -164,8 +188,15 @@ var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocali
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    // A failed backup stops the start-up: better no app than a migration without a way back.
+    await DatabaseBackup.BeforeMigrationsAsync(db, runtimeStorage, app.Logger);
     await db.Database.MigrateAsync();
     await EnsureIdentitySchemaAsync(db);
+}
+
+if (appMode.IsDesktop)
+{
+    await app.Services.GetRequiredService<IDeviceOwnerService>().GetOrCreateOwnerAsync();
 }
 
 // Configure the HTTP request pipeline.
@@ -176,12 +207,24 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    if (!appMode.IsDesktop)
+    {
+        // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+        app.UseHsts();
+    }
 }
 
 app.UseRequestLocalization(localizationOptions);
-app.UseHttpsRedirection();
+// A desktop copy talks plain HTTP to 127.0.0.1 only; there is no HTTPS endpoint to move to.
+// Its own rules (this computer only, no sign-in pages) come before every file it serves.
+if (appMode.IsDesktop)
+{
+    DesktopHost.UseDesktop(app, appMode);
+}
+else
+{
+    app.UseHttpsRedirection();
+}
 // Before the static files, so CSS, JS and SVG go out compressed (StaticAssetDelivery).
 app.UseResponseCompression();
 app.UseStaticFiles(new StaticFileOptions
@@ -193,6 +236,10 @@ app.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = StaticAssetDelive
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
+if (appMode.IsDesktop)
+{
+    app.UseMiddleware<DesktopOwnerSignInMiddleware>();
+}
 app.UseAuthorization();
 
 app.MapStaticAssets();

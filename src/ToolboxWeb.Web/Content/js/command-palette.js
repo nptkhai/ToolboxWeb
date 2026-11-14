@@ -265,6 +265,8 @@
             keys.showHelp();
         } else if (action === 'sign-out') {
             document.querySelector('form[action*="Logout"] button[type="submit"]')?.click();
+        } else if (action === 'desktop-exit') {
+            document.querySelector('form[action$="/desktop/exit"] button[type="submit"]')?.click();
         }
     }
 

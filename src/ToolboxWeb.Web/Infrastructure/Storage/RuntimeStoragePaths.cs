@@ -1,12 +1,22 @@
+using ToolboxWeb.Web.Infrastructure.Hosting;
+
 namespace ToolboxWeb.Web.Infrastructure.Storage;
 
+/// <summary>
+/// Where the app keeps its data (Storage:*). Relative paths resolve against the content root on
+/// the server and against the data folder (<see cref="AppModeInfo.DataRoot"/>) on a desktop.
+/// </summary>
 public sealed class RuntimeStoragePaths
 {
-    private RuntimeStoragePaths(string databasePath, string uploadsPath, string dataProtectionKeysPath)
+    private readonly bool _copyLegacyFiles;
+
+    private RuntimeStoragePaths(string databasePath, string uploadsPath, string dataProtectionKeysPath, string backupsPath, bool copyLegacyFiles)
     {
         DatabasePath = databasePath;
         UploadsPath = uploadsPath;
         DataProtectionKeysPath = dataProtectionKeysPath;
+        BackupsPath = backupsPath;
+        _copyLegacyFiles = copyLegacyFiles;
     }
 
     public string DatabasePath { get; }
@@ -15,19 +25,22 @@ public sealed class RuntimeStoragePaths
 
     public string DataProtectionKeysPath { get; }
 
-    public static RuntimeStoragePaths Create(IWebHostEnvironment environment, IConfiguration configuration)
-    {
-        var databasePath = ResolvePath(
-            environment.ContentRootPath,
-            configuration["Storage:DatabasePath"] ?? "app.db");
-        var uploadsPath = ResolvePath(
-            environment.ContentRootPath,
-            configuration["Storage:UploadsPath"] ?? Path.Combine("Content", "uploads"));
-        var dataProtectionKeysPath = ResolvePath(
-            environment.ContentRootPath,
-            configuration["Storage:DataProtectionKeysPath"] ?? "DataProtectionKeys");
+    /// <summary>Database copies taken before migrations (<see cref="DatabaseBackup"/>). Default: "backups" next to the database.</summary>
+    public string BackupsPath { get; }
 
-        return new RuntimeStoragePaths(databasePath, uploadsPath, dataProtectionKeysPath);
+    public static RuntimeStoragePaths Create(IConfiguration configuration, AppModeInfo mode)
+    {
+        var root = mode.DataRoot;
+        var databasePath = ResolvePath(root, configuration["Storage:DatabasePath"] ?? "app.db");
+        var uploadsPath = ResolvePath(root, configuration["Storage:UploadsPath"] ?? Path.Combine("Content", "uploads"));
+        var dataProtectionKeysPath = ResolvePath(root, configuration["Storage:DataProtectionKeysPath"] ?? "DataProtectionKeys");
+        var configuredBackups = configuration["Storage:BackupsPath"];
+        var backupsPath = string.IsNullOrWhiteSpace(configuredBackups)
+            ? Path.Combine(Path.GetDirectoryName(databasePath)!, "backups")
+            : ResolvePath(root, configuredBackups);
+
+        // Older server copies kept the database and uploads inside the site folder; a desktop never did.
+        return new RuntimeStoragePaths(databasePath, uploadsPath, dataProtectionKeysPath, backupsPath, copyLegacyFiles: !mode.IsDesktop);
     }
 
     public void Initialize(string contentRootPath)
@@ -36,8 +49,11 @@ public sealed class RuntimeStoragePaths
         Directory.CreateDirectory(UploadsPath);
         Directory.CreateDirectory(DataProtectionKeysPath);
 
-        CopyLegacyDatabaseIfNeeded(contentRootPath);
-        CopyLegacyUploadsIfNeeded(contentRootPath);
+        if (_copyLegacyFiles)
+        {
+            CopyLegacyDatabaseIfNeeded(contentRootPath);
+            CopyLegacyUploadsIfNeeded(contentRootPath);
+        }
     }
 
     private void CopyLegacyDatabaseIfNeeded(string contentRootPath)
@@ -83,7 +99,7 @@ public sealed class RuntimeStoragePaths
         }
     }
 
-    private static string ResolvePath(string contentRootPath, string configuredPath)
+    private static string ResolvePath(string basePath, string configuredPath)
     {
         var trimmedPath = configuredPath.Trim();
         if (string.IsNullOrWhiteSpace(trimmedPath))
@@ -93,7 +109,7 @@ public sealed class RuntimeStoragePaths
 
         return Path.GetFullPath(Path.IsPathRooted(trimmedPath)
             ? trimmedPath
-            : Path.Combine(contentRootPath, trimmedPath));
+            : Path.Combine(basePath, trimmedPath));
     }
 
     private static bool PathsEqual(string firstPath, string secondPath)
