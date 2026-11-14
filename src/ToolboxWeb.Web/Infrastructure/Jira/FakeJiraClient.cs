@@ -19,6 +19,12 @@ public sealed class FakeJiraClientFactory : IJiraClientFactory
     {
         return new FakeJiraClient(baseUrl, username);
     }
+
+    // Any token is accepted; it signs in as a fixed sample user.
+    public IJiraClient CreateWithToken(string baseUrl, string token)
+    {
+        return new FakeJiraClient(baseUrl, "sample.token.user");
+    }
 }
 
 public sealed partial class FakeJiraClient : IJiraClient

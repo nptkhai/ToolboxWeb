@@ -103,8 +103,8 @@ public class DashboardController : Controller
 
     private async Task<DashboardViewModel> BuildAsync()
     {
-        var jiraSession = await _jiraAuth.GetCurrentSessionAsync(HttpContext);
-        return await _dashboard.BuildAsync(_currentUser.UserId, _currentUser.DisplayName ?? string.Empty, jiraSession is not null);
+        var hasJira = await _jiraAuth.IsAvailableAsync(HttpContext);
+        return await _dashboard.BuildAsync(_currentUser.UserId, _currentUser.DisplayName ?? string.Empty, hasJira);
     }
 
     private RedirectResult RedirectToDashboard()

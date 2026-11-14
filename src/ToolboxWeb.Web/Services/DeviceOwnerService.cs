@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ToolboxWeb.Web.Constants;
@@ -10,7 +9,7 @@ namespace ToolboxWeb.Web.Services;
 
 /// <summary>
 /// The desktop owner: the one account a desktop copy signs in automatically (App:Mode=Desktop).
-/// Its id is kept in <c>device.json</c> in the data folder.
+/// Its id is kept in <c>device.json</c> (<see cref="DeviceFileStore"/>).
 /// </summary>
 public interface IDeviceOwnerService
 {
@@ -27,21 +26,18 @@ public interface IDeviceOwnerService
 
 public sealed class DeviceOwnerService : IDeviceOwnerService
 {
-    private const string DeviceFileName = "device.json";
     private const string FallbackUserName = "owner";
 
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { WriteIndented = true };
-
     private readonly IServiceScopeFactory _scopes;
-    private readonly AppModeInfo _mode;
+    private readonly DeviceFileStore _device;
     private readonly ILogger<DeviceOwnerService> _logger;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private string? _ownerId;
 
-    public DeviceOwnerService(IServiceScopeFactory scopes, AppModeInfo mode, ILogger<DeviceOwnerService> logger)
+    public DeviceOwnerService(IServiceScopeFactory scopes, DeviceFileStore device, ILogger<DeviceOwnerService> logger)
     {
         _scopes = scopes;
-        _mode = mode;
+        _device = device;
         _logger = logger;
     }
 
@@ -55,7 +51,7 @@ public sealed class DeviceOwnerService : IDeviceOwnerService
             using var scope = _scopes.CreateScope();
             var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-            var device = ReadDeviceFile();
+            var device = _device.Read();
             var knownId = _ownerId ?? device.OwnerId;
             var owner = knownId is null ? null : await users.FindByIdAsync(knownId);
 
@@ -75,7 +71,7 @@ public sealed class DeviceOwnerService : IDeviceOwnerService
 
             if (device.OwnerId != owner.Id)
             {
-                WriteDeviceFile(device with { OwnerId = owner.Id });
+                _device.Update(file => file with { OwnerId = owner.Id });
             }
 
             _ownerId = owner.Id;
@@ -126,32 +122,4 @@ public sealed class DeviceOwnerService : IDeviceOwnerService
 
         return name.Length > 0 ? name.ToString() : FallbackUserName;
     }
-
-    private string DeviceFilePath => Path.Combine(_mode.DataRoot, DeviceFileName);
-
-    private DeviceFile ReadDeviceFile()
-    {
-        try
-        {
-            return File.Exists(DeviceFilePath)
-                ? JsonSerializer.Deserialize<DeviceFile>(File.ReadAllText(DeviceFilePath), Json) ?? new DeviceFile()
-                : new DeviceFile();
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "{Path} could not be read; the owner is looked up again.", DeviceFilePath);
-            return new DeviceFile();
-        }
-    }
-
-    private void WriteDeviceFile(DeviceFile device)
-    {
-        Directory.CreateDirectory(_mode.DataRoot);
-        var temporary = DeviceFilePath + ".tmp";
-        File.WriteAllText(temporary, JsonSerializer.Serialize(device, Json));
-        File.Move(temporary, DeviceFilePath, overwrite: true);
-    }
-
-    /// <summary>device.json. Later stages add the device id and the license here.</summary>
-    private sealed record DeviceFile(string? OwnerId = null);
 }

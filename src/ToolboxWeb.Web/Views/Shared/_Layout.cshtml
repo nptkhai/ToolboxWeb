@@ -3,10 +3,12 @@
 @using Microsoft.Extensions.Hosting
 @using ToolboxWeb.Web.Services
 @inject ICurrentUserService CurrentUser
+@inject IDesktopJiraService DesktopJira
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnvironment
 @{
     var flashSuccessMessage = TempData["SuccessMessage"] as string;
     var flashErrorMessage = TempData["ErrorMessage"] as string;
+    var flashInfoMessage = TempData["InfoMessage"] as string;
     var flashNotifications = new List<object>();
     if (!string.IsNullOrEmpty(flashSuccessMessage))
     {
@@ -15,6 +17,10 @@
     if (!string.IsNullOrEmpty(flashErrorMessage))
     {
         flashNotifications.Add(new { type = "error", message = flashErrorMessage });
+    }
+    if (!string.IsNullOrEmpty(flashInfoMessage))
+    {
+        flashNotifications.Add(new { type = "info", message = flashInfoMessage });
     }
     var hasFlashNotification = flashNotifications.Count > 0;
     // Pages before sign-in (sign-in, register, …) have no sidebar, always show the animated
@@ -82,12 +88,14 @@
     @{
         var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html";
         var jiraDashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html";
-        var brandHref = CurrentUser.IsJiraUser ? jiraDashboardHref : dashboardHref;
+        // Jira screens apply to a Jira account on the server, and to a desktop with a saved Jira connection.
+        var hasJira = CurrentUser.IsJiraUser || (AppMode.IsDesktop && DesktopJira.IsConfigured);
+        var brandHref = hasJira ? jiraDashboardHref : dashboardHref;
         // The DEV group (component hub and demos) is a developer tool, not part of the product.
         var showDevGroup = ToolboxWeb.Web.Infrastructure.Security.DevToolsAccess.IsAllowed(HostEnvironment, User);
         // One list of pages (ViewModels/AppNavigation.cs) feeds the sidebar, the command palette
         // and the "G then letter" shortcuts.
-        var navGroups = AppNavigation.Build(Url, T, CurrentUser.IsJiraUser, showDevGroup);
+        var navGroups = AppNavigation.Build(Url, T, hasJira, showDevGroup, AppMode.IsDesktop);
 
         // Current sidebar item, by controller/action so it also holds after a POST round-trip
         // and on sub-routes such as /component/{tab}.html.

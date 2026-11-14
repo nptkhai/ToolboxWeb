@@ -120,7 +120,12 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("JiraOnly", policy =>
     {
         policy.RequireAuthenticatedUser();
-        policy.RequireClaim(ToolboxClaimTypes.AuthSource, AuthSources.Jira);
+        // On a desktop the owner reaches Jira through the connection saved in Settings, so the
+        // Jira screens check that connection themselves (JiraController).
+        if (!appMode.IsDesktop)
+        {
+            policy.RequireClaim(ToolboxClaimTypes.AuthSource, AuthSources.Jira);
+        }
     });
 });
 builder.Services.ConfigureApplicationCookie(options =>
@@ -161,7 +166,9 @@ if (builder.Environment.IsDevelopment())
     mvcBuilder.AddRazorRuntimeCompilation();
 }
 builder.Services.AddToolboxServices();
+builder.Services.AddSingleton<DeviceFileStore>();
 builder.Services.AddSingleton<IDeviceOwnerService, DeviceOwnerService>();
+builder.Services.AddSingleton<IDesktopJiraService, DesktopJiraService>();
 
 // Sample Jira data for checking the Jira screens without a Jira account. Development only:
 // the flag is ignored in every other environment so it can never reach real users.
@@ -197,6 +204,9 @@ using (var scope = app.Services.CreateScope())
 if (appMode.IsDesktop)
 {
     await app.Services.GetRequiredService<IDeviceOwnerService>().GetOrCreateOwnerAsync();
+    // Connect to Jira in the background once the app is up, so the first Jira page opens quickly.
+    var desktopJira = app.Services.GetRequiredService<IDesktopJiraService>();
+    app.Lifetime.ApplicationStarted.Register(() => _ = Task.Run(() => desktopJira.GetSessionAsync()));
 }
 
 // Configure the HTTP request pipeline.

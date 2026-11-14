@@ -109,7 +109,7 @@ Một mã nguồn (repo ToolboxWeb), chọn chế độ bằng cấu hình `App:
 |---|---|---|
 | R0 | Đổi tên hiển thị sang Toolkit, logo mới — **đã làm 14/11/2026** | S |
 | M0 | Chế độ `App:Mode`, đường dẫn dữ liệu Desktop, sao lưu trước migration, tự đăng nhập "chủ máy" — **đã làm 14/11/2026** (xem "Trạng thái M0") | M |
-| M1 | Trang Cài đặt + Jira lưu trên máy (tự đăng nhập lại), bỏ đăng nhập Jira kiểu cũ ở Desktop | M |
+| M1 | Trang Cài đặt + Jira lưu trên máy (tự đăng nhập lại), bỏ đăng nhập Jira kiểu cũ ở Desktop — **đã làm 14/11/2026** (xem "Trạng thái M1") | M |
 | M2 | Chế độ Web: cookie auth Jira không DB, ẩn module cần DB, no-op nhật ký, PWA + thanh phiên bản mới | M |
 | M3 | Máy chính Toolkit License: quản trị, API kích hoạt, ký license, phát hành phiên bản, heartbeat | L |
 | M4 | License trên thiết bị: token, màn hình Kích hoạt (online + thủ công), kiểm tra chữ ký | M |
@@ -145,7 +145,7 @@ Chủ dự án chốt: **bản Desktop chỉ phát hành cho người dùng ở 
   - nghe `127.0.0.1:5180`, hoặc cổng trống khác khi 5180 bận;
   - từ chối kết nối không phải loopback, chỉ nhận Host `localhost`/`127.0.0.1`, không chuyển HTTPS;
   - mở lần hai thì mở trình duyệt vào bản đang chạy rồi thoát (`/desktop/ping`, `instance.json`).
-- **Jira ở Desktop:** chưa có. Làm ở M1, ngay sau M0.
+- **Jira ở Desktop:** xem "Trạng thái M1".
 - **Chạy thử:** `dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj -- --desktop`.
 
 
@@ -176,3 +176,25 @@ Chủ dự án chốt: **bản Desktop chỉ phát hành cho người dùng ở 
 - Máy chính là điểm duy nhất cho kích hoạt và cập nhật; máy đã kích hoạt vẫn chạy khi máy chính tắt.
 - Mỗi máy một DB: không đồng bộ giữa desktop và điện thoại (đúng yêu cầu, nhưng cần nói rõ với người dùng).
 - iOS chỉ hỗ trợ PWA hạn chế; app iOS thật cần tài khoản Apple Developer.
+
+## Trạng thái M1 (14/11/2026)
+
+Chủ dự án chọn cả 4 việc, đăng nhập Jira bằng mật khẩu hoặc token.
+
+- **Trang Cài đặt** (`/settings.html`, `SettingsController`, chỉ ở Desktop):
+  - có trong menu tài khoản và Ctrl+K ("Cài đặt Jira");
+  - kết nối Jira gồm địa chỉ, cách đăng nhập (mật khẩu, hoặc token truy cập cá nhân của Jira Server/Data Center 8.14+), tên đăng nhập, mật khẩu hoặc token;
+  - nút "Kiểm tra kết nối" thử mà không lưu; "Lưu và kết nối" thử rồi lưu; "Gỡ kết nối" hỏi lại kèm địa chỉ. Lưu và gỡ đều ghi nhật ký hoạt động.
+- **Lưu trên máy:**
+  - kết nối nằm trong `device.json` (`DeviceFileStore`, mục `jira`), mật khẩu hoặc token được mã hóa bằng Data Protection và không hiện lại;
+  - "Xóa dữ liệu trên máy" xóa luôn kết nối này.
+- **Tự kết nối** (`Services/DesktopJiraService.cs`):
+  - cả app dùng một phiên Jira, mở nền ngay khi app chạy, và mở lại từ thông tin đã lưu khi phiên hết hạn (`Jira:SessionTimeoutHours`);
+  - với mật khẩu, nếu Jira trả 401 giữa chừng thì client đăng nhập lại một lần rồi gửi lại (`JiraClient`). Cơ chế này cũng áp dụng ở Server;
+  - lỗi được báo rõ: không tới được Jira, sai thông tin, địa chỉ không phải Jira, không đọc được mật khẩu đã lưu.
+- **Menu và trang Jira:**
+  - đã có kết nối thì nhóm JIRA hiện cùng dữ liệu cá nhân trong một tài khoản; logo dẫn tới Jira Dashboard;
+  - chưa kết nối thì trang Jira chuyển sang Cài đặt kèm lời nhắc (thông báo trung tính), lưu xong quay lại đúng trang;
+  - kết nối lỗi thì báo lý do.
+- **Tổng quan:** ô "Giờ log Jira hôm nay" hiện khi đã có kết nối.
+- **Server:** đăng nhập Jira như cũ; trang Cài đặt không có.

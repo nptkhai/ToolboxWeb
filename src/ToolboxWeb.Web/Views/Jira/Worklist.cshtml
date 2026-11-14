@@ -12,7 +12,7 @@
     {
         currentCulture,
         taskBoardApiUrl = Url.Action("TaskBoard", "Jira"),
-        loginUrl = Url.Page("/Account/Login", new { area = "Identity" }),
+        loginUrl = AppMode.IsDesktop ? Url.RouteUrl(ToolboxWeb.Web.Constants.ToolboxRouteSlugs.RouteNames.SettingsHtml) : Url.Page("/Account/Login", new { area = "Identity" }),
         browseBaseUrl = Model.Session.BaseUrl?.TrimEnd('/'),
         dayCapacityHours = 8,
         unsaved = new
@@ -83,7 +83,7 @@
     var searchConfigJson = JsonSerializer.Serialize(new
     {
         searchUrl = Url.Action("Search", "Jira"),
-        loginUrl = Url.Page("/Account/Login", new { area = "Identity" }),
+        loginUrl = AppMode.IsDesktop ? Url.RouteUrl(ToolboxWeb.Web.Constants.ToolboxRouteSlugs.RouteNames.SettingsHtml) : Url.Page("/Account/Login", new { area = "Identity" }),
         browseBaseUrl = Model.Session.BaseUrl?.TrimEnd('/'),
         sheetUrl = Url.Content("~/vendor/sheetjs/js/xlsx.full.min.js"),
         defaults = new

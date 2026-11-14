@@ -39,7 +39,7 @@
     var configJson = JsonSerializer.Serialize(new
     {
         dashboardApiUrl = Url.Action("Dashboard", "Jira"),
-        loginUrl = Url.Page("/Account/Login", new { area = "Identity" }),
+        loginUrl = AppMode.IsDesktop ? Url.RouteUrl(ToolboxWeb.Web.Constants.ToolboxRouteSlugs.RouteNames.SettingsHtml) : Url.Page("/Account/Login", new { area = "Identity" }),
         browseBaseUrl = Model.Session.BaseUrl?.TrimEnd('/'),
         initialSort = Model.Filter.Sort,
         initialDirection = Model.Filter.Direction,

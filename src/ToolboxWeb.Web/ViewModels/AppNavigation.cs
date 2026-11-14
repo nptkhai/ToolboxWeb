@@ -25,7 +25,9 @@ public sealed record AppNavGroup(string Key, string Label, IReadOnlyList<AppNavI
 /// </summary>
 public static class AppNavigation
 {
-    public static IReadOnlyList<AppNavGroup> Build(IUrlHelper url, IStringLocalizer localizer, bool isJiraUser, bool showDevTools)
+    /// <param name="isJiraUser">Whether the Jira screens apply: a Jira account, or a desktop with a saved Jira connection.</param>
+    /// <param name="isDesktop">A desktop copy (App:Mode=Desktop) also lists its Settings page.</param>
+    public static IReadOnlyList<AppNavGroup> Build(IUrlHelper url, IStringLocalizer localizer, bool isJiraUser, bool showDevTools, bool isDesktop = false)
     {
         string Href(string routeName, string fallback) => url.RouteUrl(routeName) ?? fallback;
         string L(string key) => localizer[key].Value;
@@ -74,10 +76,16 @@ public static class AppNavigation
             ]));
         }
 
-        groups.Add(new AppNavGroup("account", L("Nav.Group.Account"),
-        [
+        var account = new List<AppNavItem>
+        {
             new("account", url.Page("/Account/Manage/Index", new { area = "Identity" }) ?? "/Identity/Account/Manage", "user", L("Auth.ManageAccount"), null, false, (_, _) => false)
-        ]));
+        };
+        if (isDesktop)
+        {
+            account.Add(new("settings", Href(ToolboxRouteSlugs.RouteNames.SettingsHtml, "/settings.html"), "settings", L("Settings.Title"), null, false, On("Settings")));
+        }
+
+        groups.Add(new AppNavGroup("account", L("Nav.Group.Account"), account));
 
         return groups;
     }

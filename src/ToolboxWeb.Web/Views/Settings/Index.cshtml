@@ -1,0 +1,122 @@
+@using ToolboxWeb.Web.Services
+@model SettingsPageViewModel
+@*
+    Desktop settings (App:Mode=Desktop, SettingsController). The Jira connection is saved on this
+    computer by DesktopJiraService; the password or token is encrypted and never sent back here.
+    Behavior: Content/js/settings.js (sign-in kind switch, "Test connection").
+*@
+@{
+    ViewData["Title"] = T["Settings.Title"];
+    var jira = Model.Jira;
+    var isToken = Model.Form.Kind == JiraSignInKind.Token;
+    var (pillTone, pillText) = jira switch
+    {
+        { Connected: true } => ("is-success", T["Settings.Jira.Status.Connected"].Value),
+        { Configured: true, LastError: not null } => ("is-danger", T["Settings.Jira.Status.Error"].Value),
+        { Configured: true } => ("is-accent", T["Settings.Jira.Status.Saved"].Value),
+        _ => ("is-neutral", T["Settings.Jira.Status.None"].Value)
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/settings.css" asp-append-version="true" />
+}
+
+<div class="settings-page">
+    <section class="tbx-panel" id="jira" aria-labelledby="settings-jira-title">
+        <header class="tbx-panel-header">
+            <h2 class="tbx-panel-title settings-title" id="settings-jira-title"><tbx-icon name="plug" />@T["Settings.Jira.Title"]</h2>
+            <span class="tbx-pill @pillTone" data-settings-jira-pill>@pillText</span>
+        </header>
+        <div class="tbx-panel-body settings-body">
+            <p class="settings-intro">@T["Settings.Jira.Intro"]</p>
+
+            @if (jira.Connected)
+            {
+                <p class="settings-status"><tbx-icon name="circle-check" />@T["Settings.Jira.ConnectedAs", jira.DisplayName ?? jira.Username ?? string.Empty, jira.Username ?? string.Empty, jira.BaseUrl ?? string.Empty]</p>
+            }
+            else if (jira is { Configured: true, LastError: not null })
+            {
+                <div class="tbx-error-state" role="alert"><tbx-icon name="circle-alert" /><span>@jira.LastError</span></div>
+            }
+            else if (jira.Configured)
+            {
+                <p class="settings-status"><tbx-icon name="info" />@T["Settings.Jira.SavedNotConnected", jira.BaseUrl ?? string.Empty]</p>
+            }
+            @if (jira.VerifiedAtUtc is { } verified)
+            {
+                <p class="settings-meta">@T["Settings.Jira.VerifiedAt", verified.ToDisplayAppDateTime()]</p>
+            }
+
+            <form asp-controller="Settings" asp-action="SaveJira" method="post" class="settings-form" novalidate
+                  data-settings-jira data-test-url="@Url.Action("TestJira", "Settings")"
+                  data-testing-text="@T["Settings.Jira.Testing"]" data-test-failed-text="@T["Settings.Jira.TestFailed"]">
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="jira-base-url">@T["Settings.Jira.BaseUrl"]</label>
+                    <input class="form-control" id="jira-base-url" name="BaseUrl" type="url" inputmode="url" autocomplete="url" required
+                           value="@Model.Form.BaseUrl" placeholder="@T["Settings.Jira.BaseUrlExample"]" />
+                </div>
+
+                <fieldset class="tbx-field settings-kind">
+                    <legend class="tbx-field-label">@T["Settings.Jira.Kind"]</legend>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="Kind" id="jira-kind-password" value="@JiraSignInKind.Password" checked="@(!isToken)" data-settings-kind />
+                        <label class="form-check-label" for="jira-kind-password">@T["Settings.Jira.Kind.Password"]</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="Kind" id="jira-kind-token" value="@JiraSignInKind.Token" checked="@isToken" data-settings-kind />
+                        <label class="form-check-label" for="jira-kind-token">@T["Settings.Jira.Kind.Token"]</label>
+                    </div>
+                </fieldset>
+
+                <div class="tbx-field" data-kind-only="Password" hidden="@isToken">
+                    <label class="tbx-field-label" for="jira-username">@T["Settings.Jira.Username"]</label>
+                    <input class="form-control" id="jira-username" name="Username" autocomplete="username" value="@Model.Form.Username" />
+                </div>
+
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="jira-secret">
+                        <span data-kind-only="Password" hidden="@isToken">@T["Settings.Jira.Password"]</span>
+                        <span data-kind-only="Token" hidden="@(!isToken)">@T["Settings.Jira.Token"]</span>
+                    </label>
+                    <div class="tbx-password">
+                        <input class="form-control" id="jira-secret" name="secret" type="password" autocomplete="@(isToken ? "off" : "current-password")"
+                               aria-describedby="jira-secret-hint" />
+                        <partial name="_PasswordToggle" />
+                    </div>
+                    <span class="tbx-field-hint" id="jira-secret-hint">
+                        @if (jira.Configured)
+                        {
+                            @T["Settings.Jira.SecretKeep"]
+                            <text> </text>
+                        }
+                        @T["Settings.Jira.SecretHint"]
+                        <span data-kind-only="Token" hidden="@(!isToken)"> @T["Settings.Jira.TokenHint"]</span>
+                    </span>
+                </div>
+
+                <p class="settings-result @(Model.FormError is null ? null : "is-error")" role="status" aria-live="polite" data-settings-result>@Model.FormError</p>
+
+                <div class="settings-actions">
+                    <button type="submit" class="btn btn-primary"><tbx-icon name="plug" />@T["Settings.Jira.Save"]</button>
+                    <button type="button" class="btn btn-outline-secondary" data-settings-jira-test><tbx-icon name="refresh-cw" />@T["Settings.Jira.Test"]</button>
+                </div>
+            </form>
+
+            @if (jira.Configured)
+            {
+                <form asp-controller="Settings" asp-action="RemoveJira" method="post" class="settings-remove">
+                    <button type="submit" class="btn btn-outline-danger"
+                            data-confirm="@T["Settings.Jira.RemoveConfirm", jira.BaseUrl ?? string.Empty]"
+                            data-confirm-title="@T["Settings.Jira.RemoveTitle"]"
+                            data-confirm-ok="@T["Settings.Jira.Remove"]"><tbx-icon name="trash-2" />@T["Settings.Jira.Remove"]</button>
+                </form>
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/js/settings.js" asp-append-version="true"></script>
+}

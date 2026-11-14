@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using ToolboxWeb.Web.Constants;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 using ToolboxWeb.Web.Infrastructure.Jira;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels.Jira;
@@ -29,17 +30,23 @@ public class JiraController : Controller
     private readonly IJiraDueDateService _dueDates;
     private readonly ICurrentUserService _currentUser;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly AppModeInfo _mode;
+    private readonly IDesktopJiraService _desktopJira;
 
     public JiraController(
         IJiraAuthService jiraAuth,
         IJiraDueDateService dueDates,
         ICurrentUserService currentUser,
-        IStringLocalizer<SharedResource> localizer)
+        IStringLocalizer<SharedResource> localizer,
+        AppModeInfo mode,
+        IDesktopJiraService desktopJira)
     {
         _jiraAuth = jiraAuth;
         _dueDates = dueDates;
         _currentUser = currentUser;
         _localizer = localizer;
+        _mode = mode;
+        _desktopJira = desktopJira;
     }
 
     [HttpGet("/" + ToolboxRouteSlugs.Pages.JiraDashboard)]
@@ -811,17 +818,39 @@ public class JiraController : Controller
             return session;
         }
 
+        if (_mode.IsDesktop)
+        {
+            // No sign-in page on a desktop: Settings says whether Jira is not set up or what failed.
+            var status = _desktopJira.GetStatus();
+            if (status.Configured)
+            {
+                TempData[TempDataKeys.ErrorMessage] = status.LastError ?? _localizer["Settings.Jira.Unreachable"].Value;
+            }
+            else
+            {
+                TempData[TempDataKeys.InfoMessage] = _localizer["Settings.Jira.Required"].Value;
+            }
+
+            return null;
+        }
+
         await _jiraAuth.SignOutAsync(HttpContext);
         TempData["ErrorMessage"] = _localizer["Jira.SessionExpired"].Value;
         return null;
     }
 
-    private RedirectToPageResult RedirectToLogin()
+    private IActionResult RedirectToLogin()
     {
+        var returnUrl = $"{Request.Path}{Request.QueryString}";
+        if (_mode.IsDesktop)
+        {
+            return RedirectToRoute(ToolboxRouteSlugs.RouteNames.SettingsHtml, new { returnUrl });
+        }
+
         return RedirectToPage("/Account/Login", new
         {
             area = "Identity",
-            returnUrl = $"{Request.Path}{Request.QueryString}"
+            returnUrl
         });
     }
 
