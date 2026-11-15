@@ -7,7 +7,7 @@ Toolkit License (`src/ToolkitLicense.Web`) là app riêng chạy trên máy chí
 - quản lý người dùng và thiết bị;
 - phát hành phiên bản mới và xem từng máy đang chạy phiên bản nào.
 
-Máy chính không nhận dữ liệu công việc, Jira hay ghi chú của ai. Phía thiết bị (tạo mã kích hoạt, màn hình Kích hoạt, kiểm tra bản quyền) làm ở giai đoạn M4.
+Máy chính không nhận dữ liệu công việc, Jira hay ghi chú của ai. Phía thiết bị (bản Desktop của Toolkit) mô tả ở mục "Phía máy tính" bên dưới (giai đoạn M4).
 
 ## Thành phần
 
@@ -38,7 +38,7 @@ Thư mục dữ liệu chứa:
    - Nhập mã 6 số mà ứng dụng hiện ra.
 4. Lưu 10 mã khôi phục. Mỗi mã dùng được một lần khi mất điện thoại; có thể tạo bộ mới ở trang Tài khoản quản trị.
 5. Vào trang **Khóa ký**:
-   - sao chép khóa công khai (PEM) và dấu khóa: giai đoạn M4 gắn khóa này vào ứng dụng desktop;
+   - sao chép **khóa công khai một dòng** và dán vào `License:PublicKey` trong `appsettings.Desktop.json` của bản Toolkit trên máy tính (xem "Phía máy tính");
    - sao lưu `signing-key.pem`.
 
 Đăng nhập sai 5 lần thì tài khoản khóa 15 phút. Trang đăng nhập và API giới hạn số lần gọi theo địa chỉ IP: đăng nhập 10 lần/phút, API 30 lần/phút.
@@ -75,7 +75,7 @@ Cả ba loại có dạng `TIỀN_TỐ.payload.chữ_ký`:
 | `TKL1` bản quyền | Máy chính, bằng `signing-key.pem` | `{ v: 1, licenseId, deviceId, deviceKey, customer, issuedAt, expiresAt }`. `deviceKey` là base64url(SHA-256(khóa công khai thiết bị)); `expiresAt` là `null` khi không hết hạn |
 | `TKH1` heartbeat | Thiết bị | `{ v: 1, deviceId, appVersion, licenseId, sentAt }` |
 
-Thiết bị (M4) nhận bản quyền khi:
+Thiết bị nhận bản quyền khi:
 
 - chữ ký đúng với khóa công khai của máy chính gắn trong app;
 - `deviceId` và `deviceKey` khớp với chính nó;
@@ -107,6 +107,49 @@ Khi bị từ chối, API trả `400`, `404` hoặc `409` với `{ "error": "…
 - `notFound`: không có yêu cầu này.
 
 Gọi quá giới hạn thì nhận `429`.
+
+## Phía máy tính (bản Desktop của Toolkit)
+
+Mã nằm trong `src/ToolboxWeb.Web`, chỉ chạy ở chế độ Desktop. `WireFormat.cs` của app này được liên kết vào đó, nên hai bên dùng chung một định dạng.
+
+**Cấu hình** trong `appsettings.Desktop.json`, mục `License`:
+
+| Khóa | Ý nghĩa |
+|---|---|
+| `ServerUrl` | Địa chỉ máy chính, ví dụ `https://license.<miền>`. Để trống thì chỉ kích hoạt thủ công được |
+| `PublicKey` | Khóa công khai một dòng (hoặc PEM) lấy từ trang **Khóa ký**. Trang Cài đặt của máy tính hiện dấu khóa SHA-256 của khóa này, để so với trang Khóa ký |
+| `CheckHours` | Số giờ giữa hai lần báo về máy chính (mặc định 6) |
+
+Chạy `dotnet run -- --desktop` ở môi trường Development mà không có `PublicKey` thì không kiểm tra bản quyền. Ngoài Development, thiếu khóa thì app chỉ mở màn hình Kích hoạt kèm báo lỗi cấu hình.
+
+**Danh tính máy:**
+
+- Lần đầu cần tới, app tạo mã thiết bị (GUID) và cặp khóa ECDSA P-256, lưu trong `device.json` của thư mục dữ liệu.
+- Khóa riêng được mã hóa bằng Data Protection.
+- Khi chép `device.json` sang máy khác, hoặc tên máy đổi, máy đó nhận danh tính mới và phải kích hoạt lại.
+
+**Trạng thái và cách app xử lý:**
+
+| Trạng thái | App làm gì |
+|---|---|
+| Chưa kích hoạt (hoặc bản quyền sai chữ ký, của máy khác) | Mọi trang chuyển về `/activate.html` (không có sidebar); yêu cầu ghi trả 403 |
+| Còn hiệu lực | Bình thường; còn từ 14 ngày trở xuống thì có thanh nhắc gia hạn |
+| Hết hạn / bị thu hồi | **Chỉ đọc**: xem được mọi trang, có thanh báo. Mọi POST bị từ chối, trừ những thao tác gắn `[AllowWhenUnlicensed]`: kích hoạt, Cài đặt, đổi ngôn ngữ, thoát app, tìm Jira, So sánh DB, tải dữ liệu cá nhân. Hẹn giờ không lưu phiên |
+
+**Màn hình Kích hoạt (`/activate.html`):**
+
+1. **Gửi yêu cầu qua mạng:** app gửi `TKT1` lên `POST /api/activations`, rồi hỏi lại mỗi 10 giây (khi trang đang mở) hoặc mỗi 2 phút (chạy nền). Được duyệt thì app tự mở.
+2. **Thủ công:** sao chép mã kích hoạt gửi người quản trị; họ dán vào trang Yêu cầu kích hoạt, duyệt, rồi gửi lại bản quyền `TKL1`. Người dùng dán bản quyền và bấm "Áp dụng bản quyền".
+
+**Báo về máy chính (heartbeat):**
+
+- **Lịch gửi:** 15 giây sau khi mở app, sau đó mỗi `CheckHours` giờ; hoặc khi bấm "Kiểm tra ngay" trong Cài đặt.
+- **Gửi đi:** phiên bản đang chạy.
+- **Nhận về và xử lý:**
+  - bản gia hạn hoặc cấp lại: app tự lưu;
+  - tin thu hồi: app chuyển sang chỉ đọc;
+  - phiên bản mới nhất: hiện thanh "Đã có Toolkit x.y.z", có nút "Tải về" (nếu có đường tải) và "Để sau". Bản bắt buộc thì không ẩn được. Cài cập nhật thật làm ở M5.
+- **Không có mạng:** app vẫn dùng tới ngày hết hạn ghi trong bản quyền (chủ dự án chọn không bắt buộc liên lạc định kỳ). Thu hồi chỉ có hiệu lực khi máy kết nối lại.
 
 ## Dựng trên IIS (máy chính)
 
@@ -146,5 +189,6 @@ Mở `http://localhost:5190`. Dữ liệu nằm trong `src/ToolkitLicense.Web/Ap
 ## Giới hạn đã biết
 
 - Ứng dụng .NET có thể bị dịch ngược để bỏ kiểm tra bản quyền. Với công cụ nội bộ thì chấp nhận được.
+- Máy không bao giờ kết nối lại thì không biết mình bị thu hồi (theo lựa chọn không bắt buộc liên lạc định kỳ).
 - Chỉ có một tài khoản quản trị (chủ dự án). Muốn thêm người duyệt thì cần làm thêm phân quyền.
 - Đổi khóa ký (khi lộ khóa) cần phát hành bản desktop mới chứa khóa công khai mới và cấp lại mọi bản quyền. Hiện chưa có trang làm việc này.

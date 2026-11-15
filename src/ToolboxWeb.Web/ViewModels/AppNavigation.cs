@@ -96,6 +96,7 @@ public static class AppNavigation
         if (mode == AppMode.Desktop)
         {
             account.Add(new("settings", Href(ToolboxRouteSlugs.RouteNames.SettingsHtml, "/settings.html"), "settings", L("Settings.Title"), null, false, On("Settings")));
+            account.Add(new("activate", Href(ToolboxRouteSlugs.RouteNames.ActivateHtml, "/activate.html"), "key-round", L("Activation.Title"), null, false, On("Activation")));
         }
 
         groups.Add(new AppNavGroup("account", L("Nav.Group.Account"), account));

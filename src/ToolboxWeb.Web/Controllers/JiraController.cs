@@ -94,6 +94,7 @@ public class JiraController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AllowWhenUnlicensed]
     public async Task<IActionResult> Logout()
     {
         await _jiraAuth.SignOutAsync(HttpContext);
@@ -124,6 +125,7 @@ public class JiraController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AllowWhenUnlicensed]
     public async Task<IActionResult> Search([FromBody] JiraSearchRequest request)
     {
         var session = await GetSessionOrSignOutAsync();

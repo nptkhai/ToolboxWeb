@@ -20,6 +20,7 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/settings.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/activation.css" asp-append-version="true" />
 }
 
 <div class="settings-page">
@@ -113,6 +114,43 @@
                             data-confirm-ok="@T["Settings.Jira.Remove"]"><tbx-icon name="trash-2" />@T["Settings.Jira.Remove"]</button>
                 </form>
             }
+        </div>
+    </section>
+
+    @* The license of this computer (DeviceLicenseService); renewals and revocations come with "Check now". *@
+    @{
+        var license = Model.License;
+        var (licenseTone, licenseKey) = LicenseDisplay.Pill(license);
+    }
+    <section class="tbx-panel" id="license" aria-labelledby="settings-license-title">
+        <header class="tbx-panel-header">
+            <h2 class="tbx-panel-title settings-title" id="settings-license-title"><tbx-icon name="shield-check" />@T["Settings.License.Title"]</h2>
+            <span class="tbx-pill @licenseTone">@T[licenseKey]</span>
+        </header>
+        <div class="tbx-panel-body settings-body">
+            <partial name="_LicenseSummary" model="(license, Model.DeviceId)" />
+            <dl class="license-facts">
+                <dt>@T["Settings.License.Version"]</dt>
+                <dd>
+                    @ToolboxWeb.Web.Infrastructure.Hosting.AppVersion.Version
+                    @if (license.UpdateAvailable && license.LatestRelease is { } latest)
+                    {
+                        <span class="tbx-pill is-warning">@T["Settings.License.NewVersion", latest.Version]</span>
+                    }
+                </dd>
+                <dt>@T["Settings.License.ServerKey"]</dt>
+                <dd>@if (license.ServerKeyFingerprint is { } fingerprint) { <span class="license-mono">@fingerprint</span> } else { @T["Settings.License.NoKey"] }</dd>
+            </dl>
+            <p class="settings-meta">@T["Settings.License.KeyHint"]</p>
+            <div class="settings-actions">
+                @if (license.ServerConfigured && license.State is not DeviceLicenseState.Off and not DeviceLicenseState.NotConfigured)
+                {
+                    <form asp-controller="Settings" asp-action="CheckLicense" method="post">
+                        <button type="submit" class="btn btn-outline-secondary"><tbx-icon name="refresh-cw" />@T["Settings.License.Check"]</button>
+                    </form>
+                }
+                <a class="btn btn-outline-secondary" href="@(Url.RouteUrl(ToolboxWeb.Web.Constants.ToolboxRouteSlugs.RouteNames.ActivateHtml))"><tbx-icon name="key-round" />@T["Settings.License.Activate"]</a>
+            </div>
         </div>
     </section>
 </div>

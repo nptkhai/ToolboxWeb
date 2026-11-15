@@ -183,6 +183,15 @@ builder.Services.AddToolboxServices();
 builder.Services.AddSingleton<DeviceFileStore>();
 builder.Services.AddSingleton<IDeviceOwnerService, DeviceOwnerService>();
 builder.Services.AddSingleton<IDesktopJiraService, DesktopJiraService>();
+// Desktop license (docs/LICENSE_SERVER.md): device identity, license check, talks to the license server.
+builder.Services.Configure<LicenseOptions>(builder.Configuration.GetSection("License"));
+builder.Services.AddSingleton<IDeviceIdentityService, DeviceIdentityService>();
+builder.Services.AddSingleton<IDeviceLicenseService, DeviceLicenseService>();
+builder.Services.AddHttpClient(LicenseOptions.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(15));
+if (appMode.IsDesktop)
+{
+    builder.Services.AddHostedService<LicenseHeartbeatService>();
+}
 if (appMode.IsWeb)
 {
     builder.Services.Replace(ServiceDescriptor.Scoped<IActivityLogService, NoOpActivityLogService>());
@@ -280,6 +289,7 @@ app.UseAuthentication();
 if (appMode.IsDesktop)
 {
     app.UseMiddleware<DesktopOwnerSignInMiddleware>();
+    app.UseMiddleware<DesktopLicenseMiddleware>();
 }
 app.UseAuthorization();
 

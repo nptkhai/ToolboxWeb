@@ -269,5 +269,8 @@
   "Audit.Action.CustomerUpdated": "User changed",
   "Audit.Action.CustomerDeleted": "User deleted",
   "Audit.Action.ReleaseCreated": "Release published",
-  "Audit.Action.ReleaseDeleted": "Release deleted"
+  "Audit.Action.ReleaseDeleted": "Release deleted",
+  "Key.Base64": "Public key (one line)",
+  "Key.Base64Hint": "Paste it into License:PublicKey in appsettings.Desktop.json of the Toolkit desktop copy.",
+  "Key.CopyBase64": "Copy one-line key"
 }

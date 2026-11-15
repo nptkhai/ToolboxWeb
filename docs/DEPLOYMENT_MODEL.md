@@ -112,7 +112,7 @@ Một mã nguồn (repo ToolboxWeb), chọn chế độ bằng cấu hình `App:
 | M1 | Trang Cài đặt + Jira lưu trên máy (tự đăng nhập lại), bỏ đăng nhập Jira kiểu cũ ở Desktop — **đã làm 14/11/2026** (xem "Trạng thái M1") | M |
 | M2 | Chế độ Web: cookie auth Jira không DB, ẩn module cần DB, no-op nhật ký, PWA + thanh phiên bản mới — **đã làm 15/11/2026** (xem "Trạng thái M2") | M |
 | M3 | Máy chính Toolkit License: quản trị, API kích hoạt, ký license, phát hành phiên bản, heartbeat — **đã làm 15/11/2026** (xem "Trạng thái M3" và `docs/LICENSE_SERVER.md`) | L |
-| M4 | License trên thiết bị: token, màn hình Kích hoạt (online + thủ công), kiểm tra chữ ký | M |
+| M4 | License trên thiết bị: token, màn hình Kích hoạt (online + thủ công), kiểm tra chữ ký — **đã làm 15/11/2026** (xem "Trạng thái M4") | M |
 | M5 | Đóng gói Velopack, cửa sổ app, kiểm tra/áp dụng cập nhật, xuất/nhập dữ liệu chuyển từ bản IIS | M–L |
 | Sau | Mobile có DB riêng (Blazor + MAUI) nếu thật sự cần | L+ |
 
@@ -264,3 +264,30 @@ Chi tiết cách dùng và cách dựng trên IIS ở `docs/LICENSE_SERVER.md`.
   - heartbeat là `POST /api/devices/heartbeat`; mã thiết bị nằm trong nội dung đã ký thay vì trên đường dẫn;
   - không có bảng `DeviceHeartbeats` riêng: phiên bản và lần cuối hoạt động lưu ngay trên thiết bị.
 - **Chưa làm (M4):** phía thiết bị, gồm tạo khóa và mã kích hoạt, màn hình Kích hoạt, kiểm tra license khi mở app, gửi heartbeat, thanh "Có phiên bản mới".
+
+## Trạng thái M4 (15/11/2026)
+
+Chủ dự án chọn cả 4 việc:
+
+- **Hết hạn hoặc bị thu hồi:** chỉ đọc.
+- **Liên lạc định kỳ với máy chính:** không bắt buộc.
+- **Địa chỉ máy chính và khóa công khai:** ghi trong `appsettings.Desktop.json` (`License:ServerUrl`, `License:PublicKey`).
+
+Chi tiết ở mục "Phía máy tính" của `docs/LICENSE_SERVER.md`.
+
+- **Khóa và mã kích hoạt** (`DeviceIdentityService`):
+  - mã thiết bị và khóa ECDSA P-256 lưu trong `device.json`; khóa riêng mã hóa bằng Data Protection;
+  - chép sang máy khác thì thành máy mới;
+  - mã `TKT1` dùng đúng định dạng máy chính đọc (`WireFormat.cs` dùng chung).
+- **Màn hình Kích hoạt** (`/activate.html`):
+  - chưa có bản quyền thì mọi trang dẫn về đây;
+  - gửi yêu cầu qua mạng rồi tự mở app khi được duyệt, hoặc làm thủ công (sao chép mã, dán bản quyền).
+- **Kiểm tra bản quyền** (`DeviceLicenseService`, `DesktopLicenseMiddleware`):
+  - kiểm chữ ký, đúng máy, còn hạn; không cần mạng;
+  - hết hạn hoặc thu hồi thì chỉ đọc; thao tác không đổi dữ liệu app vẫn chạy (`[AllowWhenUnlicensed]`);
+  - trang Cài đặt có khung Bản quyền, kèm nút "Kiểm tra ngay".
+- **Báo phiên bản và thu hồi** (`LicenseHeartbeatService`):
+  - báo phiên bản đang chạy, tự nhận bản gia hạn, biết khi bị thu hồi;
+  - thanh "Đã có Toolkit x.y.z" có "Tải về" và "Để sau"; bản bắt buộc thì không ẩn được.
+- **Máy chính:** trang Khóa ký có thêm khóa công khai một dòng để dán vào cấu hình.
+- **Trước khi phát hành bản Desktop (M5):** điền `License:ServerUrl` và `License:PublicKey` thật vào `appsettings.Desktop.json`.

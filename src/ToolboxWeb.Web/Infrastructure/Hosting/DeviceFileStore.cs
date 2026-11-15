@@ -4,7 +4,7 @@ namespace ToolboxWeb.Web.Infrastructure.Hosting;
 
 /// <summary>
 /// <c>device.json</c> in the data folder: what belongs to this computer rather than to an account
-/// (the desktop owner, the Jira connection; later the device id and the license).
+/// (the desktop owner, the Jira connection, the device id and key, the license).
 /// </summary>
 public sealed class DeviceFileStore
 {
@@ -66,7 +66,34 @@ public sealed class DeviceFileStore
     }
 }
 
-public sealed record DeviceFile(string? OwnerId = null, DeviceJiraSettings? Jira = null);
+public sealed record DeviceFile(
+    string? OwnerId = null,
+    DeviceJiraSettings? Jira = null,
+    DeviceIdentity? Identity = null,
+    DeviceLicenseFile? License = null);
+
+/// <summary>
+/// This computer's own id and key pair, made on first need (DeviceIdentityService). The private
+/// key is encrypted with Data Protection, so a copy of the data folder on another computer cannot
+/// use it; the machine name it was made on is kept for the same reason.
+/// </summary>
+public sealed record DeviceIdentity(string DeviceId, string MachineName, string PublicKey, string ProtectedPrivateKey, DateTime CreatedAtUtc);
+
+/// <summary>
+/// The license of this computer and what the license server last said (DeviceLicenseService).
+/// <paramref name="Text"/> is the signed TKL1 license; it is checked again on every start.
+/// </summary>
+public sealed record DeviceLicenseFile(
+    string? Text = null,
+    string? ActivationRequestId = null,
+    string? ActivationStatus = null,
+    string? RevokedLicenseId = null,
+    DateTime? LastContactAtUtc = null,
+    DeviceReleaseInfo? LatestRelease = null,
+    bool UpdateAvailable = false);
+
+/// <summary>The newest Toolkit release, as the license server reported it.</summary>
+public sealed record DeviceReleaseInfo(string Version, string? Notes, bool Mandatory, string? DownloadUrl, DateTime? PublishedAtUtc);
 
 /// <summary>The Jira connection saved on this computer. The password or token is encrypted (Data Protection).</summary>
 public sealed record DeviceJiraSettings(

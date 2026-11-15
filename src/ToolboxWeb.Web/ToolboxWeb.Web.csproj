@@ -18,6 +18,11 @@
     <Content Include="Content\**" Exclude="Content\uploads\**" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- The license texts exchanged with the license server (TKT1, TKL1, TKH1): one definition for both apps. -->
+  <ItemGroup>
+    <Compile Include="..\ToolkitLicense.Web\Infrastructure\WireFormat.cs" Link="Infrastructure\Licensing\WireFormat.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.6" />

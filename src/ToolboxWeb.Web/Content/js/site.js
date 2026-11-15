@@ -1049,3 +1049,28 @@
         }
     });
 })();
+
+// Desktop: "a new version is available" notice from the license server (_DesktopNotices).
+// "Later" hides it until a newer version comes; a required release stays (no "Later" button).
+(function () {
+    'use strict';
+
+    const notice = document.querySelector('[data-release-notice]');
+    if (!notice) {
+        return;
+    }
+    const version = notice.getAttribute('data-release-notice');
+    const key = 'toolbox.release.dismissed';
+    let dismissed = null;
+    try { dismissed = localStorage.getItem(key); } catch (e) { }
+    if (notice.getAttribute('data-release-mandatory') !== 'true') {
+        notice.hidden = dismissed === version;
+    }
+    const later = notice.querySelector('[data-release-dismiss]');
+    if (later) {
+        later.addEventListener('click', function () {
+            try { localStorage.setItem(key, version); } catch (e) { }
+            notice.hidden = true;
+        });
+    }
+})();

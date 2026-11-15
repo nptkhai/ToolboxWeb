@@ -27,6 +27,8 @@ Desktop mode (one person's computer, data in `%LOCALAPPDATA%\Toolkit`, no sign-i
 dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj -- --desktop
 ```
 
+A desktop with `License:PublicKey` set in `appsettings.Desktop.json` asks for a license from the license server first (see `docs/LICENSE_SERVER.md`); in Development without a key it checks nothing.
+
 Web mode (the browser and phone site: Jira sign-in only, no database; see `docs/DEPLOYMENT_MODEL.md`):
 
 ```powershell

@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
+[AllowWhenUnlicensed]
 public class CultureController : Controller
 {
     private static readonly HashSet<string> SupportedCultures = new(StringComparer.OrdinalIgnoreCase)

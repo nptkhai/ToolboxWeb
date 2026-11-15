@@ -12,11 +12,14 @@ using ToolboxWeb.Web.ViewModels.Jira;
 namespace ToolboxWeb.Web.Controllers;
 
 /// <summary>
-/// Settings of a desktop copy (App:Mode=Desktop): what belongs to this computer, starting with
-/// the Jira connection (DesktopJiraService). Not found on the server, where Jira is signed in per session.
+/// Settings of a desktop copy (App:Mode=Desktop): what belongs to this computer, the Jira
+/// connection (DesktopJiraService) and the license (DeviceLicenseService). Not found on the server,
+/// where Jira is signed in per session. Everything here stays usable when the license has ended:
+/// it changes this computer's settings, not app data.
 /// </summary>
 [NotInWebMode]
 [Authorize]
+[AllowWhenUnlicensed]
 public class SettingsController : Controller
 {
     private readonly AppModeInfo _mode;
@@ -25,6 +28,8 @@ public class SettingsController : Controller
     private readonly ICurrentUserService _currentUser;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly JiraOptions _jiraOptions;
+    private readonly IDeviceLicenseService _licenses;
+    private readonly IDeviceIdentityService _identity;
 
     public SettingsController(
         AppModeInfo mode,
@@ -32,8 +37,12 @@ public class SettingsController : Controller
         IActivityLogService activityLog,
         ICurrentUserService currentUser,
         IStringLocalizer<SharedResource> localizer,
-        IOptions<JiraOptions> jiraOptions)
+        IOptions<JiraOptions> jiraOptions,
+        IDeviceLicenseService licenses,
+        IDeviceIdentityService identity)
     {
+        _licenses = licenses;
+        _identity = identity;
         _mode = mode;
         _jira = jira;
         _activityLog = activityLog;
@@ -54,6 +63,8 @@ public class SettingsController : Controller
         return View(new SettingsPageViewModel
         {
             Jira = status,
+            License = _licenses.GetStatus(),
+            DeviceId = _identity.Get().DeviceId,
             Form = new JiraSettingsForm
             {
                 BaseUrl = status.BaseUrl ?? _jiraOptions.DefaultBaseUrl,
@@ -93,6 +104,8 @@ public class SettingsController : Controller
             return View("Index", new SettingsPageViewModel
             {
                 Jira = _jira.GetStatus(),
+                License = _licenses.GetStatus(),
+                DeviceId = _identity.Get().DeviceId,
                 Form = form,
                 FormError = result.Message,
                 ReturnUrl = LocalOrNull(returnUrl)
@@ -127,6 +140,35 @@ public class SettingsController : Controller
         }
 
         return RedirectToRoute(ToolboxRouteSlugs.RouteNames.SettingsHtml);
+    }
+
+    /// <summary>"Check now": the heartbeat with the license server (renewals, revocation, newest release).</summary>
+    [HttpPost("/settings/license/check")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CheckLicense()
+    {
+        if (!_mode.IsDesktop)
+        {
+            return NotFound();
+        }
+
+        var (result, change) = await _licenses.CheckNowAsync(HttpContext.RequestAborted);
+        if (change != LicenseChange.None)
+        {
+            await _activityLog.LogAsync(_currentUser.UserId, ActivityActionType.Update, ActivityEntityType.License,
+                result.Status.LicenseId, _localizer[$"License.Log.{change}"].Value);
+        }
+
+        if (result.Succeeded)
+        {
+            TempData[TempDataKeys.SuccessMessage] = _localizer[change == LicenseChange.None ? "License.Checked" : $"License.Checked.{change}"].Value;
+        }
+        else
+        {
+            TempData[TempDataKeys.ErrorMessage] = _localizer[result.ErrorKey!, result.ErrorArgument ?? string.Empty].Value;
+        }
+
+        return Redirect(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.SettingsHtml) + "#license");
     }
 
     private static DesktopJiraInput ToInput(JiraSettingsForm form, string? secret) =>

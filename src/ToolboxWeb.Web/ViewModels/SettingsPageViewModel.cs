@@ -2,10 +2,14 @@ using ToolboxWeb.Web.Services;
 
 namespace ToolboxWeb.Web.ViewModels;
 
-/// <summary>The desktop Settings page (App:Mode=Desktop): for now the Jira connection.</summary>
+/// <summary>The desktop Settings page (App:Mode=Desktop): the Jira connection and the license.</summary>
 public sealed class SettingsPageViewModel
 {
     public required DesktopJiraStatus Jira { get; init; }
+
+    public required DeviceLicenseStatus License { get; init; }
+
+    public required string DeviceId { get; init; }
 
     public JiraSettingsForm Form { get; init; } = new();
 

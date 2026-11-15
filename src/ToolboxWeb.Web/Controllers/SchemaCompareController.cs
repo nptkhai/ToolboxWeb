@@ -13,6 +13,8 @@ namespace ToolboxWeb.Web.Controllers;
 
 [NotInWebMode]
 [Authorize]
+// Only reads the two databases and makes a script, so it stays usable on an ended desktop license.
+[AllowWhenUnlicensed]
 public class SchemaCompareController : Controller
 {
     private const string SessionMarkerKey = "Toolbox.SchemaCompare.Active";

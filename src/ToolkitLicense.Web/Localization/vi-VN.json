@@ -269,5 +269,8 @@
   "Audit.Action.CustomerUpdated": "Sửa người dùng",
   "Audit.Action.CustomerDeleted": "Xóa người dùng",
   "Audit.Action.ReleaseCreated": "Phát hành phiên bản",
-  "Audit.Action.ReleaseDeleted": "Xóa phiên bản"
+  "Audit.Action.ReleaseDeleted": "Xóa phiên bản",
+  "Key.Base64": "Khóa công khai (một dòng)",
+  "Key.Base64Hint": "Dán vào License:PublicKey trong appsettings.Desktop.json của bản Toolkit trên máy tính.",
+  "Key.CopyBase64": "Sao chép khóa một dòng"
 }

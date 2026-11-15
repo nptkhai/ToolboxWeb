@@ -4,6 +4,7 @@
 @using ToolboxWeb.Web.Services
 @inject ICurrentUserService CurrentUser
 @inject IDesktopJiraService DesktopJira
+@inject IDeviceLicenseService DeviceLicense
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnvironment
 @{
     var flashSuccessMessage = TempData["SuccessMessage"] as string;
@@ -26,6 +27,11 @@
     // Pages before sign-in (sign-in, register, …) have no sidebar, always show the animated
     // weather background, and show the clock and weather in the header.
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    // Desktop license: without a usable license only the activation screen opens, so the app
+    // shell (sidebar, palette, focus timer) is left out; read-only stops the timer from saving.
+    var license = AppMode.IsDesktop ? DeviceLicense.GetStatus() : null;
+    var showShell = isAuthenticated && license?.IsBlocked != true;
+    var storesFocus = !AppMode.IsWeb && license?.IsReadOnly != true;
 }
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentUICulture.Name" data-background-mode="@(isAuthenticated ? "app" : "auth")" data-time-zone="@ToolboxWeb.Web.Infrastructure.Time.AppClock.TimeZoneId">
@@ -134,8 +140,8 @@
             </li>
         }
     }
-    <div class="app-shell@(isAuthenticated ? null : " app-shell--guest")" data-shell>
-        @if (isAuthenticated)
+    <div class="app-shell@(showShell ? null : " app-shell--guest")" data-shell>
+        @if (showShell)
         {
             <aside class="app-sidebar" id="app-sidebar">
                 <div class="sidebar-head">
@@ -172,7 +178,7 @@
         }
         <div class="app-main">
             <header class="topbar">
-                @if (!isAuthenticated)
+                @if (!showShell)
                 {
                     <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">
                         <img class="brand-mark" src="~/brand/toolkit-mark.svg" asp-append-version="true" alt="" width="28" height="28" />
@@ -196,7 +202,7 @@
                     <h1 class="topbar-title@(isAuthenticated ? null : " tbx-visually-hidden")">@pageTitle</h1>
                 </nav>
                 <div class="topbar-actions">
-                    @if (isAuthenticated)
+                    @if (showShell)
                     {
                         @* Opens the command palette (Ctrl/⌘+K): pages, quick commands, search in my data. *@
                         <button class="topbar-command" type="button" data-palette-open aria-haspopup="dialog" aria-controls="tbx-palette">
@@ -206,9 +212,9 @@
                         @* The focus timer keeps running on every page (Content/js/focus-clock.js); while it
                            runs, this shows the time left and leads back to the timer. *@
                         <a class="focus-chip" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html")" data-focus-chip hidden
-                           data-complete-url="@(AppMode.IsWeb ? null : Url.Action("Complete", "FocusTimer"))"
+                           data-complete-url="@(storesFocus ? Url.Action("Complete", "FocusTimer") : null)"
                            data-text-focus="@T["FocusTimer.Phase.Focus"]" data-text-short="@T["FocusTimer.Phase.Short"]" data-text-long="@T["FocusTimer.Phase.Long"]"
-                           data-text-focus-done="@(AppMode.IsWeb ? T["FocusTimer.Done.FocusWeb"] : T["FocusTimer.Done.Focus"])" data-text-break-done="@T["FocusTimer.Done.Break"]"
+                           data-text-focus-done="@(storesFocus ? T["FocusTimer.Done.Focus"] : T["FocusTimer.Done.FocusWeb"])" data-text-break-done="@T["FocusTimer.Done.Break"]"
                            data-text-saved="@T["FocusTimer.Done.Saved"]" data-text-save-failed="@T["FocusTimer.Done.SaveFailed"]">
                             <tbx-icon name="timer" />
                             <span data-focus-chip-time></span>
@@ -234,12 +240,16 @@
                 </div>
             </header>
             <main class="content-area @(ViewData["ContentAreaClass"] as string)" role="main">
+                @if (showShell && license is not null)
+                {
+                    <partial name="_DesktopNotices" model="license" />
+                }
                 @RenderBody()
             </main>
         </div>
     </div>
     <partial name="_ConfirmModal" />
-    @if (isAuthenticated)
+    @if (showShell)
     {
         <partial name="_CommandPalette" model="navGroups" />
     }
@@ -251,7 +261,7 @@
         <partial name="_KendoScripts" />
     }
     <script src="~/js/site.js" asp-append-version="true"></script>
-    @if (isAuthenticated)
+    @if (showShell)
     {
         <script src="~/js/shortcuts.js" asp-append-version="true"></script>
         <script src="~/js/command-palette.js" asp-append-version="true"></script>
