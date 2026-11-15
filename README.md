@@ -21,7 +21,31 @@ dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj
 
 Open the URL printed by `dotnet run`. Register a user, then the app opens the dashboard.
 
+Desktop mode (one person's computer, data in `%LOCALAPPDATA%\Toolkit`, no sign-in, http://localhost:5180; see `docs/DEPLOYMENT_MODEL.md`):
+
+```powershell
+dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj -- --desktop
+```
+
+A desktop with `License:PublicKey` set in `appsettings.Desktop.json` asks for a license from the license server first (see `docs/LICENSE_SERVER.md`); in Development without a key it checks nothing.
+
+Web mode (the browser and phone site: Jira sign-in only, no database; see `docs/DEPLOYMENT_MODEL.md`):
+
+```powershell
+$env:App__Mode = "Web"
+dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj
+```
+
+License server (the owner's admin app on the main server: activation requests, licenses, devices, releases; see `docs/LICENSE_SERVER.md`). Runs on http://localhost:5190; on first start it writes a one-time setup code to `src/ToolkitLicense.Web/App_Data/setup-code.txt`:
+
+```powershell
+dotnet run --project src\ToolkitLicense.Web\ToolkitLicense.Web.csproj
+```
+
 ## Source Layout
+
+The solution has two web apps: `src/ToolboxWeb.Web` (Toolkit itself, described below) and `src/ToolkitLicense.Web` (the license server, which links the design files and a few source files of `ToolboxWeb.Web` instead of copying them).
+
 
 - `Controllers/`: request handling and redirects.
 - `Domain/`: database entities.

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using ToolboxWeb.Web.Constants;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.ViewModels;
 
@@ -25,7 +26,12 @@ public sealed record AppNavGroup(string Key, string Label, IReadOnlyList<AppNavI
 /// </summary>
 public static class AppNavigation
 {
-    public static IReadOnlyList<AppNavGroup> Build(IUrlHelper url, IStringLocalizer localizer, bool isJiraUser, bool showDevTools)
+    /// <param name="isJiraUser">Whether the Jira screens apply: a Jira account, or a desktop with a saved Jira connection.</param>
+    /// <param name="mode">
+    /// A desktop copy also lists its Settings page; the web copy, which stores nothing, lists only
+    /// the Jira screens and the focus timer.
+    /// </param>
+    public static IReadOnlyList<AppNavGroup> Build(IUrlHelper url, IStringLocalizer localizer, bool isJiraUser, bool showDevTools, AppMode mode = AppMode.Server)
     {
         string Href(string routeName, string fallback) => url.RouteUrl(routeName) ?? fallback;
         string L(string key) => localizer[key].Value;
@@ -47,12 +53,26 @@ public static class AppNavigation
             ]));
         }
 
+        var focusTimer = new AppNavItem("focus-timer", Href(ToolboxRouteSlugs.RouteNames.FocusTimerHtml, "/focus-timer.html"), "timer", L("Nav.FocusTimer"), "f", true, On("FocusTimer"));
+        if (mode == AppMode.Web)
+        {
+            groups.Add(new AppNavGroup("personal", L("Nav.Group.Personal"), [focusTimer]));
+            if (showDevTools)
+            {
+                // The Tabulator demo saves its rows in the database, so it is not on the web copy.
+                var dev = DevGroup();
+                groups.Add(dev with { Items = dev.Items.Where(x => x.Key != "tabulator-demo").ToList() });
+            }
+
+            return groups;
+        }
+
         groups.Add(new AppNavGroup("personal", L("Nav.Group.Personal"),
         [
             new("dashboard", Href(ToolboxRouteSlugs.RouteNames.DashboardHtml, "/dashboard.html"), "layout-dashboard", L("Nav.Dashboard"), "d", true, On("Dashboard", "Activity")),
             new("notes", Href(ToolboxRouteSlugs.RouteNames.NotesHtml, "/notes.html"), "sticky-note", L("Nav.Notes"), "n", true, On("Notes")),
             new("checklist", Href(ToolboxRouteSlugs.RouteNames.ChecklistHtml, "/checklist.html"), "list-checks", L("Nav.Checklist"), "t", true, On("Checklist")),
-            new("focus-timer", Href(ToolboxRouteSlugs.RouteNames.FocusTimerHtml, "/focus-timer.html"), "timer", L("Nav.FocusTimer"), "f", true, On("FocusTimer")),
+            focusTimer,
             new("quick-links", Href(ToolboxRouteSlugs.RouteNames.QuickLinksHtml, "/quick-links.html"), "link", L("Nav.QuickLinks"), "l", true, On("QuickLinks")),
             new("prompts", Href(ToolboxRouteSlugs.RouteNames.PromptTemplatesHtml, "/prompt-templates.html"), "message-square-text", L("Nav.PromptTemplates"), "p", true, On("PromptTemplates")),
             new("activity", Href(ToolboxRouteSlugs.RouteNames.ActivityHtml, "/activity.html"), "activity", L("Activity.Title"), "a", false, On("Activity"))
@@ -66,19 +86,28 @@ public static class AppNavigation
 
         if (showDevTools)
         {
-            groups.Add(new AppNavGroup("dev", L("Nav.Group.Dev"),
+            groups.Add(DevGroup());
+        }
+
+        var account = new List<AppNavItem>
+        {
+            new("account", url.Page("/Account/Manage/Index", new { area = "Identity" }) ?? "/Identity/Account/Manage", "user", L("Auth.ManageAccount"), null, false, (_, _) => false)
+        };
+        if (mode == AppMode.Desktop)
+        {
+            account.Add(new("settings", Href(ToolboxRouteSlugs.RouteNames.SettingsHtml, "/settings.html"), "settings", L("Settings.Title"), null, false, On("Settings")));
+            account.Add(new("activate", Href(ToolboxRouteSlugs.RouteNames.ActivateHtml, "/activate.html"), "key-round", L("Activation.Title"), null, false, On("Activation")));
+        }
+
+        groups.Add(new AppNavGroup("account", L("Nav.Group.Account"), account));
+
+        return groups;
+
+        AppNavGroup DevGroup() => new AppNavGroup("dev", L("Nav.Group.Dev"),
             [
                 new("components", Href(ToolboxRouteSlugs.RouteNames.ComponentsHtml, "/component.html"), "blocks", L("Nav.Components"), "c", true, On("Components", "DemoKendo", "TabulatorDemo")),
                 new("kendo-demo", Href(ToolboxRouteSlugs.RouteNames.KendoDemoHtml, "/demo-kendo.html"), "layout-grid", L("Nav.KendoDemo"), null, false, On("DemoKendo")),
                 new("tabulator-demo", Href(ToolboxRouteSlugs.RouteNames.TabulatorDemoHtml, "/tabulator-demo.html"), "table", L("Nav.TabulatorDemo"), null, false, On("TabulatorDemo"))
-            ]));
-        }
-
-        groups.Add(new AppNavGroup("account", L("Nav.Group.Account"),
-        [
-            new("account", url.Page("/Account/Manage/Index", new { area = "Identity" }) ?? "/Identity/Account/Manage", "user", L("Auth.ManageAccount"), null, false, (_, _) => false)
-        ]));
-
-        return groups;
+            ]);
     }
 }

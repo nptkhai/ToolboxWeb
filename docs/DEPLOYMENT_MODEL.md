@@ -108,15 +108,46 @@ Một mã nguồn (repo ToolboxWeb), chọn chế độ bằng cấu hình `App:
 | GĐ | Việc | Công sức |
 |---|---|---|
 | R0 | Đổi tên hiển thị sang Toolkit, logo mới — **đã làm 14/11/2026** | S |
-| M0 | Chế độ `App:Mode`, đường dẫn dữ liệu Desktop, sao lưu trước migration, tự đăng nhập "chủ máy" | M |
-| M1 | Trang Cài đặt + Jira lưu trên máy (tự đăng nhập lại), bỏ đăng nhập Jira kiểu cũ ở Desktop | M |
-| M2 | Chế độ Web: cookie auth Jira không DB, ẩn module cần DB, no-op nhật ký, PWA + thanh phiên bản mới | M |
-| M3 | Máy chính Toolkit License: quản trị, API kích hoạt, ký license, phát hành phiên bản, heartbeat | L |
-| M4 | License trên thiết bị: token, màn hình Kích hoạt (online + thủ công), kiểm tra chữ ký | M |
+| M0 | Chế độ `App:Mode`, đường dẫn dữ liệu Desktop, sao lưu trước migration, tự đăng nhập "chủ máy" — **đã làm 14/11/2026** (xem "Trạng thái M0") | M |
+| M1 | Trang Cài đặt + Jira lưu trên máy (tự đăng nhập lại), bỏ đăng nhập Jira kiểu cũ ở Desktop — **đã làm 14/11/2026** (xem "Trạng thái M1") | M |
+| M2 | Chế độ Web: cookie auth Jira không DB, ẩn module cần DB, no-op nhật ký, PWA + thanh phiên bản mới — **đã làm 15/11/2026** (xem "Trạng thái M2") | M |
+| M3 | Máy chính Toolkit License: quản trị, API kích hoạt, ký license, phát hành phiên bản, heartbeat — **đã làm 15/11/2026** (xem "Trạng thái M3" và `docs/LICENSE_SERVER.md`) | L |
+| M4 | License trên thiết bị: token, màn hình Kích hoạt (online + thủ công), kiểm tra chữ ký — **đã làm 15/11/2026** (xem "Trạng thái M4") | M |
 | M5 | Đóng gói Velopack, cửa sổ app, kiểm tra/áp dụng cập nhật, xuất/nhập dữ liệu chuyển từ bản IIS | M–L |
 | Sau | Mobile có DB riêng (Blazor + MAUI) nếu thật sự cần | L+ |
 
 Mỗi giai đoạn: trước khi làm, liệt kê việc cụ thể trong hộp chọn để chủ dự án đánh dấu (quy trình đã thống nhất).
+
+## Trạng thái M0 (14/11/2026)
+
+Chủ dự án chốt: **bản Desktop chỉ phát hành cho người dùng ở M5** (`Setup.exe` tải từ máy chính, kích hoạt license, tự cập nhật). Trước đó chế độ Desktop chỉ để phát triển và chạy thử. Mobile: mở site trên điện thoại → "Thêm vào màn hình chính"; từ M2 là PWA.
+
+- **`App:Mode`** (`Infrastructure/Hosting/AppMode.cs`):
+  - `Server` (mặc định) giữ nguyên site IIS hiện tại;
+  - `Desktop` bật bằng `--desktop`, `TOOLKIT_DESKTOP=1` hoặc `App__Mode=Desktop`, và nạp thêm `appsettings.Desktop.json`.
+- **Dữ liệu Desktop** nằm trong `%LOCALAPPDATA%\Toolkit` (đổi được bằng `Desktop:DataRoot`): `app.db`, `uploads/`, `keys/`, `logs/`, `backups/`, `device.json` (id chủ máy), `instance.json` (bản đang chạy).
+- **Sao lưu DB** trước khi chạy migration mới, ở mọi chế độ (`Infrastructure/Storage/DatabaseBackup.cs`):
+  - ghi vào `backups/app-<thời gian>-before-<migration>.db`, giữ 5 bản;
+  - ở Server, thư mục `backups` nằm cạnh file DB, hoặc theo `Storage:BackupsPath`;
+  - sao lưu lỗi thì app không khởi động.
+- **Chủ máy** (`Services/DeviceOwnerService.cs`): chọn theo thứ tự
+  1. tài khoản ghi trong `device.json`;
+  2. tài khoản không phải Jira có sẵn trong DB (lấy tài khoản cũ nhất nếu có nhiều);
+  3. tạo tài khoản mới mang tên người dùng Windows, không mật khẩu.
+  
+  `DesktopOwnerSignInMiddleware` tự đăng nhập chủ máy cho mọi request.
+- **Ở Desktop:**
+  - trang đăng nhập, đăng ký, đăng xuất chuyển về Tổng quan;
+  - Email, Mật khẩu, Xác thực hai lớp trả 404 và không có trong menu;
+  - "Xóa tài khoản" thành "Xóa dữ liệu trên máy";
+  - menu tài khoản và Ctrl+K có "Thoát Toolkit" thay cho "Đăng xuất".
+- **Chỉ máy đó mở được:**
+  - nghe `127.0.0.1:5180`, hoặc cổng trống khác khi 5180 bận;
+  - từ chối kết nối không phải loopback, chỉ nhận Host `localhost`/`127.0.0.1`, không chuyển HTTPS;
+  - mở lần hai thì mở trình duyệt vào bản đang chạy rồi thoát (`/desktop/ping`, `instance.json`).
+- **Jira ở Desktop:** xem "Trạng thái M1".
+- **Chạy thử:** `dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj -- --desktop`.
+
 
 ## File chính sẽ đụng tới
 
@@ -145,3 +176,118 @@ Mỗi giai đoạn: trước khi làm, liệt kê việc cụ thể trong hộp 
 - Máy chính là điểm duy nhất cho kích hoạt và cập nhật; máy đã kích hoạt vẫn chạy khi máy chính tắt.
 - Mỗi máy một DB: không đồng bộ giữa desktop và điện thoại (đúng yêu cầu, nhưng cần nói rõ với người dùng).
 - iOS chỉ hỗ trợ PWA hạn chế; app iOS thật cần tài khoản Apple Developer.
+
+## Trạng thái M1 (14/11/2026)
+
+Chủ dự án chọn cả 4 việc, đăng nhập Jira bằng mật khẩu hoặc token.
+
+- **Trang Cài đặt** (`/settings.html`, `SettingsController`, chỉ ở Desktop):
+  - có trong menu tài khoản và Ctrl+K ("Cài đặt Jira");
+  - kết nối Jira gồm địa chỉ, cách đăng nhập (mật khẩu, hoặc token truy cập cá nhân của Jira Server/Data Center 8.14+), tên đăng nhập, mật khẩu hoặc token;
+  - nút "Kiểm tra kết nối" thử mà không lưu; "Lưu và kết nối" thử rồi lưu; "Gỡ kết nối" hỏi lại kèm địa chỉ. Lưu và gỡ đều ghi nhật ký hoạt động.
+- **Lưu trên máy:**
+  - kết nối nằm trong `device.json` (`DeviceFileStore`, mục `jira`), mật khẩu hoặc token được mã hóa bằng Data Protection và không hiện lại;
+  - "Xóa dữ liệu trên máy" xóa luôn kết nối này.
+- **Tự kết nối** (`Services/DesktopJiraService.cs`):
+  - cả app dùng một phiên Jira, mở nền ngay khi app chạy, và mở lại từ thông tin đã lưu khi phiên hết hạn (`Jira:SessionTimeoutHours`);
+  - với mật khẩu, nếu Jira trả 401 giữa chừng thì client đăng nhập lại một lần rồi gửi lại (`JiraClient`). Cơ chế này cũng áp dụng ở Server;
+  - lỗi được báo rõ: không tới được Jira, sai thông tin, địa chỉ không phải Jira, không đọc được mật khẩu đã lưu.
+- **Menu và trang Jira:**
+  - đã có kết nối thì nhóm JIRA hiện cùng dữ liệu cá nhân trong một tài khoản; logo dẫn tới Jira Dashboard;
+  - chưa kết nối thì trang Jira chuyển sang Cài đặt kèm lời nhắc (thông báo trung tính), lưu xong quay lại đúng trang;
+  - kết nối lỗi thì báo lý do.
+- **Tổng quan:** ô "Giờ log Jira hôm nay" hiện khi đã có kết nối.
+- **Server:** đăng nhập Jira như cũ; trang Cài đặt không có.
+
+## Trạng thái M2 (15/11/2026)
+
+Chủ dự án chọn cả 4 việc. So sánh DB và Bắt SQL **chỉ có ở Desktop**. Site IIS hiện tại **giữ chế độ Server**; bản Web là một site IIS thứ hai.
+
+- **Chế độ Web** (`App:Mode=Web`):
+  - **Đăng nhập:** chỉ bằng Jira; không có đăng ký, không có trang tài khoản.
+  - **Menu:** chỉ còn Jira Dashboard, Công việc Jira và Hẹn giờ tập trung. Các trang cần DB mang `[NotInWebMode]` (`Infrastructure/Hosting/WebModeRules.cs`) và trả 404: Tổng quan, Hoạt động, Ghi chú, Việc cần làm, Liên kết, Prompt, So sánh DB, Bắt SQL, Cài đặt, Tabulator Demo.
+  - **Không ghi DB nào ra đĩa:**
+    - Identity dùng SQLite trong bộ nhớ, chỉ để giữ tài khoản bóng của người đăng nhập Jira; mất khi khởi động lại, cùng lúc với phiên Jira;
+    - nhật ký hoạt động không ghi (`NoOpActivityLogService`), nên ghi hạn lên Jira vẫn chạy;
+    - trên đĩa chỉ có khóa Data Protection (để cookie còn hiệu lực) và log.
+  - **Hẹn giờ:** chỉ đếm giờ trên trình duyệt; không lưu phiên, không có số liệu và lịch sử.
+- **Cài như ứng dụng (PWA, cả ba chế độ):**
+  - `manifest.webmanifest` dùng icon TK 192/512;
+  - service worker `Content/sw.js` chỉ lưu đệm file tĩnh có phiên bản, font, icon, thư viện và trang `/offline.html`. Trang và dữ liệu Jira luôn lấy từ mạng; không bao giờ lưu.
+- **Báo phiên bản mới (cả ba chế độ):**
+  - mỗi trang ghi số build;
+  - `site.js` hỏi `/app/version` mỗi 10 phút và khi quay lại tab; khác số build thì hiện thanh "Đã có phiên bản mới của Toolkit · Tải lại";
+  - menu tài khoản hiện "Toolkit 1.0.0" (`<Version>` trong csproj). **Tăng `Version` mỗi lần phát hành.**
+
+### Dựng site Web trên IIS (máy chính)
+1. Tạo site IIS thứ hai (ví dụ `toolkit.<miền>`), publish cùng bản build với site Server.
+2. Đặt chế độ Web theo một trong hai cách:
+   - trong `web.config` của site, phần `<aspNetCore>`, thêm `<environmentVariables><environmentVariable name="App__Mode" value="Web" /></environmentVariables>`;
+   - hoặc ghi `"App": { "Mode": "Web" }` trong `appsettings.Production.json` của site đó.
+3. `Storage:DataProtectionKeysPath` trỏ ra ngoài thư mục site (giống site Server, nhưng dùng thư mục riêng).
+4. Gắn **HTTPS có chứng chỉ hợp lệ**: điện thoại chỉ cho cài app khi site chạy HTTPS.
+5. Máy chủ phải vào được Jira (`Jira:DefaultBaseUrl`).
+6. **Cài trên điện thoại:**
+   - Android Chrome: menu ⋮ → "Cài đặt ứng dụng";
+   - iPhone Safari: Chia sẻ → "Thêm vào MH chính".
+
+## Trạng thái M3 (15/11/2026)
+
+Chủ dự án chọn cả 4 việc. Các quyết định:
+
+- **Thời hạn license:** chọn khi duyệt; mặc định không hết hạn; thu hồi được bất cứ lúc nào.
+- **Đăng nhập quản trị:** mật khẩu cộng xác thực hai lớp bắt buộc.
+- **DB:** SQLite.
+
+Chi tiết cách dùng và cách dựng trên IIS ở `docs/LICENSE_SERVER.md`.
+
+- **App quản trị riêng:** `src/ToolkitLicense.Web`, đã thêm vào `ToolboxWeb.sln`.
+  - Giao diện dùng chung token, thành phần, font, icon và logo với Toolkit, liên kết từ `ToolboxWeb.Web` chứ không chép.
+  - Có tiếng Việt và tiếng Anh, giao diện sáng và tối, dùng được trên màn hình 390px.
+- **Đăng nhập:**
+  - Tài khoản quản trị đầu tiên tạo bằng mã cài đặt một lần, ghi trong thư mục dữ liệu trên máy chủ.
+  - Xác thực hai lớp bằng ứng dụng xác thực là bắt buộc, kèm 10 mã khôi phục.
+  - Đăng nhập sai 5 lần thì khóa 15 phút; trang đăng nhập và API giới hạn số lần gọi.
+- **Kích hoạt và cấp license:**
+  - API `POST /api/activations` và `GET /api/activations/{id}`;
+  - kích hoạt thủ công bằng cách dán mã `TKT1.…`;
+  - duyệt (gắn người dùng, chọn thời hạn) hoặc từ chối;
+  - license ký bằng ECDSA P-256. Khóa ký sinh lần chạy đầu, khóa công khai và dấu khóa xem ở trang Khóa ký, để gắn vào bản desktop ở M4.
+- **Quản lý người dùng, thiết bị, license:**
+  - cấp lại hoặc gia hạn, thu hồi có lý do; mọi thao tác đều hỏi xác nhận có ghi tên;
+  - nhật ký thao tác ghi mọi việc của quản trị.
+- **Phát hành phiên bản và báo phiên bản:**
+  - trang Phiên bản (số, ghi chú, đường tải, bắt buộc), kèm bảng số máy theo từng phiên bản đang chạy;
+  - `GET /api/releases/latest`;
+  - `POST /api/devices/heartbeat` do thiết bị ký: ghi phiên bản và lần cuối hoạt động, trả tình trạng license, bản license mới khi vừa gia hạn, và phiên bản mới nhất.
+- **Khác với phác thảo ban đầu:**
+  - heartbeat là `POST /api/devices/heartbeat`; mã thiết bị nằm trong nội dung đã ký thay vì trên đường dẫn;
+  - không có bảng `DeviceHeartbeats` riêng: phiên bản và lần cuối hoạt động lưu ngay trên thiết bị.
+- **Chưa làm (M4):** phía thiết bị, gồm tạo khóa và mã kích hoạt, màn hình Kích hoạt, kiểm tra license khi mở app, gửi heartbeat, thanh "Có phiên bản mới".
+
+## Trạng thái M4 (15/11/2026)
+
+Chủ dự án chọn cả 4 việc:
+
+- **Hết hạn hoặc bị thu hồi:** chỉ đọc.
+- **Liên lạc định kỳ với máy chính:** không bắt buộc.
+- **Địa chỉ máy chính và khóa công khai:** ghi trong `appsettings.Desktop.json` (`License:ServerUrl`, `License:PublicKey`).
+
+Chi tiết ở mục "Phía máy tính" của `docs/LICENSE_SERVER.md`.
+
+- **Khóa và mã kích hoạt** (`DeviceIdentityService`):
+  - mã thiết bị và khóa ECDSA P-256 lưu trong `device.json`; khóa riêng mã hóa bằng Data Protection;
+  - chép sang máy khác thì thành máy mới;
+  - mã `TKT1` dùng đúng định dạng máy chính đọc (`WireFormat.cs` dùng chung).
+- **Màn hình Kích hoạt** (`/activate.html`):
+  - chưa có bản quyền thì mọi trang dẫn về đây;
+  - gửi yêu cầu qua mạng rồi tự mở app khi được duyệt, hoặc làm thủ công (sao chép mã, dán bản quyền).
+- **Kiểm tra bản quyền** (`DeviceLicenseService`, `DesktopLicenseMiddleware`):
+  - kiểm chữ ký, đúng máy, còn hạn; không cần mạng;
+  - hết hạn hoặc thu hồi thì chỉ đọc; thao tác không đổi dữ liệu app vẫn chạy (`[AllowWhenUnlicensed]`);
+  - trang Cài đặt có khung Bản quyền, kèm nút "Kiểm tra ngay".
+- **Báo phiên bản và thu hồi** (`LicenseHeartbeatService`):
+  - báo phiên bản đang chạy, tự nhận bản gia hạn, biết khi bị thu hồi;
+  - thanh "Đã có Toolkit x.y.z" có "Tải về" và "Để sau"; bản bắt buộc thì không ẩn được.
+- **Máy chính:** trang Khóa ký có thêm khóa công khai một dòng để dán vào cấu hình.
+- **Trước khi phát hành bản Desktop (M5):** điền `License:ServerUrl` và `License:PublicKey` thật vào `appsettings.Desktop.json`.

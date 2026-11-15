@@ -315,7 +315,8 @@
         paragraph.textContent = minutes >= 1
             ? format(paragraph.dataset.template, number(minutes))
             : paragraph.dataset.templateShort;
-        save.hidden = minutes < 1;
+        // The web copy stores nothing (data-stores="false"): stopping only ends the countdown.
+        save.hidden = minutes < 1 || text.stores === 'false';
         save.textContent = format(save.dataset.template, number(minutes));
         stopModal?.show();
     });

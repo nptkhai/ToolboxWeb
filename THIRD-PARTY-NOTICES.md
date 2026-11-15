@@ -37,6 +37,10 @@ Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expr
 | Microsoft.Data.SqlClient | 6.1.5 | MIT | In use (Schema Compare, SQL Profiler) |
 | Microsoft.SqlServer.DacFx | 170.4.83 | **Microsoft Software License Terms** (free, proprietary, redistributable with conditions) | In use (Schema Compare). **Approved by the owner on 2026-10-21**, see below |
 
+## License server (`src/ToolkitLicense.Web`)
+
+No new dependency. It references three packages already listed above, at the same versions: `Microsoft.AspNetCore.Identity.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.Sqlite` and `Microsoft.EntityFrameworkCore.Tools` (design-time). It serves these files of `ToolboxWeb.Web/Content` through links in its csproj, under the same licenses: Bootstrap, Inter, the Lucide sprite, the Toolkit logo and the app's own CSS. Signing uses `System.Security.Cryptography` from .NET. The two-factor key is shown as text, so no QR code library is used.
+
 ## Transitive NuGet packages
 
 All 138 packages in the restore graph were checked:

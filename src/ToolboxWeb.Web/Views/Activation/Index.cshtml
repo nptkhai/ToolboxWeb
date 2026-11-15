@@ -1,0 +1,113 @@
+@using ToolboxWeb.Web.Services
+@model ActivationPageViewModel
+@*
+    Desktop activation (ActivationController). Without a license only this page opens; with an
+    ended license (read-only) it is where a new one is asked for. Behavior: Content/js/activation.js
+    (polls /activate/status while a request waits for approval).
+*@
+@{
+    ViewData["Title"] = T["Activation.Title"];
+    var status = Model.Status;
+    var (tone, key) = LicenseDisplay.Pill(status);
+    var intro = status.State switch
+    {
+        DeviceLicenseState.Active => "Activation.Intro.Active",
+        DeviceLicenseState.Expired => "Activation.Intro.Expired",
+        DeviceLicenseState.Revoked => "Activation.Intro.Revoked",
+        DeviceLicenseState.Off => "Activation.Intro.Off",
+        _ => "Activation.Intro.NotActivated"
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/activation.css" asp-append-version="true" />
+}
+
+<div class="activation-page" data-activation data-status-url="/activate/status" data-pending="@(Model.Pending ? "true" : "false")">
+    <section class="tbx-panel" aria-labelledby="activation-status-title">
+        <header class="tbx-panel-header">
+            <h2 class="tbx-panel-title activation-title" id="activation-status-title"><tbx-icon name="shield-check" />@T["Activation.StatusTitle", Model.MachineName]</h2>
+            <span class="tbx-pill @tone" data-activation-pill>@T[key]</span>
+        </header>
+        <div class="tbx-panel-body activation-body">
+            @if (status.State == DeviceLicenseState.NotConfigured)
+            {
+                <div class="tbx-error-state" role="alert"><tbx-icon name="circle-alert" /><span>@T["Activation.NotConfigured"]</span></div>
+            }
+            else
+            {
+                <p class="activation-intro">@T[intro]</p>
+            }
+            <partial name="_LicenseSummary" model="(status, Model.DeviceId)" />
+        </div>
+    </section>
+
+    @if (status.State is not DeviceLicenseState.NotConfigured and not DeviceLicenseState.Off)
+    {
+        <ol class="tbx-steps">
+            <li class="tbx-step">
+                <div class="tbx-step-head">
+                    <span class="tbx-step-no" aria-hidden="true">1</span>
+                    <h2 class="tbx-step-title">@T["Activation.Online.Title"]</h2>
+                    <span class="tbx-step-hint">@T["Activation.Online.Hint"]</span>
+                </div>
+                @if (!status.ServerConfigured)
+                {
+                    <p class="activation-intro">@T["Activation.Online.NoServer"]</p>
+                }
+                else
+                {
+                    <div class="activation-wait" data-activation-wait hidden="@(!Model.Pending)" role="status">
+                        <tbx-icon name="loader-circle" class="activation-spin" />
+                        <span data-activation-wait-text>@T["Activation.Online.Waiting"]</span>
+                    </div>
+                    @if (Model.Rejected)
+                    {
+                        <div class="tbx-error-state" role="alert"><tbx-icon name="circle-alert" /><span>@T["Activation.Online.Rejected"]</span></div>
+                    }
+                    <form method="post" action="/activate/request" class="activation-actions">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn @(Model.Pending ? "btn-outline-secondary" : "btn-primary")">
+                            <tbx-icon name="upload" />@T[Model.Pending || Model.Rejected ? "Activation.Online.SendAgain" : "Activation.Online.Send"]
+                        </button>
+                    </form>
+                }
+            </li>
+            <li class="tbx-step">
+                <div class="tbx-step-head">
+                    <span class="tbx-step-no" aria-hidden="true">2</span>
+                    <h2 class="tbx-step-title">@T["Activation.Manual.Title"]</h2>
+                    <span class="tbx-step-hint">@T["Activation.Manual.Hint"]</span>
+                </div>
+                <div class="activation-body">
+                    <div class="tbx-field">
+                        <label class="tbx-field-label" for="activation-token">@T["Activation.Manual.Token"]</label>
+                        <textarea class="form-control activation-code" id="activation-token" rows="3" readonly>@Model.Token</textarea>
+                        <span class="tbx-field-hint">@T["Activation.Manual.TokenHint"]</span>
+                    </div>
+                    <div class="activation-actions">
+                        <button type="button" class="btn btn-outline-secondary" data-copy-target="#activation-token" data-copied-text="@T["Action.Copied"]">
+                            <tbx-icon name="copy" /><span data-copy-label>@T["Activation.Manual.Copy"]</span>
+                        </button>
+                    </div>
+                    <form method="post" action="/activate/license" class="activation-body" novalidate>
+                        @Html.AntiForgeryToken()
+                        <div class="tbx-field">
+                            <label class="tbx-field-label" for="activation-license">@T["Activation.Manual.License"]</label>
+                            <textarea class="form-control activation-code@(Model.LicenseError is null ? null : " is-invalid")" id="activation-license" name="licenseText" rows="3"
+                                      placeholder="TKL1.eyJ2Ijox…" aria-describedby="activation-license-error" required>@Model.LicenseText</textarea>
+                            <span class="tbx-field-error" id="activation-license-error">@Model.LicenseError</span>
+                        </div>
+                        <div class="activation-actions">
+                            <button type="submit" class="btn btn-primary"><tbx-icon name="key-round" />@T["Activation.Manual.Apply"]</button>
+                        </div>
+                    </form>
+                </div>
+            </li>
+        </ol>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/activation.js" asp-append-version="true"></script>
+}

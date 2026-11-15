@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToolboxWeb.Web.Services;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
 /// <summary>Data search for the command palette (Ctrl+K, Content/js/command-palette.js).</summary>
+[NotInWebMode]
 [Authorize]
 public class SearchController : Controller
 {

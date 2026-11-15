@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Enums;
 using ToolboxWeb.Web.Services;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
 /// <summary>Every activity entry of the user, newest first, with a kind filter ("See all" on the overview).</summary>
+[NotInWebMode]
 [Authorize]
 public class ActivityController : Controller
 {

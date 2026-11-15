@@ -19,6 +19,8 @@ public static class ToolboxRouteSlugs
         public const string SchemaCompare = "schema-compare";
         public const string SqlProfiler = "sql-profiler";
         public const string Privacy = "privacy";
+        public const string Settings = "settings";
+        public const string Activate = "activate";
         public const string Error = "error";
     }
 
@@ -39,6 +41,8 @@ public static class ToolboxRouteSlugs
         public const string SchemaCompare = "schema-compare.html";
         public const string SqlProfiler = "sql-profiler.html";
         public const string Privacy = "privacy.html";
+        public const string Settings = "settings.html";
+        public const string Activate = "activate.html";
         public const string Error = "error.html";
     }
 
@@ -61,6 +65,8 @@ public static class ToolboxRouteSlugs
         public const string SchemaCompareHtml = "schema-compare-html";
         public const string SqlProfilerHtml = "sql-profiler-html";
         public const string PrivacyHtml = "privacy-html";
+        public const string SettingsHtml = "settings-html";
+        public const string ActivateHtml = "activate-html";
         public const string ErrorHtml = "error-html";
     }
 

@@ -1,0 +1,34 @@
+@model CustomerEditViewModel
+@{
+    ViewData["Title"] = Model.Name;
+    ViewData["Nav"] = "customers";
+}
+<div class="lic-actions"><a class="btn btn-sm btn-outline-secondary" href="/customers"><tbx-icon name="arrow-left" />@T["Nav.Customers"]</a></div>
+<div class="lic-grid-2">
+    <section class="tbx-panel">
+        <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Customer.EditTitle"]</h2></div>
+        <form method="post" asp-antiforgery="true" action="/customers/edit/@Model.Id" class="tbx-panel-body lic-form" novalidate>
+            <partial name="_CustomerFields" model="@((Model.Name, Model.Email, Model.Note))" />
+            <div class="lic-actions"><button type="submit" class="btn btn-primary">@T["Action.Save"]</button></div>
+        </form>
+    </section>
+    <section class="tbx-panel">
+        <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Customer.Devices"]</h2></div>
+        @if (Model.Devices.Count == 0)
+        {
+            <partial name="_Empty" model="@(("monitor", T["Customer.NoDevices"].Value))" />
+        }
+        else
+        {
+            <ul class="tbx-list">
+                @foreach (var device in Model.Devices)
+                {
+                    <li class="tbx-row">
+                        <a class="tbx-row-title" href="/devices/details/@device.Id">@(device.MachineName is { Length: > 0 } n ? n : device.Id)</a>
+                        <span class="tbx-row-meta">@(device.AppVersion ?? "—")</span>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+</div>

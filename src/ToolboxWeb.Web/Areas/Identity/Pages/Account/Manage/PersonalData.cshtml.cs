@@ -2,11 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ToolboxWeb.Web.Domain;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 using ToolboxWeb.Web.Services;
 
 namespace ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage;
 
 [Authorize]
+// Downloading one's data stays possible on an ended desktop license.
+[AllowWhenUnlicensed]
 public class PersonalDataModel : ManagePageModel
 {
     private readonly IAccountService _accounts;

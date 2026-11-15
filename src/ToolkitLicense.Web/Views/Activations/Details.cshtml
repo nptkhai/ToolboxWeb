@@ -1,0 +1,92 @@
+@model ActivationDetailsViewModel
+@{
+    var request = Model.Request;
+    var device = request.Device!;
+    var (css, key) = Pills.For(request.Status);
+    var name = device.MachineName is { Length: > 0 } machine ? machine : device.Id;
+    ViewData["Title"] = T["Activation.DetailsTitle", name];
+    ViewData["Nav"] = "activations";
+}
+<div class="lic-actions"><a class="btn btn-sm btn-outline-secondary" href="/activations"><tbx-icon name="arrow-left" />@T["Nav.Activations"]</a></div>
+<div class="lic-grid-2">
+    <section class="tbx-panel">
+        <div class="tbx-panel-header">
+            <h2 class="tbx-panel-title">@T["Activation.Request"]</h2>
+            <span class="tbx-pill @css">@T[key]</span>
+        </div>
+        <div class="tbx-panel-body">
+            <dl class="lic-dl">
+                <dt>@T["Device.Machine"]</dt><dd>@device.MachineName</dd>
+                <dt>@T["Device.WindowsUser"]</dt><dd>@device.WindowsUser</dd>
+                <dt>@T["Device.Id"]</dt><dd><a href="/devices/details/@device.Id" class="lic-mono">@device.Id</a></dd>
+                <dt>@T["Device.KeyThumbprint"]</dt><dd class="lic-mono">@Model.KeyThumbprint</dd>
+                <dt>@T["Device.Version"]</dt><dd>@(device.AppVersion ?? "—")</dd>
+                <dt>@T["Activation.Source"]</dt><dd>@T[$"Activation.Source.{request.Source}"]@(request.RequestIp is { Length: > 0 } ip ? $" · {ip}" : "")</dd>
+                <dt>@T["Activation.RequestedAt"]</dt><dd>@Display.DateTimeText(request.RequestedAtUtc)</dd>
+                @if (request.DecidedAtUtc is not null)
+                {
+                    <dt>@T["Activation.DecidedAt"]</dt><dd>@Display.DateTimeText(request.DecidedAtUtc)</dd>
+                }
+                @if (!string.IsNullOrEmpty(request.DecisionNote))
+                {
+                    <dt>@T["Activation.Note"]</dt><dd>@request.DecisionNote</dd>
+                }
+                <dt>@T["Customer.Label"]</dt><dd>@(device.Customer?.Name ?? T["Customer.None"].Value)</dd>
+            </dl>
+        </div>
+    </section>
+
+    @if (request.Status == ActivationStatus.Pending)
+    {
+        <section class="tbx-panel">
+            <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Activation.Decide"]</h2></div>
+            <form method="post" asp-antiforgery="true" action="/activations/approve/@request.Id" class="tbx-panel-body lic-form" data-customer-pick
+                  data-confirm="@T["Activation.ApproveConfirm", name]" data-confirm-button="@T["Activation.Approve"]" novalidate>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="customerId">@T["Customer.Label"]</label>
+                    <select class="form-select" id="customerId" name="customerId">
+                        <option value="">@T["Customer.None"]</option>
+                        @foreach (var customer in Model.Customers)
+                        {
+                            <option value="@customer.Id" selected="@(customer.Id == Model.CustomerId)">@customer.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="newCustomerName">@T["Activation.NewCustomer"]</label>
+                    <input class="form-control" id="newCustomerName" name="newCustomerName" maxlength="120" placeholder="@T["Activation.NewCustomerExample"]" />
+                    <span class="tbx-field-hint">@T["Activation.NewCustomerHint"]</span>
+                </div>
+                <partial name="_TermFields" model="false" />
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="note">@T["Activation.Note"]</label>
+                    <input class="form-control" id="note" name="note" maxlength="500" />
+                </div>
+                <div class="lic-actions">
+                    <button type="submit" class="btn btn-primary"><tbx-icon name="check" />@T["Activation.Approve"]</button>
+                </div>
+            </form>
+            <form method="post" asp-antiforgery="true" action="/activations/reject/@request.Id" class="tbx-panel-body pt-0 lic-actions"
+                  data-confirm="@T["Activation.RejectConfirm", name]" data-confirm-button="@T["Activation.Reject"]" data-confirm-danger>
+                <input type="hidden" name="note" value="" />
+                <button type="submit" class="btn btn-outline-danger"><tbx-icon name="x" />@T["Activation.Reject"]</button>
+            </form>
+        </section>
+    }
+    else if (Model.License is not null)
+    {
+        <section class="tbx-panel">
+            <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["License.Title"]</h2></div>
+            <div class="tbx-panel-body lic-form">
+                <p class="lic-note">@T[request.Source == ActivationSource.Manual ? "License.ManualHint" : "License.OnlineHint"]</p>
+                <dl class="lic-dl">
+                    <dt>@T["License.Expires"]</dt><dd>@(Model.License.ExpiresAtUtc is null ? T["License.NoExpiry"].Value : Display.DateText(Model.License.ExpiresAtUtc))</dd>
+                </dl>
+                <pre class="lic-text-block" id="license-text">@Model.License.Text</pre>
+                <div class="lic-actions">
+                    <button type="button" class="btn btn-primary" data-copy="#license-text" data-copied="@T["Action.Copied"]"><tbx-icon name="copy" /><span data-copy-label>@T["License.Copy"]</span></button>
+                </div>
+            </div>
+        </section>
+    }
+</div>

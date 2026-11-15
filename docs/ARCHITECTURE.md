@@ -32,6 +32,8 @@ Controllers stay thin. Services own business rules, user isolation, and activity
 - SQLite stores user accounts, notes, checklist items, focus sessions, quick links, prompt templates, and activity history.
 - `localStorage` stores UI-only preferences: `toolbox.theme` and `toolbox.sidebar`.
 - Every user-owned entity has `UserId`. Services must always filter by `UserId`.
+- Where the files live depends on `App:Mode` (`Infrastructure/Hosting/AppMode.cs`). Server: the `Storage:*` paths of the site (outside the published folder in Production). Desktop: `%LOCALAPPDATA%\Toolkit` (`app.db`, `uploads/`, `keys/`, `logs/`, `backups/`, `device.json`), so updating the app folder never touches the data.
+- Before new migrations run, `Infrastructure/Storage/DatabaseBackup.cs` copies the database to `backups/` (the five newest are kept); a failed copy stops the start-up.
 
 ## Adding A New Tool
 

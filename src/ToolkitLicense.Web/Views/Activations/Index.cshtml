@@ -1,0 +1,41 @@
+@model ActivationsViewModel
+@{
+    ViewData["Title"] = T["Nav.Activations"];
+    ViewData["Nav"] = "activations";
+}
+<section class="tbx-panel">
+    <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Activation.PendingTitle", Model.Pending.Count]</h2></div>
+    @if (Model.Pending.Count == 0)
+    {
+        <partial name="_Empty" model="@(("inbox", T["Activation.NoPending"].Value))" />
+    }
+    else
+    {
+        <partial name="_RequestTable" model="Model.Pending" />
+    }
+</section>
+
+<section class="tbx-panel">
+    <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Activation.ManualTitle"]</h2></div>
+    <form method="post" asp-antiforgery="true" action="/activations/manual" class="tbx-panel-body lic-form" novalidate>
+        <p class="lic-note">@T["Activation.ManualIntro"]</p>
+        <div class="tbx-field">
+            <label class="tbx-field-label" for="token">@T["Activation.Token"]</label>
+            <textarea class="form-control lic-mono" id="token" name="token" rows="4" placeholder="TKT1.eyJ2Ijox…" required>@Model.Token</textarea>
+            <span class="tbx-field-error">@Model.TokenError</span>
+        </div>
+        <div class="lic-actions"><button type="submit" class="btn btn-primary">@T["Activation.ManualSubmit"]</button></div>
+    </form>
+</section>
+
+<section class="tbx-panel">
+    <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Activation.HistoryTitle"]</h2></div>
+    @if (Model.History.Count == 0)
+    {
+        <partial name="_Empty" model="@(("history", T["Activation.NoHistory"].Value))" />
+    }
+    else
+    {
+        <partial name="_RequestTable" model="Model.History" />
+    }
+</section>

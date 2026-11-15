@@ -1,0 +1,99 @@
+/* Desktop activation (Views/Activation/Index.cshtml) and the license facts it shares with Settings.
+   Colors come from tokens.css. */
+.activation-page {
+    display: grid;
+    gap: var(--space-4);
+    max-width: 760px;
+}
+
+.activation-title {
+    align-items: center;
+    display: flex;
+    gap: var(--space-2);
+}
+
+.activation-body {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.activation-intro {
+    color: var(--muted);
+    margin: 0;
+}
+
+.activation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.activation-code {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    word-break: break-all;
+}
+
+.activation-wait {
+    align-items: center;
+    color: var(--accent-strong);
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+    .activation-wait[hidden] {
+        display: none;
+    }
+
+.activation-spin {
+    animation: activation-spin 1.2s linear infinite;
+}
+
+@keyframes activation-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .activation-spin {
+        animation: none;
+    }
+}
+
+/* Fixed label column so the two lists in Settings line up. */
+.license-facts {
+    display: grid;
+    gap: var(--space-2) var(--space-4);
+    grid-template-columns: 13rem minmax(0, 1fr);
+    margin: 0;
+}
+
+    .license-facts dt {
+        color: var(--muted);
+        font-weight: var(--weight-regular);
+    }
+
+    .license-facts dd {
+        margin: 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+@media (max-width: 599.98px) {
+    .license-facts {
+        gap: 0;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+        .license-facts dd {
+            margin-bottom: var(--space-2);
+        }
+}
+
+/* Device id and key fingerprint: monospace in the text color (not Bootstrap's code color). */
+.license-mono {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+}

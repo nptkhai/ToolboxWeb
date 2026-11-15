@@ -68,9 +68,19 @@
                     <span class="account-dropdown-detail">@accountDetail</span>
                 }
             </div>
-            <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">
-                <tbx-icon name="user" />@T["Auth.ManageAccount"]
-            </a>
+            @if (!AppMode.IsWeb)
+            {
+                @* The web copy keeps no account data, so it has no account pages. *@
+                <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">
+                    <tbx-icon name="user" />@T["Auth.ManageAccount"]
+                </a>
+            }
+            @if (AppMode.IsDesktop)
+            {
+                <a class="dropdown-item" href="@Url.RouteUrl(ToolboxWeb.Web.Constants.ToolboxRouteSlugs.RouteNames.SettingsHtml)">
+                    <tbx-icon name="settings" />@T["Settings.Title"]
+                </a>
+            }
             <div class="dropdown-divider"></div>
 
             <p class="account-dropdown-label" id="account-theme-label">@T["Account.Theme"]</p>
@@ -88,9 +98,20 @@
             </form>
 
             <div class="dropdown-divider"></div>
-            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                <button type="submit" class="dropdown-item"><tbx-icon name="log-out" />@T["Auth.Logout"]</button>
-            </form>
+            @if (AppMode.IsDesktop)
+            {
+                @* A desktop has no sign-out: the owner is signed in automatically. It can quit instead. *@
+                <form asp-area="" asp-controller="Desktop" asp-action="Exit" method="post">
+                    <button type="submit" class="dropdown-item"><tbx-icon name="log-out" />@T["Desktop.Exit"]</button>
+                </form>
+            }
+            else
+            {
+                <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                    <button type="submit" class="dropdown-item"><tbx-icon name="log-out" />@T["Auth.Logout"]</button>
+                </form>
+            }
+            <p class="account-dropdown-version">@T["App.VersionLabel", ToolboxWeb.Web.Infrastructure.Hosting.AppVersion.Version]</p>
         </div>
     </div>
 }
@@ -99,7 +120,7 @@ else
     // The button for the page already open is left out (the sign-in card is right below).
     var currentPage = ViewContext.RouteData.Values["page"] as string;
     <div class="account-menu account-menu--guest">
-        @if (!string.Equals(currentPage, "/Account/Register", StringComparison.OrdinalIgnoreCase))
+        @if (!AppMode.IsWeb && !string.Equals(currentPage, "/Account/Register", StringComparison.OrdinalIgnoreCase))
         {
             <a class="btn btn-sm btn-outline-secondary" asp-area="Identity" asp-page="/Account/Register">@T["Auth.Register"]</a>
         }

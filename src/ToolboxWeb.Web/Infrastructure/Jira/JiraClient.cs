@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using ToolboxWeb.Web.ViewModels.Jira;
@@ -7,17 +8,29 @@ using ToolboxWeb.Web.Extensions;
 
 namespace ToolboxWeb.Web.Infrastructure.Jira;
 
+/// <summary>
+/// Jira Server / Data Center REST client. Signs in with a password (session cookie) or with a
+/// personal access token (Authorization: Bearer). With a password, a request that comes back 401
+/// because Jira dropped the session signs in again once and is sent again.
+/// </summary>
 public sealed class JiraClient : IJiraClient
 {
     private readonly string _password;
+    private readonly string? _token;
     private readonly CookieContainer _cookies = new();
     private readonly HttpClient _http;
 
     public JiraClient(string baseUrl, string username, string password)
+        : this(baseUrl, username, password, token: null)
+    {
+    }
+
+    private JiraClient(string baseUrl, string username, string password, string? token)
     {
         BaseUrl = baseUrl.TrimEnd('/');
         Username = username;
         _password = password;
+        _token = token;
         _http = new HttpClient(new HttpClientHandler
         {
             CookieContainer = _cookies,
@@ -27,13 +40,28 @@ public sealed class JiraClient : IJiraClient
         {
             Timeout = TimeSpan.FromSeconds(60)
         };
+        if (token is not null)
+        {
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
     }
 
+    /// <summary>A client that signs in with a personal access token; the username comes from Jira.</summary>
+    public static JiraClient WithToken(string baseUrl, string token) => new(baseUrl, string.Empty, string.Empty, token);
+
     public string BaseUrl { get; }
-    public string Username { get; }
+    public string Username { get; private set; }
 
     public async Task LoginAsync(CancellationToken cancellationToken = default)
     {
+        if (_token is not null)
+        {
+            // A token needs no sign-in; checking it also tells whose token it is.
+            using var me = JsonDocument.Parse(await ReadSuccessAsync(await _http.GetAsync(Url("/rest/api/2/myself"), cancellationToken)));
+            Username = ReadString(me.RootElement, "name") ?? ReadString(me.RootElement, "key") ?? Username;
+            return;
+        }
+
         if (!await LoginByGadgetAsync(cancellationToken))
         {
             await LoginBySessionAsync(cancellationToken);
@@ -42,6 +70,11 @@ public sealed class JiraClient : IJiraClient
 
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
+        if (_token is not null)
+        {
+            return;
+        }
+
         try
         {
             await _http.PostAsync(Url("/rest/auth/1/session"), null, cancellationToken);
@@ -193,18 +226,42 @@ public sealed class JiraClient : IJiraClient
                 ["duedate"] = dueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
             }
         };
-        using var request = new HttpRequestMessage(HttpMethod.Put, Url("/rest/api/2/issue/" + Uri.EscapeDataString(issueKey)))
+        var json = JsonSerializer.Serialize(body);
+        await ReadSuccessAsync(await SendAsync(() =>
         {
-            Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
-        };
-        // Jira Server skips its XSRF check for REST calls that carry this header.
-        request.Headers.Add("X-Atlassian-Token", "no-check");
-        await ReadSuccessAsync(await _http.SendAsync(request, cancellationToken));
+            var request = new HttpRequestMessage(HttpMethod.Put, Url("/rest/api/2/issue/" + Uri.EscapeDataString(issueKey)))
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+            // Jira Server skips its XSRF check for REST calls that carry this header.
+            request.Headers.Add("X-Atlassian-Token", "no-check");
+            return request;
+        }, cancellationToken));
     }
 
     private async Task<string> GetStringAsync(string path, CancellationToken cancellationToken)
     {
-        return await ReadSuccessAsync(await _http.GetAsync(Url(path), cancellationToken));
+        return await ReadSuccessAsync(await SendAsync(() => new HttpRequestMessage(HttpMethod.Get, Url(path)), cancellationToken));
+    }
+
+    // Sends a request; when Jira answers 401 because its session cookie ran out (idle timeout,
+    // Jira restart), signs in again once and resends. A token has no session to renew.
+    private async Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> create, CancellationToken cancellationToken)
+    {
+        using (var first = create())
+        {
+            var response = await _http.SendAsync(first, cancellationToken);
+            if (response.StatusCode != HttpStatusCode.Unauthorized || _token is not null)
+            {
+                return response;
+            }
+
+            response.Dispose();
+        }
+
+        await LoginAsync(cancellationToken);
+        using var retry = create();
+        return await _http.SendAsync(retry, cancellationToken);
     }
 
     private async Task PostJsonAsync(string path, object body, CancellationToken cancellationToken)

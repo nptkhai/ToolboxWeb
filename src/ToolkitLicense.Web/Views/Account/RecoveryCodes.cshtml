@@ -1,0 +1,17 @@
+@model string[]
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["Recovery.Title"];
+    ViewData["Wide"] = true;
+}
+<div class="alert alert-warning lic-flash d-flex gap-2" role="status"><tbx-icon name="triangle-alert" />@T["Recovery.Warning"]</div>
+<ul class="lic-codes" id="recovery-codes">
+    @foreach (var code in Model)
+    {
+        <li>@code</li>
+    }
+</ul>
+<div class="lic-actions">
+    <button type="button" class="btn btn-outline-secondary" data-copy="#recovery-codes" data-copied="@T["Action.Copied"]"><tbx-icon name="copy" /><span data-copy-label>@T["Action.Copy"]</span></button>
+    <a class="btn btn-primary" href="/">@T["Recovery.Done"]</a>
+</div>

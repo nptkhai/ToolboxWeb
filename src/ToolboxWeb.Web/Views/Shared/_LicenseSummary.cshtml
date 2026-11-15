@@ -1,0 +1,16 @@
+@model (ToolboxWeb.Web.Services.DeviceLicenseStatus Status, string DeviceId)
+@using ToolboxWeb.Web.Infrastructure.Time
+@* The license facts shared by the activation screen and Settings. *@
+@{
+    var status = Model.Status;
+}
+<dl class="license-facts">
+    <dt>@T["License.Customer"]</dt>
+    <dd>@(status.Customer ?? "—")</dd>
+    <dt>@T["License.Expires"]</dt>
+    <dd>@(status.LicenseId is null ? "—" : status.ExpiresAtUtc is { } end ? end.ToAppTime().ToDisplayDate() : T["License.NoExpiry"].Value)</dd>
+    <dt>@T["License.DeviceId"]</dt>
+    <dd><span class="license-mono">@Model.DeviceId</span></dd>
+    <dt>@T["License.LastContact"]</dt>
+    <dd>@(status.LastContactAtUtc is { } contact ? contact.ToDisplayAppDateTime() : T["License.Never"].Value)</dd>
+</dl>

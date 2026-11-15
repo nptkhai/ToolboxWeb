@@ -65,6 +65,7 @@ npx playwright install chromium
 | `TBX_UI_OUT` | `<thư mục tạm>/toolboxweb-ui` | Nơi ghi ảnh, mốc, báo cáo |
 | `TBX_UI_EMAIL`, `TBX_UI_PASSWORD` | `ui.check@example.local`, `UiCheck@12345` | Tài khoản thử; được đăng ký tự động ở lần chạy đầu |
 | `TBX_UI_JIRA` | (trống) | Đặt `1` để kiểm tra cả các trang Jira (cần `Jira__UseFakeData=true`) |
+| `TBX_UI_MODE` | (trống) | Đặt `web` khi app chạy `App__Mode=Web`: chỉ đăng nhập Jira, kiểm tra trang đăng nhập, các trang Jira và Hẹn giờ. Dùng một `TBX_UI_OUT` riêng để ảnh mốc không lẫn với bản Server |
 | `TBX_UI_TIMEZONE` | `Asia/Ho_Chi_Minh` | Múi giờ của trình duyệt khi kiểm tra |
 
 ## Ghi chú

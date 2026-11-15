@@ -2,6 +2,8 @@
 @model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.PersonalDataModel
 @{
     ViewData["Title"] = T["Profile.Nav.PersonalData"];
+    // A desktop deletes the data on this computer rather than an account (Account.DeleteDesktop.*).
+    var delete = AppMode.IsDesktop ? "Account.DeleteDesktop" : "Account.Delete";
 }
 
 <section class="tbx-panel tbx-panel-body account-section" aria-labelledby="download-title">
@@ -13,9 +15,9 @@
 </section>
 
 <section class="tbx-panel tbx-panel-body account-section account-section--danger" aria-labelledby="delete-title">
-    <h2 class="account-section-title" id="delete-title"><tbx-icon name="user-x" />@T["Account.Delete.Title"]</h2>
-    <p class="account-lead">@T["Account.Delete.Summary"]</p>
+    <h2 class="account-section-title" id="delete-title"><tbx-icon name="user-x" />@T[delete + ".Title"]</h2>
+    <p class="account-lead">@T[delete + ".Summary"]</p>
     <div class="account-actions">
-        <a class="btn btn-outline-danger" asp-page="./DeletePersonalData">@T["Account.Delete.Title"]</a>
+        <a class="btn btn-outline-danger" asp-page="./DeletePersonalData">@T[delete + ".Title"]</a>
     </div>
 </section>

@@ -47,6 +47,9 @@ public class FocusTimerPageViewModel
 
     /// <summary>?minutes=… from the overview; null keeps the remembered length.</summary>
     public int? RequestedMinutes { get; init; }
+
+    /// <summary>False on the web copy (App:Mode=Web): the timer only counts, nothing is stored.</summary>
+    public bool StoresSessions { get; init; } = true;
 }
 
 public sealed record FocusTodoOption(int Id, string Title);

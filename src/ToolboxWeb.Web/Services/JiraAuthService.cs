@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Localization;
 using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Domain;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 using ToolboxWeb.Web.ViewModels.Jira;
 
 namespace ToolboxWeb.Web.Services;
@@ -12,6 +13,12 @@ public interface IJiraAuthService
     Task<JiraSignInResult> SignInAsync(HttpContext httpContext, string baseUrl, string username, string password);
     Task<JiraSession?> GetCurrentSessionAsync(HttpContext httpContext);
     Task SignOutAsync(HttpContext httpContext);
+
+    /// <summary>
+    /// Whether Jira screens apply: a Jira session on the server; a saved Jira connection on a
+    /// desktop (the session itself is opened by the first Jira request).
+    /// </summary>
+    Task<bool> IsAvailableAsync(HttpContext httpContext);
 }
 
 public sealed class JiraAuthService : IJiraAuthService
@@ -22,17 +29,23 @@ public sealed class JiraAuthService : IJiraAuthService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly AppModeInfo _mode;
+    private readonly IDesktopJiraService _desktopJira;
 
     public JiraAuthService(
         IJiraSessionStore sessions,
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        IStringLocalizer<SharedResource> localizer)
+        IStringLocalizer<SharedResource> localizer,
+        AppModeInfo mode,
+        IDesktopJiraService desktopJira)
     {
         _sessions = sessions;
         _userManager = userManager;
         _signInManager = signInManager;
         _localizer = localizer;
+        _mode = mode;
+        _desktopJira = desktopJira;
     }
 
     public async Task<JiraSignInResult> SignInAsync(HttpContext httpContext, string baseUrl, string username, string password)
@@ -132,11 +145,28 @@ public sealed class JiraAuthService : IJiraAuthService
 
     public Task<JiraSession?> GetCurrentSessionAsync(HttpContext httpContext)
     {
-        return _sessions.GetAsync(BrowserSessionId(httpContext));
+        // A desktop has one Jira connection, saved on the settings page (DesktopJiraService).
+        return _mode.IsDesktop
+            ? _desktopJira.GetSessionAsync(httpContext.RequestAborted)
+            : _sessions.GetAsync(BrowserSessionId(httpContext));
+    }
+
+    public async Task<bool> IsAvailableAsync(HttpContext httpContext)
+    {
+        return _mode.IsDesktop
+            ? _desktopJira.IsConfigured
+            : await GetCurrentSessionAsync(httpContext) is not null;
     }
 
     public async Task SignOutAsync(HttpContext httpContext)
     {
+        if (_mode.IsDesktop)
+        {
+            // The desktop owner stays signed in; only the Jira session is closed and reopened later.
+            await _desktopJira.DropSessionAsync();
+            return;
+        }
+
         var browserSessionId = BrowserSessionId(httpContext);
         await _sessions.InvalidateAsync(browserSessionId);
         await _signInManager.SignOutAsync();
@@ -148,7 +178,8 @@ public sealed class JiraAuthService : IJiraAuthService
         return httpContext.Session.Id;
     }
 
-    private static string NormalizeBaseUrl(string baseUrl)
+    /// <summary>"https://jira.example.com/" → "https://jira.example.com" (scheme and host lower case, no query).</summary>
+    public static string NormalizeBaseUrl(string baseUrl)
     {
         var normalized = baseUrl?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(normalized))
@@ -175,7 +206,7 @@ public sealed class JiraAuthService : IJiraAuthService
         return $"{builder.Scheme.ToLowerInvariant()}://{builder.Uri.Authority.ToLowerInvariant()}{basePath}";
     }
 
-    private static string NormalizeJiraUsername(string userName)
+    public static string NormalizeJiraUsername(string userName)
     {
         var normalized = userName?.Trim().ToLowerInvariant() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(normalized))

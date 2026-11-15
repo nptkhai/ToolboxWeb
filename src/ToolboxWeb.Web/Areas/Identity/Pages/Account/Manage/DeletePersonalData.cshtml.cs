@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using ToolboxWeb.Web.Domain;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 using ToolboxWeb.Web.Services;
 
 namespace ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage;
@@ -19,6 +20,8 @@ public class DeletePersonalDataModel : ManagePageModel
     private readonly IAccountService _accounts;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly ILogger<DeletePersonalDataModel> _logger;
+    private readonly AppModeInfo _mode;
+    private readonly IDesktopJiraService _desktopJira;
 
     public DeletePersonalDataModel(
         UserManager<ApplicationUser> userManager,
@@ -26,13 +29,17 @@ public class DeletePersonalDataModel : ManagePageModel
         SignInManager<ApplicationUser> signInManager,
         IAccountService accounts,
         IStringLocalizer<SharedResource> localizer,
-        ILogger<DeletePersonalDataModel> logger)
+        ILogger<DeletePersonalDataModel> logger,
+        AppModeInfo mode,
+        IDesktopJiraService desktopJira)
         : base(userManager, currentUser)
     {
         _signInManager = signInManager;
         _accounts = accounts;
         _localizer = localizer;
         _logger = logger;
+        _mode = mode;
+        _desktopJira = desktopJira;
     }
 
     [BindProperty]
@@ -80,6 +87,12 @@ public class DeletePersonalDataModel : ManagePageModel
         {
             AddErrors(result);
             return Page();
+        }
+
+        if (_mode.IsDesktop)
+        {
+            // "Delete the data on this computer" also forgets the saved Jira connection.
+            await _desktopJira.RemoveAsync();
         }
 
         await _signInManager.SignOutAsync();

@@ -5,56 +5,64 @@
     ViewData["Title"] = T["Login.Title"];
     ViewData["ContentAreaClass"] = "content-area--login";
     var isJiraMode = string.Equals(Model.ActiveMode, "jira", StringComparison.OrdinalIgnoreCase);
+    // The web copy (App:Mode=Web) signs in with Jira only: one panel, no switch, no registration.
+    var jiraOnly = AppMode.IsWeb;
 }
 
-<div class="auth-login-page" data-login-mode="@(isJiraMode ? "jira" : "local")">
+<div class="auth-login-page" data-login-mode="@(jiraOnly ? "single" : isJiraMode ? "jira" : "local")">
     <div class="auth-login-shell">
         <div class="auth-login-panel">
             <div class="auth-login-panel-head">
                 <h2>@T["Login.Title"]</h2>
             </div>
 
-            <partial name="_AuthMethods" model="isJiraMode ? AuthMethod.Jira : AuthMethod.Local" />
+            @if (!jiraOnly)
+            {
+                <partial name="_AuthMethods" model="isJiraMode ? AuthMethod.Jira : AuthMethod.Local" />
+            }
 
             <div class="auth-login-viewport">
                 <div class="auth-login-track">
-                    <section class="auth-login-form-panel" data-login-panel="local">
-                        <p class="auth-login-hint">@T["Login.Local.Title"]</p>
+                    @if (!jiraOnly)
+                    {
+                        <section class="auth-login-form-panel" data-login-panel="local">
+                            <p class="auth-login-hint">@T["Login.Local.Title"]</p>
 
-                        @if (!string.IsNullOrWhiteSpace(Model.LocalErrorMessage))
-                        {
-                            <div class="alert alert-danger" role="alert">@Model.LocalErrorMessage</div>
-                        }
+                            @if (!string.IsNullOrWhiteSpace(Model.LocalErrorMessage))
+                            {
+                                <div class="alert alert-danger" role="alert">@Model.LocalErrorMessage</div>
+                            }
 
-                        <form method="post"
-                              asp-page="./Login"
-                              asp-route-returnUrl="@Model.ReturnUrl"
-                              class="auth-login-form">
-                            <div class="auth-login-input auth-login-input--floating">
-                                <input id="local-email"
-                                       class="form-control"
-                                       asp-for="LocalInput.Email"
-                                       autocomplete="username"
-                                       placeholder=" " />
-                                <label class="form-label" for="local-email">@T["Login.Local.Email"]</label>
-                            </div>
-                            <div class="auth-login-input auth-login-input--floating tbx-password">
-                                <input id="local-password"
-                                       class="form-control"
-                                       asp-for="LocalInput.Password"
-                                       type="password"
-                                       autocomplete="current-password"
-                                       placeholder=" " />
-                                <label class="form-label" for="local-password">@T["Login.Local.Password"]</label>
-                                <partial name="_PasswordToggle" />
-                            </div>
-                            <label class="form-check auth-login-check">
-                                <input class="form-check-input" asp-for="LocalInput.RememberMe" />
-                                <span class="form-check-label">@T["Login.Local.RememberMe"]</span>
-                            </label>
-                            <button type="submit" class="btn btn-primary auth-login-submit">@T["Login.Local.Submit"]</button>
-                        </form>
-                    </section>
+                            <form method="post"
+                                  asp-page="./Login"
+                                  asp-route-returnUrl="@Model.ReturnUrl"
+                                  class="auth-login-form">
+                                <div class="auth-login-input auth-login-input--floating">
+                                    <input id="local-email"
+                                           class="form-control"
+                                           asp-for="LocalInput.Email"
+                                           autocomplete="username"
+                                           placeholder=" " />
+                                    <label class="form-label" for="local-email">@T["Login.Local.Email"]</label>
+                                </div>
+                                <div class="auth-login-input auth-login-input--floating tbx-password">
+                                    <input id="local-password"
+                                           class="form-control"
+                                           asp-for="LocalInput.Password"
+                                           type="password"
+                                           autocomplete="current-password"
+                                           placeholder=" " />
+                                    <label class="form-label" for="local-password">@T["Login.Local.Password"]</label>
+                                    <partial name="_PasswordToggle" />
+                                </div>
+                                <label class="form-check auth-login-check">
+                                    <input class="form-check-input" asp-for="LocalInput.RememberMe" />
+                                    <span class="form-check-label">@T["Login.Local.RememberMe"]</span>
+                                </label>
+                                <button type="submit" class="btn btn-primary auth-login-submit">@T["Login.Local.Submit"]</button>
+                            </form>
+                        </section>
+                    }
 
                     <section class="auth-login-form-panel" data-login-panel="jira">
                         <p class="auth-login-hint">@T["Login.Jira.Title"]</p>

@@ -1,0 +1,14 @@
+@* Theme and language switches (header and sign-in pages). *@
+@{
+    var culture = CultureInfo.CurrentUICulture.Name;
+    var next = culture == "vi-VN" ? "en-US" : "vi-VN";
+    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+<form method="post" asp-antiforgery="true" action="/culture" class="d-inline">
+    <input type="hidden" name="culture" value="@next" />
+    <input type="hidden" name="returnUrl" value="@returnUrl" />
+    <button type="submit" class="lic-icon-button" lang="@(next == "vi-VN" ? "vi" : "en")" aria-label="@T["Header.Language"]">
+        <tbx-icon name="languages" />@(next == "vi-VN" ? "VI" : "EN")
+    </button>
+</form>
+<button type="button" class="lic-icon-button" data-theme-toggle aria-label="@T["Header.Theme"]"><tbx-icon name="moon" class="lic-theme-dark" /><tbx-icon name="sun" class="lic-theme-light" /></button>

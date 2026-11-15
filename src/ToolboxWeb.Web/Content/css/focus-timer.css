@@ -12,6 +12,11 @@
     .focus-page {
         grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     }
+
+    /* The web copy shows the timer alone (no numbers or history to show beside it). */
+    .focus-page.is-timer-only {
+        grid-template-columns: minmax(0, 560px);
+    }
 }
 
 .focus-timer,

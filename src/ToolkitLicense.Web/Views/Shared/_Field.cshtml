@@ -1,0 +1,3 @@
+@model string
+@* Validation message line for a field (reserved space so the form does not jump). *@
+<span class="tbx-field-error">@ViewData.ModelState[Model]?.Errors.FirstOrDefault()?.ErrorMessage</span>

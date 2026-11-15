@@ -1,0 +1,25 @@
+@model List<AuditEntry>
+<div class="lic-table-wrap">
+    <table class="lic-table is-stacking">
+        <thead>
+            <tr>
+                <th>@T["Audit.At"]</th>
+                <th>@T["Audit.Action"]</th>
+                <th>@T["Audit.Detail"]</th>
+                <th>@T["Audit.Admin"]</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model)
+            {
+                var label = T[$"Audit.Action.{entry.Action}"];
+                <tr>
+                    <td data-label="@T["Audit.At"]">@Display.DateTimeText(entry.AtUtc)</td>
+                    <td class="is-text" data-label="@T["Audit.Action"]">@(label.ResourceNotFound ? entry.Action : label.Value)</td>
+                    <td class="is-text" data-label="@T["Audit.Detail"]">@entry.Summary</td>
+                    <td data-label="@T["Audit.Admin"]">@entry.Admin</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

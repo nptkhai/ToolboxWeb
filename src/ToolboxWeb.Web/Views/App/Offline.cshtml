@@ -1,0 +1,63 @@
+@*
+    Shown by the service worker (Content/sw.js) when a page cannot be loaded without a network.
+    It is stored when the app is installed, with the files it links to, so it uses no layout.
+*@
+@model IReadOnlyList<ToolboxWeb.Web.Controllers.OfflineText>
+@{
+    Layout = null;
+    var first = Model[0];
+}
+<!DOCTYPE html>
+<html lang="@first.Culture">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>@first.Title - @T["App.Name"]</title>
+    <link rel="icon" href="~/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="stylesheet" href="~/vendor/fonts/inter/inter.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/vendor-sync.css" asp-append-version="true" />
+    <script>
+        (function () {
+            let theme = null;
+            try { theme = localStorage.getItem('toolbox.theme'); } catch (e) { }
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.dataset.theme = theme;
+        })();
+    </script>
+</head>
+<body class="desktop-exited">
+    <main class="tbx-panel desktop-exited-panel">
+        <img src="~/brand/toolkit-mark.svg" asp-append-version="true" alt="" width="48" height="48" />
+        @foreach (var text in Model)
+        {
+            <div class="offline-block" data-offline-lang="@text.Culture" lang="@text.Culture" hidden="@(text != first)">
+                <h1 class="desktop-exited-title">@text.Title</h1>
+                <p class="desktop-exited-text">@text.Text</p>
+                <button type="button" class="btn btn-primary" onclick="location.reload()">@text.Retry</button>
+            </div>
+        }
+    </main>
+    <script>
+        // The language last used in the app (site.js keeps it), else the browser's.
+        (function () {
+            let lang = null;
+            try { lang = localStorage.getItem('toolbox.lang'); } catch (e) { }
+            lang = (lang || navigator.language || '').toLowerCase().startsWith('en') ? 'en-US' : 'vi-VN';
+            document.querySelectorAll('[data-offline-lang]').forEach(function (block) {
+                block.hidden = block.dataset.offlineLang !== lang;
+                if (!block.hidden) {
+                    document.documentElement.lang = lang;
+                    document.title = block.querySelector('h1').textContent + ' - Toolkit';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

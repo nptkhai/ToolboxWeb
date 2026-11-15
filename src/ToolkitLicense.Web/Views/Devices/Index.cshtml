@@ -1,0 +1,64 @@
+@model DevicesViewModel
+@{
+    ViewData["Title"] = T["Nav.Devices"];
+    ViewData["Nav"] = "devices";
+}
+<form method="get" action="/devices" class="tbx-toolbar" role="search">
+    <label class="visually-hidden" for="q">@T["Device.Search"]</label>
+    <div class="tbx-search">
+        <input class="form-control" type="search" id="q" name="q" value="@Model.Search" placeholder="@T["Device.SearchExample"]" />
+    </div>
+    <button type="submit" class="btn btn-outline-secondary"><tbx-icon name="search" />@T["Action.Search"]</button>
+    <span class="tbx-toolbar-spacer"></span>
+    <span class="lic-note">@T["Device.Count", Model.Devices.Count]</span>
+</form>
+<section class="tbx-panel">
+    @if (Model.Devices.Count == 0)
+    {
+        <partial name="_Empty" model="@(("monitor", T[string.IsNullOrWhiteSpace(Model.Search) ? "Device.Empty" : "Device.NoMatch"].Value))" />
+    }
+    else
+    {
+        <div class="lic-table-wrap">
+            <table class="lic-table is-stacking">
+                <thead>
+                    <tr>
+                        <th>@T["Device.Machine"]</th>
+                        <th>@T["Customer.Label"]</th>
+                        <th>@T["License.State"]</th>
+                        <th>@T["License.Expires"]</th>
+                        <th>@T["Device.Version"]</th>
+                        <th>@T["Device.LastSeen"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var device in Model.Devices)
+                    {
+                        var license = Pills.Current(device);
+                        var (css, key) = Pills.For(license);
+                        var behind = Model.LatestVersion is not null && ReleaseService.Compare(Model.LatestVersion, device.AppVersion) > 0;
+                        <tr>
+                            <td class="is-text" data-label="@T["Device.Machine"]">
+                                <span>
+                                    <a class="lic-cell-main" href="/devices/details/@device.Id">@(device.MachineName is { Length: > 0 } name ? name : device.Id)</a>
+                                    <span class="lic-cell-sub">@device.WindowsUser</span>
+                                </span>
+                            </td>
+                            <td class="is-text" data-label="@T["Customer.Label"]">@(device.Customer?.Name ?? "—")</td>
+                            <td data-label="@T["License.State"]"><span class="tbx-pill @css">@T[key]</span></td>
+                            <td data-label="@T["License.Expires"]">@(license is null ? "—" : license.ExpiresAtUtc is null ? T["License.NoExpiry"].Value : Display.DateText(license.ExpiresAtUtc))</td>
+                            <td data-label="@T["Device.Version"]">
+                                @(device.AppVersion ?? "—")
+                                @if (behind)
+                                {
+                                    <span class="tbx-pill is-warning ms-1">@T["Release.Behind"]</span>
+                                }
+                            </td>
+                            <td data-label="@T["Device.LastSeen"]">@Display.DateTimeText(device.LastSeenAtUtc)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

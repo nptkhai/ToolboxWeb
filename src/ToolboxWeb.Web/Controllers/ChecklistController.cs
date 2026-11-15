@@ -7,6 +7,7 @@ using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Infrastructure.Time;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
@@ -15,6 +16,7 @@ namespace ToolboxWeb.Web.Controllers;
 /// posts them back, so the list comes back as it was (PRG). Completing and deleting offer "Undo"
 /// until the next page load.
 /// </summary>
+[NotInWebMode]
 [Authorize]
 public class ChecklistController : Controller
 {

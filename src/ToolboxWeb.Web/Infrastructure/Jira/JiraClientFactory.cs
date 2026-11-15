@@ -8,4 +8,9 @@ public sealed class JiraClientFactory : IJiraClientFactory
     {
         return new JiraClient(baseUrl, username, password);
     }
+
+    public IJiraClient CreateWithToken(string baseUrl, string token)
+    {
+        return JiraClient.WithToken(baseUrl, token);
+    }
 }

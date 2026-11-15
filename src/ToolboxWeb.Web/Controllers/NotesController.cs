@@ -5,6 +5,7 @@ using ToolboxWeb.Web;
 using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
@@ -13,6 +14,7 @@ namespace ToolboxWeb.Web.Controllers;
 /// (<c>?format=js&amp;search=…&amp;id=12</c>), so every write is a POST that redirects back to
 /// the same view (PRG) and refresh, back and bookmarks all behave.
 /// </summary>
+[NotInWebMode]
 [Authorize]
 public class NotesController : Controller
 {

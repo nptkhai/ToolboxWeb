@@ -10,9 +10,11 @@ using ToolboxWeb.Web.Extensions;
 using ToolboxWeb.Web.Infrastructure.Time;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
+[NotInWebMode]
 [Authorize]
 public class PromptTemplatesController : Controller
 {

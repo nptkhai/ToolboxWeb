@@ -1,0 +1,53 @@
+@model ToolboxWeb.Web.Services.DeviceLicenseStatus
+@using ToolboxWeb.Web.Constants
+@using ToolboxWeb.Web.Infrastructure.Hosting
+@using ToolboxWeb.Web.Infrastructure.Time
+@using ToolboxWeb.Web.Services
+@*
+    Desktop only (Views/Shared/_Layout.cshtml): license and release notices above every page.
+    Read-only and "expires soon" come from the license itself; "new version" from the last
+    check with the license server (DeviceLicenseService). The install itself comes in M5.
+*@
+@{
+    var activateHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ActivateHtml) ?? "/activate.html";
+    var release = Model.UpdateAvailable ? Model.LatestRelease : null;
+}
+@if (Model.IsReadOnly)
+{
+    <div class="alert alert-warning tbx-desktop-notice" role="status" data-license-readonly>
+        <tbx-icon name="lock" />
+        <p class="tbx-desktop-notice-text">@T[Model.State == DeviceLicenseState.Revoked ? "License.Notice.Revoked" : "License.Notice.Expired"]</p>
+        <a class="btn btn-sm btn-primary" href="@activateHref">@T["License.Notice.Activate"]</a>
+    </div>
+}
+else if (Model.ExpiresSoon)
+{
+    <div class="alert alert-info tbx-desktop-notice" role="status">
+        <tbx-icon name="clock" />
+        <p class="tbx-desktop-notice-text">@T["License.Notice.ExpiresSoon", Model.ExpiresAtUtc!.Value.ToAppTime().ToDisplayDate()]</p>
+        <a class="btn btn-sm btn-outline-secondary" href="@activateHref">@T["License.Notice.Renew"]</a>
+    </div>
+}
+@if (release is not null && !string.IsNullOrWhiteSpace(release.Version))
+{
+    @* "Later" hides a version until a newer one comes (site.js, toolbox.release.dismissed); a required release cannot be hidden. *@
+    <div class="alert @(release.Mandatory ? "alert-warning" : "alert-info") tbx-desktop-notice" role="status"
+         data-release-notice="@release.Version" data-release-mandatory="@(release.Mandatory ? "true" : "false")" hidden="@(!release.Mandatory)">
+        <tbx-icon name="download" />
+        <div class="tbx-desktop-notice-text">
+            <p class="mb-0">@T[release.Mandatory ? "Release.Notice.Required" : "Release.Notice.Available", release.Version, AppVersion.Version]</p>
+            @if (!string.IsNullOrWhiteSpace(release.Notes))
+            {
+                <p class="tbx-desktop-notice-sub">@release.Notes</p>
+            }
+        </div>
+        @if (!string.IsNullOrWhiteSpace(release.DownloadUrl))
+        {
+            <a class="btn btn-sm btn-primary" href="@release.DownloadUrl" target="_blank" rel="noopener noreferrer">@T["Release.Notice.Download"]</a>
+        }
+        @if (!release.Mandatory)
+        {
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-release-dismiss>@T["Release.Notice.Later"]</button>
+        }
+    </div>
+}

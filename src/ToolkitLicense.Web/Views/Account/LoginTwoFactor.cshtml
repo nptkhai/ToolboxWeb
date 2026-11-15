@@ -1,0 +1,26 @@
+@model TwoFactorLoginInput
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["Login.CodeTitle"];
+}
+<p class="lic-note">@T[Model.UseRecoveryCode ? "Login.RecoveryIntro" : "Login.CodeIntro"]</p>
+<form method="post" asp-antiforgery="true" action="/account/login-code" class="lic-form" novalidate>
+    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+    <input type="hidden" name="UseRecoveryCode" value="@(Model.UseRecoveryCode ? "true" : "false")" />
+    <div class="tbx-field">
+        <label class="tbx-field-label" for="Code">@T[Model.UseRecoveryCode ? "Login.RecoveryCode" : "Login.Code"]</label>
+        <input class="form-control lic-mono" id="Code" name="Code" autocomplete="one-time-code" inputmode="@(Model.UseRecoveryCode ? "text" : "numeric")" required autofocus />
+        <partial name="_Field" model="@("Code")" />
+    </div>
+    <button type="submit" class="btn btn-primary">@T["Login.Verify"]</button>
+</form>
+<p class="lic-note mb-0">
+    @if (Model.UseRecoveryCode)
+    {
+        <a href="/account/login-code?returnUrl=@Uri.EscapeDataString(Model.ReturnUrl ?? "")">@T["Login.UseApp"]</a>
+    }
+    else
+    {
+        <a href="/account/login-code?recovery=true&returnUrl=@Uri.EscapeDataString(Model.ReturnUrl ?? "")">@T["Login.UseRecovery"]</a>
+    }
+</p>

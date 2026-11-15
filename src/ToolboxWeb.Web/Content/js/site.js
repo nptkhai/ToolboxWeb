@@ -980,3 +980,97 @@
         });
     });
 })();
+
+// Installed app (PWA) and deployments, in every run mode: registers the service worker
+// (Content/sw.js, only over HTTPS or on this computer, as browsers require) and, every ten
+// minutes and when the tab comes back, asks /app/version whether a new build is running. If so,
+// a small bar offers to reload. The build of this page is in <meta name="toolkit-build">.
+(function () {
+    'use strict';
+
+    const meta = document.querySelector('meta[name="toolkit-build"]');
+    if (!meta) {
+        return;
+    }
+    const build = meta.content;
+    // The offline page (stored by the service worker) shows itself in the language last used here.
+    try { localStorage.setItem('toolbox.lang', document.documentElement.lang || ''); } catch (e) { }
+    const secure = window.location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+    if ('serviceWorker' in navigator && secure) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('/sw.js?build=' + encodeURIComponent(build)).catch(function () {
+                // Without it the app still works; it only cannot be installed or shown offline.
+            });
+        });
+    }
+
+    let shown = false;
+    function showBar() {
+        if (shown) {
+            return;
+        }
+        shown = true;
+        const bar = document.createElement('div');
+        bar.className = 'tbx-update-bar';
+        bar.setAttribute('role', 'status');
+        bar.innerHTML = '<span class="tbx-update-bar-text"></span>'
+            + '<button type="button" class="btn btn-primary btn-sm" data-update-reload></button>'
+            + '<button type="button" class="btn btn-sm tbx-icon-button" data-update-close></button>';
+        bar.querySelector('.tbx-update-bar-text').textContent = meta.dataset.textNew;
+        bar.querySelector('[data-update-reload]').textContent = meta.dataset.textReload;
+        const close = bar.querySelector('[data-update-close]');
+        close.setAttribute('aria-label', meta.dataset.textClose);
+        close.innerHTML = window.Toolbox && window.Toolbox.icon ? window.Toolbox.icon('x', 16) : '×';
+        bar.querySelector('[data-update-reload]').addEventListener('click', function () { window.location.reload(); });
+        close.addEventListener('click', function () { bar.remove(); });
+        document.body.appendChild(bar);
+    }
+
+    async function check() {
+        if (shown || document.visibilityState === 'hidden') {
+            return;
+        }
+        try {
+            const response = await fetch('/app/version', { cache: 'no-store', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const data = response.ok ? await response.json() : null;
+            if (data && data.build && data.build !== build) {
+                showBar();
+            }
+        } catch (error) {
+            // Offline or restarting: the next check tries again.
+        }
+    }
+
+    window.setInterval(check, 10 * 60 * 1000);
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+            check();
+        }
+    });
+})();
+
+// Desktop: "a new version is available" notice from the license server (_DesktopNotices).
+// "Later" hides it until a newer version comes; a required release stays (no "Later" button).
+(function () {
+    'use strict';
+
+    const notice = document.querySelector('[data-release-notice]');
+    if (!notice) {
+        return;
+    }
+    const version = notice.getAttribute('data-release-notice');
+    const key = 'toolbox.release.dismissed';
+    let dismissed = null;
+    try { dismissed = localStorage.getItem(key); } catch (e) { }
+    if (notice.getAttribute('data-release-mandatory') !== 'true') {
+        notice.hidden = dismissed === version;
+    }
+    const later = notice.querySelector('[data-release-dismiss]');
+    if (later) {
+        later.addEventListener('click', function () {
+            try { localStorage.setItem(key, version); } catch (e) { }
+            notice.hidden = true;
+        });
+    }
+})();

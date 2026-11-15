@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "ToolkitLicense.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:7190;http://localhost:5190",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

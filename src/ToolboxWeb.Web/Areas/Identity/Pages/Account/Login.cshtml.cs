@@ -6,6 +6,7 @@ using Microsoft.Extensions.Localization;
 using ToolboxWeb.Web.Constants;
 using Microsoft.Extensions.Options;
 using ToolboxWeb.Web.Domain;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels.Jira;
 
@@ -21,17 +22,20 @@ public class LoginModel : PageModel
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IJiraAuthService _jiraAuth;
     private readonly IOptions<JiraOptions> _jiraOptions;
+    private readonly AppModeInfo _mode;
 
     public LoginModel(
         SignInManager<ApplicationUser> signInManager,
         IStringLocalizer<SharedResource> localizer,
         IJiraAuthService jiraAuth,
-        IOptions<JiraOptions> jiraOptions)
+        IOptions<JiraOptions> jiraOptions,
+        AppModeInfo mode)
     {
         _signInManager = signInManager;
         _localizer = localizer;
         _jiraAuth = jiraAuth;
         _jiraOptions = jiraOptions;
+        _mode = mode;
     }
 
     [BindProperty]
@@ -56,12 +60,18 @@ public class LoginModel : PageModel
 
         ReturnUrl = NormalizeReturnUrl(returnUrl);
         JiraInput.BaseUrl = _jiraOptions.Value.DefaultBaseUrl;
-        ActiveMode = string.Equals(mode, JiraMode, StringComparison.OrdinalIgnoreCase) ? JiraMode : LocalMode;
+        ActiveMode = _mode.IsWeb || string.Equals(mode, JiraMode, StringComparison.OrdinalIgnoreCase) ? JiraMode : LocalMode;
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
+        // The web copy has no Toolkit accounts: Jira sign-in only (OnPostJiraAsync).
+        if (_mode.IsWeb)
+        {
+            return NotFound();
+        }
+
         ReturnUrl = NormalizeReturnUrl(returnUrl);
         JiraInput.BaseUrl = _jiraOptions.Value.DefaultBaseUrl;
         ActiveMode = LocalMode;

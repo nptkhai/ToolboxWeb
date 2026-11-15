@@ -1,0 +1,34 @@
+@model SigningKeyViewModel
+@{
+    ViewData["Title"] = T["Nav.SigningKey"];
+    ViewData["Nav"] = "key";
+}
+<div class="alert alert-warning d-flex gap-2 lic-flash" role="status">
+    <tbx-icon name="triangle-alert" />
+    <span>@T["Key.BackupWarning", Model.KeyFile]</span>
+</div>
+<section class="tbx-panel">
+    <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Key.PublicTitle"]</h2></div>
+    <div class="tbx-panel-body lic-form">
+        <p class="lic-note">@T["Key.Intro"]</p>
+        <dl class="lic-dl">
+            <dt>@T["Key.Algorithm"]</dt><dd>ECDSA P-256 / SHA-256</dd>
+            <dt>@T["Key.Fingerprint"]</dt><dd class="lic-mono" id="key-fingerprint">@Model.Fingerprint</dd>
+            <dt>@T["Key.DataRoot"]</dt><dd class="lic-mono">@Model.DataRoot</dd>
+        </dl>
+        <div class="tbx-field">
+            <span class="tbx-field-label" id="key-pem-label">@T["Key.Pem"]</span>
+            <pre class="lic-text-block" id="key-pem" aria-labelledby="key-pem-label">@Model.PublicKeyPem</pre>
+        </div>
+        <div class="tbx-field">
+            <span class="tbx-field-label" id="key-base64-label">@T["Key.Base64"]</span>
+            <pre class="lic-text-block" id="key-base64" aria-labelledby="key-base64-label">@Model.PublicKeyBase64</pre>
+            <span class="tbx-field-hint">@T["Key.Base64Hint"]</span>
+        </div>
+        <div class="lic-actions">
+            <button type="button" class="btn btn-outline-secondary" data-copy="#key-base64" data-copied="@T["Action.Copied"]"><tbx-icon name="copy" /><span data-copy-label>@T["Key.CopyBase64"]</span></button>
+            <button type="button" class="btn btn-primary" data-copy="#key-pem" data-copied="@T["Action.Copied"]"><tbx-icon name="copy" /><span data-copy-label>@T["Key.CopyPem"]</span></button>
+            <button type="button" class="btn btn-outline-secondary" data-copy="#key-fingerprint" data-copied="@T["Action.Copied"]"><tbx-icon name="copy" /><span data-copy-label>@T["Key.CopyFingerprint"]</span></button>
+        </div>
+    </div>
+</section>

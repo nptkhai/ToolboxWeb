@@ -1,0 +1,79 @@
+@inject LicenseService Licenses
+@{
+    var nav = ViewData["Nav"] as string ?? string.Empty;
+    var pending = await Licenses.PendingCountAsync();
+    var items = new[]
+    {
+        ("home", "/", "gauge", "Nav.Overview"),
+        ("activations", "/activations", "inbox", "Nav.Activations"),
+        ("devices", "/devices", "monitor", "Nav.Devices"),
+        ("customers", "/customers", "user", "Nav.Customers"),
+        ("releases", "/releases", "download", "Nav.Releases"),
+        ("key", "/signingkey", "key-round", "Nav.SigningKey"),
+        ("audit", "/audit", "history", "Nav.Audit"),
+        ("account", "/account", "shield-check", "Nav.Account")
+    };
+}
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <partial name="_Head" />
+</head>
+<body>
+    <div class="lic-shell app-shell">
+        <aside class="lic-sidebar" id="lic-sidebar" aria-label="@T["Nav.Label"]">
+            <a class="lic-brand" href="/">
+                <img src="~/brand/toolkit-mark.svg" asp-append-version="true" alt="" />
+                <span>@T["App.Name"]<small>@T["App.Tagline"]</small></span>
+            </a>
+            <nav class="lic-nav">
+                @foreach (var (key, href, icon, label) in items)
+                {
+                    var active = key == nav;
+                    <a class="lic-nav-link @(active ? "is-active" : null)" href="@href" aria-current="@(active ? "page" : null)">
+                        <tbx-icon name="@icon" />
+                        <span>@T[label]</span>
+                        @if (key == "activations" && pending > 0)
+                        {
+                            <span class="lic-nav-count" aria-label="@T["Nav.PendingCount", pending]">@pending</span>
+                        }
+                    </a>
+                }
+            </nav>
+        </aside>
+        <div class="lic-main">
+            <header class="lic-header">
+                <button type="button" class="lic-icon-button lic-menu-button" data-nav-toggle aria-controls="lic-sidebar" aria-expanded="false" aria-label="@T["Header.Menu"]"><tbx-icon name="menu" /></button>
+                <h1 class="lic-title">@ViewData["Title"]</h1>
+                <span class="lic-header-spacer"></span>
+                <partial name="_Tools" />
+                <form method="post" asp-antiforgery="true" action="/account/logout" class="d-inline">
+                    <button type="submit" class="lic-icon-button" aria-label="@T["Header.SignOut"]" title="@User.Identity?.Name"><tbx-icon name="log-out" /></button>
+                </form>
+            </header>
+            <main class="lic-content">
+                <partial name="_Flash" />
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirm-modal" tabindex="-1" aria-labelledby="confirm-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-6" id="confirm-modal-title">@T["Confirm.Title"]</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+                </div>
+                <div class="modal-body"><p class="mb-0" data-confirm-text></p></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                    <button type="button" class="btn btn-primary" data-confirm-ok data-default="@T["Action.Confirm"]">@T["Action.Confirm"]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
+    <script src="~/js/license.js" asp-append-version="true"></script>
+</body>
+</html>

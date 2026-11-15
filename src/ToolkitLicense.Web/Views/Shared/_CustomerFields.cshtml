@@ -1,0 +1,15 @@
+@model (string? Name, string? Email, string? Note)
+<div class="tbx-field">
+    <label class="tbx-field-label" for="Name">@T["Customer.Name"]<span class="tbx-required" aria-hidden="true">*</span></label>
+    <input class="form-control" id="Name" name="Name" value="@Model.Name" maxlength="120" required />
+    <partial name="_Field" model="@("Name")" />
+</div>
+<div class="tbx-field">
+    <label class="tbx-field-label" for="Email">@T["Customer.Email"]</label>
+    <input class="form-control" id="Email" name="Email" type="email" value="@Model.Email" maxlength="200" placeholder="ten@congty.vn" />
+    <partial name="_Field" model="@("Email")" />
+</div>
+<div class="tbx-field">
+    <label class="tbx-field-label" for="Note">@T["Customer.Note"]</label>
+    <textarea class="form-control" id="Note" name="Note" rows="2" maxlength="500">@Model.Note</textarea>
+</div>

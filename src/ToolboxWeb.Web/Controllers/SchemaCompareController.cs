@@ -7,10 +7,14 @@ using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Infrastructure.SqlSchema;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels.SchemaCompare;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
+[NotInWebMode]
 [Authorize]
+// Only reads the two databases and makes a script, so it stays usable on an ended desktop license.
+[AllowWhenUnlicensed]
 public class SchemaCompareController : Controller
 {
     private const string SessionMarkerKey = "Toolbox.SchemaCompare.Active";

@@ -1,7 +1,8 @@
 @page
 @model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.DeletePersonalDataModel
 @{
-    ViewData["Title"] = T["Account.Delete.Title"];
+    var delete = AppMode.IsDesktop ? "Account.DeleteDesktop" : "Account.Delete";
+    ViewData["Title"] = T[delete + ".Title"];
 }
 
 <section class="tbx-panel tbx-panel-body account-section account-section--danger">
@@ -24,9 +25,9 @@
         }
         <div class="account-actions">
             <button type="submit" class="btn btn-danger"
-                    data-confirm="@T["Account.Delete.Confirm", Model.AccountName]"
-                    data-confirm-title="@T["Account.Delete.Title"]"
-                    data-confirm-ok="@T["Account.Delete.Submit"]">@T["Account.Delete.Submit"]</button>
+                    data-confirm="@T[delete + ".Confirm", Model.AccountName]"
+                    data-confirm-title="@T[delete + ".Title"]"
+                    data-confirm-ok="@T[delete + ".Submit"]">@T[delete + ".Submit"]</button>
             <a class="btn btn-outline-secondary" asp-page="./PersonalData">@T["Account.Cancel"]</a>
         </div>
     </form>
