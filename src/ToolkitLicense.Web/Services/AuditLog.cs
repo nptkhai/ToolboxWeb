@@ -45,11 +45,12 @@ public static class AuditActions
     public const string CustomerDeleted = "CustomerDeleted";
     public const string ReleaseCreated = "ReleaseCreated";
     public const string ReleaseDeleted = "ReleaseDeleted";
+    public const string UpdatesUploaded = "UpdatesUploaded";
 
     public static readonly string[] All =
     [
         SetupAdmin, TwoFactorEnabled, PasswordChanged, RecoveryCodesRenewed, ManualRequest, Approved, Rejected,
         Reissued, Revoked, DeviceAssigned, DeviceNote, CustomerCreated, CustomerUpdated, CustomerDeleted,
-        ReleaseCreated, ReleaseDeleted
+        ReleaseCreated, ReleaseDeleted, UpdatesUploaded
     ];
 }

@@ -29,6 +29,7 @@ public sealed class DesktopLicenseMiddleware(RequestDelegate next)
     private static readonly string[] OpenPrefixes =
     [
         "/" + ToolboxRouteSlugs.HtmlPages.Activate,
+        "/" + ToolboxRouteSlugs.HtmlPages.Update,
         "/activate",
         "/desktop",
         "/app",
@@ -39,9 +40,27 @@ public sealed class DesktopLicenseMiddleware(RequestDelegate next)
         "/error.html"
     ];
 
-    public async Task InvokeAsync(HttpContext context, IDeviceLicenseService licenses, ITempDataDictionaryFactory tempData, IStringLocalizer<SharedResource> text)
+    public async Task InvokeAsync(HttpContext context, IDeviceLicenseService licenses, IDesktopUpdateService updates, ITempDataDictionaryFactory tempData, IStringLocalizer<SharedResource> text)
     {
         var status = licenses.GetStatus();
+
+        // A required release: an installed copy goes to the update page until it is installed.
+        // (A copy not installed by Setup.exe cannot update itself; it only sees the notice.)
+        if (status.UpdateRequired && updates.IsInstalled && !IsOpen(context.Request.Path))
+        {
+            if ((HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)) && !WantsJson(context.Request))
+            {
+                context.Response.Redirect("/" + ToolboxRouteSlugs.HtmlPages.Update);
+                return;
+            }
+
+            if (context.GetEndpoint()?.Metadata.GetMetadata<AllowWhenUnlicensedAttribute>() is null)
+            {
+                await RefuseAsync(context, tempData, text["Update.Blocked"].Value, reading: true);
+                return;
+            }
+        }
+
         if (status.State is DeviceLicenseState.Off or DeviceLicenseState.Active || IsOpen(context.Request.Path))
         {
             await next(context);

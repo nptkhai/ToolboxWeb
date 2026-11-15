@@ -18,6 +18,12 @@ public static class DesktopHost
     public const string PingPath = "/desktop/ping";
     public const string PingReply = "toolkit";
 
+    /// <summary>
+    /// A file of this name next to the executable makes it a desktop copy without the switch:
+    /// the installer (tools/release) adds it, so the Start menu shortcut opens the desktop app.
+    /// </summary>
+    public const string FlagFileName = "toolkit.desktop";
+
     private const string InstanceFileName = "instance.json";
     private const int DefaultPort = 5180;
 
@@ -53,9 +59,20 @@ public static class DesktopHost
     /// <paramref name="args"/>, since the command-line configuration cannot read a bare switch),
     /// <c>TOOLKIT_DESKTOP=1</c>, or <c>App__Mode=Desktop</c> in the environment.
     /// </summary>
+    /// <summary>Given by the updater when it starts the new version: the window that asked for the update reloads itself.</summary>
+    public const string NoWindowSwitch = "--no-window";
+
+    /// <summary>True when <paramref name="name"/> is among the arguments; removes it, since the command-line configuration cannot read a bare switch.</summary>
+    public static bool TakeSwitch(ref string[] args, string name)
+    {
+        var found = args.Any(arg => string.Equals(arg, name, StringComparison.OrdinalIgnoreCase));
+        args = args.Where(arg => !string.Equals(arg, name, StringComparison.OrdinalIgnoreCase)).ToArray();
+        return found;
+    }
+
     public static bool IsRequested(ref string[] args)
     {
-        var requested = args.Any(IsSwitch);
+        var requested = args.Any(IsSwitch) || File.Exists(Path.Combine(AppContext.BaseDirectory, FlagFileName));
         args = args.Where(arg => !IsSwitch(arg)).ToArray();
 
         var flag = Environment.GetEnvironmentVariable("TOOLKIT_DESKTOP");
@@ -94,7 +111,7 @@ public static class DesktopHost
     /// When this Windows account already runs a copy, opens the browser on it and returns true:
     /// the new process then exits instead of starting a second copy on the same data.
     /// </summary>
-    public static async Task<bool> HandOverToRunningInstanceAsync(AppModeInfo mode)
+    public static async Task<bool> HandOverToRunningInstanceAsync(AppModeInfo mode, IConfiguration configuration)
     {
         var instance = ReadInstance(mode);
         if (instance is null || !ProcessIsAlive(instance.Pid) || !Uri.TryCreate(instance.Url, UriKind.Absolute, out var url) || !url.IsLoopback)
@@ -116,7 +133,7 @@ public static class DesktopHost
             return false;
         }
 
-        OpenBrowser(instance.Url, logger: null);
+        AppWindow.Open(instance.Url, mode.DataRoot, configuration, logger: null);
         return true;
     }
 
@@ -182,7 +199,7 @@ public static class DesktopHost
             app.Logger.LogInformation("Toolkit desktop is running at {Url}; data folder {DataRoot}.", url, mode.DataRoot);
             if (app.Configuration.GetValue("Desktop:OpenBrowser", false))
             {
-                OpenBrowser(url, app.Logger);
+                AppWindow.Open(url, mode.DataRoot, app.Configuration, app.Logger);
             }
         });
         lifetime.ApplicationStopping.Register(() => DeleteInstance(mode));
@@ -200,18 +217,6 @@ public static class DesktopHost
         catch (SocketException)
         {
             return false;
-        }
-    }
-
-    private static void OpenBrowser(string url, ILogger? logger)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
-        catch (Exception ex)
-        {
-            logger?.LogWarning(ex, "Could not open the browser at {Url}.", url);
         }
     }
 

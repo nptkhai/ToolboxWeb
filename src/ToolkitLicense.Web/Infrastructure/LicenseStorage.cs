@@ -14,6 +14,7 @@ public sealed class LicenseStorage
         DataRoot = Path.GetFullPath(Path.IsPathRooted(root) ? root : Path.Combine(environment.ContentRootPath, root));
         Directory.CreateDirectory(DataRoot);
         Directory.CreateDirectory(KeysPath);
+        Directory.CreateDirectory(UpdatesPath);
     }
 
     public string DataRoot { get; }
@@ -22,4 +23,7 @@ public sealed class LicenseStorage
     public string KeysPath => Path.Combine(DataRoot, "keys");
     public string SigningKeyPath => Path.Combine(DataRoot, "signing-key.pem");
     public string SetupCodePath => Path.Combine(DataRoot, "setup-code.txt");
+
+    /// <summary>The desktop installer and update packages (Velopack output), served read-only at /updates.</summary>
+    public string UpdatesPath => Path.Combine(DataRoot, "updates");
 }

@@ -24,6 +24,11 @@ using ToolboxWeb.Web.Localization;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels.Jira;
 
+// Installed desktop copies (Velopack, tools/release): install, update and uninstall steps run the
+// app with special arguments; this handles them and exits before anything else starts. A copy
+// that was not installed by the Toolkit installer (dotnet run, IIS) carries on as usual.
+Velopack.VelopackApp.Build().Run();
+
 if (await DacFxExtractWorker.TryRunAsync(args))
 {
     return;
@@ -32,6 +37,7 @@ if (await DacFxExtractWorker.TryRunAsync(args))
 // App:Mode (docs/DEPLOYMENT_MODEL.md): Server is the shared IIS site, as before; Desktop is one
 // person's computer (--desktop, appsettings.Desktop.json), see Infrastructure/Hosting/DesktopHost.
 var desktopRequested = DesktopHost.IsRequested(ref args);
+var desktopNoWindow = DesktopHost.TakeSwitch(ref args, DesktopHost.NoWindowSwitch);
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
@@ -41,13 +47,17 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 if (desktopRequested)
 {
     DesktopHost.AddConfiguration(builder.Configuration, args);
+    if (desktopNoWindow)
+    {
+        builder.Configuration["Desktop:OpenBrowser"] = "false";
+    }
 }
 
 var appMode = AppModeInfo.Create(builder.Configuration, builder.Environment.ContentRootPath);
 builder.Services.AddSingleton(appMode);
 if (appMode.IsDesktop)
 {
-    if (await DesktopHost.HandOverToRunningInstanceAsync(appMode))
+    if (await DesktopHost.HandOverToRunningInstanceAsync(appMode, builder.Configuration))
     {
         return;
     }
@@ -188,6 +198,7 @@ builder.Services.Configure<LicenseOptions>(builder.Configuration.GetSection("Lic
 builder.Services.AddSingleton<IDeviceIdentityService, DeviceIdentityService>();
 builder.Services.AddSingleton<IDeviceLicenseService, DeviceLicenseService>();
 builder.Services.AddHttpClient(LicenseOptions.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(15));
+builder.Services.AddSingleton<IDesktopUpdateService, DesktopUpdateService>();
 if (appMode.IsDesktop)
 {
     builder.Services.AddHostedService<LicenseHeartbeatService>();

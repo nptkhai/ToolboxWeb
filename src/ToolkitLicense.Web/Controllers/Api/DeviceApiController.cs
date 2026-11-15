@@ -53,6 +53,7 @@ public sealed class DeviceApiController(LicenseService licenses, ReleaseService 
             license = new { status = answer.LicenseStatus, licenseId = answer.LicenseId, expiresAt = Utc(answer.ExpiresAtUtc), text = answer.LicenseText },
             latestRelease = ReleaseJson(answer.Latest),
             updateAvailable = answer.UpdateAvailable,
+            updateRequired = answer.UpdateRequired,
             serverTime = DateTimeOffset.UtcNow
         });
     }

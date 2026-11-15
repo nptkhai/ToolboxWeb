@@ -77,7 +77,7 @@
             </div>
             <div class="tbx-field">
                 <label class="tbx-field-label" for="DownloadUrl">@T["Release.DownloadUrl"]</label>
-                <input class="form-control" id="DownloadUrl" name="DownloadUrl" type="url" value="@Model.DownloadUrl" maxlength="500" placeholder="https://may-chinh/downloads/Toolkit-Setup.exe" />
+                <input class="form-control" id="DownloadUrl" name="DownloadUrl" type="url" value="@Model.DownloadUrl" maxlength="500" placeholder="https://license.example.com/download" />
                 <span class="tbx-field-hint">@T["Release.DownloadHint"]</span>
                 <partial name="_Field" model="@("DownloadUrl")" />
             </div>
@@ -89,6 +89,54 @@
         </form>
     </section>
 </div>
+<section class="tbx-panel">
+    <div class="tbx-panel-header">
+        <h2 class="tbx-panel-title">@T["Updates.Title"]</h2>
+        <a class="btn btn-sm btn-outline-secondary" href="/download" target="_blank" rel="noopener">@T["Updates.OpenDownload"]</a>
+    </div>
+    <div class="tbx-panel-body lic-form">
+        <p class="lic-note">@T["Updates.Intro"]</p>
+        <form method="post" asp-antiforgery="true" action="/releases/upload" enctype="multipart/form-data" class="lic-form"
+              data-confirm="@T["Updates.UploadConfirm"]" data-confirm-button="@T["Updates.Upload"]" novalidate>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="update-files">@T["Updates.Files"]</label>
+                <input class="form-control" type="file" id="update-files" name="files" multiple required accept=".nupkg,.json,.exe,.zip" />
+                <span class="tbx-field-hint">@T["Updates.FilesHint"]</span>
+                <span class="tbx-field-error">@Model.UploadError</span>
+            </div>
+            <div class="lic-actions"><button type="submit" class="btn btn-outline-secondary"><tbx-icon name="upload" />@T["Updates.Upload"]</button></div>
+        </form>
+    </div>
+    @if (Model.Files.Count == 0)
+    {
+        <partial name="_Empty" model="@(("download", T["Updates.Empty"].Value))" />
+    }
+    else
+    {
+        <div class="lic-table-wrap">
+            <table class="lic-table is-stacking">
+                <thead>
+                    <tr>
+                        <th>@T["Updates.FileName"]</th>
+                        <th>@T["Updates.FileSize"]</th>
+                        <th>@T["Updates.FileDate"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var file in Model.Files)
+                    {
+                        <tr>
+                            <td class="is-text" data-label="@T["Updates.FileName"]"><span class="lic-mono">@file.Name</span></td>
+                            <td class="is-number" data-label="@T["Updates.FileSize"]">@Display.Size(file.Size)</td>
+                            <td data-label="@T["Updates.FileDate"]">@Display.DateTimeText(file.ModifiedAtUtc)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
 <section class="tbx-panel">
     <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Release.InUseTitle"]</h2></div>
     @if (Model.InUse.Count == 0)

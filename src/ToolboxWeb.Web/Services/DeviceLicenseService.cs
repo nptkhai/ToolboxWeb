@@ -54,7 +54,8 @@ public sealed record DeviceLicenseStatus(
     DeviceReleaseInfo? LatestRelease,
     bool UpdateAvailable,
     string? ServerKeyFingerprint,
-    bool ServerConfigured)
+    bool ServerConfigured,
+    bool UpdateRequired = false)
 {
     /// <summary>Expired or revoked: pages can be read, nothing can be changed.</summary>
     public bool IsReadOnly => State is DeviceLicenseState.Expired or DeviceLicenseState.Revoked;
@@ -291,7 +292,8 @@ public sealed class DeviceLicenseService : IDeviceLicenseService
 
             var release = ReadRelease(root);
             var updateAvailable = root.TryGetProperty("updateAvailable", out var update) && update.ValueKind == JsonValueKind.True;
-            UpdateFile(file => file with { LastContactAtUtc = DateTime.UtcNow, LatestRelease = release, UpdateAvailable = updateAvailable });
+            var updateRequired = root.TryGetProperty("updateRequired", out var required) && required.ValueKind == JsonValueKind.True;
+            UpdateFile(file => file with { LastContactAtUtc = DateTime.UtcNow, LatestRelease = release, UpdateAvailable = updateAvailable, UpdateRequired = updateRequired });
             return (new LicenseActionResult(null, GetStatus()), change);
         }
         finally
@@ -482,7 +484,9 @@ public sealed class DeviceLicenseService : IDeviceLicenseService
         file.LatestRelease,
         file.UpdateAvailable,
         _fingerprint,
-        _serverUrl is not null);
+        _serverUrl is not null,
+        // Only while this copy still runs an older version than the one the server asked for.
+        file.UpdateRequired && file.UpdateAvailable);
 
     /// <summary>Accepts the PEM or the one-line base64 (SubjectPublicKeyInfo) of a P-256 key.</summary>
     private static (string? Base64, string? Fingerprint) ReadPublicKey(string? configured)

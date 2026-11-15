@@ -90,7 +90,8 @@ public sealed record DeviceLicenseFile(
     string? RevokedLicenseId = null,
     DateTime? LastContactAtUtc = null,
     DeviceReleaseInfo? LatestRelease = null,
-    bool UpdateAvailable = false);
+    bool UpdateAvailable = false,
+    bool UpdateRequired = false);
 
 /// <summary>The newest Toolkit release, as the license server reported it.</summary>
 public sealed record DeviceReleaseInfo(string Version, string? Notes, bool Mandatory, string? DownloadUrl, DateTime? PublishedAtUtc);

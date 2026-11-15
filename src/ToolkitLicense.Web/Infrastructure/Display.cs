@@ -32,4 +32,9 @@ public static class Display
 
     public static string DateText(DateTime? utc) =>
         utc is null ? "—" : ToLocal(utc.Value).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+    /// <summary>A file size in the reader's culture: "93,6 MB", "12 KB".</summary>
+    public static string Size(long bytes) => bytes >= 1024 * 1024
+        ? $"{Math.Round(bytes / 1024d / 1024d, 1).ToString(CultureInfo.CurrentCulture)} MB"
+        : $"{Math.Max(1, (long)Math.Ceiling(bytes / 1024d)).ToString(CultureInfo.CurrentCulture)} KB";
 }

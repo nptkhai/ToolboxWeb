@@ -92,6 +92,7 @@ builder.Services.AddScoped<IAuditLog, AuditLog>();
 builder.Services.AddScoped<LicenseService>();
 builder.Services.AddScoped<ReleaseService>();
 builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<UpdateFiles>();
 
 // Every page needs the signed-in administrator unless it says otherwise ([AllowAnonymous]:
 // setup, sign-in, the device API). Every form post carries the antiforgery token.
@@ -145,6 +146,8 @@ app.Use(async (context, next) =>
     await next();
 });
 app.UseStaticFiles();
+// The desktop installer and update packages (docs/RELEASE.md): public and read-only, no folder listing.
+app.UseStaticFiles(UpdateFiles.Options(storage));
 app.UseRouting();
 app.UseRequestLocalization();
 app.UseRateLimiter();

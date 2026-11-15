@@ -97,3 +97,7 @@
     font-family: var(--font-mono);
     font-size: var(--text-sm);
 }
+
+.update-notes {
+    white-space: pre-line;
+}

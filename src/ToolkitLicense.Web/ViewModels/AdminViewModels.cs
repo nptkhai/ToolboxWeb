@@ -77,6 +77,13 @@ public sealed class CustomerEditViewModel
 public sealed class ReleasesViewModel
 {
     public List<Release> Releases { get; set; } = [];
+
+    /// <summary>The installer and update packages on the server (Infrastructure/UpdateFiles).</summary>
+    public List<ToolkitLicense.Web.Infrastructure.UpdateFileInfo> Files { get; set; } = [];
+
+    /// <summary>Newest version in releases.win.json; offered for the release form when it has no record yet.</summary>
+    public string? FeedVersion { get; set; }
+    public string? UploadError { get; set; }
     public List<VersionUse> InUse { get; set; } = [];
     public string? Version { get; set; }
     public string? Notes { get; set; }
@@ -98,4 +105,10 @@ public sealed class AuditViewModel
     public List<AuditEntry> Entries { get; set; } = [];
     public int Page { get; set; }
     public bool HasMore { get; set; }
+}
+
+public sealed class DownloadViewModel
+{
+    public Release? Latest { get; set; }
+    public ToolkitLicense.Web.Infrastructure.UpdateFileInfo? Setup { get; set; }
 }

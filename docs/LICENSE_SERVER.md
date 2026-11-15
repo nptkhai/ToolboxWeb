@@ -28,6 +28,7 @@ Thư mục dữ liệu chứa:
 | `keys/` | Khóa Data Protection (cookie đăng nhập, khóa xác thực hai lớp) |
 | `signing-key.pem` | Khóa riêng ký bản quyền: **phải sao lưu** |
 | `setup-code.txt` | Mã cài đặt lần đầu; tự xóa khi đã tạo tài khoản quản trị |
+| `updates/` | Bộ cài và gói cập nhật bản Desktop (kết quả của `tools/release`), phục vụ công khai, chỉ đọc, tại `/updates`; xem `docs/RELEASE.md` |
 
 ## Lần chạy đầu
 
@@ -53,7 +54,8 @@ Thư mục dữ liệu chứa:
 | Thiết bị | Tìm theo tên máy, người dùng, mã thiết bị. Mỗi máy hiện tình trạng bản quyền, hạn, phiên bản (kèm "Cần cập nhật") và lần cuối hoạt động |
 | Chi tiết thiết bị | Gắn người dùng, ghi chú, **Cấp lại / gia hạn** (giữ hạn hiện tại hoặc chọn hạn mới), **Thu hồi** (có lý do), lịch sử bản quyền (sao chép lại được) và các yêu cầu kích hoạt |
 | Người dùng | Thêm, sửa, xóa. Xóa người dùng thì thiết bị và bản quyền của họ vẫn giữ, chỉ không còn gắn với ai |
-| Phiên bản | Phát hành phiên bản (số, ghi chú, đường tải về, bắt buộc hay không), xóa, xem số máy theo từng phiên bản đang chạy |
+| Phiên bản | Phát hành phiên bản (số, ghi chú, đường tải về, bắt buộc hay không), xóa, xem số máy theo từng phiên bản đang chạy. **Bộ cài và gói cập nhật**: tải lên kết quả của script phát hành (tối đa 1 GB mỗi lần); số phiên bản mới trong `releases.win.json` được điền sẵn vào form phát hành |
+| Tải Toolkit (`/download`) | Trang **công khai**, không cần đăng nhập: phiên bản mới nhất, nút tải `ToolkitApp-win-Setup.exe`, các bước cài, vượt cảnh báo SmartScreen và kích hoạt |
 | Khóa ký | Khóa công khai PEM, dấu khóa SHA-256, đường dẫn thư mục dữ liệu |
 | Nhật ký thao tác | Mọi thao tác của quản trị, 50 dòng mỗi trang |
 | Tài khoản quản trị | Đổi mật khẩu, tạo mã khôi phục mới |
@@ -93,7 +95,7 @@ Không cần đăng nhập. Mọi yêu cầu đều được ký bằng khóa c�
 |---|---|---|
 | `POST /api/activations` | `{ "token": "TKT1.…" }` | `202 { requestId, status, license, expiresAt }`. Máy đã có yêu cầu đang chờ thì nhận lại yêu cầu đó; máy đã có bản quyền còn hiệu lực thì nhận ngay `approved` kèm bản quyền |
 | `GET /api/activations/{requestId}` | — | `{ requestId, status: pending \| approved \| rejected \| revoked, license, expiresAt }`. Nếu bản quyền đã được gia hạn thì trả bản mới |
-| `POST /api/devices/heartbeat` | `{ "heartbeat": "TKH1.…" }` | `{ license: { status: active \| revoked \| expired \| none, licenseId, expiresAt, text }, latestRelease, updateAvailable, serverTime }`. `text` chỉ có khi máy chưa giữ bản quyền hiện hành (vừa cấp lại hoặc gia hạn). Ghi lại phiên bản đang chạy và lần cuối hoạt động |
+| `POST /api/devices/heartbeat` | `{ "heartbeat": "TKH1.…" }` | `{ license: { status: active \| revoked \| expired \| none, licenseId, expiresAt, text }, latestRelease, updateAvailable, updateRequired, serverTime }`. `updateRequired`: có bản **bắt buộc** mới hơn phiên bản máy đang chạy. `text` chỉ có khi máy chưa giữ bản quyền hiện hành (vừa cấp lại hoặc gia hạn). Ghi lại phiên bản đang chạy và lần cuối hoạt động |
 | `GET /api/releases/latest` | — | `{ version, notes, mandatory, downloadUrl, publishedAt }` hoặc `204` khi chưa có phiên bản |
 
 Khi bị từ chối, API trả `400`, `404` hoặc `409` với `{ "error": "…" }`. Các mã lỗi:

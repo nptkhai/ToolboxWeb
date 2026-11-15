@@ -113,7 +113,7 @@ Một mã nguồn (repo ToolboxWeb), chọn chế độ bằng cấu hình `App:
 | M2 | Chế độ Web: cookie auth Jira không DB, ẩn module cần DB, no-op nhật ký, PWA + thanh phiên bản mới — **đã làm 15/11/2026** (xem "Trạng thái M2") | M |
 | M3 | Máy chính Toolkit License: quản trị, API kích hoạt, ký license, phát hành phiên bản, heartbeat — **đã làm 15/11/2026** (xem "Trạng thái M3" và `docs/LICENSE_SERVER.md`) | L |
 | M4 | License trên thiết bị: token, màn hình Kích hoạt (online + thủ công), kiểm tra chữ ký — **đã làm 15/11/2026** (xem "Trạng thái M4") | M |
-| M5 | Đóng gói Velopack, cửa sổ app, kiểm tra/áp dụng cập nhật, xuất/nhập dữ liệu chuyển từ bản IIS | M–L |
+| M5 | Đóng gói Velopack, cửa sổ app, kiểm tra/áp dụng cập nhật, xuất/nhập dữ liệu chuyển từ bản IIS — **đã làm 16/11/2026** (xem "Trạng thái M5" và `docs/RELEASE.md`) | M–L |
 | Sau | Mobile có DB riêng (Blazor + MAUI) nếu thật sự cần | L+ |
 
 Mỗi giai đoạn: trước khi làm, liệt kê việc cụ thể trong hộp chọn để chủ dự án đánh dấu (quy trình đã thống nhất).
@@ -291,3 +291,35 @@ Chi tiết ở mục "Phía máy tính" của `docs/LICENSE_SERVER.md`.
   - thanh "Đã có Toolkit x.y.z" có "Tải về" và "Để sau"; bản bắt buộc thì không ẩn được.
 - **Máy chính:** trang Khóa ký có thêm khóa công khai một dòng để dán vào cấu hình.
 - **Trước khi phát hành bản Desktop (M5):** điền `License:ServerUrl` và `License:PublicKey` thật vào `appsettings.Desktop.json`.
+
+## Trạng thái M5 (16/11/2026)
+
+Chủ dự án chọn cả 4 việc. Các quyết định:
+
+- **Cửa sổ app:** Edge/Chrome `--app`.
+- **Nơi đặt bộ cài và gói cập nhật:** trong app Toolkit License.
+- **Ký số Setup.exe:** chưa ký; script có sẵn chỗ để ký sau.
+- **HTTPS:** Let's Encrypt miễn phí qua win-acme, có hướng dẫn.
+
+Cách phát hành từng bước ở `docs/RELEASE.md`.
+
+- **Đóng gói bộ cài:**
+  - `tools/release/publish-desktop.ps1` (Windows) và `publish-desktop.sh` (Linux/macOS): publish bản Windows x64 kèm .NET, ghi `License:ServerUrl`/`License:PublicKey` vào bản publish, thêm `toolkit.desktop`, rồi `vpk pack` ra `ToolkitApp-win-Setup.exe`, gói full và delta, `releases.win.json`.
+  - App cài vào `%LOCALAPPDATA%\ToolkitApp`, tách khỏi dữ liệu `%LOCALAPPDATA%\Toolkit`, nên gỡ cài đặt không mất dữ liệu.
+  - Đã đóng gói thử 1.0.0 và 1.1.0 trên Linux: gói delta khoảng 450 KB.
+- **Cập nhật trong app:**
+  - `Velopack.VelopackApp.Build().Run()` chạy đầu tiên trong `Program.cs`.
+  - `DesktopUpdateService` tải gói từ `{License:ServerUrl}/updates` rồi khởi động lại; database được sao lưu trước khi nâng cấp.
+  - Thanh "Đã có Toolkit x.y.z" có nút "Cập nhật ngay" (mở trang `/update.html`).
+  - Bản bắt buộc (`updateRequired` trong heartbeat) giữ máy đã cài ở trang Cập nhật cho tới khi cập nhật xong.
+  - Bản không cài bằng Setup chỉ thấy link tải về.
+- **Cửa sổ app:** `AppWindow` mở Edge hoặc Chrome `--app` với hồ sơ riêng trong thư mục dữ liệu; không có hai trình duyệt đó thì mở trình duyệt mặc định.
+- **Trang tải về trên máy chính:**
+  - `/download` công khai;
+  - `/updates` phục vụ gói, chỉ đọc, không liệt kê thư mục;
+  - trang Phiên bản có mục tải gói lên và tự điền số phiên bản mới.
+- **Xuất/nhập dữ liệu** (`DataTransferService`, Tài khoản > Dữ liệu cá nhân):
+  - xuất ghi chú, việc cần làm, phiên tập trung, liên kết, prompt, ảnh đại diện (không gồm mật khẩu máy chủ);
+  - nhập có xem trước và xác nhận, bỏ qua mục đã có.
+- **Chưa kiểm tra được:** cài, cập nhật, gỡ trên Windows thật; cửa sổ Edge `--app`; HTTPS thật trên IIS.
+
