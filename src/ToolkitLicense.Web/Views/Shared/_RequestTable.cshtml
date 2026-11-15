@@ -1,0 +1,31 @@
+@model List<ActivationRequest>
+@* Activation requests: device, source, time, status. *@
+<div class="lic-table-wrap">
+    <table class="lic-table is-stacking">
+        <thead>
+            <tr>
+                <th>@T["Device.Machine"]</th>
+                <th>@T["Activation.Source"]</th>
+                <th>@T["Activation.RequestedAt"]</th>
+                <th>@T["Activation.Status"]</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var request in Model)
+            {
+                var (css, key) = Pills.For(request.Status);
+                <tr>
+                    <td class="is-text" data-label="@T["Device.Machine"]">
+                        <span>
+                            <a class="lic-cell-main" href="/activations/details/@request.Id">@(request.Device?.MachineName is { Length: > 0 } name ? name : request.DeviceId)</a>
+                            <span class="lic-cell-sub">@request.Device?.WindowsUser</span>
+                        </span>
+                    </td>
+                    <td data-label="@T["Activation.Source"]">@T[$"Activation.Source.{request.Source}"]</td>
+                    <td data-label="@T["Activation.RequestedAt"]">@Display.DateTimeText(request.RequestedAtUtc)</td>
+                    <td data-label="@T["Activation.Status"]"><span class="tbx-pill @css">@T[key]</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

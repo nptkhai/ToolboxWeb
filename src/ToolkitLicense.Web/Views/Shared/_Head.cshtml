@@ -1,0 +1,26 @@
+@* Shared <head> content of both layouts. *@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light dark" />
+<meta name="robots" content="noindex, nofollow" />
+<title>@ViewData["Title"] · @T["App.Name"]</title>
+<link rel="icon" href="~/favicon.ico" sizes="16x16 32x32 48x48" />
+<link rel="icon" type="image/svg+xml" href="~/brand/toolkit-mark.svg" asp-append-version="true" />
+<link rel="preload" href="~/vendor/fonts/inter/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="~/vendor/fonts/inter/inter.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/vendor-sync.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/license.css" asp-append-version="true" />
+<script>
+    // Same rule and key as the Toolkit app: the OS preference until the user picks a theme.
+    (function () {
+        let theme = null;
+        try { theme = localStorage.getItem('toolbox.theme'); } catch (e) { }
+        if (theme !== 'light' && theme !== 'dark') {
+            theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.dataset.theme = theme;
+    })();
+</script>

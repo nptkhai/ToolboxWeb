@@ -1,0 +1,66 @@
+@model OverviewViewModel
+@{
+    ViewData["Title"] = T["Nav.Overview"];
+    ViewData["Nav"] = "home";
+}
+<div class="lic-stats">
+    <a class="tbx-panel lic-stat @(Model.Pending > 0 ? "is-attention" : null)" href="/activations">
+        <span class="lic-stat-label">@T["Overview.Pending"]</span>
+        <span class="lic-stat-value">@Model.Pending</span>
+    </a>
+    <a class="tbx-panel lic-stat" href="/devices">
+        <span class="lic-stat-label">@T["Overview.ActiveLicenses"]</span>
+        <span class="lic-stat-value">@Model.ActiveLicenses</span>
+    </a>
+    <a class="tbx-panel lic-stat" href="/devices">
+        <span class="lic-stat-label">@T["Overview.Devices"]</span>
+        <span class="lic-stat-value">@Model.Devices</span>
+        <span class="lic-cell-sub">@T["Overview.SeenWeek", Model.SeenThisWeek]</span>
+    </a>
+    <a class="tbx-panel lic-stat" href="/releases">
+        <span class="lic-stat-label">@T["Overview.Latest"]</span>
+        <span class="lic-stat-value">@(Model.Latest?.Version ?? "—")</span>
+        <span class="lic-cell-sub">@T["Overview.Behind", Model.DevicesBehind]</span>
+    </a>
+</div>
+<div class="lic-grid-2">
+    <section class="tbx-panel">
+        <div class="tbx-panel-header">
+            <h2 class="tbx-panel-title">@T["Overview.PendingTitle"]</h2>
+            <a class="btn btn-sm btn-outline-secondary" href="/activations">@T["Action.SeeAll"]</a>
+        </div>
+        @if (Model.PendingRequests.Count == 0)
+        {
+            <partial name="_Empty" model="@(("inbox", T["Overview.NoPending"].Value))" />
+        }
+        else
+        {
+            <partial name="_RequestTable" model="Model.PendingRequests" />
+        }
+    </section>
+    <section class="tbx-panel">
+        <div class="tbx-panel-header">
+            <h2 class="tbx-panel-title">@T["Overview.RecentAudit"]</h2>
+            <a class="btn btn-sm btn-outline-secondary" href="/audit">@T["Action.SeeAll"]</a>
+        </div>
+        @if (Model.RecentAudit.Count == 0)
+        {
+            <partial name="_Empty" model="@(("history", T["Audit.Empty"].Value))" />
+        }
+        else
+        {
+            <ul class="tbx-list">
+                @foreach (var entry in Model.RecentAudit)
+                {
+                    var label = T[$"Audit.Action.{entry.Action}"];
+                    <li class="tbx-row tbx-row--two-line">
+                        <div class="tbx-row-main">
+                            <span class="tbx-row-title">@(label.ResourceNotFound ? entry.Action : label.Value)</span>
+                            <span class="tbx-row-sub">@entry.Summary · @Display.DateTimeText(entry.AtUtc)</span>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+</div>

@@ -1,0 +1,36 @@
+@model TwoFactorSetupViewModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["TwoFactor.Title"];
+    ViewData["Wide"] = true;
+}
+<p class="lic-note">@T["TwoFactor.Intro"]</p>
+<ol class="lic-form ps-3 mb-0">
+    <li>@T["TwoFactor.Step1"]</li>
+    <li>
+        @T["TwoFactor.Step2"]
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+            <span class="lic-key" id="shared-key">@Model.SharedKey</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="#shared-key" data-copied="@T["Action.Copied"]"><tbx-icon name="copy" /><span data-copy-label>@T["Action.Copy"]</span></button>
+        </div>
+        <details class="mt-2">
+            <summary class="lic-note">@T["TwoFactor.Link"]</summary>
+            <pre class="lic-text-block mt-2" id="otp-uri">@Model.AuthenticatorUri</pre>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="#otp-uri" data-copied="@T["Action.Copied"]"><tbx-icon name="copy" /><span data-copy-label>@T["Action.Copy"]</span></button>
+        </details>
+    </li>
+    <li>@T["TwoFactor.Step3"]</li>
+</ol>
+<form method="post" asp-antiforgery="true" action="/account/two-factor" class="lic-form" novalidate>
+    <div class="tbx-field">
+        <label class="tbx-field-label" for="Code">@T["Login.Code"]</label>
+        <input class="form-control lic-mono" id="Code" name="Code" autocomplete="one-time-code" inputmode="numeric" placeholder="123456" required />
+        <partial name="_Field" model="@("Code")" />
+    </div>
+    <div class="lic-actions">
+        <button type="submit" class="btn btn-primary">@T["TwoFactor.Submit"]</button>
+    </div>
+</form>
+<form method="post" asp-antiforgery="true" action="/account/logout">
+    <button type="submit" class="btn btn-link p-0">@T["Header.SignOut"]</button>
+</form>

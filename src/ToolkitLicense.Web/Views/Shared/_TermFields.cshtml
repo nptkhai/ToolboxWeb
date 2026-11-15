@@ -1,0 +1,18 @@
+@model bool
+@* License term choice. Model: whether "keep the current end date" is offered (re-issue). *@
+<fieldset class="tbx-field" data-term>
+    <legend class="tbx-field-label">@T["License.Term"]</legend>
+    <div class="lic-term">
+        @if (Model)
+        {
+            <div class="form-check"><input class="form-check-input" type="radio" name="term" id="term-keep" value="Keep" checked /><label class="form-check-label" for="term-keep">@T["License.Term.Keep"]</label></div>
+        }
+        <div class="form-check"><input class="form-check-input" type="radio" name="term" id="term-none" value="None" checked="@(!Model)" /><label class="form-check-label" for="term-none">@T["License.Term.None"]</label></div>
+        <div class="form-check"><input class="form-check-input" type="radio" name="term" id="term-6m" value="SixMonths" /><label class="form-check-label" for="term-6m">@T["License.Term.SixMonths"]</label></div>
+        <div class="form-check"><input class="form-check-input" type="radio" name="term" id="term-1y" value="OneYear" /><label class="form-check-label" for="term-1y">@T["License.Term.OneYear"]</label></div>
+        <div class="form-check"><input class="form-check-input" type="radio" name="term" id="term-date" value="Date" /><label class="form-check-label" for="term-date">@T["License.Term.Date"]</label></div>
+    </div>
+    <label class="visually-hidden" for="term-date-value">@T["License.Term.DateValue"]</label>
+    <input class="form-control" type="date" name="date" id="term-date-value" data-term-date min="@Display.TodayLocal.AddDays(1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" style="max-width: 220px" />
+    <span class="tbx-field-hint">@T["License.Term.Hint"]</span>
+</fieldset>

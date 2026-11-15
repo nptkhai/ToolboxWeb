@@ -1,0 +1,60 @@
+@model CustomersViewModel
+@{
+    ViewData["Title"] = T["Nav.Customers"];
+    ViewData["Nav"] = "customers";
+}
+<div class="lic-grid-2">
+    <section class="tbx-panel">
+        <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Customer.ListTitle", Model.Customers.Count]</h2></div>
+        @if (Model.Customers.Count == 0)
+        {
+            <partial name="_Empty" model="@(("user", T["Customer.Empty"].Value))" />
+        }
+        else
+        {
+            <div class="lic-table-wrap">
+                <table class="lic-table is-stacking">
+                    <thead>
+                        <tr>
+                            <th>@T["Customer.Name"]</th>
+                            <th>@T["Customer.Email"]</th>
+                            <th>@T["Customer.Devices"]</th>
+                            <th><span class="visually-hidden">@T["Action.Actions"]</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var customer in Model.Customers)
+                        {
+                            <tr>
+                                <td class="is-text" data-label="@T["Customer.Name"]">
+                                    <span>
+                                        <a class="lic-cell-main" href="/customers/edit/@customer.Id">@customer.Name</a>
+                                        @if (!string.IsNullOrEmpty(customer.Note))
+                                        {
+                                            <span class="lic-cell-sub">@customer.Note</span>
+                                        }
+                                    </span>
+                                </td>
+                                <td class="is-text" data-label="@T["Customer.Email"]">@(customer.Email ?? "—")</td>
+                                <td data-label="@T["Customer.Devices"]">@customer.Devices.Count</td>
+                                <td data-label="">
+                                    <form method="post" asp-antiforgery="true" action="/customers/delete/@customer.Id" class="d-inline"
+                                          data-confirm="@T["Customer.DeleteConfirm", customer.Name, customer.Devices.Count]" data-confirm-button="@T["Action.Delete"]" data-confirm-danger>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="@T["Customer.DeleteLabel", customer.Name]"><tbx-icon name="trash-2" /></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+    <section class="tbx-panel">
+        <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Customer.New"]</h2></div>
+        <form method="post" asp-antiforgery="true" action="/customers/create" class="tbx-panel-body lic-form" novalidate>
+            <partial name="_CustomerFields" model="@((Model.Name, Model.Email, Model.Note))" />
+            <div class="lic-actions"><button type="submit" class="btn btn-primary"><tbx-icon name="plus" />@T["Customer.Add"]</button></div>
+        </form>
+    </section>
+</div>

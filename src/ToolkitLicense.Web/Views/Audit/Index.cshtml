@@ -1,0 +1,28 @@
+@model AuditViewModel
+@{
+    ViewData["Title"] = T["Nav.Audit"];
+    ViewData["Nav"] = "audit";
+}
+<section class="tbx-panel">
+    @if (Model.Entries.Count == 0)
+    {
+        <partial name="_Empty" model="@(("history", T["Audit.Empty"].Value))" />
+    }
+    else
+    {
+        <partial name="_AuditTable" model="Model.Entries" />
+    }
+</section>
+@if (Model.Page > 1 || Model.HasMore)
+{
+    <nav class="lic-pager" aria-label="@T["Audit.Pages"]">
+        @if (Model.Page > 1)
+        {
+            <a class="btn btn-sm btn-outline-secondary" href="/audit?page=@(Model.Page - 1)"><tbx-icon name="chevron-left" />@T["Audit.Newer"]</a>
+        }
+        @if (Model.HasMore)
+        {
+            <a class="btn btn-sm btn-outline-secondary" href="/audit?page=@(Model.Page + 1)">@T["Audit.Older"]<tbx-icon name="chevron-right" /></a>
+        }
+    </nav>
+}

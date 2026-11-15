@@ -1,0 +1,31 @@
+@model SetupInput
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["Setup.Title"];
+}
+<p class="lic-note">@T["Setup.Intro"]</p>
+<p class="lic-note"><code>@ViewData["SetupFile"]</code></p>
+<form method="post" asp-antiforgery="true" action="/setup" class="lic-form" novalidate>
+    <div class="tbx-field">
+        <label class="tbx-field-label" for="Code">@T["Setup.Code"]</label>
+        <input class="form-control lic-mono" id="Code" name="Code" value="@Model.Code" autocomplete="off" placeholder="ABCD-EFGH-JKLM-NPQR" required />
+        <partial name="_Field" model="@("Code")" />
+    </div>
+    <div class="tbx-field">
+        <label class="tbx-field-label" for="UserName">@T["Account.UserName"]</label>
+        <input class="form-control" id="UserName" name="UserName" value="@Model.UserName" autocomplete="username" required />
+        <partial name="_Field" model="@("UserName")" />
+    </div>
+    <div class="tbx-field">
+        <label class="tbx-field-label" for="Password">@T["Account.Password"]</label>
+        <input class="form-control" id="Password" name="Password" type="password" autocomplete="new-password" required />
+        <span class="tbx-field-hint">@T["Account.PasswordRule"]</span>
+        <partial name="_Field" model="@("Password")" />
+    </div>
+    <div class="tbx-field">
+        <label class="tbx-field-label" for="ConfirmPassword">@T["Account.ConfirmPassword"]</label>
+        <input class="form-control" id="ConfirmPassword" name="ConfirmPassword" type="password" autocomplete="new-password" required />
+        <partial name="_Field" model="@("ConfirmPassword")" />
+    </div>
+    <button type="submit" class="btn btn-primary">@T["Setup.Submit"]</button>
+</form>

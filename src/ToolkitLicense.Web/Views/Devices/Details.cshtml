@@ -1,0 +1,149 @@
+@model DeviceDetailsViewModel
+@{
+    var device = Model.Device;
+    var name = device.MachineName is { Length: > 0 } machine ? machine : device.Id;
+    var (css, key) = Pills.For(Model.Active ?? Pills.Current(device));
+    ViewData["Title"] = name;
+    ViewData["Nav"] = "devices";
+}
+<div class="lic-actions"><a class="btn btn-sm btn-outline-secondary" href="/devices"><tbx-icon name="arrow-left" />@T["Nav.Devices"]</a></div>
+<div class="lic-grid-2">
+    <section class="tbx-panel">
+        <div class="tbx-panel-header">
+            <h2 class="tbx-panel-title">@T["Device.Title"]</h2>
+            <span class="tbx-pill @css">@T[key]</span>
+        </div>
+        <div class="tbx-panel-body lic-form">
+            <dl class="lic-dl">
+                <dt>@T["Device.Machine"]</dt><dd>@device.MachineName</dd>
+                <dt>@T["Device.WindowsUser"]</dt><dd>@device.WindowsUser</dd>
+                <dt>@T["Device.Id"]</dt><dd class="lic-mono">@device.Id</dd>
+                <dt>@T["Device.KeyThumbprint"]</dt><dd class="lic-mono">@Model.KeyThumbprint</dd>
+                <dt>@T["Device.Version"]</dt>
+                <dd>
+                    @(device.AppVersion ?? "—")
+                    @if (Model.LatestVersion is not null && ReleaseService.Compare(Model.LatestVersion, device.AppVersion) > 0)
+                    {
+                        <span class="tbx-pill is-warning ms-1">@T["Release.BehindOf", Model.LatestVersion]</span>
+                    }
+                </dd>
+                <dt>@T["Device.FirstSeen"]</dt><dd>@Display.DateTimeText(device.FirstSeenAtUtc)</dd>
+                <dt>@T["Device.LastSeen"]</dt><dd>@Display.DateTimeText(device.LastSeenAtUtc)</dd>
+                <dt>@T["License.Expires"]</dt>
+                <dd>@(Model.Active is null ? "—" : Model.Active.ExpiresAtUtc is null ? T["License.NoExpiry"].Value : Display.DateText(Model.Active.ExpiresAtUtc))</dd>
+            </dl>
+            <form method="post" asp-antiforgery="true" action="/devices/assign/@device.Id" class="lic-form">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="customerId">@T["Customer.Label"]</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <select class="form-select" id="customerId" name="customerId" style="max-width: 320px">
+                            <option value="">@T["Customer.None"]</option>
+                            @foreach (var customer in Model.Customers)
+                            {
+                                <option value="@customer.Id" selected="@(customer.Id == device.CustomerId)">@customer.Name</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-outline-secondary">@T["Device.Assign"]</button>
+                    </div>
+                    <span class="tbx-field-hint">@T["Device.AssignHint"]</span>
+                </div>
+            </form>
+            <form method="post" asp-antiforgery="true" action="/devices/note/@device.Id" class="lic-form">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="note">@T["Device.Note"]</label>
+                    <textarea class="form-control" id="note" name="note" rows="2" maxlength="500">@device.Note</textarea>
+                </div>
+                <div class="lic-actions"><button type="submit" class="btn btn-outline-secondary">@T["Device.SaveNote"]</button></div>
+            </form>
+        </div>
+    </section>
+
+    <div class="d-grid gap-3 align-content-start">
+        <section class="tbx-panel">
+            <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Device.Reissue"]</h2></div>
+            <form method="post" asp-antiforgery="true" action="/devices/reissue/@device.Id" class="tbx-panel-body lic-form"
+                  data-confirm="@T["Device.ReissueConfirm", name]" data-confirm-button="@T["Device.Reissue"]" novalidate>
+                <p class="lic-note">@T["Device.ReissueIntro"]</p>
+                <partial name="_TermFields" model="@(Model.Licenses.Count > 0)" />
+                <div class="lic-actions"><button type="submit" class="btn btn-primary"><tbx-icon name="refresh-cw" />@T["Device.Reissue"]</button></div>
+            </form>
+        </section>
+        @if (Model.Active is not null)
+        {
+            <section class="tbx-panel">
+                <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Device.Revoke"]</h2></div>
+                <form method="post" asp-antiforgery="true" action="/devices/revoke/@device.Id" class="tbx-panel-body lic-form"
+                      data-confirm="@T["Device.RevokeConfirm", name]" data-confirm-button="@T["Device.Revoke"]" data-confirm-danger novalidate>
+                    <p class="lic-note">@T["Device.RevokeIntro"]</p>
+                    <div class="tbx-field">
+                        <label class="tbx-field-label" for="reason">@T["Device.RevokeReason"]</label>
+                        <input class="form-control" id="reason" name="reason" maxlength="500" />
+                    </div>
+                    <div class="lic-actions"><button type="submit" class="btn btn-danger"><tbx-icon name="user-x" />@T["Device.Revoke"]</button></div>
+                </form>
+            </section>
+        }
+    </div>
+</div>
+
+<section class="tbx-panel">
+    <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Device.Licenses"]</h2></div>
+    @if (Model.Licenses.Count == 0)
+    {
+        <partial name="_Empty" model="@(("key-round", T["Device.NoLicense"].Value))" />
+    }
+    else
+    {
+        <div class="lic-table-wrap">
+            <table class="lic-table is-stacking">
+                <thead>
+                    <tr>
+                        <th>@T["License.Issued"]</th>
+                        <th>@T["License.Expires"]</th>
+                        <th>@T["License.State"]</th>
+                        <th>@T["License.Detail"]</th>
+                        <th>@T["License.Text"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var license in Model.Licenses)
+                    {
+                        var (lcss, lkey) = Pills.For(license);
+                        <tr>
+                            <td data-label="@T["License.Issued"]">@Display.DateTimeText(license.IssuedAtUtc)</td>
+                            <td data-label="@T["License.Expires"]">@(license.ExpiresAtUtc is null ? T["License.NoExpiry"].Value : Display.DateText(license.ExpiresAtUtc))</td>
+                            <td data-label="@T["License.State"]"><span class="tbx-pill @lcss">@T[lkey]</span></td>
+                            <td class="is-text" data-label="@T["License.Detail"]">
+                                @if (license.RevokedAtUtc is not null)
+                                {
+                                    @T["License.RevokedAt", Display.DateTimeText(license.RevokedAtUtc), license.RevokeReason ?? "—"]
+                                }
+                                else
+                                {
+                                    <span class="lic-mono">@license.Id</span>
+                                }
+                            </td>
+                            <td data-label="@T["License.Text"]">
+                                <pre class="visually-hidden" id="lic-@license.Id">@license.Text</pre>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-copy="#lic-@license.Id" data-copied="@T["Action.Copied"]"><tbx-icon name="copy" /><span data-copy-label>@T["Action.Copy"]</span></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="tbx-panel">
+    <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Device.Requests"]</h2></div>
+    @if (Model.Requests.Count == 0)
+    {
+        <partial name="_Empty" model="@(("inbox", T["Activation.NoHistory"].Value))" />
+    }
+    else
+    {
+        foreach (var r in Model.Requests) { r.Device = device; }
+        <partial name="_RequestTable" model="Model.Requests" />
+    }
+</section>

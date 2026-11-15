@@ -1,0 +1,21 @@
+@model LoginInput
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["Login.Title"];
+}
+<form method="post" asp-antiforgery="true" action="/account/login" class="lic-form" novalidate>
+    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+    @if (ViewData.ModelState[string.Empty]?.Errors.FirstOrDefault() is { } error)
+    {
+        <div class="alert alert-danger lic-flash d-flex gap-2" role="alert"><tbx-icon name="circle-alert" />@error.ErrorMessage</div>
+    }
+    <div class="tbx-field">
+        <label class="tbx-field-label" for="UserName">@T["Account.UserName"]</label>
+        <input class="form-control" id="UserName" name="UserName" value="@Model.UserName" autocomplete="username" required autofocus />
+    </div>
+    <div class="tbx-field">
+        <label class="tbx-field-label" for="Password">@T["Account.Password"]</label>
+        <input class="form-control" id="Password" name="Password" type="password" autocomplete="current-password" required />
+    </div>
+    <button type="submit" class="btn btn-primary">@T["Login.Submit"]</button>
+</form>

@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Toolkit License: the main server's admin app (users, devices, licenses, releases).
+    See docs/LICENSE_SERVER.md. It shares the design files and a few source files with
+    ToolboxWeb.Web instead of copying them, so the two apps cannot drift apart.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0.0</Version>
+    <RootNamespace>ToolkitLicense.Web</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="Localization\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Web root: this app's own files plus the shared design files of ToolboxWeb.Web, all copied
+       next to the build so development and the published site serve the same folder. -->
+  <ItemGroup>
+    <None Remove="Content\**" />
+    <Content Include="Content\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\ToolboxWeb.Web\Content\css\tokens.css" Link="Content\css\tokens.css" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\ToolboxWeb.Web\Content\css\components.css" Link="Content\css\components.css" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\ToolboxWeb.Web\Content\css\vendor-sync.css" Link="Content\css\vendor-sync.css" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\ToolboxWeb.Web\Content\lib\bootstrap\**" Link="Content\lib\bootstrap\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\ToolboxWeb.Web\Content\vendor\fonts\inter\**" Link="Content\vendor\fonts\inter\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\ToolboxWeb.Web\Content\vendor\lucide\**" Link="Content\vendor\lucide\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\ToolboxWeb.Web\Content\brand\toolkit-mark.svg" Link="Content\brand\toolkit-mark.svg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\ToolboxWeb.Web\Content\favicon.ico" Link="Content\favicon.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Shared source: the JSON localizer and the <tbx-icon> tag helper of ToolboxWeb.Web. -->
+  <ItemGroup>
+    <Compile Include="..\ToolboxWeb.Web\Localization\JsonLocalizationStore.cs" Link="Shared\JsonLocalizationStore.cs" />
+    <Compile Include="..\ToolboxWeb.Web\Localization\JsonStringLocalizer.cs" Link="Shared\JsonStringLocalizer.cs" />
+    <Compile Include="..\ToolboxWeb.Web\Localization\JsonStringLocalizerFactory.cs" Link="Shared\JsonStringLocalizerFactory.cs" />
+    <Compile Include="..\ToolboxWeb.Web\Infrastructure\TagHelpers\IconTagHelper.cs" Link="Shared\IconTagHelper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

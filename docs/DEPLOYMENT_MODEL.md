@@ -111,7 +111,7 @@ Một mã nguồn (repo ToolboxWeb), chọn chế độ bằng cấu hình `App:
 | M0 | Chế độ `App:Mode`, đường dẫn dữ liệu Desktop, sao lưu trước migration, tự đăng nhập "chủ máy" — **đã làm 14/11/2026** (xem "Trạng thái M0") | M |
 | M1 | Trang Cài đặt + Jira lưu trên máy (tự đăng nhập lại), bỏ đăng nhập Jira kiểu cũ ở Desktop — **đã làm 14/11/2026** (xem "Trạng thái M1") | M |
 | M2 | Chế độ Web: cookie auth Jira không DB, ẩn module cần DB, no-op nhật ký, PWA + thanh phiên bản mới — **đã làm 15/11/2026** (xem "Trạng thái M2") | M |
-| M3 | Máy chính Toolkit License: quản trị, API kích hoạt, ký license, phát hành phiên bản, heartbeat | L |
+| M3 | Máy chính Toolkit License: quản trị, API kích hoạt, ký license, phát hành phiên bản, heartbeat — **đã làm 15/11/2026** (xem "Trạng thái M3" và `docs/LICENSE_SERVER.md`) | L |
 | M4 | License trên thiết bị: token, màn hình Kích hoạt (online + thủ công), kiểm tra chữ ký | M |
 | M5 | Đóng gói Velopack, cửa sổ app, kiểm tra/áp dụng cập nhật, xuất/nhập dữ liệu chuyển từ bản IIS | M–L |
 | Sau | Mobile có DB riêng (Blazor + MAUI) nếu thật sự cần | L+ |
@@ -230,3 +230,37 @@ Chủ dự án chọn cả 4 việc. So sánh DB và Bắt SQL **chỉ có ở D
 6. **Cài trên điện thoại:**
    - Android Chrome: menu ⋮ → "Cài đặt ứng dụng";
    - iPhone Safari: Chia sẻ → "Thêm vào MH chính".
+
+## Trạng thái M3 (15/11/2026)
+
+Chủ dự án chọn cả 4 việc. Các quyết định:
+
+- **Thời hạn license:** chọn khi duyệt; mặc định không hết hạn; thu hồi được bất cứ lúc nào.
+- **Đăng nhập quản trị:** mật khẩu cộng xác thực hai lớp bắt buộc.
+- **DB:** SQLite.
+
+Chi tiết cách dùng và cách dựng trên IIS ở `docs/LICENSE_SERVER.md`.
+
+- **App quản trị riêng:** `src/ToolkitLicense.Web`, đã thêm vào `ToolboxWeb.sln`.
+  - Giao diện dùng chung token, thành phần, font, icon và logo với Toolkit, liên kết từ `ToolboxWeb.Web` chứ không chép.
+  - Có tiếng Việt và tiếng Anh, giao diện sáng và tối, dùng được trên màn hình 390px.
+- **Đăng nhập:**
+  - Tài khoản quản trị đầu tiên tạo bằng mã cài đặt một lần, ghi trong thư mục dữ liệu trên máy chủ.
+  - Xác thực hai lớp bằng ứng dụng xác thực là bắt buộc, kèm 10 mã khôi phục.
+  - Đăng nhập sai 5 lần thì khóa 15 phút; trang đăng nhập và API giới hạn số lần gọi.
+- **Kích hoạt và cấp license:**
+  - API `POST /api/activations` và `GET /api/activations/{id}`;
+  - kích hoạt thủ công bằng cách dán mã `TKT1.…`;
+  - duyệt (gắn người dùng, chọn thời hạn) hoặc từ chối;
+  - license ký bằng ECDSA P-256. Khóa ký sinh lần chạy đầu, khóa công khai và dấu khóa xem ở trang Khóa ký, để gắn vào bản desktop ở M4.
+- **Quản lý người dùng, thiết bị, license:**
+  - cấp lại hoặc gia hạn, thu hồi có lý do; mọi thao tác đều hỏi xác nhận có ghi tên;
+  - nhật ký thao tác ghi mọi việc của quản trị.
+- **Phát hành phiên bản và báo phiên bản:**
+  - trang Phiên bản (số, ghi chú, đường tải, bắt buộc), kèm bảng số máy theo từng phiên bản đang chạy;
+  - `GET /api/releases/latest`;
+  - `POST /api/devices/heartbeat` do thiết bị ký: ghi phiên bản và lần cuối hoạt động, trả tình trạng license, bản license mới khi vừa gia hạn, và phiên bản mới nhất.
+- **Khác với phác thảo ban đầu:**
+  - heartbeat là `POST /api/devices/heartbeat`; mã thiết bị nằm trong nội dung đã ký thay vì trên đường dẫn;
+  - không có bảng `DeviceHeartbeats` riêng: phiên bản và lần cuối hoạt động lưu ngay trên thiết bị.
+- **Chưa làm (M4):** phía thiết bị, gồm tạo khóa và mã kích hoạt, màn hình Kích hoạt, kiểm tra license khi mở app, gửi heartbeat, thanh "Có phiên bản mới".

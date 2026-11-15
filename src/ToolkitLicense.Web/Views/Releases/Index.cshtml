@@ -1,0 +1,135 @@
+@model ReleasesViewModel
+@{
+    ViewData["Title"] = T["Nav.Releases"];
+    ViewData["Nav"] = "releases";
+    var latest = Model.Releases.FirstOrDefault();
+}
+<div class="lic-grid-2">
+    <section class="tbx-panel">
+        <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Release.ListTitle"]</h2></div>
+        @if (Model.Releases.Count == 0)
+        {
+            <partial name="_Empty" model="@(("download", T["Release.Empty"].Value))" />
+        }
+        else
+        {
+            <div class="lic-table-wrap">
+                <table class="lic-table is-stacking">
+                    <thead>
+                        <tr>
+                            <th>@T["Release.Version"]</th>
+                            <th>@T["Release.Published"]</th>
+                            <th>@T["Release.Devices"]</th>
+                            <th>@T["Release.Notes"]</th>
+                            <th><span class="visually-hidden">@T["Action.Actions"]</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var release in Model.Releases)
+                        {
+                            var devices = Model.InUse.Where(x => ReleaseService.Compare(x.Version, release.Version) == 0).Sum(x => x.Devices);
+                            <tr>
+                                <td data-label="@T["Release.Version"]">
+                                    <span class="lic-cell-main">@release.Version</span>
+                                    @if (release == latest)
+                                    {
+                                        <span class="tbx-pill is-accent ms-1">@T["Release.Latest"]</span>
+                                    }
+                                    @if (release.Mandatory)
+                                    {
+                                        <span class="tbx-pill is-warning ms-1">@T["Release.Mandatory"]</span>
+                                    }
+                                </td>
+                                <td data-label="@T["Release.Published"]">@Display.DateText(release.PublishedAtUtc)</td>
+                                <td class="is-number" data-label="@T["Release.Devices"]">@devices</td>
+                                <td class="is-text" data-label="@T["Release.Notes"]">
+                                    @(release.Notes ?? "—")
+                                    @if (release.DownloadUrl is not null)
+                                    {
+                                        <span class="lic-cell-sub"><a href="@release.DownloadUrl" rel="noopener noreferrer">@release.DownloadUrl</a></span>
+                                    }
+                                </td>
+                                <td data-label="">
+                                    <form method="post" asp-antiforgery="true" action="/releases/delete/@release.Id" class="d-inline"
+                                          data-confirm="@T["Release.DeleteConfirm", release.Version]" data-confirm-button="@T["Action.Delete"]" data-confirm-danger>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="@T["Release.DeleteLabel", release.Version]"><tbx-icon name="trash-2" /></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+    <section class="tbx-panel">
+        <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Release.New"]</h2></div>
+        <form method="post" asp-antiforgery="true" action="/releases/create" class="tbx-panel-body lic-form" novalidate>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="Version">@T["Release.Version"]<span class="tbx-required" aria-hidden="true">*</span></label>
+                <input class="form-control" id="Version" name="Version" value="@Model.Version" maxlength="40" placeholder="1.1.0" required />
+                <span class="tbx-field-hint">@T["Release.VersionHint"]</span>
+                <partial name="_Field" model="@("Version")" />
+            </div>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="Notes">@T["Release.Notes"]</label>
+                <textarea class="form-control" id="Notes" name="Notes" rows="3" maxlength="2000">@Model.Notes</textarea>
+            </div>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="DownloadUrl">@T["Release.DownloadUrl"]</label>
+                <input class="form-control" id="DownloadUrl" name="DownloadUrl" type="url" value="@Model.DownloadUrl" maxlength="500" placeholder="https://may-chinh/downloads/Toolkit-Setup.exe" />
+                <span class="tbx-field-hint">@T["Release.DownloadHint"]</span>
+                <partial name="_Field" model="@("DownloadUrl")" />
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="Mandatory" name="Mandatory" value="true" checked="@Model.Mandatory" />
+                <label class="form-check-label" for="Mandatory">@T["Release.MandatoryLabel"]</label>
+            </div>
+            <div class="lic-actions"><button type="submit" class="btn btn-primary"><tbx-icon name="plus" />@T["Release.Add"]</button></div>
+        </form>
+    </section>
+</div>
+<section class="tbx-panel">
+    <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Release.InUseTitle"]</h2></div>
+    @if (Model.InUse.Count == 0)
+    {
+        <partial name="_Empty" model="@(("monitor", T["Device.Empty"].Value))" />
+    }
+    else
+    {
+        <div class="lic-table-wrap">
+            <table class="lic-table is-stacking">
+                <thead>
+                    <tr>
+                        <th>@T["Release.Version"]</th>
+                        <th>@T["Release.Devices"]</th>
+                        <th>@T["License.State"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var use in Model.InUse)
+                    {
+                        <tr>
+                            <td data-label="@T["Release.Version"]">@(use.Version.Length > 0 ? use.Version : T["Release.Unknown"].Value)</td>
+                            <td class="is-number" data-label="@T["Release.Devices"]">@use.Devices</td>
+                            <td data-label="@T["License.State"]">
+                                @if (use.IsLatest)
+                                {
+                                    <span class="tbx-pill is-success">@T["Release.UpToDate"]</span>
+                                }
+                                else if (use.Behind)
+                                {
+                                    <span class="tbx-pill is-warning">@T["Release.Behind"]</span>
+                                }
+                                else
+                                {
+                                    <span class="tbx-pill is-neutral">—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

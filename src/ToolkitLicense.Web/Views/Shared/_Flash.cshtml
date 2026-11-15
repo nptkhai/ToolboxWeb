@@ -1,0 +1,10 @@
+@foreach (var (key, css, icon) in new[] { ("Success", "alert-success", "circle-check"), ("Error", "alert-danger", "circle-alert"), ("Info", "alert-info", "info") })
+{
+    if (TempData[key] is string message && message.Length > 0)
+    {
+        <div class="alert @css d-flex gap-2 align-items-start lic-flash" role="@(key == "Error" ? "alert" : "status")">
+            <tbx-icon name="@icon" />
+            <span>@message</span>
+        </div>
+    }
+}

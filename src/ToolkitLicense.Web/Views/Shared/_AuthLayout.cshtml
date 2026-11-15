@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <partial name="_Head" />
+</head>
+<body>
+    <main class="lic-auth app-shell">
+        <div class="lic-auth-card @(ViewData["Wide"] is true ? "is-wide" : null)">
+            <section class="tbx-panel">
+                <div class="tbx-panel-body lic-form">
+                    <div class="lic-auth-head">
+                        <img src="~/brand/toolkit-mark.svg" asp-append-version="true" alt="" />
+                        <div>
+                            <h1>@ViewData["Title"]</h1>
+                            <p>@T["App.Name"]</p>
+                        </div>
+                    </div>
+                    <partial name="_Flash" />
+                    @RenderBody()
+                </div>
+            </section>
+            <div class="lic-auth-tools"><partial name="_Tools" /></div>
+        </div>
+    </main>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
+    <script src="~/js/license.js" asp-append-version="true"></script>
+</body>
+</html>

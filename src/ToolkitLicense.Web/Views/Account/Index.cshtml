@@ -1,0 +1,41 @@
+@model AccountViewModel
+@{
+    ViewData["Title"] = T["Nav.Account"];
+    ViewData["Nav"] = "account";
+}
+<div class="lic-grid-2">
+    <section class="tbx-panel">
+        <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Account.ChangePassword"]</h2></div>
+        <form method="post" asp-antiforgery="true" action="/account/password" class="tbx-panel-body lic-form" novalidate>
+            <p class="lic-note">@T["Account.SignedInAs", Model.UserName]</p>
+            <input type="text" name="username" value="@Model.UserName" autocomplete="username" hidden />
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="CurrentPassword">@T["Account.CurrentPassword"]</label>
+                <input class="form-control" id="CurrentPassword" name="CurrentPassword" type="password" autocomplete="current-password" required />
+                <partial name="_Field" model="@("CurrentPassword")" />
+            </div>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="NewPassword">@T["Account.NewPassword"]</label>
+                <input class="form-control" id="NewPassword" name="NewPassword" type="password" autocomplete="new-password" required />
+                <span class="tbx-field-hint">@T["Account.PasswordRule"]</span>
+                <partial name="_Field" model="@("NewPassword")" />
+            </div>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="ConfirmPassword">@T["Account.ConfirmPassword"]</label>
+                <input class="form-control" id="ConfirmPassword" name="ConfirmPassword" type="password" autocomplete="new-password" required />
+                <partial name="_Field" model="@("ConfirmPassword")" />
+            </div>
+            <div class="lic-actions"><button type="submit" class="btn btn-primary">@T["Account.ChangePassword"]</button></div>
+        </form>
+    </section>
+    <section class="tbx-panel">
+        <div class="tbx-panel-header"><h2 class="tbx-panel-title">@T["Account.TwoFactor"]</h2></div>
+        <div class="tbx-panel-body lic-form">
+            <p class="mb-0"><span class="tbx-pill is-success">@T["Account.TwoFactorOn"]</span></p>
+            <p class="lic-note">@T["Account.RecoveryLeft", Model.RecoveryCodesLeft]</p>
+            <form method="post" asp-antiforgery="true" action="/account/recovery-codes" data-confirm="@T["Account.NewCodesConfirm"]" data-confirm-button="@T["Account.NewCodes"]">
+                <button type="submit" class="btn btn-outline-secondary">@T["Account.NewCodes"]</button>
+            </form>
+        </div>
+    </section>
+</div>
