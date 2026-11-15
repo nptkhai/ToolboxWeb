@@ -62,10 +62,11 @@
     }
 }
 
+/* Fixed label column so the two lists in Settings line up. */
 .license-facts {
     display: grid;
     gap: var(--space-2) var(--space-4);
-    grid-template-columns: minmax(140px, max-content) minmax(0, 1fr);
+    grid-template-columns: 13rem minmax(0, 1fr);
     margin: 0;
 }
 
