@@ -3,7 +3,7 @@
 // - optionally a Jira session, which needs the app to run with Jira__UseFakeData=true.
 const fs = require('fs');
 const { chromium } = require('@playwright/test');
-const { OUT, LOCAL_STATE, JIRA_STATE, EMAIL, PASSWORD, INCLUDE_JIRA } = require('./settings');
+const { OUT, LOCAL_STATE, JIRA_STATE, EMAIL, PASSWORD, INCLUDE_JIRA, WEB_MODE } = require('./settings');
 
 async function signInLocal(page, baseURL) {
   await page.goto(`${baseURL}/Identity/Account/Login`);
@@ -48,7 +48,10 @@ async function seedSampleData(page, baseURL) {
 
 async function signInJira(page, baseURL) {
   await page.goto(`${baseURL}/Identity/Account/Login`);
-  await page.click('[data-login-switch="jira"]');
+  // The web copy shows the Jira panel only, without the switch.
+  if (await page.locator('[data-login-switch="jira"]').count()) {
+    await page.click('[data-login-switch="jira"]');
+  }
   await page.fill('#jira-base-url', 'https://jira.fake.local');
   await page.fill('#jira-username', 'ui.check');
   await page.fill('#jira-password', 'not-used');
@@ -63,13 +66,16 @@ module.exports = async (config) => {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch();
   try {
-    const local = await browser.newContext({ locale: 'vi-VN' });
-    const page = await local.newPage();
-    if (!(await signInLocal(page, baseURL)) && !(await register(page, baseURL))) {
-      throw new Error(`Could not sign in or register ${EMAIL} at ${baseURL}. Is the app running?`);
+    // The web copy has no local accounts (App__Mode=Web): only the Jira sign-in is prepared.
+    if (!WEB_MODE) {
+      const local = await browser.newContext({ locale: 'vi-VN' });
+      const page = await local.newPage();
+      if (!(await signInLocal(page, baseURL)) && !(await register(page, baseURL))) {
+        throw new Error(`Could not sign in or register ${EMAIL} at ${baseURL}. Is the app running?`);
+      }
+      await seedSampleData(page, baseURL);
+      await local.storageState({ path: LOCAL_STATE });
     }
-    await seedSampleData(page, baseURL);
-    await local.storageState({ path: LOCAL_STATE });
 
     if (INCLUDE_JIRA) {
       const jira = await browser.newContext({ locale: 'vi-VN' });

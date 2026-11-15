@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <!-- The version people see (account menu, /app/version). Raise it for every release. -->
+    <Version>1.0.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-ToolboxWeb.Web-84046f6d-e870-456a-9296-6783eedf464f</UserSecretsId>

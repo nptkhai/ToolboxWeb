@@ -110,7 +110,7 @@ Một mã nguồn (repo ToolboxWeb), chọn chế độ bằng cấu hình `App:
 | R0 | Đổi tên hiển thị sang Toolkit, logo mới — **đã làm 14/11/2026** | S |
 | M0 | Chế độ `App:Mode`, đường dẫn dữ liệu Desktop, sao lưu trước migration, tự đăng nhập "chủ máy" — **đã làm 14/11/2026** (xem "Trạng thái M0") | M |
 | M1 | Trang Cài đặt + Jira lưu trên máy (tự đăng nhập lại), bỏ đăng nhập Jira kiểu cũ ở Desktop — **đã làm 14/11/2026** (xem "Trạng thái M1") | M |
-| M2 | Chế độ Web: cookie auth Jira không DB, ẩn module cần DB, no-op nhật ký, PWA + thanh phiên bản mới | M |
+| M2 | Chế độ Web: cookie auth Jira không DB, ẩn module cần DB, no-op nhật ký, PWA + thanh phiên bản mới — **đã làm 15/11/2026** (xem "Trạng thái M2") | M |
 | M3 | Máy chính Toolkit License: quản trị, API kích hoạt, ký license, phát hành phiên bản, heartbeat | L |
 | M4 | License trên thiết bị: token, màn hình Kích hoạt (online + thủ công), kiểm tra chữ ký | M |
 | M5 | Đóng gói Velopack, cửa sổ app, kiểm tra/áp dụng cập nhật, xuất/nhập dữ liệu chuyển từ bản IIS | M–L |
@@ -198,3 +198,35 @@ Chủ dự án chọn cả 4 việc, đăng nhập Jira bằng mật khẩu ho�
   - kết nối lỗi thì báo lý do.
 - **Tổng quan:** ô "Giờ log Jira hôm nay" hiện khi đã có kết nối.
 - **Server:** đăng nhập Jira như cũ; trang Cài đặt không có.
+
+## Trạng thái M2 (15/11/2026)
+
+Chủ dự án chọn cả 4 việc. So sánh DB và Bắt SQL **chỉ có ở Desktop**. Site IIS hiện tại **giữ chế độ Server**; bản Web là một site IIS thứ hai.
+
+- **Chế độ Web** (`App:Mode=Web`):
+  - **Đăng nhập:** chỉ bằng Jira; không có đăng ký, không có trang tài khoản.
+  - **Menu:** chỉ còn Jira Dashboard, Công việc Jira và Hẹn giờ tập trung. Các trang cần DB mang `[NotInWebMode]` (`Infrastructure/Hosting/WebModeRules.cs`) và trả 404: Tổng quan, Hoạt động, Ghi chú, Việc cần làm, Liên kết, Prompt, So sánh DB, Bắt SQL, Cài đặt, Tabulator Demo.
+  - **Không ghi DB nào ra đĩa:**
+    - Identity dùng SQLite trong bộ nhớ, chỉ để giữ tài khoản bóng của người đăng nhập Jira; mất khi khởi động lại, cùng lúc với phiên Jira;
+    - nhật ký hoạt động không ghi (`NoOpActivityLogService`), nên ghi hạn lên Jira vẫn chạy;
+    - trên đĩa chỉ có khóa Data Protection (để cookie còn hiệu lực) và log.
+  - **Hẹn giờ:** chỉ đếm giờ trên trình duyệt; không lưu phiên, không có số liệu và lịch sử.
+- **Cài như ứng dụng (PWA, cả ba chế độ):**
+  - `manifest.webmanifest` dùng icon TK 192/512;
+  - service worker `Content/sw.js` chỉ lưu đệm file tĩnh có phiên bản, font, icon, thư viện và trang `/offline.html`. Trang và dữ liệu Jira luôn lấy từ mạng; không bao giờ lưu.
+- **Báo phiên bản mới (cả ba chế độ):**
+  - mỗi trang ghi số build;
+  - `site.js` hỏi `/app/version` mỗi 10 phút và khi quay lại tab; khác số build thì hiện thanh "Đã có phiên bản mới của Toolkit · Tải lại";
+  - menu tài khoản hiện "Toolkit 1.0.0" (`<Version>` trong csproj). **Tăng `Version` mỗi lần phát hành.**
+
+### Dựng site Web trên IIS (máy chính)
+1. Tạo site IIS thứ hai (ví dụ `toolkit.<miền>`), publish cùng bản build với site Server.
+2. Đặt chế độ Web theo một trong hai cách:
+   - trong `web.config` của site, phần `<aspNetCore>`, thêm `<environmentVariables><environmentVariable name="App__Mode" value="Web" /></environmentVariables>`;
+   - hoặc ghi `"App": { "Mode": "Web" }` trong `appsettings.Production.json` của site đó.
+3. `Storage:DataProtectionKeysPath` trỏ ra ngoài thư mục site (giống site Server, nhưng dùng thư mục riêng).
+4. Gắn **HTTPS có chứng chỉ hợp lệ**: điện thoại chỉ cho cài app khi site chạy HTTPS.
+5. Máy chủ phải vào được Jira (`Jira:DefaultBaseUrl`).
+6. **Cài trên điện thoại:**
+   - Android Chrome: menu ⋮ → "Cài đặt ứng dụng";
+   - iPhone Safari: Chia sẻ → "Thêm vào MH chính".

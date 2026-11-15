@@ -27,6 +27,13 @@ Desktop mode (one person's computer, data in `%LOCALAPPDATA%\Toolkit`, no sign-i
 dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj -- --desktop
 ```
 
+Web mode (the browser and phone site: Jira sign-in only, no database; see `docs/DEPLOYMENT_MODEL.md`):
+
+```powershell
+$env:App__Mode = "Web"
+dotnet run --project src\ToolboxWeb.Web\ToolboxWeb.Web.csproj
+```
+
 ## Source Layout
 
 - `Controllers/`: request handling and redirects.

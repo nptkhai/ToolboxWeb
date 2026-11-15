@@ -7,9 +7,11 @@ using ToolboxWeb.Web.Infrastructure.SqlSchema;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels.SchemaCompare;
 using ToolboxWeb.Web.ViewModels.SqlProfiler;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
+[NotInWebMode]
 [Authorize]
 public class SqlProfilerController : Controller
 {

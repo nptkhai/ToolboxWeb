@@ -37,6 +37,16 @@
     <link rel="icon" href="~/favicon.ico" sizes="16x16 32x32 48x48" />
     <link rel="icon" type="image/svg+xml" href="~/brand/toolkit-mark.svg" asp-append-version="true" />
     <link rel="apple-touch-icon" href="~/brand/apple-touch-icon.png" asp-append-version="true" />
+    @* Installable app (PWA): manifest, window colors (--surface light/dark), service worker in site.js. *@
+    <link rel="manifest" href="~/manifest.webmanifest" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#15181E" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="@T["App.Name"]" />
+    @* The running build; site.js compares it with /app/version to offer a reload after a deployment. *@
+    <meta name="toolkit-build" content="@ToolboxWeb.Web.Infrastructure.Hosting.AppVersion.Build"
+          data-text-new="@T["App.NewVersion"]" data-text-reload="@T["App.Reload"]" data-text-close="@T["Action.Close"]" />
     <script type="importmap"></script>
     <link rel="preload" href="~/vendor/fonts/inter/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="~/vendor/fonts/inter/inter.css" asp-append-version="true" />
@@ -95,7 +105,7 @@
         var showDevGroup = ToolboxWeb.Web.Infrastructure.Security.DevToolsAccess.IsAllowed(HostEnvironment, User);
         // One list of pages (ViewModels/AppNavigation.cs) feeds the sidebar, the command palette
         // and the "G then letter" shortcuts.
-        var navGroups = AppNavigation.Build(Url, T, hasJira, showDevGroup, AppMode.IsDesktop);
+        var navGroups = AppNavigation.Build(Url, T, hasJira, showDevGroup, AppMode.Mode);
 
         // Current sidebar item, by controller/action so it also holds after a POST round-trip
         // and on sub-routes such as /component/{tab}.html.
@@ -196,9 +206,9 @@
                         @* The focus timer keeps running on every page (Content/js/focus-clock.js); while it
                            runs, this shows the time left and leads back to the timer. *@
                         <a class="focus-chip" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.FocusTimerHtml) ?? "/focus-timer.html")" data-focus-chip hidden
-                           data-complete-url="@Url.Action("Complete", "FocusTimer")"
+                           data-complete-url="@(AppMode.IsWeb ? null : Url.Action("Complete", "FocusTimer"))"
                            data-text-focus="@T["FocusTimer.Phase.Focus"]" data-text-short="@T["FocusTimer.Phase.Short"]" data-text-long="@T["FocusTimer.Phase.Long"]"
-                           data-text-focus-done="@T["FocusTimer.Done.Focus"]" data-text-break-done="@T["FocusTimer.Done.Break"]"
+                           data-text-focus-done="@(AppMode.IsWeb ? T["FocusTimer.Done.FocusWeb"] : T["FocusTimer.Done.Focus"])" data-text-break-done="@T["FocusTimer.Done.Break"]"
                            data-text-saved="@T["FocusTimer.Done.Saved"]" data-text-save-failed="@T["FocusTimer.Done.SaveFailed"]">
                             <tbx-icon name="timer" />
                             <span data-focus-chip-time></span>

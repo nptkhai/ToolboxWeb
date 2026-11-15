@@ -5,6 +5,7 @@ using ToolboxWeb.Web;
 using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
@@ -12,6 +13,7 @@ namespace ToolboxWeb.Web.Controllers;
 /// The personal overview. The quick forms on it (add a task, mark one done, add a note) post here
 /// and come back to the overview instead of the tool's own page.
 /// </summary>
+[NotInWebMode]
 [Authorize]
 public class DashboardController : Controller
 {

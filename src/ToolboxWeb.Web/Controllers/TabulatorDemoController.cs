@@ -5,9 +5,11 @@ using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Infrastructure.Security;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
+[NotInWebMode]
 [Authorize]
 [DevToolsOnly]
 public class TabulatorDemoController : Controller

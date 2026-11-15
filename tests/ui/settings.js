@@ -10,5 +10,8 @@ module.exports = {
   EMAIL: process.env.TBX_UI_EMAIL || 'ui.check@example.local',
   PASSWORD: process.env.TBX_UI_PASSWORD || 'UiCheck@12345',
   // Set TBX_UI_JIRA=1 when the app runs with Jira__UseFakeData=true (Development only).
-  INCLUDE_JIRA: process.env.TBX_UI_JIRA === '1'
+  INCLUDE_JIRA: process.env.TBX_UI_JIRA === '1' || process.env.TBX_UI_MODE === 'web',
+  // Set TBX_UI_MODE=web when the app runs with App__Mode=Web (Jira sign-in only, no database).
+  // Use another TBX_UI_OUT for it, so its baseline stays apart from the server one.
+  WEB_MODE: process.env.TBX_UI_MODE === 'web'
 };

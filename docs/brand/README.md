@@ -13,7 +13,7 @@ Tên sản phẩm hiển thị cho người dùng là **Toolkit** (đổi từ T
 | `toolkit.ico` | Icon bộ cài Windows (16/32/48/256) |
 | `export/` | PNG xuất từ các SVG trên: `apple-touch-icon-180`, `icon-192`, `icon-512`, `toolkit-logo-512`, `og-image-1200x630` |
 
-Trong app (`Content/`): `favicon.ico` (16/32/48 từ `toolkit-mark.svg`), `brand/toolkit-mark.svg`, `brand/favicon-32.png`, `brand/apple-touch-icon.png`. Icon 192/512 sẽ chép vào `Content/brand/` khi làm manifest PWA (giai đoạn M2 trong `docs/DEPLOYMENT_MODEL.md`).
+Trong app (`Content/`): `favicon.ico` (16/32/48 từ `toolkit-mark.svg`), `brand/toolkit-mark.svg`, `brand/favicon-32.png`, `brand/apple-touch-icon.png`. Icon 192/512 nằm trong `Content/brand/` cho manifest PWA (`Content/manifest.webmanifest`, giai đoạn M2).
 
 ## Màu
 

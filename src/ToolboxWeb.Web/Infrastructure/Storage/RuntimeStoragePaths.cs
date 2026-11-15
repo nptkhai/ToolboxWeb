@@ -9,9 +9,11 @@ namespace ToolboxWeb.Web.Infrastructure.Storage;
 public sealed class RuntimeStoragePaths
 {
     private readonly bool _copyLegacyFiles;
+    private readonly bool _keysOnly;
 
-    private RuntimeStoragePaths(string databasePath, string uploadsPath, string dataProtectionKeysPath, string backupsPath, bool copyLegacyFiles)
+    private RuntimeStoragePaths(string databasePath, string uploadsPath, string dataProtectionKeysPath, string backupsPath, bool copyLegacyFiles, bool keysOnly)
     {
+        _keysOnly = keysOnly;
         DatabasePath = databasePath;
         UploadsPath = uploadsPath;
         DataProtectionKeysPath = dataProtectionKeysPath;
@@ -40,11 +42,19 @@ public sealed class RuntimeStoragePaths
             : ResolvePath(root, configuredBackups);
 
         // Older server copies kept the database and uploads inside the site folder; a desktop never did.
-        return new RuntimeStoragePaths(databasePath, uploadsPath, dataProtectionKeysPath, backupsPath, copyLegacyFiles: !mode.IsDesktop);
+        // The web copy stores no data: only its Data Protection keys go to disk.
+        return new RuntimeStoragePaths(databasePath, uploadsPath, dataProtectionKeysPath, backupsPath,
+            copyLegacyFiles: mode.Mode == AppMode.Server, keysOnly: mode.IsWeb);
     }
 
     public void Initialize(string contentRootPath)
     {
+        if (_keysOnly)
+        {
+            Directory.CreateDirectory(DataProtectionKeysPath);
+            return;
+        }
+
         Directory.CreateDirectory(Path.GetDirectoryName(DatabasePath)!);
         Directory.CreateDirectory(UploadsPath);
         Directory.CreateDirectory(DataProtectionKeysPath);

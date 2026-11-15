@@ -132,7 +132,8 @@
             const commands = ranked(query, commandOptions().filter(function (o) { return matches(query, [o.label, o.keywords]); }));
             if (pages.length) groups.push([text.pages, pages]);
             if (commands.length) groups.push([text.commands, commands]);
-            groups.push([text.data, dataOptions(), true]);
+            // The web copy stores no data, so it has nothing to search (no searchUrl).
+            if (config.searchUrl) groups.push([text.data, dataOptions(), true]);
         }
         render(groups, query);
     }
@@ -201,6 +202,9 @@
 
     function searchData() {
         const query = input.value.trim();
+        if (!config.searchUrl) {
+            return;
+        }
         window.clearTimeout(searchTimer);
         if (query.length < (config.minQuery || 2)) {
             dataState = { query: query, status: 'idle', items: [] };

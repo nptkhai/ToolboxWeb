@@ -47,7 +47,12 @@ public static class StaticAssetDelivery
     public static void SetCacheHeaders(StaticFileResponseContext context)
     {
         var request = context.Context.Request;
-        if (request.Query.ContainsKey("v"))
+        if (request.Path.Equals("/sw.js") || request.Path.Equals("/manifest.webmanifest"))
+        {
+            // The browser must see a new service worker or manifest as soon as it is deployed.
+            context.Context.Response.Headers.CacheControl = "no-cache";
+        }
+        else if (request.Query.ContainsKey("v"))
         {
             context.Context.Response.Headers.CacheControl = VersionedCache;
         }

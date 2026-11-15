@@ -15,6 +15,7 @@ namespace ToolboxWeb.Web.Controllers;
 /// Settings of a desktop copy (App:Mode=Desktop): what belongs to this computer, starting with
 /// the Jira connection (DesktopJiraService). Not found on the server, where Jira is signed in per session.
 /// </summary>
+[NotInWebMode]
 [Authorize]
 public class SettingsController : Controller
 {

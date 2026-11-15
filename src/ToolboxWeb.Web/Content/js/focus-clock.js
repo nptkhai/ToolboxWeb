@@ -179,6 +179,10 @@
         };
     }
 
+    function canSave() {
+        return Boolean(chip && chip.dataset.completeUrl);
+    }
+
     async function postSession(item) {
         const token = document.querySelector('[data-focus-token] input[name="__RequestVerificationToken"]');
         const body = new URLSearchParams({
@@ -229,6 +233,10 @@
 
     /** Sends a session; when that fails it waits in the browser and goes again later. */
     async function keepSession(item) {
+        // The web copy (App:Mode=Web) stores nothing: the chip carries no save address.
+        if (!canSave()) {
+            return false;
+        }
         try {
             if (await postSession(item) === 'rejected') {
                 return false;
@@ -246,6 +254,9 @@
     // ignores a session it already has (same start), so a repeat does no harm.
     let retrying = false;
     async function retryUnsaved() {
+        if (!canSave()) {
+            return;
+        }
         const list = unsaved();
         const lastTry = Number(read(RETRY_KEY)) || 0;
         if (retrying || !list.length || Date.now() - lastTry < RETRY_EVERY_MS / 2) {
@@ -384,7 +395,11 @@
                 browserNotice(message);
             }
             // Stored with the time it really ended, not the time this page noticed.
-            if (await keepSession(sessionOf(s, minutes, s.endsAt)) === 'saved') {
+            if (!canSave()) {
+                if (!late) {
+                    notify(message, 'info');
+                }
+            } else if (await keepSession(sessionOf(s, minutes, s.endsAt)) === 'saved') {
                 notify(message, 'success');
             }
         } else {

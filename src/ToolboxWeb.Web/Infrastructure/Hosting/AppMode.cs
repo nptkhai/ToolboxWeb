@@ -10,7 +10,13 @@ public enum AppMode
     /// One person's computer: the database lives on that computer, its owner is signed in
     /// automatically and only the computer itself can open the app.
     /// </summary>
-    Desktop
+    Desktop,
+
+    /// <summary>
+    /// The browser and phone site (second IIS site): Jira screens and tools that store nothing.
+    /// Sign-in is Jira only and no database is written to disk.
+    /// </summary>
+    Web
 }
 
 /// <summary>The run mode and where a desktop copy keeps its data. Registered as a singleton.</summary>
@@ -25,6 +31,8 @@ public sealed class AppModeInfo
     public AppMode Mode { get; }
 
     public bool IsDesktop => Mode == AppMode.Desktop;
+
+    public bool IsWeb => Mode == AppMode.Web;
 
     /// <summary>
     /// The folder relative storage paths resolve against: the content root on the server,

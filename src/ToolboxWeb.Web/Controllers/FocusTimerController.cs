@@ -6,6 +6,7 @@ using ToolboxWeb.Web.Constants;
 using ToolboxWeb.Web.Enums;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels;
+using ToolboxWeb.Web.Infrastructure.Hosting;
 
 namespace ToolboxWeb.Web.Controllers;
 
@@ -15,10 +16,12 @@ public class FocusTimerController : Controller
     private readonly IFocusSessionService _focusSessions;
     private readonly IChecklistService _checklist;
     private readonly ICurrentUserService _currentUser;
+    private readonly AppModeInfo _mode;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public FocusTimerController(IFocusSessionService focusSessions, IChecklistService checklist, ICurrentUserService currentUser, IStringLocalizer<SharedResource> localizer)
+    public FocusTimerController(IFocusSessionService focusSessions, IChecklistService checklist, ICurrentUserService currentUser, IStringLocalizer<SharedResource> localizer, AppModeInfo mode)
     {
+        _mode = mode;
         _focusSessions = focusSessions;
         _checklist = checklist;
         _currentUser = currentUser;
@@ -36,6 +39,7 @@ public class FocusTimerController : Controller
     /// The browser posts this when a focus session ends, from whichever page is open; a stop
     /// before the end posts the minutes actually spent. Answers JSON to script, redirects otherwise.
     /// </summary>
+    [NotInWebMode]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Complete(FocusSessionFormViewModel form)
@@ -58,6 +62,7 @@ public class FocusTimerController : Controller
         return RedirectToTimer();
     }
 
+    [NotInWebMode]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateNote(FocusSessionNoteViewModel form)
@@ -74,6 +79,7 @@ public class FocusTimerController : Controller
         return RedirectToTimer();
     }
 
+    [NotInWebMode]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
@@ -84,6 +90,12 @@ public class FocusTimerController : Controller
 
     private async Task<FocusTimerPageViewModel> PageAsync(FocusSessionFormViewModel form, int? minutes, bool start)
     {
+        if (_mode.IsWeb)
+        {
+            // The web copy has no database: the timer counts in the browser and stores nothing.
+            return new FocusTimerPageViewModel { Form = form, AutoStart = start, RequestedMinutes = minutes, StoresSessions = false };
+        }
+
         var todos = await _checklist.GetAsync(_currentUser.UserId, 200);
         return new FocusTimerPageViewModel
         {

@@ -8,6 +8,7 @@ namespace ToolboxWeb.Web.Controllers;
 /// Desktop copy only (App:Mode=Desktop): the "is Toolkit running here?" check used by a second
 /// start, and "Quit Toolkit" from the account menu. Not found on the server.
 /// </summary>
+[NotInWebMode]
 [Route("desktop")]
 public class DesktopController : Controller
 {

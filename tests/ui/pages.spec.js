@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const { test, expect } = require('@playwright/test');
-const { OUT, LOCAL_STATE, JIRA_STATE, INCLUDE_JIRA } = require('./settings');
+const { OUT, LOCAL_STATE, JIRA_STATE, INCLUDE_JIRA, WEB_MODE } = require('./settings');
 
 const ANONYMOUS_PAGES = [
   { name: 'login', path: '/Identity/Account/Login' },
@@ -34,6 +34,11 @@ const LOCAL_PAGES = [
   { name: 'account-email', path: '/Identity/Account/Manage/Email' },
   { name: 'account-password', path: '/Identity/Account/Manage/ChangePassword' },
   { name: 'access-denied', path: '/jira-dashboard.html' }
+];
+
+// The web copy (TBX_UI_MODE=web): Jira screens plus the focus timer, which only counts there.
+const WEB_EXTRA_PAGES = [
+  { name: 'focus-timer', path: '/focus-timer.html' }
 ];
 
 const JIRA_PAGES = [
@@ -161,16 +166,18 @@ function definePages(pages, storageState) {
 
 test.describe('anonymous', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
-  definePages(ANONYMOUS_PAGES);
+  // The web copy has no registration page.
+  definePages(WEB_MODE ? ANONYMOUS_PAGES.filter((x) => x.name !== 'register') : ANONYMOUS_PAGES);
 });
 
 test.describe('local account', () => {
-  test.use({ storageState: LOCAL_STATE });
+  test.skip(WEB_MODE, 'The web copy has no local accounts.');
+  test.use({ storageState: WEB_MODE ? { cookies: [], origins: [] } : LOCAL_STATE });
   definePages(LOCAL_PAGES);
 });
 
 test.describe('jira account (fake data)', () => {
   test.skip(!INCLUDE_JIRA, 'Set TBX_UI_JIRA=1 and run the app with Jira__UseFakeData=true to include Jira screens.');
   test.use({ storageState: INCLUDE_JIRA ? JIRA_STATE : { cookies: [], origins: [] } });
-  definePages(JIRA_PAGES);
+  definePages(WEB_MODE ? [...JIRA_PAGES, ...WEB_EXTRA_PAGES] : JIRA_PAGES);
 });

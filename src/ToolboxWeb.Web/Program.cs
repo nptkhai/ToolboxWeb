@@ -97,8 +97,22 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
         new AcceptLanguageHeaderRequestCultureProvider()
     ];
 });
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(sqliteConnection));
+if (appMode.IsWeb)
+{
+    // The web copy writes no database to disk. Identity still needs a user store for the Jira
+    // sign-in, so it lives in memory for the life of the process (this connection keeps it
+    // alive); a restart empties it, as it ends the Jira sessions anyway.
+    var webMemory = new SqliteConnection("Data Source=toolkit-web;Mode=Memory;Cache=Shared");
+    webMemory.Open();
+    builder.Services.AddSingleton(webMemory);
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlite(webMemory.ConnectionString));
+}
+else
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlite(sqliteConnection));
+}
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -158,7 +172,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(runtimeStorage.DataProtectionKeysPath));
-var mvcBuilder = builder.Services.AddControllersWithViews()
+var mvcBuilder = builder.Services.AddControllersWithViews(options => options.Filters.Add<WebModeFilter>())
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();
 if (builder.Environment.IsDevelopment())
@@ -169,6 +183,10 @@ builder.Services.AddToolboxServices();
 builder.Services.AddSingleton<DeviceFileStore>();
 builder.Services.AddSingleton<IDeviceOwnerService, DeviceOwnerService>();
 builder.Services.AddSingleton<IDesktopJiraService, DesktopJiraService>();
+if (appMode.IsWeb)
+{
+    builder.Services.Replace(ServiceDescriptor.Scoped<IActivityLogService, NoOpActivityLogService>());
+}
 
 // Sample Jira data for checking the Jira screens without a Jira account. Development only:
 // the flag is ignored in every other environment so it can never reach real users.
@@ -196,7 +214,11 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     // A failed backup stops the start-up: better no app than a migration without a way back.
-    await DatabaseBackup.BeforeMigrationsAsync(db, runtimeStorage, app.Logger);
+    if (!appMode.IsWeb)
+    {
+        await DatabaseBackup.BeforeMigrationsAsync(db, runtimeStorage, app.Logger);
+    }
+
     await db.Database.MigrateAsync();
     await EnsureIdentitySchemaAsync(db);
 }
@@ -235,13 +257,22 @@ else
 {
     app.UseHttpsRedirection();
 }
+
+if (appMode.IsWeb)
+{
+    WebModeRules.UseWeb(app);
+}
 // Before the static files, so CSS, JS and SVG go out compressed (StaticAssetDelivery).
 app.UseResponseCompression();
-app.UseStaticFiles(new StaticFileOptions
+if (!appMode.IsWeb)
 {
-    FileProvider = new PhysicalFileProvider(runtimeStorage.UploadsPath),
-    RequestPath = "/uploads"
-});
+    // Profile images; the web copy keeps no uploads.
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(runtimeStorage.UploadsPath),
+        RequestPath = "/uploads"
+    });
+}
 app.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = StaticAssetDelivery.SetCacheHeaders });
 app.UseRouting();
 app.UseSession();
