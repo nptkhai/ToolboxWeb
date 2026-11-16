@@ -1,6 +1,7 @@
 @page
 @using ToolboxWeb.Web.Areas.Identity.Pages.Account
 @model ToolboxWeb.Web.Areas.Identity.Pages.Account.LoginModel
+@inject ToolboxWeb.Web.Infrastructure.Hosting.DesktopDownloadLink DesktopDownload
 @{
     ViewData["Title"] = T["Login.Title"];
     ViewData["ContentAreaClass"] = "content-area--login";
@@ -108,6 +109,16 @@
                     </section>
                 </div>
             </div>
+            @if (DesktopDownload.For(HttpContext.Request) is { } desktopDownload)
+            {
+                @* The full desktop app (notes, to-dos, DB tools, data on the computer): the license server's download page. *@
+                <div class="auth-login-desktop">
+                    <a class="btn btn-outline-secondary" href="@desktopDownload" target="_blank" rel="noopener">
+                        <tbx-icon name="download" />@T["DesktopDownload.Button"]
+                    </a>
+                    <p class="auth-login-desktop-hint">@T["DesktopDownload.Hint"]</p>
+                </div>
+            }
         </div>
     </div>
 </div>

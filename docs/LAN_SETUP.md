@@ -7,7 +7,7 @@ Sau khi xong, bạn có:
 | Thành phần | Mở ở đâu | Dùng để |
 |---|---|---|
 | **Site chính**: Toolkit License | `https://localhost:8443` trên máy này | Quản trị bản quyền, duyệt kích hoạt, phát hành phiên bản |
-| **Trang tải app máy tính** | `https://localhost:8443/download` trên máy này, hoặc `https://<địa-chỉ-máy>:8443/download` từ máy khác cùng Wi-Fi | Tải `ToolkitApp-win-Setup.exe` |
+| **Trang tải app máy tính** | `https://localhost:8443/download` trên máy này, hoặc `https://<địa-chỉ-máy>:8443/download` từ máy khác cùng Wi-Fi. Site Web cũng có nút **"Tải Toolkit cho máy tính"** (trang đăng nhập và menu tài khoản) dẫn tới trang này | Tải `ToolkitApp-win-Setup.exe` |
 | **Site Web**: Toolkit chế độ Web | `https://localhost:9443` trên máy này, hoặc `https://<địa-chỉ-máy>:9443` từ iPhone cùng Wi-Fi | Jira và hẹn giờ trên trình duyệt; cài lên iPhone như một app |
 | **App máy tính (Desktop)** | cài trên máy này | Toolkit đầy đủ, dữ liệu nằm trên máy |
 
@@ -191,11 +191,14 @@ icacls "$Data\Web" /grant "IIS AppPool\ToolkitWeb:(OI)(CI)M" | Out-Null
 & $AppCmd set config ToolkitWeb -section:system.webServer/aspNetCore /+"environmentVariables.[name='App__Mode',value='Web']" /commit:apphost
 & $AppCmd set config ToolkitWeb -section:system.webServer/aspNetCore /+"environmentVariables.[name='Storage__DataProtectionKeysPath',value='$Data\Web\keys']" /commit:apphost
 & $AppCmd set config ToolkitWeb -section:system.webServer/aspNetCore /+"environmentVariables.[name='Logging__File__Directory',value='$Data\Web\logs']" /commit:apphost
+# Nút "Tải Toolkit cho máy tính": {host} được thay bằng địa chỉ người xem đang dùng (localhost, tên máy, IP)
+& $AppCmd set config ToolkitWeb -section:system.webServer/aspNetCore /+"environmentVariables.[name='App__DesktopDownloadUrl',value='https://{host}:$LicensePort/download']" /commit:apphost
 Restart-WebAppPool ToolkitWeb
 (Invoke-WebRequest "https://localhost:$WebPort/" -UseBasicParsing).StatusCode   # 200 (trang đăng nhập Jira)
 ```
 
 - Bản Web không có database; nó chỉ lưu khóa của cookie đăng nhập và log.
+- Trang đăng nhập và menu tài khoản có nút **"Tải Toolkit cho máy tính"**, mở trang tải về của site chính. Nút ẩn trên điện thoại, vì bộ cài chỉ chạy trên Windows.
 - Máy này phải vào được Jira (`https://task.ascvn.com.vn`, khóa `Jira:DefaultBaseUrl`). Jira ở địa chỉ khác thì thêm biến `Jira__DefaultBaseUrl` theo cùng cách.
 
 ## 4. Cho iPhone và máy khác cùng Wi-Fi vào được (không đổi IP)
@@ -276,7 +279,7 @@ Báo cho chủ máy:
 1. `https://localhost:8443/releases` → mục **Phát hành phiên bản**:
    - ô phiên bản đã điền sẵn `1.0.0`, đường tải về là trang tải về;
    - bấm **Phát hành**.
-2. Mở `https://localhost:8443/download` → **Tải bộ cài (Setup.exe)** → mở `ToolkitApp-win-Setup.exe`.
+2. Mở `https://localhost:8443/download` (hoặc bấm **"Tải Toolkit cho máy tính"** trên site Web `https://localhost:9443`) → **Tải bộ cài (Setup.exe)** → mở `ToolkitApp-win-Setup.exe`.
 3. Windows hiện *"Windows protected your PC"* (bộ cài chưa ký số) → **More info** → **Run anyway**. Mỗi máy chỉ hỏi một lần.
 4. Toolkit tự mở trong cửa sổ riêng, ở màn hình **Kích hoạt** → bấm **Gửi yêu cầu kích hoạt**.
 5. Quay lại site chính → **Yêu cầu kích hoạt** → bấm vào máy vừa gửi → **Duyệt và cấp bản quyền** → xác nhận. Khoảng 10 giây sau, Toolkit tự mở.
