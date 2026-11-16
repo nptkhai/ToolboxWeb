@@ -91,3 +91,4 @@ The background for each decision:
 | Playwright (`@playwright/test`) | Apache-2.0 | `tests/ui/` |
 | vpk (Velopack CLI, .NET tool) 1.2.161 | MIT | `tools/release/` (builds the desktop installer and update packages) |
 | zstd (system tool, only for `publish-desktop.sh` on Linux/macOS) | BSD-3-Clause | delta packages when packaging outside Windows |
+| mkcert (owner's tool, not in the repository) | BSD-3-Clause | HTTPS certificates for a LAN setup (`docs/LAN_SETUP.md`) |

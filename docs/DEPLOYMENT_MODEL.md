@@ -301,7 +301,7 @@ Chủ dự án chọn cả 4 việc. Các quyết định:
 - **Ký số Setup.exe:** chưa ký; script có sẵn chỗ để ký sau.
 - **HTTPS:** Let's Encrypt miễn phí qua win-acme, có hướng dẫn.
 
-Cách phát hành từng bước ở `docs/RELEASE.md`.
+Cách phát hành từng bước ở `docs/RELEASE.md`. Dựng toàn bộ trên một máy Windows trong mạng LAN (HTTPS bằng mkcert) ở `docs/LAN_SETUP.md`.
 
 - **Đóng gói bộ cài:**
   - `tools/release/publish-desktop.ps1` (Windows) và `publish-desktop.sh` (Linux/macOS): publish bản Windows x64 kèm .NET, ghi `License:ServerUrl`/`License:PublicKey` vào bản publish, thêm `toolkit.desktop`, rồi `vpk pack` ra `ToolkitApp-win-Setup.exe`, gói full và delta, `releases.win.json`.
