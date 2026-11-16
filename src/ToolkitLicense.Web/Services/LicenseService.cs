@@ -12,7 +12,8 @@ public sealed record ApproveInput(int? CustomerId, string? NewCustomerName, Lice
 public sealed record ReissueInput(LicenseTerm Term, DateTime? Date);
 
 /// <summary>What a device learns from a heartbeat.</summary>
-public sealed record HeartbeatAnswer(string LicenseStatus, string? LicenseId, DateTime? ExpiresAtUtc, string? LicenseText, Release? Latest, bool UpdateAvailable);
+/// <param name="UpdateRequired">A mandatory release newer than the device's version exists: the device must update before going on.</param>
+public sealed record HeartbeatAnswer(string LicenseStatus, string? LicenseId, DateTime? ExpiresAtUtc, string? LicenseText, Release? Latest, bool UpdateAvailable, bool UpdateRequired);
 
 /// <summary>
 /// Activation requests, licenses and devices. Every change is written to the audit log in the
@@ -343,8 +344,10 @@ public sealed class LicenseService(LicenseDbContext db, SigningKey signingKey, I
             };
         }
 
-        var latest = await releases.LatestAsync();
+        var all = await releases.AllAsync();
+        var latest = all.FirstOrDefault();
         var updateAvailable = latest is not null && ReleaseService.Compare(latest.Version, device.AppVersion) > 0;
+        var updateRequired = all.Any(x => x.Mandatory && ReleaseService.Compare(x.Version, device.AppVersion) > 0);
         return (new HeartbeatAnswer(
             status,
             active?.Id,
@@ -352,7 +355,8 @@ public sealed class LicenseService(LicenseDbContext db, SigningKey signingKey, I
             // The text only when the device does not hold this license yet (renewed or re-issued).
             active is not null && active.Id != beat.LicenseId ? active.Text : null,
             latest,
-            updateAvailable), TokenError.None);
+            updateAvailable,
+            updateRequired), TokenError.None);
     }
 
     // ------------------------------------------------------------------ signing

@@ -97,6 +97,7 @@ public static class AppNavigation
         {
             account.Add(new("settings", Href(ToolboxRouteSlugs.RouteNames.SettingsHtml, "/settings.html"), "settings", L("Settings.Title"), null, false, On("Settings")));
             account.Add(new("activate", Href(ToolboxRouteSlugs.RouteNames.ActivateHtml, "/activate.html"), "key-round", L("Activation.Title"), null, false, On("Activation")));
+            account.Add(new("update", Href(ToolboxRouteSlugs.RouteNames.UpdateHtml, "/update.html"), "download", L("Update.Title"), null, false, (controller, action) => string.Equals(controller, "Desktop", StringComparison.OrdinalIgnoreCase) && string.Equals(action, "Update", StringComparison.OrdinalIgnoreCase)));
         }
 
         groups.Add(new AppNavGroup("account", L("Nav.Group.Account"), account));

@@ -8,6 +8,7 @@
     Read-only and "expires soon" come from the license itself; "new version" from the last
     check with the license server (DeviceLicenseService). The install itself comes in M5.
 *@
+@inject IDesktopUpdateService Updates
 @{
     var activateHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.ActivateHtml) ?? "/activate.html";
     var release = Model.UpdateAvailable ? Model.LatestRelease : null;
@@ -41,7 +42,11 @@ else if (Model.ExpiresSoon)
                 <p class="tbx-desktop-notice-sub">@release.Notes</p>
             }
         </div>
-        @if (!string.IsNullOrWhiteSpace(release.DownloadUrl))
+        @if (Updates.IsInstalled)
+        {
+            <a class="btn btn-sm btn-primary" href="@(Url.RouteUrl(ToolboxRouteSlugs.RouteNames.UpdateHtml) ?? "/update.html")">@T["Update.Now"]</a>
+        }
+        else if (!string.IsNullOrWhiteSpace(release.DownloadUrl))
         {
             <a class="btn btn-sm btn-primary" href="@release.DownloadUrl" target="_blank" rel="noopener noreferrer">@T["Release.Notice.Download"]</a>
         }

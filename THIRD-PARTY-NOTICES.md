@@ -34,6 +34,7 @@ Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expr
 | Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation | 9.0.6 | MIT | In use (Development) |
 | Microsoft.EntityFrameworkCore.Sqlite | 9.0.6 | MIT | In use |
 | Microsoft.EntityFrameworkCore.Tools | 9.0.6 | MIT | Design-time |
+| Velopack | 1.2.161 | MIT (LICENSE read on github.com/velopack/velopack; © Caelan Sayler, Velopack Ltd.) | In use: installer hooks and in-app updates of the desktop copy (`Program.cs`, `Services/DesktopUpdateService.cs`). No dependencies on net9.0. The installer (Setup.exe, Update.exe) that `vpk` adds to the package is part of the same MIT project |
 | Microsoft.Data.SqlClient | 6.1.5 | MIT | In use (Schema Compare, SQL Profiler) |
 | Microsoft.SqlServer.DacFx | 170.4.83 | **Microsoft Software License Terms** (free, proprietary, redistributable with conditions) | In use (Schema Compare). **Approved by the owner on 2026-10-21**, see below |
 
@@ -88,3 +89,5 @@ The background for each decision:
 | Component | License | Used by |
 |---|---|---|
 | Playwright (`@playwright/test`) | Apache-2.0 | `tests/ui/` |
+| vpk (Velopack CLI, .NET tool) 1.2.161 | MIT | `tools/release/` (builds the desktop installer and update packages) |
+| zstd (system tool, only for `publish-desktop.sh` on Linux/macOS) | BSD-3-Clause | delta packages when packaging outside Windows |

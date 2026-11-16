@@ -5,6 +5,7 @@
 @inject ICurrentUserService CurrentUser
 @inject IDesktopJiraService DesktopJira
 @inject IDeviceLicenseService DeviceLicense
+@inject IDesktopUpdateService DesktopUpdates
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnvironment
 @{
     var flashSuccessMessage = TempData["SuccessMessage"] as string;
@@ -30,7 +31,9 @@
     // Desktop license: without a usable license only the activation screen opens, so the app
     // shell (sidebar, palette, focus timer) is left out; read-only stops the timer from saving.
     var license = AppMode.IsDesktop ? DeviceLicense.GetStatus() : null;
-    var showShell = isAuthenticated && license?.IsBlocked != true;
+    // A required update on an installed copy also leaves only its own page (/update.html).
+    var updateBlocked = license?.UpdateRequired == true && DesktopUpdates.IsInstalled;
+    var showShell = isAuthenticated && license?.IsBlocked != true && !updateBlocked;
     var storesFocus = !AppMode.IsWeb && license?.IsReadOnly != true;
 }
 <!DOCTYPE html>

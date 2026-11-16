@@ -1,0 +1,87 @@
+@using ToolboxWeb.Web.Services
+@model DesktopUpdatePageViewModel
+@*
+    Desktop update (DesktopController.Update, DesktopUpdateService). "Update now" downloads the
+    new version, then the app quits, the installer swaps the files and the new version starts;
+    Content/js/update.js drives the steps and reloads this window when the app is back.
+*@
+@{
+    ViewData["Title"] = T["Update.Title"];
+    var release = Model.Release;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/activation.css" asp-append-version="true" />
+}
+
+<div class="activation-page" data-update data-start-url="/desktop/update/start" data-status-url="/desktop/update/status" data-apply-url="/desktop/update/apply"
+     data-text-checking="@T["Update.Stage.Checking"]" data-text-downloading="@T["Update.Stage.Downloading"]" data-text-ready="@T["Update.Stage.Ready"]"
+     data-text-applying="@T["Update.Stage.Applying"]" data-text-back="@T["Update.Stage.Back"]"
+     data-text-no-package="@T["Update.Error.NoPackage"]" data-text-unreachable="@T["Update.Error.Unreachable"]" data-text-failed="@T["Update.Error.Failed"]">
+    @Html.AntiForgeryToken()
+    <section class="tbx-panel" aria-labelledby="update-title">
+        <header class="tbx-panel-header">
+            <h2 class="tbx-panel-title activation-title" id="update-title"><tbx-icon name="download" />@T["Update.Heading"]</h2>
+            @if (release is not null)
+            {
+                <span class="tbx-pill @(Model.Required ? "is-warning" : "is-accent")">@T[Model.Required ? "Update.Required" : "Update.Available"]</span>
+            }
+        </header>
+        <div class="tbx-panel-body activation-body">
+            @if (release is null)
+            {
+                <p class="activation-intro">@T["Update.UpToDate", Model.CurrentVersion]</p>
+                <div class="activation-actions"><a class="btn btn-primary" href="/">@T["Update.BackToApp"]</a></div>
+            }
+            else
+            {
+                <dl class="license-facts">
+                    <dt>@T["Update.Current"]</dt>
+                    <dd>@Model.CurrentVersion</dd>
+                    <dt>@T["Update.New"]</dt>
+                    <dd>@release.Version</dd>
+                    @if (!string.IsNullOrWhiteSpace(release.Notes))
+                    {
+                        <dt>@T["Update.Notes"]</dt>
+                        <dd class="update-notes">@release.Notes</dd>
+                    }
+                </dl>
+                @if (Model.Required)
+                {
+                    <p class="activation-intro">@T["Update.RequiredText"]</p>
+                }
+
+                @if (Model.Installed)
+                {
+                    <p class="activation-intro">@T["Update.Explain"]</p>
+                    <div class="activation-wait" data-update-wait hidden role="status" aria-live="polite">
+                        <tbx-icon name="loader-circle" class="activation-spin" />
+                        <span data-update-text></span>
+                    </div>
+                    <div class="tbx-error-state" data-update-error hidden role="alert"><tbx-icon name="circle-alert" /><span data-update-error-text></span></div>
+                    <div class="activation-actions">
+                        <button type="button" class="btn btn-primary" data-update-start><tbx-icon name="download" />@T["Update.Now"]</button>
+                        @if (!Model.Required)
+                        {
+                            <a class="btn btn-outline-secondary" href="/">@T["Release.Notice.Later"]</a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="activation-intro">@T["Update.NotInstalled"]</p>
+                    @if (!string.IsNullOrWhiteSpace(release.DownloadUrl))
+                    {
+                        <div class="activation-actions">
+                            <a class="btn btn-primary" href="@release.DownloadUrl" target="_blank" rel="noopener noreferrer"><tbx-icon name="download" />@T["Release.Notice.Download"]</a>
+                        </div>
+                    }
+                }
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/js/update.js" asp-append-version="true"></script>
+}

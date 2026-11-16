@@ -1,0 +1,41 @@
+@model DownloadViewModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["Download.Title"];
+    ViewData["Wide"] = true;
+    var latest = Model.Latest;
+}
+<p class="lic-note">@T["Download.Intro"]</p>
+@if (Model.Setup is null)
+{
+    <div class="tbx-empty">
+        <span class="tbx-empty-icon"><tbx-icon name="download" size="20" /></span>
+        <p class="tbx-empty-text">@T["Download.NotYet"]</p>
+    </div>
+}
+else
+{
+    <dl class="lic-dl">
+        <dt>@T["Release.Version"]</dt>
+        <dd>@(latest?.Version ?? "—")</dd>
+        <dt>@T["Release.Published"]</dt>
+        <dd>@Display.DateText(latest?.PublishedAtUtc ?? Model.Setup.ModifiedAtUtc)</dd>
+        <dt>@T["Download.Size"]</dt>
+        <dd>@Display.Size(Model.Setup.Size)</dd>
+        @if (!string.IsNullOrWhiteSpace(latest?.Notes))
+        {
+            <dt>@T["Release.Notes"]</dt>
+            <dd class="lic-pre">@latest.Notes</dd>
+        }
+    </dl>
+    <div class="lic-actions">
+        <a class="btn btn-primary" href="/updates/@UpdateFiles.SetupFileName" download><tbx-icon name="download" />@T["Download.Button"]</a>
+    </div>
+    <ol class="lic-steps">
+        <li>@T["Download.Step1"]</li>
+        <li>@T["Download.Step2"]</li>
+        <li>@T["Download.Step3"]</li>
+        <li>@T["Download.Step4"]</li>
+    </ol>
+    <p class="lic-note">@T["Download.System"]</p>
+}

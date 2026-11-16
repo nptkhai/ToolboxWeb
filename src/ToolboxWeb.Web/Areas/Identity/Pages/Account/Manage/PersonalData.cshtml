@@ -1,5 +1,6 @@
 @page
 @model ToolboxWeb.Web.Areas.Identity.Pages.Account.Manage.PersonalDataModel
+@using ToolboxWeb.Web.Extensions
 @{
     ViewData["Title"] = T["Profile.Nav.PersonalData"];
     // A desktop deletes the data on this computer rather than an account (Account.DeleteDesktop.*).
@@ -12,6 +13,73 @@
     <form method="post" asp-page-handler="Download" class="account-actions">
         <button type="submit" class="btn btn-outline-secondary"><tbx-icon name="download" />@T["Account.PersonalData.Download"]</button>
     </form>
+</section>
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+@* Moving all Toolkit data to another copy (DataTransferService): export here, import there. *@
+<section class="tbx-panel tbx-panel-body account-section" aria-labelledby="transfer-title">
+    <h2 class="account-section-title" id="transfer-title"><tbx-icon name="arrow-left-right" />@T["DataTransfer.Title"]</h2>
+    <p class="account-lead">@T["DataTransfer.Text"]</p>
+    <form method="post" asp-page-handler="Export" class="account-actions">
+        <button type="submit" class="btn btn-outline-secondary"><tbx-icon name="download" />@T["DataTransfer.Export"]</button>
+    </form>
+
+    <h3 class="account-subtitle" id="import-title">@T["DataTransfer.ImportTitle"]</h3>
+    <p class="account-lead">@T["DataTransfer.ImportText"]</p>
+    @if (Model.Preview is { } preview)
+    {
+        <div class="data-transfer-preview" role="status">
+            <p class="account-lead">@T["DataTransfer.PreviewIntro", preview.ExportedAtUtc.ToDisplayAppDateTime(), preview.AppVersion ?? "—"]</p>
+            <table class="data-transfer-table">
+                <thead>
+                    <tr><th scope="col">@T["DataTransfer.Kind"]</th><th scope="col">@T["DataTransfer.New"]</th><th scope="col">@T["DataTransfer.Existing"]</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var count in preview.Counts)
+                    {
+                        <tr><td>@T["DataTransfer.Kind." + count.Kind]</td><td class="is-number">@count.New</td><td class="is-number">@count.Existing</td></tr>
+                    }
+                </tbody>
+            </table>
+            @if (preview.HasAvatar)
+            {
+                <p class="account-lead">@T["DataTransfer.Avatar"]</p>
+            }
+        </div>
+        @if (preview.TotalNew > 0 || preview.HasAvatar)
+        {
+            <form method="post" asp-page-handler="Import" class="account-actions">
+                <input type="hidden" name="token" value="@Model.ImportToken" />
+                <button type="submit" class="btn btn-primary"
+                        data-confirm="@T["DataTransfer.ImportConfirm", preview.TotalNew]"
+                        data-confirm-title="@T["DataTransfer.ImportTitle"]"
+                        data-confirm-ok="@T["DataTransfer.Import"]" data-confirm-tone="primary"><tbx-icon name="upload" />@T["DataTransfer.Import"]</button>
+                <a class="btn btn-outline-secondary" asp-page="./PersonalData">@T["Action.Cancel"]</a>
+            </form>
+        }
+        else
+        {
+            <p class="account-lead">@T["DataTransfer.NothingNew"]</p>
+        }
+    }
+    else
+    {
+        <form method="post" asp-page-handler="Preview" enctype="multipart/form-data" class="data-transfer-form" novalidate>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="transfer-file">@T["DataTransfer.File"]</label>
+                <input class="form-control" type="file" id="transfer-file" name="file" accept=".json,application/json" required aria-describedby="transfer-file-error" />
+                <span class="tbx-field-error" id="transfer-file-error">@Model.ImportError</span>
+            </div>
+            <div class="account-actions">
+                <button type="submit" class="btn btn-outline-secondary"><tbx-icon name="eye" />@T["DataTransfer.Preview"]</button>
+            </div>
+        </form>
+    }
+    @if (Model.Preview is not null && Model.ImportError is not null)
+    {
+        <div class="tbx-error-state" role="alert"><tbx-icon name="circle-alert" /><span>@Model.ImportError</span></div>
+    }
 </section>
 
 <section class="tbx-panel tbx-panel-body account-section account-section--danger" aria-labelledby="delete-title">

@@ -42,6 +42,8 @@ License server (the owner's admin app on the main server: activation requests, l
 dotnet run --project src\ToolkitLicense.Web\ToolkitLicense.Web.csproj
 ```
 
+Desktop installer and updates (Velopack): `tools/release/publish-desktop.ps1` builds `ToolkitApp-win-Setup.exe` and the update packages, which are uploaded to the license server. Steps, signing and free HTTPS are in `docs/RELEASE.md`.
+
 ## Source Layout
 
 The solution has two web apps: `src/ToolboxWeb.Web` (Toolkit itself, described below) and `src/ToolkitLicense.Web` (the license server, which links the design files and a few source files of `ToolboxWeb.Web` instead of copying them).
