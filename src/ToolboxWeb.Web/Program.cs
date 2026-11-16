@@ -199,6 +199,7 @@ builder.Services.AddSingleton<IDeviceIdentityService, DeviceIdentityService>();
 builder.Services.AddSingleton<IDeviceLicenseService, DeviceLicenseService>();
 builder.Services.AddHttpClient(LicenseOptions.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(15));
 builder.Services.AddSingleton<IDesktopUpdateService, DesktopUpdateService>();
+builder.Services.AddSingleton<DesktopDownloadLink>();
 if (appMode.IsDesktop)
 {
     builder.Services.AddHostedService<LicenseHeartbeatService>();

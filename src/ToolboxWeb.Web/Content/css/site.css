@@ -1325,6 +1325,22 @@ a {
     text-align: center;
 }
 
+/* "Download Toolkit for your computer" under the sign-in forms (DesktopDownloadLink). */
+.auth-login-desktop {
+    border-top: 1px solid var(--line);
+    display: grid;
+    gap: var(--space-2);
+    justify-items: center;
+    padding-top: var(--space-4);
+}
+
+.auth-login-desktop-hint {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    margin: 0;
+    text-align: center;
+}
+
 /* Short text blocks on the smaller auth cards (two-factor code, recovery code, lockout). */
 .auth-login-text {
     color: var(--muted);

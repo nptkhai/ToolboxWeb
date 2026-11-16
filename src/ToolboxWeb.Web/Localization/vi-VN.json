@@ -1928,5 +1928,7 @@
   "DataTransfer.Error.TooBig": "File lớn hơn 50 MB.",
   "DataTransfer.Error.NotToolkit": "Đây không phải file dữ liệu Toolkit (tạo bằng nút \"Xuất dữ liệu Toolkit\").",
   "DataTransfer.Error.Version": "File được tạo bởi bản Toolkit mới hơn. Cập nhật Toolkit rồi thử lại.",
-  "DataTransfer.Error.Expired": "File tải lên đã hết hạn. Chọn lại file và xem trước."
+  "DataTransfer.Error.Expired": "File tải lên đã hết hạn. Chọn lại file và xem trước.",
+  "DesktopDownload.Button": "Tải Toolkit cho máy tính",
+  "DesktopDownload.Hint": "Bản đầy đủ cho Windows: ghi chú, việc cần làm, công cụ DB, dữ liệu nằm trên máy của bạn."
 }

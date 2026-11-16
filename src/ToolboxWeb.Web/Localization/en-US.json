@@ -1928,5 +1928,7 @@
   "DataTransfer.Error.TooBig": "The file is larger than 50 MB.",
   "DataTransfer.Error.NotToolkit": "This is not a Toolkit data file (made with \"Export Toolkit data\").",
   "DataTransfer.Error.Version": "The file was made by a newer Toolkit. Update Toolkit and try again.",
-  "DataTransfer.Error.Expired": "The uploaded file has expired. Choose the file again and preview it."
+  "DataTransfer.Error.Expired": "The uploaded file has expired. Choose the file again and preview it.",
+  "DesktopDownload.Button": "Download Toolkit for your computer",
+  "DesktopDownload.Hint": "The full Windows app: notes, to-dos, DB tools, with your data on your computer."
 }

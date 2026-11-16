@@ -7,6 +7,7 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserProfileService UserProfileService
 @inject ICurrentUserService CurrentUser
+@inject ToolboxWeb.Web.Infrastructure.Hosting.DesktopDownloadLink DesktopDownload
 @{
     static string BuildInitials(string? value)
     {
@@ -73,6 +74,12 @@
                 @* The web copy keeps no account data, so it has no account pages. *@
                 <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">
                     <tbx-icon name="user" />@T["Auth.ManageAccount"]
+                </a>
+            }
+            @if (DesktopDownload.For(Context.Request) is { } desktopDownload)
+            {
+                <a class="dropdown-item" href="@desktopDownload" target="_blank" rel="noopener">
+                    <tbx-icon name="download" />@T["DesktopDownload.Button"]
                 </a>
             }
             @if (AppMode.IsDesktop)
