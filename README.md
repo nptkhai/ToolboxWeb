@@ -42,6 +42,8 @@ License server (the owner's admin app on the main server: activation requests, l
 dotnet run --project src\ToolkitLicense.Web\ToolkitLicense.Web.csproj
 ```
 
+Running everything on one Windows machine for a LAN (license server, web site, desktop installs, phones), step by step: `docs/LAN_SETUP.md`.
+
 Desktop installer and updates (Velopack): `tools/release/publish-desktop.ps1` builds `ToolkitApp-win-Setup.exe` and the update packages, which are uploaded to the license server. Steps, signing and free HTTPS are in `docs/RELEASE.md`.
 
 ## Source Layout

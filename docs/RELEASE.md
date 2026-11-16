@@ -86,6 +86,8 @@ Cách này cũng dùng được khi chuyển sang máy tính mới.
 
 ## HTTPS miễn phí cho các site trên máy chính (Let's Encrypt)
 
+> Chỉ dùng trong mạng LAN, không có tên miền công khai? Dùng mkcert thay cho Let's Encrypt, xem `docs/LAN_SETUP.md`.
+
 Site Toolkit License (`license.<miền>`) và site Web/điện thoại (`toolkit.<miền>`) đều phải chạy HTTPS:
 
 - cookie đăng nhập quản trị chỉ gửi qua HTTPS;
