@@ -341,9 +341,10 @@ public sealed class DacFxCompareEngine : IDacFxCompareEngine
         DacFxProgressCollector progress,
         CancellationToken cancellationToken)
     {
+        var (fileName, assemblyArgument) = ResolveWorkerCommand();
         var startInfo = new ProcessStartInfo
         {
-            FileName = ResolveDotNetHost(),
+            FileName = fileName,
             WorkingDirectory = AppContext.BaseDirectory,
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -351,7 +352,11 @@ public sealed class DacFxCompareEngine : IDacFxCompareEngine
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
-        startInfo.ArgumentList.Add(typeof(DacFxCompareEngine).Assembly.Location);
+        if (assemblyArgument is not null)
+        {
+            startInfo.ArgumentList.Add(assemblyArgument);
+        }
+
         startInfo.ArgumentList.Add(DacFxExtractWorker.CommandSwitch);
         startInfo.Environment["DOTNET_NOLOGO"] = "1";
         startInfo.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
@@ -479,6 +484,25 @@ public sealed class DacFxCompareEngine : IDacFxCompareEngine
         }
 
         return result.ToString();
+    }
+
+    /// <summary>
+    /// How to start the extract worker. When the app runs from its own executable (the installed
+    /// desktop app is self-contained and usually has no "dotnet" on the machine; also dotnet run),
+    /// the worker is that same executable. Otherwise (IIS, "dotnet ToolboxWeb.Web.dll") it is the
+    /// dotnet host with the app's assembly.
+    /// </summary>
+    private static (string FileName, string? AssemblyArgument) ResolveWorkerCommand()
+    {
+        var processPath = Environment.ProcessPath;
+        var assembly = typeof(DacFxCompareEngine).Assembly;
+        if (!string.IsNullOrEmpty(processPath)
+            && string.Equals(Path.GetFileNameWithoutExtension(processPath), assembly.GetName().Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return (processPath, null);
+        }
+
+        return (ResolveDotNetHost(), assembly.Location);
     }
 
     private static string ResolveDotNetHost()

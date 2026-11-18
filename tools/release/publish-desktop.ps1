@@ -3,7 +3,8 @@
     Builds the Toolkit desktop installer and update packages (Velopack). See docs/RELEASE.md.
 
 .DESCRIPTION
-    1. dotnet publish for Windows x64 with .NET included (self-contained).
+    1. dotnet publish for Windows x64 with .NET included (self-contained), as a Windows
+       application (OutputType WinExe): no console window opens next to the app.
     2. Writes the license server address and public key into appsettings.Desktop.json of the
        published copy (not of the repository) and adds toolkit.desktop, which starts it as the
        desktop app.
@@ -55,7 +56,7 @@ if (-not (Get-Command vpk -ErrorAction SilentlyContinue)) {
 
 $publish = Join-Path "artifacts/publish" $Version
 if (Test-Path $publish) { Remove-Item $publish -Recurse -Force }
-dotnet publish $csproj -c Release -r win-x64 --self-contained true -p:Version=$Version -o $publish
+dotnet publish $csproj -c Release -r win-x64 --self-contained true -p:Version=$Version -p:OutputType=WinExe -o $publish
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 
 # The published copy is the desktop app: license settings and the desktop marker.

@@ -24,7 +24,8 @@ fi
 
 PUBLISH=${PUBLISH_DIR:-artifacts/publish/$VERSION}
 rm -rf "$PUBLISH"
-dotnet publish src/ToolboxWeb.Web/ToolboxWeb.Web.csproj -c Release -r win-x64 --self-contained true -p:Version="$VERSION" -o "$PUBLISH"
+# WinExe: a Windows application, so no console window opens next to the desktop app.
+dotnet publish src/ToolboxWeb.Web/ToolboxWeb.Web.csproj -c Release -r win-x64 --self-contained true -p:Version="$VERSION" -p:OutputType=WinExe -o "$PUBLISH"
 
 python3 - "$PUBLISH/appsettings.Desktop.json" "$SERVER_URL" "$PUBLIC_KEY" <<'PY'
 import json, sys

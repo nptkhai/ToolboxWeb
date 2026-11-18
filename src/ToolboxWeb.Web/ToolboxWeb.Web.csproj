@@ -7,6 +7,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-ToolboxWeb.Web-84046f6d-e870-456a-9296-6783eedf464f</UserSecretsId>
+    <!-- The Toolkit icon on the .exe, so the desktop shortcuts and the taskbar show it (docs/brand). -->
+    <ApplicationIcon>..\..\docs\brand\toolkit.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
