@@ -12,6 +12,7 @@ tools/release/publish-desktop.ps1  ──►    Phiên bản > Tải lên       
 ```
 
 - **Bộ cài:** dùng Velopack (MIT). App được cài vào tài khoản Windows của người dùng (`%LOCALAPPDATA%\ToolkitApp`), không cần quyền quản trị, có lối tắt "Toolkit" trên Desktop và Start Menu.
+- **Không có cửa sổ dòng lệnh:** bản cài được build dạng ứng dụng Windows. Log ghi vào `%LOCALAPPDATA%\Toolkit\logs` để tra lỗi khi cần. Lối tắt và thanh tác vụ mang icon Toolkit, gắn vào file `.exe` từ `docs/brand/toolkit.ico`.
 - **Dữ liệu** nằm riêng ở `%LOCALAPPDATA%\Toolkit`, nên **gỡ cài đặt hay cập nhật không xóa dữ liệu**. Muốn xóa dữ liệu thì dùng Tài khoản > Dữ liệu cá nhân > "Xóa dữ liệu trên máy".
 - **Cửa sổ app:** Toolkit mở trong Microsoft Edge (hoặc Chrome) ở chế độ app: cửa sổ riêng, không có thanh địa chỉ.
   - Đóng cửa sổ thì Toolkit vẫn chạy nền; bấm lối tắt để mở lại.
