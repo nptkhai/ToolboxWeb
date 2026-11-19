@@ -18,6 +18,8 @@ public static class ToolboxRouteSlugs
         public const string JiraDashboard = "statistics";
         public const string JiraWorklist = "tasks";
         public const string TextCompare = "text-compare";
+        public const string CodePlayground = "code-playground";
+        public const string CodePlaygroundRun = "code-playground/run.html";
         public const string SchemaCompare = "schema-compare";
         public const string SqlProfiler = "sql-profiler";
         public const string Privacy = "privacy";
@@ -42,6 +44,7 @@ public static class ToolboxRouteSlugs
         public const string JiraDashboard = "statistics.html";
         public const string JiraWorklist = "tasks.html";
         public const string TextCompare = "text-compare.html";
+        public const string CodePlayground = "code-playground.html";
         public const string SchemaCompare = "schema-compare.html";
         public const string SqlProfiler = "sql-profiler.html";
         public const string Privacy = "privacy.html";
@@ -95,6 +98,8 @@ public static class ToolboxRouteSlugs
         public const string JiraDashboardHtml = "jira-dashboard-html";
         public const string JiraWorklistHtml = "jira-worklist-html";
         public const string TextCompareHtml = "text-compare-html";
+        public const string CodePlaygroundHtml = "code-playground-html";
+        public const string CodePlaygroundRun = "code-playground-run";
         public const string SchemaCompareHtml = "schema-compare-html";
         public const string SqlProfilerHtml = "sql-profiler-html";
         public const string PrivacyHtml = "privacy-html";

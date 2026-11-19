@@ -1,0 +1,320 @@
+@using System.Text.Json
+@model CodePlaygroundPageViewModel
+@*
+    Code playground: HTML, CSS and JS with a live result. Content/js/code-playground.js runs the
+    editor (CodeMirror 5, theme from the --syntax-* tokens), the layout, the console and the
+    work kept in this browser; Content/js/code-playground-sandbox.js builds the page shown in
+    the sandboxed frame (no allow-same-origin, so the code cannot reach Toolkit). Nothing on
+    this page is posted to the server.
+*@
+@{
+    ViewData["Title"] = T["CodePlayground.Title"];
+    string Text(string key) => T[key].Value;
+    string[] keys =
+    [
+        "Name.Default", "Status.Draft", "Status.Saved", "Status.Unsaved", "Status.NotStored", "Run", "Format", "FormatFailed",
+        "Cursor", "SyntaxOk", "SyntaxError", "Fullscreen", "ExitFullscreen", "PopupBlocked", "Console.Collapse", "Console.Expand",
+        "Console.Line", "Console.Trimmed", "Console.LoadFailed", "Libs.Invalid", "Templates.Blank", "Templates.BlankHint", "Templates.Bootstrap",
+        "Templates.BootstrapHint", "Templates.Jquery", "Templates.JqueryHint", "Templates.Metric", "Templates.MetricHint",
+        "Saved.Updated", "Saved.Count", "Saved.Current", "Saved.Rename", "Saved.Duplicate", "Saved.Delete", "Saved.DeleteTitle",
+        "Saved.DeleteMessage", "Saved.Full", "Saved.CopySuffix", "Saved.Done", "Saved.StorageFull", "NameModal.Save",
+        "NameModal.SaveAs", "NameModal.Rename", "NameModal.Required", "Replace.Title", "Replace.Message", "Replace.Ok",
+        "Share.Copied", "Share.TooLong", "Share.Failed", "Share.Opened", "Share.Invalid", "Download.Done", "Download.Failed",
+        "Keys.Tabs", "Save", "Libraries", "Editor"
+    ];
+    var text = keys.ToDictionary(k => k, k => Text("CodePlayground." + k));
+    text["delete"] = Text("Action.Delete");
+    text["open"] = Text("Action.Open");
+
+    // CodeMirror's search box words (addon/search), passed as its "phrases" option.
+    var phrases = new Dictionary<string, string>
+    {
+        ["Search:"] = Text("CodePlayground.Search.Find"),
+        ["(Use /re/ syntax for regexp search)"] = Text("CodePlayground.Search.Regex"),
+        ["Replace:"] = Text("CodePlayground.Search.Replace"),
+        ["With:"] = Text("CodePlayground.Search.With"),
+        ["Replace all:"] = Text("CodePlayground.Search.ReplaceAll"),
+        ["Replace with:"] = Text("CodePlayground.Search.ReplaceWith"),
+        ["Replace?"] = Text("CodePlayground.Search.Confirm"),
+        ["Yes"] = Text("CodePlayground.Search.Yes"),
+        ["No"] = Text("CodePlayground.Search.No"),
+        ["All"] = Text("CodePlayground.Search.All"),
+        ["Stop"] = Text("CodePlayground.Search.Stop")
+    };
+
+    var config = new
+    {
+        storageKey = Model.StorageKey,
+        maxSaved = CodePlaygroundPageViewModel.MaxSaved,
+        maxShareLength = CodePlaygroundPageViewModel.MaxShareLength,
+        maxConsoleLines = CodePlaygroundPageViewModel.MaxConsoleLines,
+        formatterUrl = Model.FormatterUrl,
+        runUrl = Model.RunUrl,
+        libraries = Model.Libraries.Select(x => new { id = x.Id, name = x.Name, files = x.Files }),
+        text,
+        phrases
+    };
+    var configJson = JsonSerializer.Serialize(config);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/codemirror/lib/codemirror.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/codemirror/addon/dialog/dialog.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/code-playground.css" asp-append-version="true" />
+}
+
+<div class="pg-page" data-playground>
+    <div class="pg-head">
+        <label class="pg-name-label" for="pg-name">@T["CodePlayground.Name.Label"]</label>
+        <input class="form-control pg-name" id="pg-name" maxlength="80" autocomplete="off" spellcheck="false" data-pg-name />
+        <span class="pg-status" data-pg-status aria-live="polite"></span>
+    </div>
+
+    <div class="tbx-toolbar pg-toolbar" role="toolbar" aria-label="@T["CodePlayground.Toolbar"]">
+        <button type="button" class="btn btn-primary" data-pg-run>
+            <tbx-icon name="play" />@T["CodePlayground.Run"]
+        </button>
+        <div class="form-check pg-autorun">
+            <input class="form-check-input" type="checkbox" id="pg-autorun" data-pg-autorun />
+            <label class="form-check-label" for="pg-autorun">@T["CodePlayground.AutoRun"]</label>
+        </div>
+        <button type="button" class="btn btn-outline-secondary" data-pg-format>
+            <tbx-icon name="wand-sparkles" />@T["CodePlayground.Format"]
+        </button>
+        <button type="button" class="btn btn-outline-secondary" data-pg-libs>
+            <tbx-icon name="library" />@T["CodePlayground.Libraries"]<span class="pg-badge" data-pg-libs-count hidden></span>
+        </button>
+        <span class="tbx-toolbar-spacer"></span>
+        <div class="dropdown">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <tbx-icon name="folder-open" />@T["CodePlayground.MyWork"]
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><button type="button" class="dropdown-item" data-pg-new><tbx-icon name="file-plus" />@T["CodePlayground.New"]</button></li>
+                <li><button type="button" class="dropdown-item" data-pg-save><tbx-icon name="save" />@T["CodePlayground.Save"]</button></li>
+                <li><button type="button" class="dropdown-item" data-pg-save-as><tbx-icon name="copy-plus" />@T["CodePlayground.SaveAs"]</button></li>
+                <li><hr class="dropdown-divider" /></li>
+                <li><button type="button" class="dropdown-item" data-pg-saved><tbx-icon name="folder-open" />@T["CodePlayground.SavedList"]</button></li>
+            </ul>
+        </div>
+        <button type="button" class="btn btn-outline-secondary" data-pg-download>
+            <tbx-icon name="download" />@T["CodePlayground.Download"]
+        </button>
+        <button type="button" class="btn btn-outline-secondary" data-pg-share>
+            <tbx-icon name="share-2" />@T["CodePlayground.Share"]
+        </button>
+        <div class="btn-group pg-layout" role="group" aria-label="@T["CodePlayground.Layout.Label"]">
+            <button type="button" class="btn btn-outline-secondary tbx-icon-button" data-pg-layout="split" aria-pressed="true"
+                    aria-label="@T["CodePlayground.Layout.Split"]" title="@T["CodePlayground.Layout.Split"]">
+                <tbx-icon name="columns-2" />
+            </button>
+            <button type="button" class="btn btn-outline-secondary tbx-icon-button" data-pg-layout="stack" aria-pressed="false"
+                    aria-label="@T["CodePlayground.Layout.Stack"]" title="@T["CodePlayground.Layout.Stack"]">
+                <tbx-icon name="rows-2" />
+            </button>
+        </div>
+    </div>
+
+    <div class="pg-mobile-tabs" role="group" aria-label="@T["CodePlayground.View.Label"]">
+        <button type="button" class="tbx-chip" data-pg-mobile="code" aria-pressed="true">@T["CodePlayground.View.Code"]</button>
+        <button type="button" class="tbx-chip" data-pg-mobile="result" aria-pressed="false">@T["CodePlayground.View.Result"]</button>
+        <button type="button" class="tbx-chip" data-pg-mobile="console" aria-pressed="false">
+            @T["CodePlayground.Console"]<span class="tbx-chip-count" data-pg-console-count-mobile>0</span>
+        </button>
+    </div>
+
+    <div class="pg-work" data-pg-work data-layout="split" data-mobile="code">
+        <section class="tbx-panel pg-editor" aria-label="@T["CodePlayground.Editor"]">
+            <div class="pg-tabs" role="tablist" aria-label="@T["CodePlayground.Editor"]">
+                <button type="button" class="pg-tab" role="tab" id="pg-tab-html" aria-selected="true" aria-controls="pg-code" data-pg-tab="html">
+                    <span class="pg-tab-dot is-html" aria-hidden="true"></span>HTML
+                </button>
+                <button type="button" class="pg-tab" role="tab" id="pg-tab-css" aria-selected="false" aria-controls="pg-code" tabindex="-1" data-pg-tab="css">
+                    <span class="pg-tab-dot is-css" aria-hidden="true"></span>CSS
+                </button>
+                <button type="button" class="pg-tab" role="tab" id="pg-tab-js" aria-selected="false" aria-controls="pg-code" tabindex="-1" data-pg-tab="js">
+                    <span class="pg-tab-dot is-js" aria-hidden="true"></span>JS<span class="pg-tab-error" data-pg-js-error hidden>!</span>
+                </button>
+            </div>
+            <div class="pg-code" id="pg-code" role="tabpanel" aria-labelledby="pg-tab-html" data-pg-code></div>
+            <div class="pg-statusbar">
+                <span data-pg-cursor></span>
+                <span>@T["CodePlayground.Indent"]</span>
+                <span class="tbx-toolbar-spacer"></span>
+                <span class="pg-syntax" data-pg-syntax></span>
+            </div>
+        </section>
+
+        <div class="pg-splitter" role="separator" tabindex="0" aria-orientation="vertical" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50"
+             aria-label="@T["CodePlayground.Splitter"]" title="@T["CodePlayground.Splitter"]" data-pg-splitter></div>
+
+        <section class="tbx-panel pg-preview" aria-label="@T["CodePlayground.Preview"]" data-pg-preview>
+            <div class="pg-preview-bar">
+                <button type="button" class="btn btn-outline-secondary btn-sm tbx-icon-button" data-pg-reload aria-label="@T["CodePlayground.Reload"]" title="@T["CodePlayground.Reload"]">
+                    <tbx-icon name="refresh-cw" />
+                </button>
+                <div class="btn-group pg-devices" role="group" aria-label="@T["CodePlayground.Device.Label"]">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-pg-device="desktop" aria-pressed="true">
+                        <tbx-icon name="monitor" />@T["CodePlayground.Device.Desktop"]
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-pg-device="768" aria-pressed="false">
+                        <tbx-icon name="tablet" />768
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-pg-device="375" aria-pressed="false">
+                        <tbx-icon name="smartphone" />375
+                    </button>
+                </div>
+                <span class="tbx-toolbar-spacer"></span>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-pg-fullscreen>
+                    <tbx-icon name="maximize" /><span data-pg-fullscreen-text>@T["CodePlayground.Fullscreen"]</span>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm tbx-icon-button" data-pg-open-tab aria-label="@T["CodePlayground.OpenTab"]" title="@T["CodePlayground.OpenTab"]">
+                    <tbx-icon name="external-link" />
+                </button>
+            </div>
+            <div class="pg-frame-wrap" data-pg-frame-wrap data-device="desktop">
+                <iframe class="pg-frame" title="@T["CodePlayground.PreviewFrame"]" sandbox="allow-scripts allow-modals allow-forms allow-popups"
+                        referrerpolicy="no-referrer" data-pg-frame></iframe>
+                <div class="pg-frame-empty tbx-empty" data-pg-empty hidden>
+                    <span class="tbx-empty-icon"><tbx-icon name="code-xml" size="20" /></span>
+                    <p class="tbx-empty-text">@T["CodePlayground.PreviewEmpty"]</p>
+                </div>
+            </div>
+
+            <div class="pg-console" data-pg-console>
+                <div class="pg-console-head">
+                    <span class="pg-console-title"><tbx-icon name="terminal" />@T["CodePlayground.Console"]</span>
+                    <div class="pg-console-filters" role="group" aria-label="@T["CodePlayground.Console.Filter"]">
+                        <button type="button" class="tbx-chip" data-pg-filter="all" aria-pressed="true">@T["CodePlayground.Console.All"]<span class="tbx-chip-count" data-pg-count="all">0</span></button>
+                        <button type="button" class="tbx-chip" data-pg-filter="log" aria-pressed="false">@T["CodePlayground.Console.Log"]<span class="tbx-chip-count" data-pg-count="log">0</span></button>
+                        <button type="button" class="tbx-chip" data-pg-filter="warn" aria-pressed="false">@T["CodePlayground.Console.Warn"]<span class="tbx-chip-count" data-pg-count="warn">0</span></button>
+                        <button type="button" class="tbx-chip" data-pg-filter="error" aria-pressed="false">@T["CodePlayground.Console.Error"]<span class="tbx-chip-count" data-pg-count="error">0</span></button>
+                    </div>
+                    <span class="tbx-toolbar-spacer"></span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm tbx-icon-button" data-pg-console-clear aria-label="@T["CodePlayground.Console.Clear"]" title="@T["CodePlayground.Console.Clear"]">
+                        <tbx-icon name="ban" />
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm tbx-icon-button pg-console-toggle" data-pg-console-toggle aria-expanded="true"
+                            aria-label="@T["CodePlayground.Console.Collapse"]" title="@T["CodePlayground.Console.Collapse"]">
+                        <tbx-icon name="chevron-down" />
+                    </button>
+                </div>
+                <ol class="pg-console-list" data-pg-console-list aria-live="polite"></ol>
+                <p class="pg-console-empty" data-pg-console-empty>@T["CodePlayground.Console.Empty"]</p>
+            </div>
+        </section>
+    </div>
+
+    <p class="pg-note">@T["CodePlayground.Note"]</p>
+    <p class="tbx-shortcuts" data-shortcuts-line></p>
+</div>
+
+<div class="modal fade" id="pg-libs-modal" tabindex="-1" aria-labelledby="pg-libs-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" novalidate data-pg-libs-form>
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="pg-libs-title">@T["CodePlayground.Libs.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body tbx-form-grid">
+                <fieldset class="tbx-field">
+                    <legend class="tbx-field-label">@T["CodePlayground.Libs.Builtin"]</legend>
+                    @foreach (var library in Model.Libraries)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="pg-lib-@library.Id" value="@library.Id" data-pg-lib />
+                            <label class="form-check-label" for="pg-lib-@library.Id">@library.Name</label>
+                        </div>
+                    }
+                </fieldset>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="pg-lib-urls">@T["CodePlayground.Libs.Custom"]</label>
+                    <textarea class="form-control pg-lib-urls" id="pg-lib-urls" rows="4" spellcheck="false" autocomplete="off"
+                              placeholder="https://cdn.example.com/library.min.js" aria-describedby="pg-lib-urls-error pg-lib-urls-hint" data-pg-lib-urls></textarea>
+                    <span class="tbx-field-error" id="pg-lib-urls-error" data-pg-lib-error></span>
+                    <span class="tbx-field-hint" id="pg-lib-urls-hint">@T["CodePlayground.Libs.CustomHint"]</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary">@T["CodePlayground.Libs.Apply"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="pg-templates-modal" tabindex="-1" aria-labelledby="pg-templates-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="pg-templates-title">@T["CodePlayground.Templates.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="tbx-list pg-pick-list" data-pg-template-list></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pg-saved-modal" tabindex="-1" aria-labelledby="pg-saved-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="pg-saved-title">@T["CodePlayground.Saved.Title"]</h2>
+                <span class="pg-saved-count" data-pg-saved-count></span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="tbx-list pg-pick-list" data-pg-saved-list></ul>
+                <div data-pg-saved-empty hidden>
+                    <partial name="_EmptyState" model="@(new EmptyStateViewModel(T["CodePlayground.Saved.Empty"].Value, "folder-open"))" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pg-name-modal" tabindex="-1" aria-labelledby="pg-name-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" novalidate data-pg-name-form>
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="pg-name-title" data-pg-name-title>@T["CodePlayground.NameModal.Save"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="pg-name-input">@T["CodePlayground.Name.Label"]</label>
+                    <input class="form-control" id="pg-name-input" maxlength="80" autocomplete="off" aria-describedby="pg-name-error" data-pg-name-input />
+                    <span class="tbx-field-error" id="pg-name-error" data-pg-name-error></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary" data-pg-name-submit>@T["CodePlayground.Save"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script id="code-playground-config" type="application/json">@Html.Raw(configJson)</script>
+
+@section Scripts {
+    <script src="~/vendor/codemirror/lib/codemirror.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/xml/xml.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/javascript/javascript.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/css/css.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/htmlmixed/htmlmixed.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/fold/xml-fold.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/edit/closetag.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/edit/closebrackets.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/edit/matchbrackets.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/edit/matchtags.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/comment/comment.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/dialog/dialog.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/search/searchcursor.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/search/search.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/selection/active-line.js" asp-append-version="true"></script>
+    <script src="~/js/code-playground-sandbox.js" asp-append-version="true"></script>
+    <script src="~/js/code-playground.js" asp-append-version="true"></script>
+}

@@ -105,6 +105,9 @@
     --syntax-type: #0E6A8F;
     --syntax-attr: #9F1239;
     --syntax-title: #2753B8;
+
+    /* The code playground's result frame: white like a real browser page, in both themes. */
+    --preview-canvas: #FFFFFF;
 }
 
 :root[data-theme="dark"] {
@@ -151,6 +154,8 @@
     --syntax-type: #7DD3FC;
     --syntax-attr: #FDA4AF;
     --syntax-title: #A5B4FC;
+
+    --preview-canvas: #FFFFFF;
 }
 
 @media (prefers-reduced-motion: reduce) {

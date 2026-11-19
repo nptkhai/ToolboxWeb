@@ -1,0 +1,28 @@
+@*
+    "Open in a new tab" of the code playground. The playground tab sends the page through
+    postMessage (same origin only, Content/js/code-playground-run.js) and it runs here in a
+    full-window sandboxed frame without allow-same-origin, exactly as in the playground. A blob
+    URL is not used on purpose: it would run the code with Toolkit's origin.
+*@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.Name">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>@T["CodePlayground.Preview"] · Toolkit</title>
+    <link rel="icon" href="~/brand/toolkit-mark.svg" type="image/svg+xml" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/fonts/inter/inter.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/code-playground.css" asp-append-version="true" />
+</head>
+<body class="pg-run-page">
+    <p class="pg-run-message" data-pg-run-message data-no-opener="@T["CodePlayground.RunPage.NoOpener"]">@T["CodePlayground.RunPage.Waiting"]</p>
+    <iframe class="pg-run-frame" title="@T["CodePlayground.PreviewFrame"]" sandbox="allow-scripts allow-modals allow-forms allow-popups"
+            referrerpolicy="no-referrer" data-pg-run-frame hidden></iframe>
+    <script src="~/js/code-playground-run.js" asp-append-version="true"></script>
+</body>
+</html>

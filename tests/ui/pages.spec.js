@@ -25,6 +25,7 @@ const LOCAL_PAGES = [
   { name: 'quick-links', path: '/quick-links.html' },
   { name: 'prompt-templates', path: '/prompt-templates.html' },
   { name: 'text-compare', path: '/text-compare.html' },
+  { name: 'code-playground', path: '/code-playground.html' },
   { name: 'schema-compare', path: '/schema-compare.html' },
   { name: 'sql-profiler', path: '/sql-profiler.html' },
   { name: 'component', path: '/component.html' },
@@ -38,10 +39,11 @@ const LOCAL_PAGES = [
 ];
 
 // The web copy (TBX_UI_MODE=web): Jira screens plus the focus timer, which only counts there,
-// and Compare text, which runs in the browser.
+// and Compare text and the Code playground, which run in the browser.
 const WEB_EXTRA_PAGES = [
   { name: 'focus-timer', path: '/focus-timer.html' },
-  { name: 'text-compare', path: '/text-compare.html' }
+  { name: 'text-compare', path: '/text-compare.html' },
+  { name: 'code-playground', path: '/code-playground.html' }
 ];
 
 const JIRA_PAGES = [

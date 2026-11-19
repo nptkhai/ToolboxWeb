@@ -1,0 +1,730 @@
+/* Code playground (Views/CodePlayground/Index.cshtml, Content/js/code-playground.js) and its
+   "Open in a new tab" page (Run.cshtml). Colours come from tokens.css only: --syntax-* for code,
+   --preview-canvas for the result frame. */
+
+.pg-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+/* ---------------------------------------------------------------- name and toolbar */
+
+.pg-head {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+}
+
+.pg-name-label {
+    color: var(--muted);
+    font-size: var(--text-sm);
+}
+
+.pg-name {
+    font-weight: var(--weight-semibold);
+    max-width: 360px;
+}
+
+.pg-status {
+    color: var(--muted);
+    font-size: var(--text-sm);
+}
+
+    .pg-status.is-dirty {
+        color: var(--warning);
+    }
+
+    .pg-status.is-warning {
+        color: var(--danger);
+    }
+
+.pg-toolbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+    .pg-toolbar .btn .tbx-icon,
+    .pg-preview-bar .btn .tbx-icon,
+    .pg-page .dropdown-item .tbx-icon {
+        margin-right: var(--space-1);
+    }
+
+    .pg-page .tbx-icon-button .tbx-icon {
+        margin-right: 0;
+    }
+
+.pg-autorun {
+    margin: 0 var(--space-1);
+}
+
+.pg-badge {
+    background: var(--accent-tint);
+    border-radius: var(--radius-chip);
+    color: var(--accent-strong);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    margin-left: var(--space-1);
+    padding: 0 var(--space-2);
+}
+
+.pg-layout .btn[aria-pressed="true"],
+.pg-devices .btn[aria-pressed="true"] {
+    background: var(--accent-tint);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+    color: var(--accent-strong);
+}
+
+.pg-mobile-tabs {
+    display: none;
+    gap: var(--space-2);
+}
+
+/* ---------------------------------------------------------------- work area */
+
+.pg-work {
+    --pg-ratio: 0.5;
+    display: grid;
+    height: clamp(520px, calc(100vh - 210px), 1400px);
+    min-width: 0;
+}
+
+    .pg-work[data-layout="split"] {
+        grid-template-columns: calc((100% - 10px) * var(--pg-ratio)) 10px minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+    }
+
+    .pg-work[data-layout="stack"] {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: calc((100% - 10px) * var(--pg-ratio)) 10px minmax(0, 1fr);
+    }
+
+    /* While dragging, the frame must not swallow the pointer. */
+    .pg-work.is-resizing .pg-frame {
+        pointer-events: none;
+    }
+
+    .pg-work.is-resizing {
+        user-select: none;
+    }
+
+.pg-editor,
+.pg-preview {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
+}
+
+.pg-splitter {
+    align-self: stretch;
+    border-radius: var(--radius-pill);
+    cursor: col-resize;
+    position: relative;
+    touch-action: none;
+}
+
+    .pg-splitter::after {
+        background: var(--line-strong);
+        border-radius: var(--radius-chip);
+        content: "";
+        inset: 50% auto auto 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
+    }
+
+.pg-work[data-layout="split"] .pg-splitter::after {
+    height: 40px;
+    width: 4px;
+}
+
+.pg-work[data-layout="stack"] .pg-splitter {
+    cursor: row-resize;
+}
+
+    .pg-work[data-layout="stack"] .pg-splitter::after {
+        height: 4px;
+        width: 40px;
+    }
+
+.pg-splitter:hover::after,
+.pg-splitter:focus-visible::after,
+.pg-work.is-resizing .pg-splitter::after {
+    background: var(--accent);
+}
+
+.pg-splitter:focus-visible {
+    outline: 2px solid var(--focus-ring);
+}
+
+/* ---------------------------------------------------------------- editor */
+
+.pg-tabs {
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3) 0;
+}
+
+.pg-tab {
+    align-items: center;
+    background: none;
+    border: 1px solid transparent;
+    border-bottom: 0;
+    border-radius: var(--radius-control) var(--radius-control) 0 0;
+    color: var(--muted);
+    display: inline-flex;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    gap: var(--space-2);
+    margin-bottom: -1px;
+    padding: var(--space-1) var(--space-3);
+}
+
+    .pg-tab:hover {
+        color: var(--text);
+    }
+
+    .pg-tab[aria-selected="true"] {
+        background: var(--surface);
+        border-color: var(--line);
+        color: var(--accent-strong);
+    }
+
+    .pg-tab:focus-visible {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: -2px;
+    }
+
+/* The dot shows the language colour once the tab has code, a hollow ring while it is empty. */
+.pg-tab-dot {
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    height: 8px;
+    opacity: .5;
+    width: 8px;
+}
+
+.pg-tab.has-code .pg-tab-dot {
+    opacity: 1;
+}
+
+    .pg-tab.has-code .pg-tab-dot.is-html {
+        background: var(--format-xml);
+        border-color: var(--format-xml);
+    }
+
+    .pg-tab.has-code .pg-tab-dot.is-css {
+        background: var(--format-css);
+        border-color: var(--format-css);
+    }
+
+    .pg-tab.has-code .pg-tab-dot.is-js {
+        background: var(--format-js);
+        border-color: var(--format-js);
+    }
+
+.pg-tab-error {
+    background: var(--danger);
+    border-radius: var(--radius-chip);
+    color: var(--on-danger);
+    font-size: var(--text-xs);
+    line-height: 16px;
+    min-width: 16px;
+    text-align: center;
+}
+
+.pg-code {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+.pg-statusbar {
+    align-items: center;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: var(--text-xs);
+    gap: var(--space-3);
+    padding: var(--space-1) var(--space-3);
+}
+
+.pg-syntax {
+    color: var(--success);
+}
+
+    .pg-syntax.is-error {
+        color: var(--danger);
+    }
+
+/* ---------------------------------------------------------------- CodeMirror theme "toolkit" */
+
+.pg-code .CodeMirror {
+    height: 100%;
+    inset: 0;
+    position: absolute;
+}
+
+.cm-s-toolkit.CodeMirror {
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+}
+
+.cm-s-toolkit .CodeMirror-gutters {
+    background: var(--surface-2);
+    border-right: 1px solid var(--line);
+}
+
+.cm-s-toolkit .CodeMirror-linenumber {
+    color: var(--muted);
+}
+
+.cm-s-toolkit .CodeMirror-cursor {
+    border-left-color: var(--text);
+}
+
+.cm-s-toolkit .CodeMirror-selected,
+.cm-s-toolkit.CodeMirror-focused .CodeMirror-selected,
+.cm-s-toolkit .CodeMirror-line::selection,
+.cm-s-toolkit .CodeMirror-line > span::selection,
+.cm-s-toolkit .CodeMirror-line > span > span::selection {
+    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+
+.cm-s-toolkit .CodeMirror-activeline-background {
+    background: var(--hover);
+}
+
+.cm-s-toolkit .CodeMirror-activeline-gutter {
+    background: var(--hover);
+}
+
+.cm-s-toolkit .CodeMirror-matchingtag {
+    background: var(--accent-tint);
+}
+
+.cm-s-toolkit .CodeMirror-matchingbracket {
+    background: var(--accent-tint);
+    color: inherit;
+    font-weight: var(--weight-semibold);
+}
+
+.cm-s-toolkit .CodeMirror-nonmatchingbracket {
+    color: var(--danger);
+}
+
+.cm-s-toolkit .cm-keyword,
+.cm-s-toolkit .cm-tag {
+    color: var(--syntax-keyword);
+}
+
+.cm-s-toolkit .cm-string,
+.cm-s-toolkit .cm-string-2 {
+    color: var(--syntax-string);
+}
+
+.cm-s-toolkit .cm-comment,
+.cm-s-toolkit .cm-meta {
+    color: var(--syntax-comment);
+}
+
+.cm-s-toolkit .cm-number,
+.cm-s-toolkit .cm-atom {
+    color: var(--syntax-number);
+}
+
+.cm-s-toolkit .cm-type,
+.cm-s-toolkit .cm-variable-3,
+.cm-s-toolkit .cm-qualifier,
+.cm-s-toolkit .cm-builtin {
+    color: var(--syntax-type);
+}
+
+.cm-s-toolkit .cm-attribute,
+.cm-s-toolkit .cm-property {
+    color: var(--syntax-attr);
+}
+
+.cm-s-toolkit .cm-def,
+.cm-s-toolkit .cm-variable-2 {
+    color: var(--syntax-title);
+}
+
+.cm-s-toolkit .cm-bracket,
+.cm-s-toolkit .cm-operator {
+    color: var(--muted);
+}
+
+.cm-s-toolkit .cm-error {
+    color: var(--danger);
+}
+
+/* The search box of the search addon. */
+.pg-code .CodeMirror-dialog {
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+}
+
+.pg-code .CodeMirror-dialog-top {
+    border-bottom: 1px solid var(--line);
+}
+
+.pg-code .CodeMirror-dialog input {
+    color: var(--text);
+}
+
+.pg-code .CodeMirror-search-hint {
+    color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- preview */
+
+.pg-preview-bar {
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+}
+
+.pg-frame-wrap {
+    background: var(--surface-2);
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    min-height: 0;
+    overflow: auto;
+    position: relative;
+}
+
+.pg-frame {
+    background: var(--preview-canvas);
+    border: 0;
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.pg-frame-wrap[data-device="768"] .pg-frame,
+.pg-frame-wrap[data-device="375"] .pg-frame {
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    flex: none;
+}
+
+.pg-frame-wrap[data-device="768"] .pg-frame {
+    width: 768px;
+}
+
+.pg-frame-wrap[data-device="375"] .pg-frame {
+    width: 375px;
+}
+
+.pg-frame-empty {
+    background: var(--surface);
+    inset: 0;
+    justify-content: center;
+    position: absolute;
+}
+
+    .pg-frame-empty[hidden] {
+        display: none;
+    }
+
+.pg-preview.is-fullscreen {
+    border-radius: 0;
+    inset: 0;
+    position: fixed;
+    z-index: 1080;
+}
+
+.pg-preview:fullscreen {
+    background: var(--surface);
+}
+
+/* ---------------------------------------------------------------- console */
+
+.pg-console {
+    border-top: 1px solid var(--line);
+    display: flex;
+    /* At most about a third of the result pane, so a short pane (top and bottom) keeps its page. */
+    flex: 0 0 clamp(96px, 35%, 200px);
+    flex-direction: column;
+    min-height: 0;
+}
+
+    .pg-console.is-collapsed {
+        flex-basis: auto;
+    }
+
+        .pg-console.is-collapsed .pg-console-list,
+        .pg-console.is-collapsed .pg-console-empty {
+            display: none;
+        }
+
+        .pg-console.is-collapsed .pg-console-toggle .tbx-icon {
+            transform: rotate(180deg);
+        }
+
+.pg-console-head {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+}
+
+.pg-console-title {
+    align-items: center;
+    display: inline-flex;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    gap: var(--space-1);
+}
+
+.pg-console-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.pg-console-list {
+    border-top: 1px solid var(--line);
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    list-style: none;
+    margin: 0;
+    min-height: 0;
+    overflow: auto;
+    padding: 0;
+}
+
+    .pg-console-list:empty {
+        display: none;
+    }
+
+.pg-console-empty {
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin: 0;
+    padding: var(--space-3);
+}
+
+    .pg-console-empty[hidden] {
+        display: none;
+    }
+
+.pg-log {
+    align-items: baseline;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: var(--space-2);
+    padding: 2px var(--space-3);
+}
+
+    .pg-log.is-warn {
+        background: var(--warning-tint);
+    }
+
+    .pg-log.is-error {
+        background: var(--danger-tint);
+    }
+
+    .pg-log.is-info .pg-log-mark {
+        color: var(--accent);
+    }
+
+    .pg-log.is-warn .pg-log-mark {
+        color: var(--warning);
+    }
+
+    .pg-log.is-error .pg-log-mark,
+    .pg-log.is-error .pg-log-text {
+        color: var(--danger);
+    }
+
+    .pg-log.is-note {
+        color: var(--muted);
+        font-family: var(--font-sans);
+    }
+
+.pg-log-time {
+    color: var(--muted);
+    flex: none;
+}
+
+.pg-log-mark {
+    color: var(--muted);
+    flex: none;
+}
+
+.pg-log-text {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.pg-log-where {
+    color: var(--muted);
+    flex: none;
+    font-family: var(--font-sans);
+}
+
+/* ---------------------------------------------------------------- dialogs and notes */
+
+.pg-pick-list {
+    margin: 0;
+    padding: 0;
+}
+
+.pg-pick-row {
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.pg-pick {
+    background: none;
+    border: 0;
+    color: inherit;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    padding: var(--space-2) 0;
+    text-align: left;
+}
+
+    .pg-pick:hover .tbx-row-title {
+        color: var(--accent-strong);
+    }
+
+    .pg-pick:focus-visible {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 2px;
+    }
+
+.pg-saved-count {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin-left: var(--space-2);
+}
+
+.pg-lib-urls {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+}
+
+.pg-note {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    margin: 0;
+}
+
+/* ---------------------------------------------------------------- "Open in a new tab" page */
+
+.pg-run-page {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    height: 100vh;
+    margin: 0;
+}
+
+.pg-run-message {
+    margin: 0;
+    padding: var(--space-6);
+}
+
+    .pg-run-message[hidden] {
+        display: none;
+    }
+
+.pg-run-frame {
+    background: var(--preview-canvas);
+    border: 0;
+    display: block;
+    height: 100vh;
+    width: 100%;
+}
+
+/* ---------------------------------------------------------------- phones and tablets */
+
+@media (max-width: 899.98px) {
+    .pg-layout,
+    .pg-splitter {
+        display: none;
+    }
+
+    .pg-mobile-tabs {
+        display: flex;
+    }
+
+    .pg-work,
+    .pg-work[data-layout="split"],
+    .pg-work[data-layout="stack"] {
+        display: block;
+        height: auto;
+    }
+
+    .pg-editor,
+    .pg-preview {
+        height: 70vh;
+        min-height: 420px;
+    }
+
+    .pg-work[data-mobile="code"] .pg-preview,
+    .pg-work[data-mobile="result"] .pg-editor,
+    .pg-work[data-mobile="console"] .pg-editor {
+        display: none;
+    }
+
+    .pg-work[data-mobile="result"] .pg-console {
+        display: none;
+    }
+
+    .pg-work[data-mobile="console"] .pg-preview-bar,
+    .pg-work[data-mobile="console"] .pg-frame-wrap {
+        display: none;
+    }
+
+    .pg-work[data-mobile="console"] .pg-console {
+        flex: 1;
+    }
+
+        .pg-work[data-mobile="console"] .pg-console .pg-console-list,
+        .pg-work[data-mobile="console"] .pg-console .pg-console-empty {
+            display: block;
+        }
+
+    .pg-name {
+        max-width: none;
+    }
+}
+
+@media (max-width: 599.98px) {
+    .pg-toolbar .tbx-toolbar-spacer {
+        display: none;
+    }
+
+    .pg-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
