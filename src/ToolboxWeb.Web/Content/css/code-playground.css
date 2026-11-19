@@ -11,6 +11,18 @@
 
 /* ---------------------------------------------------------------- name and toolbar */
 
+/* The name row and the toolbar share one white bar, like the list pages' toolbar (.tbx-list-toolbar). */
+.pg-bar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+    .pg-bar .pg-head {
+        border-bottom: 1px solid var(--line);
+        padding-bottom: var(--space-2);
+    }
+
 .pg-head {
     align-items: center;
     display: flex;
