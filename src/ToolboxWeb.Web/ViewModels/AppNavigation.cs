@@ -29,7 +29,7 @@ public static class AppNavigation
     /// <param name="isJiraUser">Whether the Jira screens apply: a Jira account, or a desktop with a saved Jira connection.</param>
     /// <param name="mode">
     /// A desktop copy also lists its Settings page; the web copy, which stores nothing, lists only
-    /// the Jira screens and the focus timer.
+    /// the Jira screens, the focus timer and the text compare (both work in the browser alone).
     /// </param>
     public static IReadOnlyList<AppNavGroup> Build(IUrlHelper url, IStringLocalizer localizer, bool isJiraUser, bool showDevTools, AppMode mode = AppMode.Server)
     {
@@ -53,10 +53,12 @@ public static class AppNavigation
             ]));
         }
 
+        var textCompare = new AppNavItem("text-compare", Href(ToolboxRouteSlugs.RouteNames.TextCompareHtml, "/text-compare.html"), "file-diff", L("Nav.TextCompare"), "x", true, On("TextCompare"));
         var focusTimer = new AppNavItem("focus-timer", Href(ToolboxRouteSlugs.RouteNames.FocusTimerHtml, "/focus-timer.html"), "timer", L("Nav.FocusTimer"), "f", true, On("FocusTimer"));
         if (mode == AppMode.Web)
         {
             groups.Add(new AppNavGroup("personal", L("Nav.Group.Personal"), [focusTimer]));
+            groups.Add(new AppNavGroup("tools", L("Nav.Group.Tools"), [textCompare]));
             if (showDevTools)
             {
                 // The Tabulator demo saves its rows in the database, so it is not on the web copy.
@@ -78,8 +80,9 @@ public static class AppNavigation
             new("activity", Href(ToolboxRouteSlugs.RouteNames.ActivityHtml, "/activity.html"), "activity", L("Activity.Title"), "a", false, On("Activity"))
         ]));
 
-        groups.Add(new AppNavGroup("database", L("Nav.Group.Database"),
+        groups.Add(new AppNavGroup("tools", L("Nav.Group.Tools"),
         [
+            textCompare,
             new("schema-compare", Href(ToolboxRouteSlugs.RouteNames.SchemaCompareHtml, "/schema-compare.html"), "git-compare", L("Nav.SchemaCompare"), "s", true, On("SchemaCompare")),
             new("sql-profiler", Href(ToolboxRouteSlugs.RouteNames.SqlProfilerHtml, "/sql-profiler.html"), "activity", L("Nav.SqlProfiler"), "q", true, On("SqlProfiler"))
         ]));

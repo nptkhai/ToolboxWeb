@@ -17,6 +17,7 @@ public static class ToolboxRouteSlugs
         // Jira "Statistics" and "Task management" (renamed 2026-11-19; the old jira-* addresses redirect, see JiraController).
         public const string JiraDashboard = "statistics";
         public const string JiraWorklist = "tasks";
+        public const string TextCompare = "text-compare";
         public const string SchemaCompare = "schema-compare";
         public const string SqlProfiler = "sql-profiler";
         public const string Privacy = "privacy";
@@ -40,6 +41,7 @@ public static class ToolboxRouteSlugs
         public const string TabulatorDemo = "tabulator-demo.html";
         public const string JiraDashboard = "statistics.html";
         public const string JiraWorklist = "tasks.html";
+        public const string TextCompare = "text-compare.html";
         public const string SchemaCompare = "schema-compare.html";
         public const string SqlProfiler = "sql-profiler.html";
         public const string Privacy = "privacy.html";
@@ -92,6 +94,7 @@ public static class ToolboxRouteSlugs
         public const string TabulatorDemoHtml = "tabulator-demo-html";
         public const string JiraDashboardHtml = "jira-dashboard-html";
         public const string JiraWorklistHtml = "jira-worklist-html";
+        public const string TextCompareHtml = "text-compare-html";
         public const string SchemaCompareHtml = "schema-compare-html";
         public const string SqlProfilerHtml = "sql-profiler-html";
         public const string PrivacyHtml = "privacy-html";

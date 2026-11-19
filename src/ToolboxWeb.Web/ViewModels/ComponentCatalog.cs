@@ -54,6 +54,8 @@ public static class ComponentCatalog
     public static readonly ComponentLibrary FullCalendar = new("FullCalendar", "6.1.15", "MIT");
     public static readonly ComponentLibrary Quill = new("Quill", "2.0.2", "BSD-3-Clause");
     public static readonly ComponentLibrary SheetJs = new("SheetJS CE", "0.20.2", "Apache-2.0");
+    public static readonly ComponentLibrary JsDiff = new("jsdiff", "9.0.0", "BSD-3-Clause");
+    public static readonly ComponentLibrary HighlightJs = new("highlight.js", "11.12.0", "BSD-3-Clause");
 
     private const string TextInput = ToolboxRouteSlugs.ComponentsTabs.TextInput;
     private const string Selection = ToolboxRouteSlugs.ComponentsTabs.Selection;
@@ -121,6 +123,8 @@ public static class ComponentCatalog
         new("kendo-listview", "Kendo DataSource + ListView + Pager", GridData, KendoCore, ComponentStatus.Available, HasDemo: true),
         new("sheetjs", "SheetJS", GridData, SheetJs, ComponentStatus.Usable, "Components.Catalog.Note.SheetJs"),
         new("echarts", "Apache ECharts", GridData, ECharts, ComponentStatus.Usable, "Components.Catalog.Note.ECharts"),
+        new("jsdiff", "jsdiff", GridData, JsDiff, ComponentStatus.Usable, "Components.Catalog.Note.JsDiff"),
+        new("highlightjs", "highlight.js", GridData, HighlightJs, ComponentStatus.Usable, "Components.Catalog.Note.HighlightJs"),
         new("kendo-grid", "Kendo Grid", GridData, KendoCommercial, ComponentStatus.NotInKendoCore, "Components.Catalog.Note.UseTabulator"),
         new("kendo-chart", "Kendo Chart", GridData, KendoCommercial, ComponentStatus.NotInKendoCore, "Components.Catalog.Note.UseECharts"),
         new("kendo-pdf", "Kendo PDF export and drawing", GridData, KendoDrawing, ComponentStatus.CommercialDependency, "Components.Catalog.Note.CommercialDrawing"),

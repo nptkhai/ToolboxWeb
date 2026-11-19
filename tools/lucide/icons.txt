@@ -1,8 +1,10 @@
 # Lucide icons included in Content/vendor/lucide/lucide-sprite.svg.
 # Add a name here, then rebuild the sprite (see build-sprite.py). Keep only icons the app uses.
 activity
+arrow-down
 arrow-left
 arrow-left-right
+arrow-up
 blocks
 braces
 calendar
@@ -11,19 +13,25 @@ chevron-down
 chevron-left
 chevron-right
 chevron-up
+chevrons-up-down
 circle-alert
 circle-check
+clipboard-paste
 clock
+columns-2
 copy
 copy-plus
 corner-down-left
 database
 download
 ellipsis
+eraser
 external-link
 eye
 eye-off
+file-diff
 file-text
+file-up
 gauge
 git-compare
 grip-vertical
@@ -56,6 +64,7 @@ play
 plug
 plus
 refresh-cw
+rows-2
 save
 search
 settings

@@ -42,13 +42,14 @@ Lưu ý:
 10. [Công việc Jira – Tìm kiếm](#10-công-việc-jira--tìm-kiếm-jsearch)
 11. [Công việc Jira – Quản lý công việc](#11-công-việc-jira--quản-lý-công-việc-jboard)
 12. [Công việc Jira – Sắp xếp tự động](#12-công-việc-jira--sắp-xếp-tự-động-jauto)
-13. [So sánh cấu trúc DB](#13-so-sánh-cấu-trúc-db-scmp)
-14. [Bắt câu lệnh SQL](#14-bắt-câu-lệnh-sql-sqlp)
-15. [Tài khoản](#15-tài-khoản-acc)
-16. [Trang dành cho người phát triển](#16-trang-dành-cho-người-phát-triển-dev)
-17. [Màn hình hoặc công cụ mới](#17-màn-hình-hoặc-công-cụ-mới-new)
-18. [Đề xuất thêm của bạn (chung)](#18-đề-xuất-thêm-của-bạn-chung)
-19. [Tổng hợp và chia giai đoạn](#19-tổng-hợp-và-chia-giai-đoạn)
+13. [So sánh nội dung](#13-so-sánh-nội-dung-diff)
+14. [So sánh cấu trúc DB](#14-so-sánh-cấu-trúc-db-scmp)
+15. [Bắt câu lệnh SQL](#15-bắt-câu-lệnh-sql-sqlp)
+16. [Tài khoản](#16-tài-khoản-acc)
+17. [Trang dành cho người phát triển](#17-trang-dành-cho-người-phát-triển-dev)
+18. [Màn hình hoặc công cụ mới](#18-màn-hình-hoặc-công-cụ-mới-new)
+19. [Đề xuất thêm của bạn (chung)](#19-đề-xuất-thêm-của-bạn-chung)
+20. [Tổng hợp và chia giai đoạn](#20-tổng-hợp-và-chia-giai-đoạn)
 
 ## Bản đồ màn hình
 
@@ -63,8 +64,9 @@ Lưu ý:
 | Hẹn giờ tập trung | `/focus-timer.html` | CÁ NHÂN | Mọi tài khoản | G F |
 | Liên kết nhanh | `/quick-links.html` | CÁ NHÂN | Mọi tài khoản | G L |
 | Không gian prompt | `/prompt-templates.html` | CÁ NHÂN | Mọi tài khoản | G P |
-| So sánh cấu trúc DB | `/schema-compare.html` | CÔNG CỤ DB | Mọi tài khoản | G S |
-| Bắt câu lệnh SQL | `/sql-profiler.html` | CÔNG CỤ DB | Mọi tài khoản | G Q |
+| So sánh nội dung | `/text-compare.html` | CÔNG CỤ | Mọi tài khoản, cả bản Web | G X |
+| So sánh cấu trúc DB | `/schema-compare.html` | CÔNG CỤ | Mọi tài khoản | G S |
+| Bắt câu lệnh SQL | `/sql-profiler.html` | CÔNG CỤ | Mọi tài khoản | G Q |
 | Bảng mẫu component, Kendo Demo, Tabulator Demo | `/component.html` … | DEV | Chỉ ở môi trường Development | G C |
 | Đăng nhập, đăng ký, tài khoản | `/Identity/Account/...` | Menu avatar | — | — |
 
@@ -76,7 +78,7 @@ Lưu ý:
 
 | Mã | Chức năng | Đánh giá | Ghi chú của bạn |
 |---|---|---|---|
-| APP-01 | Sidebar 4 nhóm (JIRA / CÁ NHÂN / CÔNG CỤ DB / DEV); đánh dấu trang đang mở; thu gọn còn icon (nhớ lựa chọn, có tooltip); dưới 900px thành ngăn trượt | | |
+| APP-01 | Sidebar 4 nhóm (JIRA / CÁ NHÂN / CÔNG CỤ / DEV); đánh dấu trang đang mở; thu gọn còn icon (nhớ lựa chọn, có tooltip); dưới 900px thành ngăn trượt | | |
 | APP-02 | Thanh trên cùng 48px: breadcrumb, ô "Tìm hoặc chạy lệnh…" (Ctrl/⌘+K), đồng hồ và ngày theo `App:TimeZone`, thời tiết theo vị trí, ô đếm giờ khi đang tập trung, menu avatar | | |
 | APP-03 | Menu avatar: ảnh hoặc chữ viết tắt, đổi giao diện sáng/tối/theo máy, đổi ngôn ngữ Việt/Anh, tài khoản, đăng xuất | | |
 | APP-04 | Bảng lệnh Ctrl/⌘+K: nhảy trang, lệnh nhanh (tạo ghi chú/việc/liên kết/prompt, bật/dừng hẹn giờ, giao diện, ngôn ngữ, phím tắt, đăng xuất), tìm trong dữ liệu của mình (ghi chú, việc, liên kết, prompt; không dấu), mục mở gần đây | | |
@@ -516,7 +518,41 @@ Lưu ý:
 
 ---
 
-## 13. So sánh cấu trúc DB (SCMP)
+## 13. So sánh nội dung (DIFF)
+
+### Chức năng đang có
+
+| Mã | Chức năng | Đánh giá | Ghi chú của bạn |
+|---|---|---|---|
+| DIFF-01 | Hai ô Bản gốc / Bản mới: Dán từ bộ nhớ tạm, Mở file hoặc kéo thả file (tối đa 5 MB, chỉ file văn bản), đếm ký tự và dòng, tên file hiện cạnh ô | | |
+| DIFF-02 | So sánh (Ctrl/⌘+Enter) chạy ngay trên trình duyệt, không gửi nội dung lên máy chủ; xuống dòng Windows/Unix coi như nhau; tối đa 50.000 dòng mỗi bên | | |
+| DIFF-03 | Xem Song song hoặc Hàng dòng (điện thoại luôn Hàng dòng); đếm +thêm / −xóa / ~sửa; tô chữ đổi trong dòng sửa | | |
+| DIFF-04 | Tô màu code (highlight.js): tự nhận theo đuôi file hoặc nội dung, hoặc chọn SQL, C#, JavaScript, TypeScript, JSON, XML/HTML, CSS, YAML, PowerShell, Bash, Python, Java, Markdown, INI; tắt khi một bên dài hơn 5.000 dòng | | |
+| DIFF-05 | Thu gọn đoạn không đổi (giữ 3 dòng quanh mỗi thay đổi, bấm để hiện); "Đổi chỗ"; khung nhập tự thu gọn sau khi so sánh | | |
+| DIFF-06 | Đi giữa các thay đổi bằng ↑ ↓ hoặc J / K, vị trí "2 / 6" | | |
+| DIFF-07 | Sao chép kết quả dạng chữ (+ / −) vào bộ nhớ tạm; Xuất báo cáo: file HTML tự chứa, mở bằng mọi trình duyệt, in hoặc lưu PDF được | | |
+| DIFF-08 | Gần đây: 10 lần so sánh gần nhất trên trình duyệt này (mỗi tài khoản một danh sách); bấm để nạp lại và so sánh; xóa từng mục hoặc xóa hết (có xác nhận) | | |
+
+### Đã biết / chưa kiểm tra
+
+- Lịch sử nằm trong trình duyệt, nên không đi theo tài khoản sang máy khác và không có trong file xuất dữ liệu Toolkit.
+- Mỗi bên dài hơn khoảng 300.000 ký tự thì vẫn so sánh nhưng không lưu vào Gần đây.
+
+### Đề xuất
+
+| Mã | Đề xuất | Lợi ích | Công sức | Chọn | Ưu tiên | Ghi chú của bạn |
+|---|---|---|---|---|---|---|
+| DIFF-P01 | Tùy chọn bỏ qua khoảng trắng, hoa/thường, dòng trống | Bớt nhiễu khi so sánh code đã định dạng lại | S | | | |
+| DIFF-P02 | Định dạng JSON/XML trước khi so sánh | So sánh được file một dòng | S | | | |
+| DIFF-P03 | So sánh hai thư mục hoặc file Excel | Mở rộng sang dữ liệu khác | L | | | |
+
+### Đề xuất thêm của bạn
+
+-
+
+---
+
+## 14. So sánh cấu trúc DB (SCMP)
 
 ### Chức năng đang có
 
@@ -550,7 +586,7 @@ Lưu ý:
 
 ---
 
-## 14. Bắt câu lệnh SQL (SQLP)
+## 15. Bắt câu lệnh SQL (SQLP)
 
 ### Chức năng đang có
 
@@ -585,7 +621,7 @@ Lưu ý:
 
 ---
 
-## 15. Tài khoản (ACC)
+## 16. Tài khoản (ACC)
 
 ### Chức năng đang có
 
@@ -623,7 +659,7 @@ Lưu ý:
 
 ---
 
-## 16. Trang dành cho người phát triển (DEV)
+## 17. Trang dành cho người phát triển (DEV)
 
 ### Chức năng đang có
 
@@ -648,11 +684,11 @@ Lưu ý:
 
 ---
 
-## 17. Màn hình hoặc công cụ mới (NEW)
+## 18. Màn hình hoặc công cụ mới (NEW)
 
 | Mã | Đề xuất | Nội dung chính | Công sức | Chọn | Ưu tiên | Ghi chú của bạn |
 |---|---|---|---|---|---|---|
-| NEW-01 | **Hộp công cụ cho dev** (nhóm DEV hoặc CÔNG CỤ) | Định dạng/kiểm tra JSON, XML, SQL; Base64; mã hóa URL; giải mã JWT; tạo GUID; đổi Unix time ↔ ngày giờ; so sánh hai đoạn văn bản (diff); thử biểu thức regex. Tất cả chạy trong trình duyệt, không gửi dữ liệu ra ngoài | M–L | | | |
+| NEW-01 | **Hộp công cụ cho dev** (nhóm DEV hoặc CÔNG CỤ) | Định dạng/kiểm tra JSON, XML, SQL; Base64; mã hóa URL; giải mã JWT; tạo GUID; đổi Unix time ↔ ngày giờ; so sánh hai đoạn văn bản (diff, đã có: mục 13); thử biểu thức regex. Tất cả chạy trong trình duyệt, không gửi dữ liệu ra ngoài | M–L | | | |
 | NEW-02 | **Lịch tổng hợp** | Một lịch tháng/tuần gồm việc cần làm, hạn subtask Jira, phiên tập trung (FullCalendar đã có sẵn trong app) | M | | | |
 | NEW-03 | **Báo cáo tuần / timesheet** | Giờ log Jira theo ngày và theo issue, việc đã xong, phút tập trung; xuất Excel hoặc sao chép văn bản gửi báo cáo | M | | | |
 | NEW-04 | **Ghi giờ Jira (worklog)** dùng chung | Một hộp "Log giờ" dùng ở Jira Dashboard, Quản lý công việc, Hẹn giờ (JDASH-P06, JBOARD-P01, FOCUS-P01); xác nhận trước khi ghi | L | | | |
@@ -665,7 +701,7 @@ Lưu ý:
 
 ---
 
-## 18. Đề xuất thêm của bạn (chung)
+## 19. Đề xuất thêm của bạn (chung)
 
 Ghi ở đây những ý không thuộc màn hình nào, hoặc vấn đề bạn gặp khi dùng hằng ngày.
 
@@ -675,7 +711,7 @@ Ghi ở đây những ý không thuộc màn hình nào, hoặc vấn đề bạ
 
 ---
 
-## 19. Tổng hợp và chia giai đoạn
+## 20. Tổng hợp và chia giai đoạn
 
 *Mình sẽ điền mục này sau khi bạn đánh giá và push file lên: gom các dòng được chọn, xếp theo ưu tiên của bạn, công sức và phụ thuộc giữa các việc (ví dụ APP-P06 Ngày lễ đi trước JDASH-P02 và JAUTO-P01; NEW-04 Ghi giờ Jira đi trước JDASH-P06, JBOARD-P01, FOCUS-P01).*
 
