@@ -43,13 +43,14 @@ Lưu ý:
 11. [Công việc Jira – Quản lý công việc](#11-công-việc-jira--quản-lý-công-việc-jboard)
 12. [Công việc Jira – Sắp xếp tự động](#12-công-việc-jira--sắp-xếp-tự-động-jauto)
 13. [So sánh nội dung](#13-so-sánh-nội-dung-diff)
-14. [So sánh cấu trúc DB](#14-so-sánh-cấu-trúc-db-scmp)
-15. [Bắt câu lệnh SQL](#15-bắt-câu-lệnh-sql-sqlp)
-16. [Tài khoản](#16-tài-khoản-acc)
-17. [Trang dành cho người phát triển](#17-trang-dành-cho-người-phát-triển-dev)
-18. [Màn hình hoặc công cụ mới](#18-màn-hình-hoặc-công-cụ-mới-new)
-19. [Đề xuất thêm của bạn (chung)](#19-đề-xuất-thêm-của-bạn-chung)
-20. [Tổng hợp và chia giai đoạn](#20-tổng-hợp-và-chia-giai-đoạn)
+14. [Thử code web](#14-thử-code-web-play)
+15. [So sánh cấu trúc DB](#15-so-sánh-cấu-trúc-db-scmp)
+16. [Bắt câu lệnh SQL](#16-bắt-câu-lệnh-sql-sqlp)
+17. [Tài khoản](#17-tài-khoản-acc)
+18. [Trang dành cho người phát triển](#18-trang-dành-cho-người-phát-triển-dev)
+19. [Màn hình hoặc công cụ mới](#19-màn-hình-hoặc-công-cụ-mới-new)
+20. [Đề xuất thêm của bạn (chung)](#20-đề-xuất-thêm-của-bạn-chung)
+21. [Tổng hợp và chia giai đoạn](#21-tổng-hợp-và-chia-giai-đoạn)
 
 ## Bản đồ màn hình
 
@@ -65,6 +66,7 @@ Lưu ý:
 | Liên kết nhanh | `/quick-links.html` | CÁ NHÂN | Mọi tài khoản | G L |
 | Không gian prompt | `/prompt-templates.html` | CÁ NHÂN | Mọi tài khoản | G P |
 | So sánh nội dung | `/text-compare.html` | CÔNG CỤ | Mọi tài khoản, cả bản Web | G X |
+| Thử code web | `/code-playground.html` | CÔNG CỤ | Mọi tài khoản, cả bản Web | G H |
 | So sánh cấu trúc DB | `/schema-compare.html` | CÔNG CỤ | Mọi tài khoản | G S |
 | Bắt câu lệnh SQL | `/sql-profiler.html` | CÔNG CỤ | Mọi tài khoản | G Q |
 | Bảng mẫu component, Kendo Demo, Tabulator Demo | `/component.html` … | DEV | Chỉ ở môi trường Development | G C |
@@ -552,7 +554,43 @@ Lưu ý:
 
 ---
 
-## 14. So sánh cấu trúc DB (SCMP)
+## 14. Thử code web (PLAY)
+
+### Chức năng đang có
+
+| Mã | Chức năng | Đánh giá | Ghi chú của bạn |
+|---|---|---|---|
+| PLAY-01 | Ô soạn 3 tab HTML / CSS / JS (CodeMirror 5): tô màu, số dòng, tự đóng thẻ và ngoặc, tô cặp thẻ/ngoặc, Ctrl+/ chú thích, Ctrl+F tìm và thay; mỗi tab giữ con trỏ và lịch sử hoàn tác riêng; dòng trạng thái có vị trí con trỏ và lỗi cú pháp JS | | |
+| PLAY-02 | Chạy (Ctrl/⌘+Enter), Tự chạy sau khi ngừng gõ; kết quả chạy trong khung cách ly (không đọc được cookie, dữ liệu hay trang Toolkit); dán cả trang HTML đầy đủ cũng chạy được | | |
+| PLAY-03 | Console: log, info, cảnh báo, lỗi (kèm tab và số dòng), lỗi promise, file không tải được; lọc Tất cả / Log / Cảnh báo / Lỗi, xóa, thu gọn, giữ 500 dòng gần nhất | | |
+| PLAY-04 | Bố cục Chia 2 bên / Trên – Dưới, kéo thanh chia (cả bằng phím mũi tên), chiều rộng Máy tính / 768 / 375, Toàn màn hình, Mở tab mới; điện thoại dùng tab Code / Kết quả / Console | | |
+| PLAY-05 | Định dạng code của tab đang mở (Alt+Shift+F, js-beautify) | | |
+| PLAY-06 | Thư viện: Bootstrap 5.3.3 và jQuery 3.7.1 có sẵn (chạy cả khi không có mạng), thêm link CSS/JS khác | | |
+| PLAY-07 | Tự lưu bản nháp; Lưu (Ctrl/⌘+S), Lưu thành bài mới; tối đa 20 bài: mở, đổi tên, nhân bản, xóa (có xác nhận); hỏi trước khi thay bài chưa lưu; 4 mẫu khởi đầu | | |
+| PLAY-08 | Tải về một file .html chạy được mọi nơi (thư viện có sẵn được nhúng vào file); Chia sẻ bằng link chứa code đã nén | | |
+
+### Đã biết / chưa kiểm tra
+
+- Bài lưu trên trình duyệt nên không theo tài khoản sang máy khác và không có trong file xuất dữ liệu Toolkit; dùng Tải về hoặc Chia sẻ.
+- Vòng lặp không dừng trong JS có thể làm treo trang.
+- Bấm vào trong khung kết quả thì phím tắt của trang (Ctrl+S, Ctrl+Enter) không nhận cho tới khi bấm lại vào ô soạn.
+- Link chia sẻ dài hơn khoảng 30.000 ký tự bị từ chối.
+
+### Đề xuất
+
+| Mã | Đề xuất | Lợi ích | Công sức | Chọn | Ưu tiên | Ghi chú của bạn |
+|---|---|---|---|---|---|---|
+| PLAY-P01 | Chặn vòng lặp không dừng (dừng code chạy quá lâu) | Không treo trang khi gõ nhầm | M | | | |
+| PLAY-P02 | Thêm thư viện có sẵn (Kendo UI Core, ECharts, Tabulator đã có trong app) | Thử nhanh control của app | S | | | |
+| PLAY-P03 | Lưu bài vào tài khoản (database) để dùng trên nhiều máy | Không phải Tải về / Chia sẻ | M | | | |
+
+### Đề xuất thêm của bạn
+
+-
+
+---
+
+## 15. So sánh cấu trúc DB (SCMP)
 
 ### Chức năng đang có
 
@@ -586,7 +624,7 @@ Lưu ý:
 
 ---
 
-## 15. Bắt câu lệnh SQL (SQLP)
+## 16. Bắt câu lệnh SQL (SQLP)
 
 ### Chức năng đang có
 
@@ -621,7 +659,7 @@ Lưu ý:
 
 ---
 
-## 16. Tài khoản (ACC)
+## 17. Tài khoản (ACC)
 
 ### Chức năng đang có
 
@@ -659,7 +697,7 @@ Lưu ý:
 
 ---
 
-## 17. Trang dành cho người phát triển (DEV)
+## 18. Trang dành cho người phát triển (DEV)
 
 ### Chức năng đang có
 
@@ -684,7 +722,7 @@ Lưu ý:
 
 ---
 
-## 18. Màn hình hoặc công cụ mới (NEW)
+## 19. Màn hình hoặc công cụ mới (NEW)
 
 | Mã | Đề xuất | Nội dung chính | Công sức | Chọn | Ưu tiên | Ghi chú của bạn |
 |---|---|---|---|---|---|---|
@@ -701,7 +739,7 @@ Lưu ý:
 
 ---
 
-## 19. Đề xuất thêm của bạn (chung)
+## 20. Đề xuất thêm của bạn (chung)
 
 Ghi ở đây những ý không thuộc màn hình nào, hoặc vấn đề bạn gặp khi dùng hằng ngày.
 
@@ -711,7 +749,7 @@ Ghi ở đây những ý không thuộc màn hình nào, hoặc vấn đề bạ
 
 ---
 
-## 20. Tổng hợp và chia giai đoạn
+## 21. Tổng hợp và chia giai đoạn
 
 *Mình sẽ điền mục này sau khi bạn đánh giá và push file lên: gom các dòng được chọn, xếp theo ưu tiên của bạn, công sức và phụ thuộc giữa các việc (ví dụ APP-P06 Ngày lễ đi trước JDASH-P02 và JAUTO-P01; NEW-04 Ghi giờ Jira đi trước JDASH-P06, JBOARD-P01, FOCUS-P01).*
 

@@ -5,6 +5,7 @@ arrow-down
 arrow-left
 arrow-left-right
 arrow-up
+ban
 blocks
 braces
 calendar
@@ -18,6 +19,7 @@ circle-alert
 circle-check
 clipboard-paste
 clock
+code-xml
 columns-2
 copy
 copy-plus
@@ -30,8 +32,10 @@ external-link
 eye
 eye-off
 file-diff
+file-plus
 file-text
 file-up
+folder-open
 gauge
 git-compare
 grip-vertical
@@ -45,12 +49,14 @@ keyboard
 languages
 layout-dashboard
 layout-grid
+library
 link
 list-checks
 loader-circle
 lock
 log-out
 mail
+maximize
 menu
 message-square-text
 monitor
@@ -68,12 +74,15 @@ rows-2
 save
 search
 settings
+share-2
 shield-check
 smartphone
 square-check
 sticky-note
 sun
 table
+tablet
+terminal
 timer
 trash-2
 triangle-alert

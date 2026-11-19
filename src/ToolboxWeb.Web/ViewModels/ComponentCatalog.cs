@@ -56,6 +56,8 @@ public static class ComponentCatalog
     public static readonly ComponentLibrary SheetJs = new("SheetJS CE", "0.20.2", "Apache-2.0");
     public static readonly ComponentLibrary JsDiff = new("jsdiff", "9.0.0", "BSD-3-Clause");
     public static readonly ComponentLibrary HighlightJs = new("highlight.js", "11.12.0", "BSD-3-Clause");
+    public static readonly ComponentLibrary CodeMirror = new("CodeMirror", "5.65.21", "MIT");
+    public static readonly ComponentLibrary JsBeautify = new("js-beautify", "1.15.4", "MIT");
 
     private const string TextInput = ToolboxRouteSlugs.ComponentsTabs.TextInput;
     private const string Selection = ToolboxRouteSlugs.ComponentsTabs.Selection;
@@ -125,6 +127,8 @@ public static class ComponentCatalog
         new("echarts", "Apache ECharts", GridData, ECharts, ComponentStatus.Usable, "Components.Catalog.Note.ECharts"),
         new("jsdiff", "jsdiff", GridData, JsDiff, ComponentStatus.Usable, "Components.Catalog.Note.JsDiff"),
         new("highlightjs", "highlight.js", GridData, HighlightJs, ComponentStatus.Usable, "Components.Catalog.Note.HighlightJs"),
+        new("codemirror", "CodeMirror", TextInput, CodeMirror, ComponentStatus.Usable, "Components.Catalog.Note.CodeMirror"),
+        new("js-beautify", "js-beautify", TextInput, JsBeautify, ComponentStatus.Usable, "Components.Catalog.Note.JsBeautify"),
         new("kendo-grid", "Kendo Grid", GridData, KendoCommercial, ComponentStatus.NotInKendoCore, "Components.Catalog.Note.UseTabulator"),
         new("kendo-chart", "Kendo Chart", GridData, KendoCommercial, ComponentStatus.NotInKendoCore, "Components.Catalog.Note.UseECharts"),
         new("kendo-pdf", "Kendo PDF export and drawing", GridData, KendoDrawing, ComponentStatus.CommercialDependency, "Components.Catalog.Note.CommercialDrawing"),

@@ -2,7 +2,7 @@
 
 ToolboxWeb uses the third-party components listed below. Their copyright and license notices remain with the original files. The policy for adding or upgrading components is in `AGENTS.md` under "Third-Party License Policy".
 
-Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expression. jsdiff and highlight.js were added on 2026-11-19 after reading their `LICENSE` files.
+Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expression. jsdiff and highlight.js were added on 2026-11-19, CodeMirror 5 and js-beautify on 2026-11-20, after reading their `LICENSE` files.
 
 ## Client-side assets (shipped under `src/ToolboxWeb.Web/Content/`)
 
@@ -24,6 +24,8 @@ Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expr
 | Quill | 2.0.2 | BSD-3-Clause | `vendor/quill/` | Asset only, not wired |
 | jsdiff (npm `diff`, `dist/diff.min.js`; a one-line license comment was added at the top because the build has none) | 9.0.0 | BSD-3-Clause (LICENSE read in the npm package; © 2009-2015 Kevin Decker). No runtime dependencies | `vendor/jsdiff/` (with `LICENSE`) | In use (Compare text, `js/text-compare.js`) |
 | highlight.js (`@highlightjs/cdn-assets`: `highlight.min.js` common-language build plus `languages/powershell.min.js`; no theme stylesheet, colours come from `tokens.css`) | 11.12.0 | BSD-3-Clause (LICENSE read in the npm package; © 2006 Ivan Sagalaev, Josh Goebel and contributors). No runtime dependencies | `vendor/highlightjs/` (with `LICENSE`) | In use (Compare text code colours) |
+| CodeMirror 5 (`codemirror`: `lib/codemirror.js` and `.css`; modes xml, javascript, css, htmlmixed; addons closetag, closebrackets, matchbrackets, matchtags, xml-fold, comment, search, searchcursor, dialog, active-line; no theme, colours come from `tokens.css`) | 5.65.21 | MIT (LICENSE read in the npm package; © Marijn Haverbeke and others). No dependencies | `vendor/codemirror/` (with `LICENSE`) | In use (Code playground editor) |
+| js-beautify (`js/lib/beautifier.min.js`, the browser build; a one-line license comment was added at the top and the source map line removed. The npm package's dependencies serve only its command-line tool and are not shipped) | 1.15.4 | MIT (LICENSE read in the npm package; © 2007-2018 Einar Lielmanis, Liam Newman and contributors) | `vendor/js-beautify/` (with `LICENSE`) | In use (Code playground "Format"; loaded only when pressed) |
 | SheetJS Community Edition (`xlsx.full.min.js`, includes the SheetJS codepage tables, Apache-2.0) | 0.20.2 | Apache-2.0 | `vendor/sheetjs/` (with `LICENSE`) | In use (Jira Search "Export to Excel"; loaded only when the button is pressed). The `LICENSE` text was taken from the npm package `xlsx@0.18.5`, the same Apache-2.0 text, because cdn.sheetjs.com could not be reached when it was added |
 
 ## NuGet packages (direct references in `ToolboxWeb.Web.csproj`)

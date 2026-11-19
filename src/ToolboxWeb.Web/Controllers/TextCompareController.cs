@@ -1,8 +1,7 @@
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToolboxWeb.Web.Constants;
+using ToolboxWeb.Web.Infrastructure.Web;
 using ToolboxWeb.Web.Services;
 using ToolboxWeb.Web.ViewModels;
 
@@ -29,14 +28,7 @@ public class TextCompareController : Controller
     {
         return View(new TextComparePageViewModel
         {
-            RecentStorageKey = "toolbox.textCompare.recent.v1:" + UserKey(_currentUser.UserId)
+            RecentStorageKey = BrowserStorageKey.ForUser("toolbox.textCompare.recent.v1", _currentUser.UserId)
         });
-    }
-
-    // A short hash rather than the account id itself: enough to keep two accounts on one browser apart.
-    private static string UserKey(string userId)
-    {
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(userId ?? string.Empty));
-        return Convert.ToHexString(hash, 0, 8).ToLowerInvariant();
     }
 }
