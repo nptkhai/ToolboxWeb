@@ -106,7 +106,7 @@
     }
     @{
         var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html";
-        var jiraDashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html";
+        var jiraDashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/statistics.html";
         // Jira screens apply to a Jira account on the server, and to a desktop with a saved Jira connection.
         var hasJira = CurrentUser.IsJiraUser || (AppMode.IsDesktop && DesktopJira.IsConfigured);
         var brandHref = hasJira ? jiraDashboardHref : dashboardHref;

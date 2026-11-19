@@ -10,9 +10,9 @@
     ViewData["Title"] = T["Auth.AccessDenied.Title"];
     var requested = Request.Query["ReturnUrl"].ToString();
     var safeRequested = Url.IsLocalUrl(requested) ? requested : string.Empty;
-    var isJiraPage = safeRequested.StartsWith("/jira-", StringComparison.OrdinalIgnoreCase);
+    var isJiraPage = ToolboxRouteSlugs.IsJiraScreen(safeRequested);
     var homeHref = CurrentUser.IsJiraUser
-        ? Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html"
+        ? Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/statistics.html"
         : Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html";
     var jiraLoginUrl = Url.Page("/Account/Login", new { area = "Identity", mode = "jira", returnUrl = safeRequested });
 }

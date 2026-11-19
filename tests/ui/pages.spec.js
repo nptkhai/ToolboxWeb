@@ -33,7 +33,7 @@ const LOCAL_PAGES = [
   { name: 'account-profile', path: '/Identity/Account/Manage' },
   { name: 'account-email', path: '/Identity/Account/Manage/Email' },
   { name: 'account-password', path: '/Identity/Account/Manage/ChangePassword' },
-  { name: 'access-denied', path: '/jira-dashboard.html' }
+  { name: 'access-denied', path: '/statistics.html' }
 ];
 
 // The web copy (TBX_UI_MODE=web): Jira screens plus the focus timer, which only counts there.
@@ -42,10 +42,10 @@ const WEB_EXTRA_PAGES = [
 ];
 
 const JIRA_PAGES = [
-  { name: 'jira-dashboard', path: '/jira-dashboard.html' },
-  { name: 'jira-worklist-search', path: '/jira-worklist.html' },
-  { name: 'jira-worklist-board', path: '/jira-worklist.html', click: '#jira-tab-board' },
-  { name: 'jira-worklist-auto', path: '/jira-worklist.html', click: '#jira-tab-auto' }
+  { name: 'jira-dashboard', path: '/statistics.html' },
+  { name: 'jira-worklist-search', path: '/tasks.html' },
+  { name: 'jira-worklist-board', path: '/tasks.html', click: '#jira-tab-board' },
+  { name: 'jira-worklist-auto', path: '/tasks.html', click: '#jira-tab-auto' }
 ];
 
 // Elements whose content changes with the clock or the weather service.

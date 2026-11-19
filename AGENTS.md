@@ -60,6 +60,7 @@
 
 - Public pages should follow the `.html` route convention used by the current source.
 - Use `ToolboxRouteSlugs` for canonical page and tab routes instead of scattering hardcoded URLs.
+- Screens in the Jira group are named without the word "Jira" (owner decision 2026-11-19): **Statistics** (`/statistics.html`, `JiraController.DashboardPage`, `Views/Jira/Dashboard.cshtml`) and **Task management** (`/tasks.html`, `WorklistPage`, `Views/Jira/Worklist.cshtml`). Code identifiers keep their Jira names. The old `/jira-dashboard(.html)` and `/jira-worklist(.html)` redirect permanently (`ToolboxRouteSlugs.LegacyPages`); keep those redirects.
 - `ViewModels/AppNavigation.cs` is the one list of the app's pages: the sidebar, the breadcrumb, the Ctrl+K command palette and the "G then letter" shortcuts all read it. A new page gets one entry there (key, route, Lucide icon, label key, a free G letter or none, the group); do not add sidebar links or palette entries by hand.
 - `Content/` is the real web root. Do not assume `wwwroot/`.
 - User-facing text should prefer localization keys in:

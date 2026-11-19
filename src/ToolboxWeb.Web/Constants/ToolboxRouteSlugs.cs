@@ -14,8 +14,9 @@ public static class ToolboxRouteSlugs
         public const string Components = "component";
         public const string KendoDemo = "kendo-ui-demo";
         public const string TabulatorDemo = "tabulator-demo";
-        public const string JiraDashboard = "jira-dashboard";
-        public const string JiraWorklist = "jira-worklist";
+        // Jira "Statistics" and "Task management" (renamed 2026-11-19; the old jira-* addresses redirect, see JiraController).
+        public const string JiraDashboard = "statistics";
+        public const string JiraWorklist = "tasks";
         public const string SchemaCompare = "schema-compare";
         public const string SqlProfiler = "sql-profiler";
         public const string Privacy = "privacy";
@@ -37,8 +38,8 @@ public static class ToolboxRouteSlugs
         public const string Components = "component.html";
         public const string KendoDemo = "demo-kendo.html";
         public const string TabulatorDemo = "tabulator-demo.html";
-        public const string JiraDashboard = "jira-dashboard.html";
-        public const string JiraWorklist = "jira-worklist.html";
+        public const string JiraDashboard = "statistics.html";
+        public const string JiraWorklist = "tasks.html";
         public const string SchemaCompare = "schema-compare.html";
         public const string SqlProfiler = "sql-profiler.html";
         public const string Privacy = "privacy.html";
@@ -46,6 +47,33 @@ public static class ToolboxRouteSlugs
         public const string Activate = "activate.html";
         public const string Update = "update.html";
         public const string Error = "error.html";
+    }
+
+    /// <summary>Addresses used before the Jira screens were renamed; they redirect to the new ones.</summary>
+    public static class LegacyPages
+    {
+        public const string JiraDashboard = "jira-dashboard";
+        public const string JiraDashboardHtml = "jira-dashboard.html";
+        public const string JiraWorklist = "jira-worklist";
+        public const string JiraWorklistHtml = "jira-worklist.html";
+    }
+
+    private static readonly string[] JiraScreenPaths =
+    [
+        Pages.JiraDashboard, HtmlPages.JiraDashboard, Pages.JiraWorklist, HtmlPages.JiraWorklist,
+        LegacyPages.JiraDashboard, LegacyPages.JiraDashboardHtml, LegacyPages.JiraWorklist, LegacyPages.JiraWorklistHtml
+    ];
+
+    /// <summary>True when a local address (query and fragment allowed) opens one of the Jira screens, by its new or old address.</summary>
+    public static bool IsJiraScreen(string? localUrl)
+    {
+        if (string.IsNullOrWhiteSpace(localUrl))
+        {
+            return false;
+        }
+
+        var path = localUrl.Split('?', '#')[0].Trim('/');
+        return JiraScreenPaths.Any(page => string.Equals(path, page, StringComparison.OrdinalIgnoreCase));
     }
 
     public static class RouteNames

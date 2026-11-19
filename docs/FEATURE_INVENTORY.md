@@ -54,8 +54,8 @@ Lưu ý:
 
 | Màn hình | Đường dẫn | Nhóm menu | Ai thấy | Phím đi tới |
 |---|---|---|---|---|
-| Jira Dashboard | `/jira-dashboard.html` | JIRA | Đăng nhập bằng Jira | G J |
-| Công việc Jira (3 tab) | `/jira-worklist.html` | JIRA | Đăng nhập bằng Jira | G W |
+| Thống kê | `/statistics.html` (link cũ `/jira-dashboard.html` tự chuyển) | JIRA | Đăng nhập bằng Jira | G J |
+| Quản lý công việc (3 tab) | `/tasks.html` (link cũ `/jira-worklist.html` tự chuyển) | JIRA | Đăng nhập bằng Jira | G W |
 | Tổng quan | `/dashboard.html` | CÁ NHÂN | Mọi tài khoản | G D |
 | Lịch sử hoạt động | `/activity.html` | (thuộc Tổng quan) | Mọi tài khoản | G A |
 | Ghi chú | `/notes.html` | CÁ NHÂN | Mọi tài khoản | G N |

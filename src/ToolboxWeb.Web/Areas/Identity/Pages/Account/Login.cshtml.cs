@@ -139,7 +139,7 @@ public class LoginModel : PageModel
         }
 
         return preferJiraDashboard
-            ? (Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html")
+            ? (Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/statistics.html")
             : (Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html");
     }
 
@@ -148,17 +148,5 @@ public class LoginModel : PageModel
         return Url.IsLocalUrl(returnUrl) ? returnUrl! : string.Empty;
     }
 
-    private static bool IsJiraOnlyPath(string returnUrl)
-    {
-        if (string.IsNullOrWhiteSpace(returnUrl))
-        {
-            return false;
-        }
-
-        var path = returnUrl.Split('?', '#')[0];
-        return string.Equals(path, "/jira-dashboard", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(path, "/jira-dashboard.html", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(path, "/jira-worklist", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(path, "/jira-worklist.html", StringComparison.OrdinalIgnoreCase);
-    }
+    private static bool IsJiraOnlyPath(string returnUrl) => ToolboxRouteSlugs.IsJiraScreen(returnUrl);
 }

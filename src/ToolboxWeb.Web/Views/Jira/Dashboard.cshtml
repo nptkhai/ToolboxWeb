@@ -11,7 +11,7 @@
 *@
 @{
     ViewData["Title"] = T["Jira.Dashboard.Title"];
-    var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/jira-dashboard.html";
+    var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/statistics.html";
     var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     var periodPicker = new JiraPeriodPickerViewModel
     {
