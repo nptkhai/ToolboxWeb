@@ -3,8 +3,8 @@
 @*
     Compare text (diff checker). Everything runs in the browser: Content/js/text-compare.js
     compares with jsdiff, colours code with highlight.js, keeps the last comparisons in
-    localStorage and builds the copy text; Content/js/text-compare-report.js builds the exported
-    HTML report. Nothing on this page is posted to the server.
+    localStorage and copies either side to the clipboard; the language box is a Kendo ComboBox;
+    Content/js/text-compare-report.js builds the exported HTML report. Nothing on this page is posted to the server.
 *@
 @{
     ViewData["Title"] = T["TextCompare.Title"];
@@ -27,7 +27,11 @@
             ["autoFound"] = Text("TextCompare.Language.AutoFound"),
             ["auto"] = Text("TextCompare.Language.Auto"),
             ["plain"] = Text("TextCompare.Language.Plain"),
-            ["copied"] = Text("TextCompare.Copied"),
+            ["copiedLeft"] = Text("TextCompare.CopiedLeft"),
+            ["copiedRight"] = Text("TextCompare.CopiedRight"),
+            ["copyEmpty"] = Text("TextCompare.CopyEmpty"),
+            ["copyLeft"] = Text("TextCompare.CopyLeft"),
+            ["copyRight"] = Text("TextCompare.CopyRight"),
             ["copyFailed"] = Text("TextCompare.CopyFailed"),
             ["exported"] = Text("TextCompare.Exported"),
             ["collapse"] = Text("TextCompare.Input.Collapse"),
@@ -71,6 +75,7 @@
 }
 
 @section Styles {
+    <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/text-compare.css" asp-append-version="true" />
 }
 
@@ -86,21 +91,14 @@
         </div>
         <div class="tc-language">
             <label class="tc-language-label" for="tc-language">@T["TextCompare.Language.Label"]</label>
-            <select class="form-select" id="tc-language" data-tc-language>
-                <option value="auto">@T["TextCompare.Language.Auto"]</option>
-                <option value="plaintext">@T["TextCompare.Language.Plain"]</option>
-                @foreach (var language in TextComparePageViewModel.Languages)
-                {
-                    <option value="@language.Id">@language.Name</option>
-                }
-            </select>
+            <input class="form-control" id="tc-language" autocomplete="off" data-tc-language />
         </div>
         <span class="tbx-toolbar-spacer"></span>
         <button type="button" class="btn btn-outline-secondary" data-tc-swap>
             <tbx-icon name="arrow-left-right" />@T["TextCompare.Swap"]
         </button>
-        <button type="button" class="btn btn-outline-secondary" data-tc-copy disabled>
-            <tbx-icon name="copy" />@T["TextCompare.Copy"]
+        <button type="button" class="btn btn-outline-secondary" data-tc-collapse-same aria-pressed="false">
+            <tbx-icon name="chevrons-up-down" />@T["TextCompare.CollapseSame"]
         </button>
         <button type="button" class="btn btn-outline-secondary" data-tc-export disabled>
             <tbx-icon name="download" />@T["TextCompare.Export"]
@@ -136,6 +134,10 @@
                             </span>
                             <span class="tc-count" data-tc-count></span>
                             <span class="tbx-toolbar-spacer"></span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-tc-copy-side="@side"
+                                    aria-label="@(side == "left" ? T["TextCompare.CopyLeft"] : T["TextCompare.CopyRight"])">
+                                <tbx-icon name="copy" />@T["TextCompare.Copy"]
+                            </button>
                             <button type="button" class="btn btn-outline-secondary btn-sm" data-tc-paste>
                                 <tbx-icon name="clipboard-paste" />@T["TextCompare.Paste"]
                             </button>
@@ -198,6 +200,7 @@
 <script id="text-compare-config" type="application/json">@Html.Raw(configJson)</script>
 
 @section Scripts {
+    <partial name="_KendoScripts" />
     <script src="~/vendor/jsdiff/js/diff.min.js" asp-append-version="true"></script>
     <script src="~/vendor/highlightjs/js/highlight.min.js" asp-append-version="true"></script>
     <script src="~/vendor/highlightjs/js/languages/powershell.min.js" asp-append-version="true"></script>

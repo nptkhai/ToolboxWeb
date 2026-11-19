@@ -17,7 +17,8 @@
     gap: var(--space-2);
 }
 
-.tc-view .btn[aria-pressed="true"] {
+.tc-view .btn[aria-pressed="true"],
+.tc-toolbar [data-tc-collapse-same][aria-pressed="true"] {
     background: var(--accent-tint);
     border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
     color: var(--accent-strong);
@@ -35,9 +36,9 @@
     white-space: nowrap;
 }
 
+.tc-language .k-combobox,
 .tc-language .form-select {
-    min-width: 220px;
-    width: auto;
+    width: 240px;
 }
 
 .tc-toolbar .btn .tbx-icon,
@@ -309,6 +310,33 @@
 .tc-head .tc-dot {
     margin-right: var(--space-2);
     vertical-align: middle;
+}
+
+.tc-head-copy {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-radius: var(--radius-control);
+    color: var(--muted);
+    display: inline-flex;
+    margin-left: var(--space-2);
+    padding: 3px;
+    vertical-align: middle;
+}
+
+    .tc-head-copy:hover {
+        background: var(--hover);
+        color: var(--text);
+    }
+
+    .tc-head-copy:focus-visible {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 1px;
+    }
+
+.tc-head.is-left .tc-head-copy,
+.tc-head.is-right .tc-head-copy {
+    float: right;
 }
 
 .tc-head-arrow {
@@ -664,8 +692,10 @@
         flex: 1 1 100%;
     }
 
+        .tc-language .k-combobox,
         .tc-language .form-select {
             flex: 1;
+            width: auto;
         }
 
     .tc-text {

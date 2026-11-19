@@ -524,13 +524,13 @@ Lưu ý:
 
 | Mã | Chức năng | Đánh giá | Ghi chú của bạn |
 |---|---|---|---|
-| DIFF-01 | Hai ô Bản gốc / Bản mới: Dán từ bộ nhớ tạm, Mở file hoặc kéo thả file (tối đa 5 MB, chỉ file văn bản), đếm ký tự và dòng, tên file hiện cạnh ô | | |
+| DIFF-01 | Hai ô Bản gốc / Bản mới: Sao chép, Dán từ bộ nhớ tạm, Mở file hoặc kéo thả file (tối đa 5 MB, chỉ file văn bản), đếm ký tự và dòng, tên file hiện cạnh ô | | |
 | DIFF-02 | So sánh (Ctrl/⌘+Enter) chạy ngay trên trình duyệt, không gửi nội dung lên máy chủ; xuống dòng Windows/Unix coi như nhau; tối đa 50.000 dòng mỗi bên | | |
 | DIFF-03 | Xem Song song hoặc Hàng dòng (điện thoại luôn Hàng dòng); đếm +thêm / −xóa / ~sửa; tô chữ đổi trong dòng sửa | | |
-| DIFF-04 | Tô màu code (highlight.js): tự nhận theo đuôi file hoặc nội dung, hoặc chọn SQL, C#, JavaScript, TypeScript, JSON, XML/HTML, CSS, YAML, PowerShell, Bash, Python, Java, Markdown, INI; tắt khi một bên dài hơn 5.000 dòng | | |
-| DIFF-05 | Thu gọn đoạn không đổi (giữ 3 dòng quanh mỗi thay đổi, bấm để hiện); "Đổi chỗ"; khung nhập tự thu gọn sau khi so sánh | | |
+| DIFF-04 | Tô màu code (highlight.js): tự nhận theo đuôi file hoặc nội dung, hoặc chọn trong ô Kendo ComboBox (gõ để lọc) SQL, C#, JavaScript, TypeScript, JSON, XML/HTML, CSS, YAML, PowerShell, Bash, Python, Java, Markdown, INI; tắt khi một bên dài hơn 5.000 dòng | | |
+| DIFF-05 | Mặc định hiện mọi dòng; nút "Thu gọn dòng giống nhau" (tắt sẵn, nhớ lựa chọn) gập đoạn không đổi, giữ 3 dòng quanh mỗi thay đổi, bấm để hiện; "Đổi chỗ"; khung nhập tự thu gọn sau khi so sánh | | |
 | DIFF-06 | Đi giữa các thay đổi bằng ↑ ↓ hoặc J / K, vị trí "2 / 6" | | |
-| DIFF-07 | Sao chép kết quả dạng chữ (+ / −) vào bộ nhớ tạm; Xuất báo cáo: file HTML tự chứa, mở bằng mọi trình duyệt, in hoặc lưu PDF được | | |
+| DIFF-07 | Sao chép nội dung từng bên (nút ở mỗi ô nhập và ở đầu mỗi cột kết quả); Xuất báo cáo (theo lựa chọn thu gọn): file HTML tự chứa, mở bằng mọi trình duyệt, in hoặc lưu PDF được | | |
 | DIFF-08 | Gần đây: 10 lần so sánh gần nhất trên trình duyệt này (mỗi tài khoản một danh sách); bấm để nạp lại và so sánh; xóa từng mục hoặc xóa hết (có xác nhận) | | |
 
 ### Đã biết / chưa kiểm tra
