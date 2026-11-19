@@ -3,8 +3,10 @@
 // - jsdiff (window.Diff) finds the changed lines, then the changed words inside a pair of lines;
 // - highlight.js (window.hljs) colours code, once per side so multi-line comments stay right;
 // - the last comparisons (at most 10) are kept in localStorage under config.storageKey;
-// - "Copy" puts a plain +/- text on the clipboard, "Export report" downloads a standalone HTML
-//   file built by Content/js/text-compare-report.js.
+// - "Copy" on either side puts that side's text on the clipboard; "Export report" downloads a
+//   standalone HTML file built by Content/js/text-compare-report.js;
+// - the language box is a Kendo ComboBox (a plain <select> when Kendo is missing);
+// - every line shows by default; "Collapse unchanged lines" (remembered) folds long equal runs.
 // Shortcuts go through Toolbox.keys (Ctrl/⌘+Enter compares, J / K step through the changes).
 (function () {
     'use strict';
@@ -39,7 +41,7 @@
         viewButtons: root.querySelectorAll('[data-tc-view]'),
         language: root.querySelector('[data-tc-language]'),
         swap: root.querySelector('[data-tc-swap]'),
-        copy: root.querySelector('[data-tc-copy]'),
+        collapseSame: root.querySelector('[data-tc-collapse-same]'),
         exportButton: root.querySelector('[data-tc-export]'),
         input: root.querySelector('[data-tc-input]'),
         inputBody: root.querySelector('[data-tc-input-body]'),
@@ -69,6 +71,7 @@
     const state = {
         view: 'split',
         language: 'auto',
+        collapse: false,
         result: null,
         expanded: new Set(),
         current: -1
@@ -142,7 +145,7 @@
 
     function writePrefs() {
         try {
-            window.localStorage.setItem(PREFS_KEY, JSON.stringify({ view: state.view, language: state.language }));
+            window.localStorage.setItem(PREFS_KEY, JSON.stringify({ view: state.view, language: state.language, collapse: state.collapse }));
         } catch (error) {
             // Private window or storage blocked: the choice just is not remembered.
         }
@@ -576,17 +579,94 @@
     }
 
     function updateAutoLabel(found) {
-        const option = els.language.querySelector('option[value="auto"]');
-        if (!option) return;
-        option.textContent = found
+        picker.setAutoText(found
             ? fmt(text.autoFound, found === 'plaintext' ? text.plain : (languageNames[found] || found))
-            : text.auto;
+            : text.auto);
+    }
+
+    // The language box: a Kendo ComboBox that filters as the user types (the app's preferred
+    // control), or a plain <select> in the same place when Kendo did not load. value() is the
+    // highlight.js id, "auto" or "plaintext"; onChange runs only for a real change.
+    function buildLanguagePicker(input, onChange) {
+        const items = [{ id: 'auto', name: text.auto }, { id: 'plaintext', name: text.plain }]
+            .concat((config.languages || []).map(function (x) { return { id: x.id, name: x.name }; }));
+        const known = function (id) { return items.some(function (x) { return x.id === id; }); };
+        let current = 'auto';
+        const $ = window.jQuery;
+
+        if ($ && $.fn && typeof $.fn.kendoComboBox === 'function') {
+            const combo = $(input).kendoComboBox({
+                dataSource: items,
+                dataTextField: 'name',
+                dataValueField: 'id',
+                filter: 'contains',
+                suggest: true,
+                clearButton: false,
+                change: function () {
+                    const value = combo.value();
+                    // Text that matches no language: go back to the last choice.
+                    if (!known(value)) {
+                        combo.value(current);
+                        return;
+                    }
+                    if (value !== current) {
+                        current = value;
+                        onChange(value);
+                    }
+                }
+            }).data('kendoComboBox');
+            combo.value(current);
+            return {
+                value: function () { return current; },
+                set: function (id) {
+                    if (known(id)) {
+                        current = id;
+                        combo.value(id);
+                    }
+                },
+                setAutoText: function (label) {
+                    const auto = combo.dataSource.data().find(function (x) { return x.id === 'auto'; });
+                    if (auto && auto.name !== label) {
+                        auto.set('name', label);
+                    }
+                    if (current === 'auto') {
+                        combo.value('auto');
+                    }
+                }
+            };
+        }
+
+        const select = document.createElement('select');
+        select.className = 'form-select';
+        select.id = input.id;
+        items.forEach(function (x) {
+            const option = document.createElement('option');
+            option.value = x.id;
+            option.textContent = x.name;
+            select.appendChild(option);
+        });
+        input.replaceWith(select);
+        select.addEventListener('change', function () {
+            current = select.value;
+            onChange(current);
+        });
+        return {
+            value: function () { return current; },
+            set: function (id) {
+                if (known(id)) {
+                    current = id;
+                    select.value = id;
+                }
+            },
+            setAutoText: function (label) {
+                select.querySelector('option[value="auto"]').textContent = label;
+            }
+        };
     }
 
     // ------------------------------------------------------------------ result states
 
     function setActions(enabled) {
-        els.copy.disabled = !enabled;
         els.exportButton.disabled = !enabled;
     }
 
@@ -647,12 +727,16 @@
         markCurrent();
     }
 
-    // Rows and folds in display order: long runs of unchanged lines become one fold, keeping
-    // CONTEXT lines next to each change. Folds opened on the page (state.expanded) show every
-    // line, except for the report, which always folds.
+    // Rows and folds in display order. Every line shows unless "Collapse unchanged lines" is on;
+    // then long runs of unchanged lines become one fold, keeping CONTEXT lines next to each
+    // change. Folds opened on the page (state.expanded) show every line; the report ignores them.
     function layout(result, forReport) {
         const items = [];
         const rows = result.rows;
+        if (!state.collapse) {
+            return rows.map(function (row, index) { return { type: 'row', index: index }; });
+        }
+
         let i = 0;
         while (i < rows.length) {
             if (rows[i].kind !== 'same') {
@@ -726,12 +810,20 @@
             + icon('chevrons-up-down', 14) + '<span>' + escapeHtml(fmt(text.fold, number(item.count))) + '</span></button></td></tr>';
     }
 
+    // A small button that copies one side's text, in the column heads of the result.
+    function headCopyHtml(sideKey) {
+        const label = sideKey === 'left' ? text.copyLeft : text.copyRight;
+        return '<button type="button" class="tc-head-copy" data-tc-copy-side="' + sideKey + '" data-from-result="true"'
+            + ' aria-label="' + escapeHtml(label) + '" title="' + escapeHtml(label) + '">' + icon('copy', 14) + '</button>';
+    }
+
     function headHtml(result, sideKey, colspan) {
         const side = result[sideKey];
         return '<th colspan="' + colspan + '" class="tc-head is-' + sideKey + '"><span class="tc-dot is-' + sideKey + '" aria-hidden="true"></span>'
             + '<span class="tc-head-name">' + escapeHtml(side.name) + '</span>'
             + '<span class="tc-head-role">' + escapeHtml(sideKey === 'left' ? text.left : text.right) + '</span>'
-            + '<span class="tc-head-count">' + escapeHtml(fmt(text.lines, number(side.lines.length))) + '</span></th>';
+            + '<span class="tc-head-count">' + escapeHtml(fmt(text.lines, number(side.lines.length))) + '</span>'
+            + headCopyHtml(sideKey) + '</th>';
     }
 
     function codeCell(c, side) {
@@ -824,9 +916,11 @@
             + '<thead><tr><th colspan="4" class="tc-head is-both">'
             + '<span class="tc-dot is-left" aria-hidden="true"></span><span class="tc-head-name">' + escapeHtml(result.left.name) + '</span>'
             + '<span class="tc-head-count">' + escapeHtml(fmt(text.lines, number(result.left.lines.length))) + '</span>'
+            + headCopyHtml('left')
             + '<span class="tc-head-arrow" aria-hidden="true">→</span>'
             + '<span class="tc-dot is-right" aria-hidden="true"></span><span class="tc-head-name">' + escapeHtml(result.right.name) + '</span>'
             + '<span class="tc-head-count">' + escapeHtml(fmt(text.lines, number(result.right.lines.length))) + '</span>'
+            + headCopyHtml('right')
             + '</th></tr></thead><tbody>' + body + '</tbody></table>';
     }
 
@@ -867,35 +961,16 @@
 
     // ------------------------------------------------------------------ copy and export
 
-    function copyText() {
-        const result = state.result;
-        const lines = ['--- ' + result.left.name, '+++ ' + result.right.name];
-        if (!result.blockCount) {
-            lines.push(text.identical);
-        } else {
-            unifiedLines(result, layout(result, false)).forEach(function (line) {
-                if (line.fold) {
-                    lines.push('… ' + fmt(text.fold, number(line.fold.count)));
-                } else if (line.side === 'both') {
-                    lines.push('  ' + result.left.lines[line.row.l]);
-                } else if (line.side === 'left') {
-                    lines.push('- ' + result.left.lines[line.row.l]);
-                } else {
-                    lines.push('+ ' + result.right.lines[line.row.r]);
-                }
-            });
-        }
-
-        return lines.join('\n') + '\n';
-    }
-
-    function copy() {
-        if (!state.result) {
+    // Copies one side's text as it is: from the box, or the compared text from the result head.
+    function copySide(sideKey, fromResult) {
+        const value = fromResult && state.result ? state.result[sideKey].text : sides[sideKey].textarea.value;
+        const name = sideKey === 'left' ? text.left : text.right;
+        if (!value) {
+            notify(fmt(text.copyEmpty, name), 'warning');
             return;
         }
 
-        const value = copyText();
-        const done = function () { notify(text.copied, 'success'); };
+        const done = function () { notify(sideKey === 'left' ? text.copiedLeft : text.copiedRight, 'success'); };
         if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
             navigator.clipboard.writeText(value).then(done).catch(function () { legacyCopy(value) ? done() : notify(text.copyFailed, 'error'); });
         } else if (legacyCopy(value)) {
@@ -1094,9 +1169,9 @@
 
         setSide(sides.left, entry.left.text, entry.left.file || '');
         setSide(sides.right, entry.right.text, entry.right.file || '');
-        if (entry.language && els.language.querySelector('option[value="' + entry.language + '"]')) {
-            state.language = entry.language;
-            els.language.value = entry.language;
+        if (entry.language) {
+            picker.set(entry.language);
+            state.language = picker.value();
             writePrefs();
         }
         compare();
@@ -1153,12 +1228,28 @@
 
     root.dataset.emptyText = root.querySelector('.tc-result-body .tbx-empty-text')?.textContent || '';
 
+    const picker = buildLanguagePicker(els.language, function (value) {
+        state.language = value;
+        writePrefs();
+        updateAutoLabel(null);
+        if (state.result) {
+            compare({ quiet: true });
+        }
+    });
+
+    function setCollapse(on) {
+        state.collapse = Boolean(on);
+        els.collapseSame.setAttribute('aria-pressed', state.collapse ? 'true' : 'false');
+        els.collapseSame.classList.toggle('active', state.collapse);
+    }
+
     const prefs = readPrefs();
     setView(prefs.view);
-    if (prefs.language && els.language.querySelector('option[value="' + prefs.language + '"]')) {
-        state.language = prefs.language;
+    setCollapse(prefs.collapse === true);
+    if (prefs.language) {
+        picker.set(prefs.language);
     }
-    els.language.value = state.language;
+    state.language = picker.value();
 
     els.viewButtons.forEach(function (button) {
         button.addEventListener('click', function () {
@@ -1168,12 +1259,18 @@
         });
     });
 
-    els.language.addEventListener('change', function () {
-        state.language = els.language.value;
+    els.collapseSame.addEventListener('click', function () {
+        setCollapse(!state.collapse);
+        state.expanded = new Set();
         writePrefs();
-        updateAutoLabel(null);
-        if (state.result) {
-            compare({ quiet: true });
+        render();
+    });
+
+    // Copy buttons: one in each input box, and one in each column head of the result.
+    root.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-tc-copy-side]');
+        if (button) {
+            copySide(button.dataset.tcCopySide, button.dataset.fromResult === 'true');
         }
     });
 
@@ -1203,7 +1300,6 @@
     });
 
     els.compare.addEventListener('click', function () { compare(); });
-    els.copy.addEventListener('click', copy);
     els.exportButton.addEventListener('click', exportReport);
     els.prev.addEventListener('click', function () { step(-1); });
     els.next.addEventListener('click', function () { step(1); });
