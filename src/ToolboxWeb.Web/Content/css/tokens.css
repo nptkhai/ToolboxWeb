@@ -95,6 +95,16 @@
     --format-mixed: #15803D;
     --state-review: #9333EA;
     --state-high: #EA580C;
+
+    /* Code colours of the text compare (Content/css/text-compare.css, highlight.js classes).
+       Each one keeps 4.5:1 on the surface and on the added/removed line tints. */
+    --syntax-keyword: #7E22CE;
+    --syntax-string: #047857;
+    --syntax-comment: #5F6673;
+    --syntax-number: #A6420C;
+    --syntax-type: #0E6A8F;
+    --syntax-attr: #9F1239;
+    --syntax-title: #2753B8;
 }
 
 :root[data-theme="dark"] {
@@ -133,6 +143,14 @@
     --format-mixed: #4ADE80;
     --state-review: #C084FC;
     --state-high: #FB923C;
+
+    --syntax-keyword: #C4B5FD;
+    --syntax-string: #6EE7B7;
+    --syntax-comment: #9AA3B2;
+    --syntax-number: #FDBA74;
+    --syntax-type: #7DD3FC;
+    --syntax-attr: #FDA4AF;
+    --syntax-title: #A5B4FC;
 }
 
 @media (prefers-reduced-motion: reduce) {

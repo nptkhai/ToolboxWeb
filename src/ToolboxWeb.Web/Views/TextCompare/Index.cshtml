@@ -1,0 +1,206 @@
+@using System.Text.Json
+@model TextComparePageViewModel
+@*
+    Compare text (diff checker). Everything runs in the browser: Content/js/text-compare.js
+    compares with jsdiff, colours code with highlight.js, keeps the last comparisons in
+    localStorage and builds the copy text; Content/js/text-compare-report.js builds the exported
+    HTML report. Nothing on this page is posted to the server.
+*@
+@{
+    ViewData["Title"] = T["TextCompare.Title"];
+    string Text(string key) => T[key].Value;
+
+    var config = new
+    {
+        storageKey = Model.RecentStorageKey,
+        maxRecent = TextComparePageViewModel.MaxRecent,
+        maxSavedChars = TextComparePageViewModel.MaxSavedChars,
+        maxFileBytes = TextComparePageViewModel.MaxFileBytes,
+        maxLines = TextComparePageViewModel.MaxLines,
+        highlightMaxLines = TextComparePageViewModel.HighlightMaxLines,
+        languages = TextComparePageViewModel.Languages.Select(x => new { id = x.Id, name = x.Name }),
+        text = new Dictionary<string, string>
+        {
+            ["left"] = Text("TextCompare.Left"),
+            ["right"] = Text("TextCompare.Right"),
+            ["counts"] = Text("TextCompare.Counts"),
+            ["autoFound"] = Text("TextCompare.Language.AutoFound"),
+            ["auto"] = Text("TextCompare.Language.Auto"),
+            ["plain"] = Text("TextCompare.Language.Plain"),
+            ["copied"] = Text("TextCompare.Copied"),
+            ["copyFailed"] = Text("TextCompare.CopyFailed"),
+            ["exported"] = Text("TextCompare.Exported"),
+            ["collapse"] = Text("TextCompare.Input.Collapse"),
+            ["expand"] = Text("TextCompare.Input.Expand"),
+            ["inputSummary"] = Text("TextCompare.Input.Summary"),
+            ["pasteFailed"] = Text("TextCompare.PasteFailed"),
+            ["fileName"] = Text("TextCompare.FileName"),
+            ["fileTooLarge"] = Text("TextCompare.FileTooLarge"),
+            ["fileNotText"] = Text("TextCompare.FileNotText"),
+            ["fileReadFailed"] = Text("TextCompare.FileReadFailed"),
+            ["compare"] = Text("TextCompare.Compare"),
+            ["needBoth"] = Text("TextCompare.NeedBoth"),
+            ["identical"] = Text("TextCompare.Identical"),
+            ["tooLarge"] = Text("TextCompare.TooLarge"),
+            ["tooDifferent"] = Text("TextCompare.TooDifferent"),
+            ["added"] = Text("TextCompare.Stats.Added"),
+            ["removed"] = Text("TextCompare.Stats.Removed"),
+            ["changed"] = Text("TextCompare.Stats.Changed"),
+            ["lines"] = Text("TextCompare.Lines"),
+            ["fold"] = Text("TextCompare.Fold"),
+            ["foldAction"] = Text("TextCompare.FoldAction"),
+            ["noHighlight"] = Text("TextCompare.NoHighlight"),
+            ["next"] = Text("TextCompare.Next"),
+            ["previous"] = Text("TextCompare.Previous"),
+            ["position"] = Text("TextCompare.Position"),
+            ["recentOpen"] = Text("TextCompare.Recent.Open"),
+            ["recentRemove"] = Text("TextCompare.Recent.Remove"),
+            ["recentClearTitle"] = Text("TextCompare.Recent.ClearTitle"),
+            ["recentClearMessage"] = Text("TextCompare.Recent.ClearMessage"),
+            ["recentClear"] = Text("TextCompare.Recent.Clear"),
+            ["recentNotSaved"] = Text("TextCompare.Recent.NotSaved"),
+            ["vs"] = Text("TextCompare.Recent.Vs"),
+            ["reportTitle"] = Text("TextCompare.Report.Title"),
+            ["reportCreated"] = Text("TextCompare.Report.Created"),
+            ["reportUnchanged"] = Text("TextCompare.Report.Unchanged"),
+            ["reportFooter"] = Text("TextCompare.Report.Footer"),
+            ["reportFileStem"] = Text("TextCompare.Report.FileStem")
+        }
+    };
+    var configJson = JsonSerializer.Serialize(config);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/text-compare.css" asp-append-version="true" />
+}
+
+<div class="tc-page" data-text-compare>
+    <div class="tbx-toolbar tc-toolbar" role="toolbar" aria-label="@T["TextCompare.Toolbar"]">
+        <div class="btn-group tc-view" role="group" aria-label="@T["TextCompare.View.Label"]" data-tc-view-group>
+            <button type="button" class="btn btn-outline-secondary" data-tc-view="split" aria-pressed="true">
+                <tbx-icon name="columns-2" />@T["TextCompare.View.Split"]
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-tc-view="unified" aria-pressed="false">
+                <tbx-icon name="rows-2" />@T["TextCompare.View.Unified"]
+            </button>
+        </div>
+        <div class="tc-language">
+            <label class="tc-language-label" for="tc-language">@T["TextCompare.Language.Label"]</label>
+            <select class="form-select" id="tc-language" data-tc-language>
+                <option value="auto">@T["TextCompare.Language.Auto"]</option>
+                <option value="plaintext">@T["TextCompare.Language.Plain"]</option>
+                @foreach (var language in TextComparePageViewModel.Languages)
+                {
+                    <option value="@language.Id">@language.Name</option>
+                }
+            </select>
+        </div>
+        <span class="tbx-toolbar-spacer"></span>
+        <button type="button" class="btn btn-outline-secondary" data-tc-swap>
+            <tbx-icon name="arrow-left-right" />@T["TextCompare.Swap"]
+        </button>
+        <button type="button" class="btn btn-outline-secondary" data-tc-copy disabled>
+            <tbx-icon name="copy" />@T["TextCompare.Copy"]
+        </button>
+        <button type="button" class="btn btn-outline-secondary" data-tc-export disabled>
+            <tbx-icon name="download" />@T["TextCompare.Export"]
+        </button>
+    </div>
+
+    <section class="tbx-panel tc-input" aria-labelledby="tc-input-title" data-tc-input>
+        <div class="tbx-panel-header tc-input-header">
+            <h2 class="tbx-panel-title" id="tc-input-title">@T["TextCompare.Input.Title"]</h2>
+            <span class="tc-input-summary" data-tc-input-summary hidden></span>
+            <span class="tbx-toolbar-spacer"></span>
+            <button type="button" class="btn btn-link btn-sm" data-tc-clear>
+                <tbx-icon name="eraser" />@T["TextCompare.ClearAll"]
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-tc-collapse aria-expanded="true" aria-controls="tc-input-body">
+                <tbx-icon name="chevron-up" /><span data-tc-collapse-text>@T["TextCompare.Input.Collapse"]</span>
+            </button>
+        </div>
+        <div class="tbx-panel-body tc-input-body" id="tc-input-body" data-tc-input-body>
+            <div class="tc-sides">
+                @foreach (var side in new[] { "left", "right" })
+                {
+                    var title = side == "left" ? T["TextCompare.Left"] : T["TextCompare.Right"];
+                    <div class="tc-side" data-tc-side="@side">
+                        <div class="tc-side-head">
+                            <span class="tc-dot is-@side" aria-hidden="true"></span>
+                            <label class="tc-side-title" for="tc-@side-text">@title</label>
+                            <span class="tc-file" data-tc-file hidden>
+                                <span class="tc-file-name" data-tc-file-name></span>
+                                <button type="button" class="tc-file-clear" data-tc-file-clear aria-label="@T["TextCompare.FileNameClear"]">
+                                    <tbx-icon name="x" size="12" />
+                                </button>
+                            </span>
+                            <span class="tc-count" data-tc-count></span>
+                            <span class="tbx-toolbar-spacer"></span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-tc-paste>
+                                <tbx-icon name="clipboard-paste" />@T["TextCompare.Paste"]
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-tc-open>
+                                <tbx-icon name="file-up" />@T["TextCompare.OpenFile"]
+                            </button>
+                            <input type="file" class="visually-hidden" tabindex="-1" aria-hidden="true" aria-label="@T["TextCompare.OpenFile"]" data-tc-file-input />
+                        </div>
+                        <div class="tc-drop" data-tc-drop>
+                            <textarea class="form-control tc-text" id="tc-@side-text" rows="10" spellcheck="false"
+                                      autocomplete="off" wrap="off" data-tc-text></textarea>
+                            <div class="tc-drop-hint" aria-hidden="true"><tbx-icon name="file-up" size="20" />@T["TextCompare.Drop"]</div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="tc-input-actions">
+                <p class="tc-hint">@T["TextCompare.Input.Hint"]</p>
+                <button type="button" class="btn btn-primary" data-tc-compare>
+                    <tbx-icon name="file-diff" />@T["TextCompare.Compare"]
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section class="tbx-panel tc-result" aria-labelledby="tc-result-title" data-tc-result>
+        <h2 class="visually-hidden" id="tc-result-title">@T["TextCompare.Result"]</h2>
+        <div class="tc-result-head" data-tc-result-head hidden>
+            <div class="tc-stats" data-tc-stats></div>
+            <p class="tc-note" data-tc-note hidden></p>
+        </div>
+        <div class="tc-result-body" data-tc-body aria-live="polite">
+            <partial name="_EmptyState" model="@(new EmptyStateViewModel(T["TextCompare.Empty"].Value, "file-diff"))" />
+        </div>
+        <div class="tc-footer">
+            <div class="tc-nav" data-tc-nav hidden>
+                <span class="tc-position" data-tc-position aria-live="polite"></span>
+                <button type="button" class="btn btn-outline-secondary btn-sm tbx-icon-button" data-tc-prev aria-label="@T["TextCompare.Previous"]" title="@T["TextCompare.Previous"]">
+                    <tbx-icon name="arrow-up" />
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm tbx-icon-button" data-tc-next aria-label="@T["TextCompare.Next"]" title="@T["TextCompare.Next"]">
+                    <tbx-icon name="arrow-down" />
+                </button>
+            </div>
+            <div class="tc-recent" data-tc-recent>
+                <span class="tc-recent-title"><tbx-icon name="history" />@T["TextCompare.Recent.Title"]</span>
+                <div class="tc-recent-list" data-tc-recent-list></div>
+                <span class="tc-recent-empty" data-tc-recent-empty>@T["TextCompare.Recent.Empty"]</span>
+                <button type="button" class="btn btn-link btn-sm" data-tc-recent-clear hidden>
+                    <tbx-icon name="trash-2" />@T["TextCompare.Recent.Clear"]
+                </button>
+            </div>
+        </div>
+        <p class="tc-privacy">@T["TextCompare.Recent.Note"]</p>
+    </section>
+
+    <p class="tbx-shortcuts" data-shortcuts-line></p>
+</div>
+
+<script id="text-compare-config" type="application/json">@Html.Raw(configJson)</script>
+
+@section Scripts {
+    <script src="~/vendor/jsdiff/js/diff.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/highlightjs/js/highlight.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/highlightjs/js/languages/powershell.min.js" asp-append-version="true"></script>
+    <script src="~/js/text-compare-report.js" asp-append-version="true"></script>
+    <script src="~/js/text-compare.js" asp-append-version="true"></script>
+}
