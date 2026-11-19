@@ -47,8 +47,8 @@ public static class AppNavigation
 
             groups.Add(new AppNavGroup("jira", L("Nav.Group.Jira"),
             [
-                new("jira-dashboard", Href(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml, "/jira-dashboard.html"), "gauge", L("Nav.JiraDashboard"), "j", true, IsJiraDashboard),
-                new("jira-worklist", Href(ToolboxRouteSlugs.RouteNames.JiraWorklistHtml, "/jira-worklist.html"), "kanban", L("Nav.JiraWorklist"), "w", true,
+                new("jira-dashboard", Href(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml, "/statistics.html"), "gauge", L("Nav.JiraDashboard"), "j", true, IsJiraDashboard),
+                new("jira-worklist", Href(ToolboxRouteSlugs.RouteNames.JiraWorklistHtml, "/tasks.html"), "kanban", L("Nav.JiraWorklist"), "w", true,
                     (controller, action) => string.Equals(controller, "Jira", StringComparison.OrdinalIgnoreCase) && !IsJiraDashboard(controller, action))
             ]));
         }

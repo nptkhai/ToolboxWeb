@@ -49,6 +49,19 @@ public class JiraController : Controller
         _desktopJira = desktopJira;
     }
 
+    /// <summary>Old addresses of Statistics and Task management (bookmarks, installed apps): permanent redirect, query kept.</summary>
+    [HttpGet("/" + ToolboxRouteSlugs.LegacyPages.JiraDashboard)]
+    [HttpGet("/" + ToolboxRouteSlugs.LegacyPages.JiraDashboardHtml)]
+    [AllowAnonymous]
+    public IActionResult LegacyDashboard() =>
+        RedirectPermanent((Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/" + ToolboxRouteSlugs.HtmlPages.JiraDashboard) + Request.QueryString);
+
+    [HttpGet("/" + ToolboxRouteSlugs.LegacyPages.JiraWorklist)]
+    [HttpGet("/" + ToolboxRouteSlugs.LegacyPages.JiraWorklistHtml)]
+    [AllowAnonymous]
+    public IActionResult LegacyWorklist() =>
+        RedirectPermanent((Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraWorklistHtml) ?? "/" + ToolboxRouteSlugs.HtmlPages.JiraWorklist) + Request.QueryString);
+
     [HttpGet("/" + ToolboxRouteSlugs.Pages.JiraDashboard)]
     [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.JiraDashboard, Name = ToolboxRouteSlugs.RouteNames.JiraDashboardHtml)]
     public async Task<IActionResult> DashboardPage([FromQuery] JiraDashboardQueryViewModel query)
