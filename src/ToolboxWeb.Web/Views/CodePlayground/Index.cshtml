@@ -64,54 +64,56 @@
 }
 
 <div class="pg-page" data-playground>
-    <div class="pg-head">
-        <label class="pg-name-label" for="pg-name">@T["CodePlayground.Name.Label"]</label>
-        <input class="form-control pg-name" id="pg-name" maxlength="80" autocomplete="off" spellcheck="false" data-pg-name />
-        <span class="pg-status" data-pg-status aria-live="polite"></span>
-    </div>
+    <div class="tbx-list-toolbar pg-bar">
+        <div class="pg-head">
+            <label class="pg-name-label" for="pg-name">@T["CodePlayground.Name.Label"]</label>
+            <input class="form-control pg-name" id="pg-name" maxlength="80" autocomplete="off" spellcheck="false" data-pg-name />
+            <span class="pg-status" data-pg-status aria-live="polite"></span>
+        </div>
 
-    <div class="tbx-toolbar pg-toolbar" role="toolbar" aria-label="@T["CodePlayground.Toolbar"]">
-        <button type="button" class="btn btn-primary" data-pg-run>
-            <tbx-icon name="play" />@T["CodePlayground.Run"]
-        </button>
-        <div class="form-check pg-autorun">
-            <input class="form-check-input" type="checkbox" id="pg-autorun" data-pg-autorun />
-            <label class="form-check-label" for="pg-autorun">@T["CodePlayground.AutoRun"]</label>
-        </div>
-        <button type="button" class="btn btn-outline-secondary" data-pg-format>
-            <tbx-icon name="wand-sparkles" />@T["CodePlayground.Format"]
-        </button>
-        <button type="button" class="btn btn-outline-secondary" data-pg-libs>
-            <tbx-icon name="library" />@T["CodePlayground.Libraries"]<span class="pg-badge" data-pg-libs-count hidden></span>
-        </button>
-        <span class="tbx-toolbar-spacer"></span>
-        <div class="dropdown">
-            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <tbx-icon name="folder-open" />@T["CodePlayground.MyWork"]
+        <div class="tbx-toolbar pg-toolbar" role="toolbar" aria-label="@T["CodePlayground.Toolbar"]">
+            <button type="button" class="btn btn-primary" data-pg-run>
+                <tbx-icon name="play" />@T["CodePlayground.Run"]
             </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li><button type="button" class="dropdown-item" data-pg-new><tbx-icon name="file-plus" />@T["CodePlayground.New"]</button></li>
-                <li><button type="button" class="dropdown-item" data-pg-save><tbx-icon name="save" />@T["CodePlayground.Save"]</button></li>
-                <li><button type="button" class="dropdown-item" data-pg-save-as><tbx-icon name="copy-plus" />@T["CodePlayground.SaveAs"]</button></li>
-                <li><hr class="dropdown-divider" /></li>
-                <li><button type="button" class="dropdown-item" data-pg-saved><tbx-icon name="folder-open" />@T["CodePlayground.SavedList"]</button></li>
-            </ul>
-        </div>
-        <button type="button" class="btn btn-outline-secondary" data-pg-download>
-            <tbx-icon name="download" />@T["CodePlayground.Download"]
-        </button>
-        <button type="button" class="btn btn-outline-secondary" data-pg-share>
-            <tbx-icon name="share-2" />@T["CodePlayground.Share"]
-        </button>
-        <div class="btn-group pg-layout" role="group" aria-label="@T["CodePlayground.Layout.Label"]">
-            <button type="button" class="btn btn-outline-secondary tbx-icon-button" data-pg-layout="split" aria-pressed="true"
-                    aria-label="@T["CodePlayground.Layout.Split"]" title="@T["CodePlayground.Layout.Split"]">
-                <tbx-icon name="columns-2" />
+            <div class="form-check pg-autorun">
+                <input class="form-check-input" type="checkbox" id="pg-autorun" data-pg-autorun />
+                <label class="form-check-label" for="pg-autorun">@T["CodePlayground.AutoRun"]</label>
+            </div>
+            <button type="button" class="btn btn-outline-secondary" data-pg-format>
+                <tbx-icon name="wand-sparkles" />@T["CodePlayground.Format"]
             </button>
-            <button type="button" class="btn btn-outline-secondary tbx-icon-button" data-pg-layout="stack" aria-pressed="false"
-                    aria-label="@T["CodePlayground.Layout.Stack"]" title="@T["CodePlayground.Layout.Stack"]">
-                <tbx-icon name="rows-2" />
+            <button type="button" class="btn btn-outline-secondary" data-pg-libs>
+                <tbx-icon name="library" />@T["CodePlayground.Libraries"]<span class="pg-badge" data-pg-libs-count hidden></span>
             </button>
+            <span class="tbx-toolbar-spacer"></span>
+            <div class="dropdown">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <tbx-icon name="folder-open" />@T["CodePlayground.MyWork"]
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button type="button" class="dropdown-item" data-pg-new><tbx-icon name="file-plus" />@T["CodePlayground.New"]</button></li>
+                    <li><button type="button" class="dropdown-item" data-pg-save><tbx-icon name="save" />@T["CodePlayground.Save"]</button></li>
+                    <li><button type="button" class="dropdown-item" data-pg-save-as><tbx-icon name="copy-plus" />@T["CodePlayground.SaveAs"]</button></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><button type="button" class="dropdown-item" data-pg-saved><tbx-icon name="folder-open" />@T["CodePlayground.SavedList"]</button></li>
+                </ul>
+            </div>
+            <button type="button" class="btn btn-outline-secondary" data-pg-download>
+                <tbx-icon name="download" />@T["CodePlayground.Download"]
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-pg-share>
+                <tbx-icon name="share-2" />@T["CodePlayground.Share"]
+            </button>
+            <div class="btn-group pg-layout" role="group" aria-label="@T["CodePlayground.Layout.Label"]">
+                <button type="button" class="btn btn-outline-secondary tbx-icon-button" data-pg-layout="split" aria-pressed="true"
+                        aria-label="@T["CodePlayground.Layout.Split"]" title="@T["CodePlayground.Layout.Split"]">
+                    <tbx-icon name="columns-2" />
+                </button>
+                <button type="button" class="btn btn-outline-secondary tbx-icon-button" data-pg-layout="stack" aria-pressed="false"
+                        aria-label="@T["CodePlayground.Layout.Stack"]" title="@T["CodePlayground.Layout.Stack"]">
+                    <tbx-icon name="rows-2" />
+                </button>
+            </div>
         </div>
     </div>
 
