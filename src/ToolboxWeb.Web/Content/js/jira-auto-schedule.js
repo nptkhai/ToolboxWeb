@@ -188,15 +188,28 @@
             writeDate(field("dueTo"), filter.dueTo);
         }
 
-        // The project list grows with every project seen, so a filtered search keeps the others.
+        // The projects come from the Projects catalog (Content/js/jira-catalog.js) when it has been
+        // synced; the list also grows with every project seen, so a filtered search keeps the others.
         function refreshProjects(selected) {
             const select = q('[data-auto-field="project"]');
             const current = selected ?? select.value;
             rows.forEach((row) => row.project && projectsSeen.add(row.project));
+            const names = new Map();
+            (window.ToolboxJiraCatalog?.items(null, "projects") || []).forEach((project) => {
+                projectsSeen.add(project.key);
+                names.set(project.key, project.name);
+            });
             const allLabel = select.dataset.allLabel || (select.dataset.allLabel = select.options[0]?.textContent || "");
             select.innerHTML = `<option value="">${escapeHtml(allLabel)}</option>`
-                + Array.from(projectsSeen).sort().map((project) => `<option>${escapeHtml(project)}</option>`).join("");
+                + Array.from(projectsSeen).sort().map((project) => {
+                    const label = names.get(project) ? `${project} · ${names.get(project)}` : project;
+                    return `<option value="${escapeHtml(project)}">${escapeHtml(label)}</option>`;
+                }).join("");
             select.value = projectsSeen.has(current) ? current : "";
+        }
+
+        function onCatalog() {
+            refreshProjects();
         }
 
         function setListState(kind, message) {
@@ -964,6 +977,8 @@
                 on(modal.querySelector("[data-auto-cfg-order]"), "change", onOrderChange);
                 on(modal.querySelector("[data-auto-cfg-order]"), "click", onOrderClick);
                 on(document.querySelector("[data-auto-move-form]"), "submit", onMoveSubmit);
+                on(window, "toolbox:jira-catalog", onCatalog);
+                refreshProjects();
 
                 tracker()?.register("auto", {
                     changes: () => proposals.filter(isChanged).map((proposal) => ({

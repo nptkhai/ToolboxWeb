@@ -1,8 +1,9 @@
 namespace ToolboxWeb.Web.Services;
 
 /// <summary>
-/// Classifies free-text Jira status names into the three tones the UI colors by. Jira workflows
-/// differ per project, so this matches on keywords instead of exact names.
+/// The three tones the UI colors a Jira status by. Jira puts every status in a category
+/// ("new", "indeterminate", "done"), which is used whenever it is known; the keyword match on the
+/// name is only a fallback for issues read without it.
 /// </summary>
 public static class JiraStatus
 {
@@ -32,6 +33,20 @@ public static class JiraStatus
         "qa",
         "verify"
     ];
+
+    /// <summary>The tone of a status from Jira's category; falls back to the name when there is none.</summary>
+    public static string Tone(string? status, string? category)
+    {
+        return category?.Trim().ToLowerInvariant() switch
+        {
+            "done" => Done,
+            "indeterminate" => Doing,
+            "new" or "undefined" => Todo,
+            _ => Tone(status)
+        };
+    }
+
+    public static bool IsDone(string? status, string? category) => Tone(status, category) == Done;
 
     public static bool IsDone(string? status)
     {

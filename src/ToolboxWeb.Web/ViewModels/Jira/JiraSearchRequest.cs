@@ -11,6 +11,7 @@ public sealed class JiraSearchRequest
     public string? Status { get; set; }
     public string? Assignee { get; set; }
     public string? Reporter { get; set; }
+    public string? SubTaskType { get; set; }
     public DateTime FromDate { get; set; } = AppClock.Today;
     public DateTime ToDate { get; set; } = AppClock.Today;
 }

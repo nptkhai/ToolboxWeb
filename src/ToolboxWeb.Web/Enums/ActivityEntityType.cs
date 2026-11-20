@@ -12,5 +12,6 @@ public enum ActivityEntityType
     SchemaCompare = 8,
     SqlProfiler = 9,
     JiraIssue = 10,
-    License = 11
+    License = 11,
+    JiraCatalog = 12
 }

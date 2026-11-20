@@ -2064,8 +2064,78 @@ a.jira-key {
     }
 
 .jira-chart-panel,
+.jira-bytype-panel,
 .jira-table-panel {
     padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+/* Statistics: hours logged by Sub-task Type (jira-dashboard.js renderByType). */
+.jira-bytype {
+    display: grid;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.jira-bytype-row {
+    align-items: center;
+    display: grid;
+    font-size: var(--text-sm);
+    gap: var(--space-3);
+    grid-template-columns: minmax(120px, 220px) minmax(0, 1fr) 72px 96px;
+}
+
+.jira-bytype-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.jira-bytype-row.is-none .jira-bytype-name {
+    color: var(--muted);
+}
+
+.jira-bytype-bar {
+    background: var(--surface-2);
+    border-radius: var(--radius-pill);
+    height: 8px;
+    overflow: hidden;
+}
+
+    .jira-bytype-bar > span {
+        background: var(--accent-brand);
+        border-radius: inherit;
+        display: block;
+        height: 100%;
+    }
+
+.jira-bytype-hours {
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-semibold);
+    text-align: right;
+}
+
+.jira-bytype-count,
+.jira-bytype-empty {
+    color: var(--muted);
+    font-size: var(--text-xs);
+}
+
+@media (max-width: 599.98px) {
+    .jira-bytype-row {
+        gap: var(--space-1) var(--space-2);
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .jira-bytype-bar {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .jira-bytype-count {
+        display: none;
+    }
 }
 
 .jira-panel-head {
@@ -2145,6 +2215,13 @@ a.jira-key {
     color: var(--danger);
     font-size: var(--text-xs);
     margin-left: var(--space-2);
+}
+
+.jira-waiting {
+    color: var(--muted);
+    display: inline-flex;
+    margin-left: var(--space-1);
+    vertical-align: middle;
 }
 
 .jira-unestimated {

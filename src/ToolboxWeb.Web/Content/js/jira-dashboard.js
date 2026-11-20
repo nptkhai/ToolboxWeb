@@ -26,11 +26,13 @@
     const alertHost = document.querySelector("[data-jira-alert-host]");
     const jqlBlock = document.querySelector("[data-jira-jql-block]");
     const chipsHost = document.querySelector("[data-jira-chips]");
+    const byTypeHost = document.querySelector("[data-jira-bytype]");
 
     let data = jira.parseJsonScript("jira-dashboard-data", {});
     const config = jira.parseJsonScript("jira-dashboard-config", {});
     const text = config.text || {};
     const columnText = config.columns || {};
+    grid.waitingLabel = text.waiting || "";
     const locale = fmt?.locale || document.documentElement.lang || "vi-VN";
     const vietnamese = locale.toLowerCase().startsWith("vi");
 
@@ -53,6 +55,32 @@
 
     const hours = (value) => jira.displayHours(Number(value) || 0);
     const number = (value) => (fmt ? fmt.number(value, 0) : String(value));
+
+    // ------------------------------------------------------------------ hours by Sub-task Type
+
+    function renderByType() {
+        if (!byTypeHost) {
+            return;
+        }
+
+        const lines = (data.hoursByType || []).filter((line) => Number(line.hours) > 0);
+        if (!lines.length) {
+            byTypeHost.innerHTML = `<li class="jira-bytype-empty">${escapeHtml(text.hoursByTypeEmpty)}</li>`;
+            return;
+        }
+
+        const max = Math.max(...lines.map((line) => Number(line.hours) || 0));
+        byTypeHost.innerHTML = lines.map((line) => {
+            const share = max ? Math.max(2, Math.round((Number(line.hours) / max) * 100)) : 0;
+            const name = line.type || text.hoursByTypeNone;
+            return `<li class="jira-bytype-row${line.type ? "" : " is-none"}">`
+                + `<span class="jira-bytype-name" title="${escapeHtml(name)}">${escapeHtml(name)}</span>`
+                + `<span class="jira-bytype-bar" aria-hidden="true"><span style="width:${share}%"></span></span>`
+                + `<span class="jira-bytype-hours">${escapeHtml(hours(line.hours))}</span>`
+                + `<span class="jira-bytype-count">${escapeHtml(template(text.hoursByTypeCount, number(line.subtaskCount)))}</span>`
+                + "</li>";
+        }).join("");
+    }
 
     // ------------------------------------------------------------------ cards
 
@@ -345,6 +373,7 @@
             { title: columnText.subTaskKey, field: "subTaskKey", width: narrow ? 146 : 150, responsive: 0, formatter: grid.formatters.issueKey(config.browseBaseUrl) },
             { title: columnText.subTaskSummary, field: "subTaskSummary", hozAlign: "left", minWidth: narrow ? 140 : 200, widthGrow: 3, responsive: 0, formatter: grid.formatters.text },
             { title: columnText.status, field: "status", width: 140, responsive: 1, formatter: grid.formatters.status },
+            { title: columnText.subTaskType, field: "subTaskType", width: 150, responsive: 5, formatter: grid.formatters.text },
             { title: columnText.dueDate, field: "dueDate", width: 190, responsive: 2, sorter: grid.dueDateSorter, formatter: grid.formatters.dueWithLate(text.daysLate) },
             { title: columnText.estimate, field: "estimateHours", hozAlign: "right", width: 130, responsive: 3, sorter: "number", formatter: grid.formatters.estimate(text.noEstimate) },
             { title: columnText.logged, field: "loggedHours", hozAlign: "right", width: 110, responsive: 4, sorter: "number", formatter: grid.formatters.hours }
@@ -457,6 +486,7 @@
             renderAlert(data.errorMessage);
             renderCards(data.summary);
             renderChart();
+            renderByType();
             jira.jql.update(jqlBlock, data.appliedJql);
 
             updateChipCounts(data.rows || []);
@@ -487,5 +517,8 @@
 
     renderCards(data.summary);
     renderChart();
+    renderByType();
     initTable();
+    // Reads what is stored; reads Jira only while there is no catalog yet (the first sync).
+    window.ToolboxJiraCatalog?.ensure().catch(() => { /* Statistics works without catalogs */ });
 })(window, document);

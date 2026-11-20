@@ -38,6 +38,7 @@ public static class JiraQueryBuilder
         AddEquals(parts, "project", request.Project);
         AddEquals(parts, "key", request.IssueKey);
         AddEquals(parts, "status", request.Status);
+        AddEquals(parts, "\"Sub-task Type\"", request.SubTaskType);
         AddUser(parts, "assignee", request.Assignee);
         AddUser(parts, "reporter", request.Reporter);
         parts.Add($"due >= \"{request.FromDate:yyyy-MM-dd}\"");
@@ -49,7 +50,7 @@ public static class JiraQueryBuilder
     {
         if (!string.IsNullOrWhiteSpace(value))
         {
-            parts.Add($"{field} = \"{value.Trim()}\"");
+            parts.Add($"{field} = {Quote(value)}");
         }
     }
 
@@ -61,6 +62,10 @@ public static class JiraQueryBuilder
         }
 
         var text = value.Trim();
-        parts.Add(text == "currentUser()" ? $"{field} = currentUser()" : $"{field} = \"{text}\"");
+        parts.Add(text == "currentUser()" ? $"{field} = currentUser()" : $"{field} = {Quote(text)}");
     }
+
+    /// <summary>A JQL string literal: quotes and backslashes in the value are escaped.</summary>
+    public static string Quote(string value) =>
+        "\"" + value.Trim().Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 }

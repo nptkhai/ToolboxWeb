@@ -341,6 +341,44 @@ namespace ToolboxWeb.Web.Data.Migrations
                     b.ToTable("FocusSessions");
                 });
 
+            modelBuilder.Entity("ToolboxWeb.Web.Domain.JiraCatalog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BaseUrl")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ItemCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SyncedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "BaseUrl", "Kind")
+                        .IsUnique();
+
+                    b.ToTable("JiraCatalogs");
+                });
+
             modelBuilder.Entity("ToolboxWeb.Web.Domain.Note", b =>
                 {
                     b.Property<int>("Id")
@@ -631,6 +669,17 @@ namespace ToolboxWeb.Web.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("ChecklistItem");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ToolboxWeb.Web.Domain.JiraCatalog", b =>
+                {
+                    b.HasOne("ToolboxWeb.Web.Domain.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

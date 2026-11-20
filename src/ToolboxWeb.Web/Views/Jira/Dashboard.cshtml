@@ -34,7 +34,8 @@
         Model.Summary,
         Model.LogBarUnit,
         Model.LogBars,
-        Model.Rows
+        Model.Rows,
+        Model.HoursByType
     }, jsonOptions);
     var configJson = JsonSerializer.Serialize(new
     {
@@ -81,13 +82,18 @@
             chartSummary = T["Jira.Dashboard.Chart.Summary"].Value,
             chartTooltip = T["Jira.Dashboard.Chart.Tooltip"].Value,
             chartTooltipNoTarget = T["Jira.Dashboard.Chart.TooltipNoTarget"].Value,
-            chartEmpty = T["Jira.Dashboard.Chart.Empty"].Value
+            chartEmpty = T["Jira.Dashboard.Chart.Empty"].Value,
+            waiting = T["Jira.Waiting"].Value,
+            hoursByTypeNone = T["Jira.Dashboard.HoursByTypeNone"].Value,
+            hoursByTypeEmpty = T["Jira.Dashboard.HoursByTypeEmpty"].Value,
+            hoursByTypeCount = T["Jira.Dashboard.HoursByTypeCount"].Value
         },
         columns = new
         {
             subTaskKey = T["Jira.Table.SubtaskKey"].Value,
             subTaskSummary = T["Jira.Table.SubtaskSummary"].Value,
             status = T["Jira.Table.Status"].Value,
+            subTaskType = T["Jira.Table.SubTaskType"].Value,
             dueDate = T["Jira.Table.DueDate"].Value,
             estimate = T["Jira.Table.EstimateTime"].Value,
             logged = T["Jira.Table.LogTime"].Value
@@ -136,6 +142,14 @@
         <div class="jira-chart" data-jira-chart></div>
     </section>
 
+    @* Hours logged in the period by Sub-task Type (JiraDashboardMetrics.HoursByType), drawn by jira-dashboard.js. *@
+    <section class="tbx-panel jira-bytype-panel" aria-labelledby="jira-bytype-title">
+        <header class="jira-panel-head">
+            <h2 id="jira-bytype-title">@T["Jira.Dashboard.HoursByType"]</h2>
+        </header>
+        <ul class="jira-bytype" data-jira-bytype></ul>
+    </section>
+
     <section class="tbx-panel jira-table-panel" aria-labelledby="jira-table-title">
         <header class="jira-panel-head">
             <div>
@@ -165,5 +179,6 @@
     <script src="~/vendor/echarts/js/echarts.min.js" asp-append-version="true"></script>
     <script src="~/js/charts.js" asp-append-version="true"></script>
     <script src="~/js/jira-common.js" asp-append-version="true"></script>
+    <partial name="_JiraCatalogScript" model="Model.Session.BaseUrl" />
     <script src="~/js/jira-dashboard.js" asp-append-version="true"></script>
 }

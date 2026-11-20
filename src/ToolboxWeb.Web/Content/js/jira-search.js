@@ -18,7 +18,7 @@
     const columnText = config.columns || {};
     const STORAGE_KEY = "toolbox.jira.search";
     const PAGE_SIZE = 50;
-    const FIELDS = ["assignee", "from", "to", "status", "project", "issueKey", "reporter", "jql"];
+    const FIELDS = ["assignee", "from", "to", "status", "project", "subTaskType", "issueKey", "reporter", "jql"];
     const URL_KEYS = ["mode"].concat(FIELDS);
 
     const form = root.querySelector("[data-search-form]");
@@ -42,6 +42,9 @@
     let lastJql = "";
     let requestId = 0;
     const datePickers = {};
+    const combos = {};
+    const catalogs = window.ToolboxJiraCatalog;
+    grid.waitingLabel = text.waiting || "";
 
     // ------------------------------------------------------------------ form
 
@@ -67,9 +70,103 @@
         });
     }
 
+    // Project, status, Sub-task Type, assignee and reporter pick from the Jira catalogs
+    // (Content/js/jira-catalog.js) in Kendo ComboBoxes; any value can still be typed. Without
+    // Kendo the text boxes get a datalist instead.
+    const USER_PRESETS = ["", "currentUser()"];
+
+    function catalogItems(kind, state) {
+        const items = catalogs ? catalogs.items(state, kind) : [];
+        switch (kind) {
+            case "projects": return items.map((x) => ({ text: `${x.key} · ${x.name}`, value: x.key }));
+            case "statuses": return items.map((x) => ({ text: x.name, value: x.name }));
+            case "subtasktypes": return items.map((x) => ({ text: String(x), value: String(x) }));
+            case "users": return items.map((x) => ({ text: x.displayName || x.name, value: x.name }));
+            default: return [];
+        }
+    }
+
+    function fillUserSelect(select, users) {
+        // The server already listed the users (from the catalog or Jira): keep its options.
+        if (!users.length || Array.from(select.options).some((option) => !USER_PRESETS.includes(option.value))) {
+            return false;
+        }
+
+        users.forEach((user) => select.add(new Option(user.text, user.value)));
+        return true;
+    }
+
+    function initCombos() {
+        const $ = window.jQuery;
+        const kendoReady = !!($ && $.fn && $.fn.kendoComboBox);
+        root.querySelectorAll("[data-search-combo]").forEach((el) => {
+            const name = el.dataset.searchField;
+            if (!kendoReady) {
+                return;
+            }
+
+            if (el.tagName === "SELECT") {
+                combos[name] = $(el).kendoComboBox({ filter: "contains", suggest: true, clearButton: false }).data("kendoComboBox");
+                return;
+            }
+
+            el.removeAttribute("list");
+            combos[name] = $(el).kendoComboBox({
+                dataSource: [],
+                dataTextField: "text",
+                dataValueField: "value",
+                filter: "contains",
+                placeholder: el.dataset.placeholder || el.getAttribute("placeholder") || ""
+            }).data("kendoComboBox");
+        });
+    }
+
+    function refreshCombos(state) {
+        root.querySelectorAll("[data-search-combo]").forEach((el) => {
+            const name = el.dataset.searchField;
+            const items = catalogItems(el.dataset.searchCombo, state);
+            const combo = combos[name];
+            if (el.tagName === "SELECT") {
+                if (fillUserSelect(el, items) && combo) {
+                    const value = combo.value();
+                    combo.setDataSource(new window.kendo.data.DataSource({
+                        data: Array.from(el.options).map((option) => ({ text: option.textContent, value: option.value }))
+                    }));
+                    combo.value(value);
+                }
+
+                return;
+            }
+
+            if (combo) {
+                const value = combo.value();
+                combo.setDataSource(new window.kendo.data.DataSource({ data: items }));
+                combo.value(value);
+                return;
+            }
+
+            const list = document.getElementById(el.getAttribute("list") || "");
+            if (list) {
+                list.innerHTML = items.map((x) => `<option value="${escapeHtml(x.value)}">${escapeHtml(x.text)}</option>`).join("");
+            }
+        });
+    }
+
+    function fieldText(name) {
+        if (combos[name]) {
+            return combos[name].text().trim();
+        }
+
+        return fields[name]?.tagName === "SELECT" ? selectedText(fields[name]) : readField(name);
+    }
+
     function readField(name) {
         if (datePickers[name]) {
             return jira.dates.formatIsoDate(datePickers[name].value());
+        }
+
+        if (combos[name]) {
+            return String(combos[name].value() || "").trim();
         }
 
         return (fields[name]?.value || "").trim();
@@ -78,6 +175,11 @@
     function writeField(name, value) {
         if (datePickers[name]) {
             datePickers[name].value(jira.dates.parseIsoDate(value));
+            return;
+        }
+
+        if (combos[name]) {
+            combos[name].value(value || "");
             return;
         }
 
@@ -126,7 +228,7 @@
         }
 
         const parts = [
-            `${labels.assignee}: ${selectedText(fields.assignee) || text.any}`,
+            `${labels.assignee}: ${fieldText("assignee") || text.any}`,
             `${labels.due}: ${jira.displayDate(state.from)} – ${jira.displayDate(state.to)}`
         ];
         if (state.status) {
@@ -137,12 +239,16 @@
             parts.push(`${labels.project}: ${state.project}`);
         }
 
+        if (state.subTaskType) {
+            parts.push(`${labels.subTaskType}: ${state.subTaskType}`);
+        }
+
         if (state.issueKey) {
             parts.push(`${labels.issueKey}: ${state.issueKey}`);
         }
 
         if (state.reporter) {
-            parts.push(`${labels.reporter}: ${selectedText(fields.reporter)}`);
+            parts.push(`${labels.reporter}: ${fieldText("reporter")}`);
         }
 
         return parts.join(" · ");
@@ -272,7 +378,8 @@
             { title: columnText.key, field: "issueKey", width: narrow ? 146 : 150, responsive: 0, formatter: grid.formatters.issueKey(config.browseBaseUrl) },
             { title: columnText.summary, field: "summary", hozAlign: "left", minWidth: narrow ? 140 : 220, widthGrow: 3, responsive: 0, formatter: grid.formatters.text },
             { title: columnText.status, field: "status", width: 140, responsive: 1, formatter: grid.formatters.status },
-            { title: columnText.type, field: "type", width: 110, responsive: 5, formatter: grid.formatters.text },
+            { title: columnText.type, field: "type", width: 110, responsive: 6, formatter: grid.formatters.text },
+            { title: columnText.subTaskType, field: "subTaskType", width: 150, responsive: 5, formatter: grid.formatters.text },
             { title: columnText.dueDate, field: "dueDate", width: 190, responsive: 2, sorter: grid.dueDateSorter, formatter: grid.formatters.dueWithLate(text.daysLate) },
             { title: columnText.estimate, field: "estimateHours", hozAlign: "right", width: 130, responsive: 3, sorter: "number", formatter: grid.formatters.estimate(text.noEstimate) },
             { title: columnText.logged, field: "loggedHours", hozAlign: "right", width: 110, responsive: 4, sorter: "number", formatter: grid.formatters.hours, tooltip: loggedTooltip }
@@ -373,6 +480,7 @@
                     reporter: state.reporter || null,
                     status: state.status || null,
                     project: state.project || null,
+                    subTaskType: state.subTaskType || null,
                     issueKey: state.issueKey || null,
                     // Left out when empty: the server then uses today.
                     fromDate: state.from || undefined,
@@ -438,13 +546,14 @@
             const XLSX = await loadSheetJs();
             // What the user sees: the active chip and the current sort.
             const data = table.getData("active");
-            const header = [columnText.key, columnText.summary, columnText.status, columnText.type,
+            const header = [columnText.key, columnText.summary, columnText.status, columnText.type, columnText.subTaskType,
                 columnText.parent, columnText.parentSummary, columnText.dueDate, columnText.estimate, columnText.logged];
             const body = data.map((row) => [
                 row.issueKey,
                 row.summary,
                 row.status,
                 row.type,
+                row.subTaskType || "",
                 row.parent,
                 row.parentSummary,
                 jira.dates.parseIsoDate(row.dueDate),
@@ -452,7 +561,7 @@
                 Number(row.loggedHours) || 0
             ]);
             const sheet = XLSX.utils.aoa_to_sheet([header].concat(body), { cellDates: true, dateNF: window.Toolbox?.format?.datePattern || "dd/MM/yyyy" });
-            sheet["!cols"] = [16, 60, 16, 12, 16, 50, 12, 10, 10].map((wch) => ({ wch }));
+            sheet["!cols"] = [16, 60, 16, 12, 18, 16, 50, 12, 10, 10].map((wch) => ({ wch }));
             const book = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(book, sheet, (text.exportSheet || "Jira").slice(0, 31));
             XLSX.writeFile(book, `jira-${jira.dates.formatIsoDate(new Date())}.xlsx`);
@@ -502,6 +611,13 @@
     exportButton?.addEventListener("click", exportExcel);
 
     initDates();
+    initCombos();
+    if (catalogs) {
+        window.addEventListener("toolbox:jira-catalog", (event) => refreshCombos(event.detail));
+        // Reads what is stored; reads Jira only while there is no catalog yet (the first sync).
+        catalogs.ensure().catch(() => { /* the form still takes typed values */ });
+    }
+
     const initial = Object.assign({}, config.defaults, stateFromUrl() || recalled() || {});
     writeState(initial);
     search(readState());

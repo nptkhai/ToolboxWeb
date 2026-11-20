@@ -42,6 +42,7 @@ Lưu ý:
 10. [Công việc Jira – Tìm kiếm](#10-công-việc-jira--tìm-kiếm-jsearch)
 11. [Công việc Jira – Quản lý công việc](#11-công-việc-jira--quản-lý-công-việc-jboard)
 12. [Công việc Jira – Sắp xếp tự động](#12-công-việc-jira--sắp-xếp-tự-động-jauto)
+12a. [Danh mục Jira](#12a-danh-mục-jira-jcat)
 13. [So sánh nội dung](#13-so-sánh-nội-dung-diff)
 14. [Thử code web](#14-thử-code-web-play)
 15. [So sánh cấu trúc DB](#15-so-sánh-cấu-trúc-db-scmp)
@@ -58,6 +59,7 @@ Lưu ý:
 |---|---|---|---|---|
 | Thống kê | `/statistics.html` (link cũ `/jira-dashboard.html` tự chuyển) | JIRA | Đăng nhập bằng Jira | G J |
 | Quản lý công việc (3 tab) | `/tasks.html` (link cũ `/jira-worklist.html` tự chuyển) | JIRA | Đăng nhập bằng Jira | G W |
+| Danh mục | `/catalogs.html` | JIRA | Đăng nhập bằng Jira, cả bản Web | G M |
 | Tổng quan | `/dashboard.html` | CÁ NHÂN | Mọi tài khoản | G D |
 | Lịch sử hoạt động | `/activity.html` | (thuộc Tổng quan) | Mọi tài khoản | G A |
 | Ghi chú | `/notes.html` | CÁ NHÂN | Mọi tài khoản | G N |
@@ -513,6 +515,38 @@ Lưu ý:
 | JAUTO-P02 | **Khóa ngày** (không xếp vào ngày đã kín họp) hoặc đặt số giờ riêng cho từng ngày | Sát lịch thật | M | | | |
 | JAUTO-P03 | Xếp theo **độ ưu tiên Jira** | Việc gấp lên trước mà không phải chọn tay | S | | | |
 | JAUTO-P04 | **Lưu nhiều cấu hình** (ví dụ "Tuần thường", "Tuần release") | Đổi kiểu xếp nhanh | S | | | |
+
+### Đề xuất thêm của bạn
+
+-
+
+---
+
+## 12a. Danh mục Jira (JCAT)
+
+### Chức năng đang có
+
+| Mã | Chức năng | Đánh giá | Ghi chú của bạn |
+|---|---|---|---|
+| JCAT-01 | 10 danh mục: Dự án (tất cả dự án tài khoản xem được), Trạng thái + nhóm trạng thái, Loại issue, Sub-task Type, Độ ưu tiên, Kết quả xử lý, Bộ lọc yêu thích, Người dùng, Version (chỉ các dự án chọn trong Thiết lập, tối đa 50), Cấu hình Jira (giờ/ngày, phiên bản, mã trường Sub-task Type) | | |
+| JCAT-02 | Chỉ đồng bộ khi bấm "Đồng bộ" (từng dòng hoặc tất cả). Lần đầu, khi chưa có danh mục nào, Toolkit tự lấy một lần (trừ Version), mỗi phiên trình duyệt thử một lần; không đồng bộ khi đăng nhập hay tải lại trang | | |
+| JCAT-03 | Nơi lưu: site IIS và máy tính lưu trong cơ sở dữ liệu theo tài khoản và địa chỉ Jira (bảng `JiraCatalogs`); bản Web lưu trên trình duyệt (localStorage, khoảng 100–250 KB với dữ liệu thật), trạng thái chờ và giờ/ngày trong cookie | | |
+| JCAT-04 | Xem từng danh mục trong hộp thoại có ô tìm | | |
+| JCAT-05 | Thiết lập: danh sách **trạng thái chờ** (tính là đang làm, không tính trễ hạn; mặc định Pending, Waiting for support / customer / approval, Escalated, In Following Up, Work in progress) và dự án lấy Version | | |
+| JCAT-06 | Các màn Jira dùng danh mục: ô Dự án / Trạng thái / Sub-task Type / Người thực hiện / Người báo cáo ở tab Tìm kiếm (Kendo ComboBox, vẫn gõ được giá trị khác), danh sách dự án ở Sắp xếp tự động, cột Sub-task Type, bảng "Giờ đã log theo loại công việc" ở Thống kê | | |
+| JCAT-07 | Cách tính dùng chung (`JiraRules`): trạng thái lấy theo nhóm trạng thái của Jira (Cancelled, Rejected là xong), trạng thái chờ không trễ hạn, giờ tính từ giây, "1d" theo số giờ/ngày của Jira, ngày giờ đổi sang giờ Việt Nam | | |
+
+### Đã biết / chưa kiểm tra
+
+- Mới kiểm tra với dữ liệu giả (cả 3 bản: Server, Web, Desktop). Chưa thử với Jira thật: số lượng thật, việc đọc từng trang kết quả (trên 1.000 issue) và thời gian đồng bộ người dùng.
+- Danh mục Sub-task Type gom từ subtask của bạn trong một năm gần đây cộng với giá trị cho phép của trường; loại chưa ai dùng có thể thiếu.
+
+### Đề xuất
+
+| Mã | Đề xuất | Lợi ích | Công sức | Chọn | Ưu tiên | Ghi chú của bạn |
+|---|---|---|---|---|---|---|
+| JCAT-P01 | Thống kê theo **khách hàng** (mỗi dự án là một khách hàng) | Biết giờ làm cho từng khách | M | | | |
+| JCAT-P02 | Ô chọn **Version** khi tìm kiếm | Lọc theo đợt release | S | | | |
 
 ### Đề xuất thêm của bạn
 
