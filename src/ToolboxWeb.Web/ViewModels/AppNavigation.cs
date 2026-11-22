@@ -32,7 +32,7 @@ public static class AppNavigation
     /// the Jira screens, the focus timer, the text compare and the code playground (they work in
     /// the browser alone).
     /// </param>
-    /// <param name="showFiles">"Files &amp; folders": the desktop owner, or an account listed in Files:AllowedUsers on the IIS site (Infrastructure/Files/FilesAccess.cs).</param>
+    /// <param name="showFiles">"Files &amp; folders": the desktop owner, or an account listed in Files:AllowedUsers / Files:AllowedJiraUsers on the IIS site (Infrastructure/Files/FilesAccess.cs).</param>
     public static IReadOnlyList<AppNavGroup> Build(IUrlHelper url, IStringLocalizer localizer, bool isJiraUser, bool showDevTools, AppMode mode = AppMode.Server, bool showFiles = false)
     {
         string Href(string routeName, string fallback) => url.RouteUrl(routeName) ?? fallback;
