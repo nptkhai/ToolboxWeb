@@ -231,6 +231,23 @@ public class FilesController : Controller
             return new { count = await _files.UploadAsync(root, folder, list, overwrite, HttpContext.RequestAborted) };
         });
 
+    [HttpGet("/Files/Search")]
+    public Task<IActionResult> Search(string? q, bool matchCase = false, bool hidden = false, int? root = null) =>
+        Run(async () => await _files.SearchContentAsync(q, matchCase, hidden, root, HttpContext.RequestAborted));
+
+    /// <summary>Which linked paths are missing (Markdown link check). Reads only.</summary>
+    [HttpPost("/Files/Missing")]
+    [ValidateAntiForgeryToken]
+    [AllowWhenUnlicensed]
+    public Task<IActionResult> Missing([FromBody] FileMissingRequest? request) =>
+        Run(async () => await _files.MissingAsync(request?.Root ?? 0, request?.Paths ?? [], HttpContext.RequestAborted));
+
+    /// <summary>Desktop: a file opened from Explorer (/files.html?open=…). Adds its folder as a root only when asked.</summary>
+    [HttpPost("/Files/OpenPath")]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> OpenPath([FromBody] FileOpenPathRequest? request) =>
+        Run(async () => await _files.OpenPathAsync(request?.Path, request?.AddRoot ?? false, HttpContext.RequestAborted));
+
     [HttpGet("/Files/Trash")]
     public Task<IActionResult> Trash() => Run(() => Task.FromResult<object>(_files.GetTrash()));
 

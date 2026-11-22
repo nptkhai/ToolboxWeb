@@ -647,6 +647,14 @@ Lưu ý:
 | FILES-14 | Kéo thả trong cây để di chuyển (Ctrl/Alt để sao chép, luôn hỏi lại), kéo tệp và thư mục từ Explorer vào (hỏi trước khi ghi đè) | | |
 | FILES-15 | Xóa: vào Thùng rác của Windows (máy tính Windows) hoặc thùng rác của Toolkit (IIS), giữ 30 ngày, khôi phục hoặc xóa hẳn | | |
 | FILES-16 | Cây tự cập nhật khi có tệp thêm, xóa, đổi tên từ bên ngoài (máy chủ theo dõi thư mục, trang hỏi thay đổi mỗi 3 giây) | | |
+| FILES-17 | Tìm trong nội dung mọi thư mục gốc (Ctrl+Shift+F), kết quả theo tệp, bấm để mở tệp đúng dòng | | |
+| FILES-18 | Tệp mở gần đây và tệp ghim (trên trình duyệt): ở màn hình bắt đầu và trong ô tìm nhanh khi chưa gõ | | |
+| FILES-19 | Mục lục theo tiêu đề cho Markdown; hiện tệp ẩn; lọc cây theo loại tệp (có nhãn "đang lọc" để bỏ nhanh) | | |
+| FILES-20 | Dán ảnh vào Markdown: ảnh lưu vào `assets/` cạnh tệp và chèn sẵn đường dẫn | | |
+| FILES-21 | Kiểm tra lỗi ở thanh trạng thái: JSON, YAML sai cú pháp (bấm để nhảy tới dòng), liên kết nội bộ hỏng trong Markdown (đánh dấu trên trang) | | |
+| FILES-22 | Xuất Markdown thành tệp HTML độc lập; In / Lưu thành PDF (hộp thoại in của trình duyệt) | | |
+| FILES-23 | Lệnh "Tệp: …" trong bảng lệnh Ctrl+K (Ctrl+Shift+P mở bảng lệnh) | | |
+| FILES-24 | Máy tính Windows: Toolkit có trong "Open with" của tệp .md (không tự đặt làm mặc định); mở tệp từ Explorer thì hiện trong Tệp & Thư mục, tệp ngoài mọi gốc thì hỏi thêm thư mục chứa nó; cửa sổ app nhớ vị trí và kích thước | | |
 | FILES-08 | Bảo mật: chỉ đường dẫn tương đối trong gốc; chặn `..`, đường dẫn tuyệt đối, link/junction ra ngoài, luồng NTFS, tên thiết bị; HTML/SVG trong tệp không bao giờ chạy như trang của Toolkit | | |
 
 ### Đã biết / chưa kiểm tra
@@ -654,7 +662,8 @@ Lưu ý:
 - Hộp thoại chọn thư mục và "Lưu bản sao" của Windows, mở bằng chương trình mặc định: chưa thử trên Windows (môi trường kiểm tra là Linux, dùng hộp chọn trong trang).
 - Thùng rác của Windows, "Hiện trong Explorer": chưa thử trên Windows (bản kiểm tra trên Linux dùng thùng rác của Toolkit).
 - Thư mục gốc bị xóa rồi tạo lại khi app đang chạy: trên Windows trang tự nạp lại cả cây; trên Linux phải bấm Làm mới.
-- Vị trí và kích thước cửa sổ app: do profile Edge/Chrome của app tự nhớ; chưa kiểm tra trên Windows.
+- Vị trí và kích thước cửa sổ app: cửa sổ chỉ nhận kích thước cố định ở lần mở đầu tiên, sau đó profile Edge/Chrome của app tự nhớ; chưa kiểm tra trên Windows.
+- "Open with" cho tệp .md (đăng ký trong HKCU khi cài, gỡ khi gỡ cài đặt) và mở tệp từ Explorer khi app đang chạy: chưa thử trên Windows; phần mở trang `/files.html?open=` đã thử trên bản máy tính Linux.
 
 ### Đề xuất thêm của bạn
 

@@ -18,6 +18,8 @@ tools/release/publish-desktop.ps1  ──►    Phiên bản > Tải lên       
   - Đóng cửa sổ thì Toolkit vẫn chạy nền; bấm lối tắt để mở lại.
   - Thoát hẳn: menu tài khoản > "Thoát Toolkit".
   - Muốn mở bằng tab trình duyệt thường thì đặt `Desktop:Window = "Browser"` trong `appsettings.Desktop.json`.
+  - Vị trí và kích thước cửa sổ: lần mở đầu tiên cửa sổ rộng 1320×880; sau đó Edge/Chrome nhớ lại vị trí và kích thước bạn để.
+- **Mở tệp .md bằng Toolkit:** khi cài (và mỗi lần cập nhật), Toolkit thêm mình vào danh sách "Open with" của tệp `.md`, `.markdown` cho tài khoản Windows hiện tại (`HKCU\Software\Classes`), không tự đặt làm chương trình mặc định. Muốn nhấp đúp là mở bằng Toolkit: chuột phải tệp `.md` > Open with > Choose another app > Toolkit > Always. Gỡ cài đặt thì mục này cũng được gỡ.
 
 ## Chuẩn bị một lần
 
@@ -115,4 +117,5 @@ Chứng chỉ Let's Encrypt **miễn phí** và tự gia hạn. Ký số bộ c�
 
 - Cài, cập nhật và gỡ cài đặt thật trên Windows: đã đóng gói thử trên Linux, nhưng chưa chạy bộ cài trên Windows.
 - Cửa sổ Edge `--app` chỉ có trên Windows; trên máy khác Toolkit mở tab trình duyệt.
+- "Open with" cho tệp `.md` và việc chuyển tệp sang cửa sổ Toolkit đang chạy: chưa thử trên Windows.
 - Bản Toolkit không cài bằng bộ cài (chạy từ thư mục publish, hoặc `dotnet run`) không tự cập nhật được. Thanh thông báo khi đó dẫn tới trang tải về.

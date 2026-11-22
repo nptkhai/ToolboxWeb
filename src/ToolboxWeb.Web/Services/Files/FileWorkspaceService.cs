@@ -94,6 +94,18 @@ public interface IFileWorkspaceService
     /// <summary>Files dropped from Explorer: stored under <paramref name="folder"/> with their relative paths. Throws "exists" listing the names unless <paramref name="overwrite"/>.</summary>
     Task<int> UploadAsync(int rootId, string? folder, IReadOnlyList<(string RelativePath, IFormFile File)> files, bool overwrite, CancellationToken cancellationToken = default);
 
+    /// <summary>Lines containing <paramref name="query"/> in the text files of every available root (or one root).</summary>
+    Task<FileSearchResult> SearchContentAsync(string? query, bool matchCase, bool showHidden, int? rootId, CancellationToken cancellationToken = default);
+
+    /// <summary>Which of the given paths (relative to the root) do not exist: broken links in a Markdown file.</summary>
+    Task<IReadOnlyList<string>> MissingAsync(int rootId, IReadOnlyList<string> paths, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Desktop: a file opened from Explorer (double-click on a .md file). Finds the root that holds
+    /// it, or, when <paramref name="addRoot"/>, adds its folder as a root. Null root id when none holds it yet.
+    /// </summary>
+    Task<FileOpenPathView> OpenPathAsync(string? fullPath, bool addRoot, CancellationToken cancellationToken = default);
+
     IReadOnlyList<FileTrashItem> GetTrash();
 
     /// <summary>Puts a trashed item back where it was (with "(restored)" when the name is taken); returns where.</summary>
@@ -360,6 +372,175 @@ public sealed class FileWorkspaceService : IFileWorkspaceService
         await _activityLog.LogAsync(_currentUser.UserId, ActivityActionType.Create, ActivityEntityType.File, null,
             _localizer["ActivityLog.FilesAdded", targets.Count, string.IsNullOrEmpty(parentRelative) ? root.Name : $"{root.Name}/{parentRelative}"].Value);
         return targets.Count;
+    }
+
+    public async Task<FileSearchResult> SearchContentAsync(string? query, bool matchCase, bool showHidden, int? rootId, CancellationToken cancellationToken = default)
+    {
+        var text = (query ?? string.Empty).Trim();
+        if (text.Length < 2)
+        {
+            return new FileSearchResult([], 0, false);
+        }
+
+        var comparison = matchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+        var roots = await UserRoots().OrderBy(x => x.SortOrder).ThenBy(x => x.Id).AsNoTracking().ToListAsync(cancellationToken);
+        var matches = new List<FileSearchMatch>();
+        var filesSearched = 0;
+        var stopAt = DateTime.UtcNow.AddSeconds(6);
+        var truncated = false;
+        var options = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        foreach (var root in roots.Where(r => (rootId is null || r.Id == rootId) && RootProblem(r.Path) is null))
+        {
+            var rootPath = FilePathGuard.NormalizeRoot(root.Path);
+            var pending = new Stack<DirectoryInfo>();
+            pending.Push(new DirectoryInfo(rootPath));
+            while (pending.Count > 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (matches.Count >= 300 || DateTime.UtcNow > stopAt)
+                {
+                    truncated = true;
+                    break;
+                }
+
+                var dir = pending.Pop();
+                IEnumerable<FileSystemInfo> entries;
+                try
+                {
+                    entries = dir.EnumerateFileSystemInfos("*", options).ToList();
+                }
+                catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+                {
+                    continue;
+                }
+
+                foreach (var info in entries)
+                {
+                    if (!showHidden && IsHidden(info))
+                    {
+                        continue;
+                    }
+
+                    if (info is DirectoryInfo sub)
+                    {
+                        pending.Push(sub);
+                        continue;
+                    }
+
+                    if (info is not FileInfo file || file.Length > 2 * 1024 * 1024 || KindOf(file.Name) is "image" or "pdf" or "office" or "binary")
+                    {
+                        continue;
+                    }
+
+                    byte[] bytes;
+                    try
+                    {
+                        bytes = await File.ReadAllBytesAsync(file.FullName, cancellationToken);
+                    }
+                    catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+                    {
+                        continue;
+                    }
+
+                    if (TextFileCodec.LooksBinary(bytes))
+                    {
+                        continue;
+                    }
+
+                    filesSearched++;
+                    var (content, _) = TextFileCodec.Decode(bytes);
+                    if (content.IndexOf(text, comparison) < 0)
+                    {
+                        continue;
+                    }
+
+                    var relative = FilePathGuard.Relative(rootPath, file.FullName);
+                    var lineNumber = 0;
+                    foreach (var line in content.Split('\n'))
+                    {
+                        lineNumber++;
+                        var at = line.IndexOf(text, comparison);
+                        if (at < 0)
+                        {
+                            continue;
+                        }
+
+                        var clean = line.TrimEnd('\r');
+                        var start = Math.Max(0, at - 60);
+                        var snippet = clean.Substring(start, Math.Min(clean.Length - start, 200));
+                        matches.Add(new FileSearchMatch(root.Id, root.Name, relative, file.Name, lineNumber, at + 1, snippet, at - start));
+                        if (matches.Count >= 300)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return new FileSearchResult(matches, filesSearched, truncated);
+    }
+
+    public async Task<IReadOnlyList<string>> MissingAsync(int rootId, IReadOnlyList<string> paths, CancellationToken cancellationToken = default)
+    {
+        var (root, _) = await ResolveAsync(rootId, null, cancellationToken);
+        var missing = new List<string>();
+        foreach (var path in paths.Distinct().Take(500))
+        {
+            var full = FilePathGuard.Resolve(root.Path, path);
+            if (full is null || (!File.Exists(full) && !Directory.Exists(full)))
+            {
+                missing.Add(path);
+            }
+        }
+
+        return missing;
+    }
+
+    public async Task<FileOpenPathView> OpenPathAsync(string? fullPath, bool addRoot, CancellationToken cancellationToken = default)
+    {
+        if (!_mode.IsDesktop)
+        {
+            throw Error("unsupported", "Files.Error.DesktopOnly");
+        }
+
+        string full;
+        try
+        {
+            full = Path.GetFullPath((fullPath ?? string.Empty).Trim().Trim('"'));
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            throw Error("invalid", "Files.Error.PathInvalid");
+        }
+
+        if (!File.Exists(full))
+        {
+            throw Error("notFound", "Files.Error.FileMissing");
+        }
+
+        var folder = Path.GetDirectoryName(full)!;
+        var roots = await UserRoots().AsNoTracking().ToListAsync(cancellationToken);
+        var holder = roots
+            .Where(r => RootProblem(r.Path) is null && FilePathGuard.IsInside(FilePathGuard.NormalizeRoot(r.Path), full))
+            .OrderByDescending(r => r.Path.Length)
+            .FirstOrDefault();
+        if (holder is not null)
+        {
+            var relative = FilePathGuard.Relative(holder.Path, full);
+            if (FilePathGuard.Resolve(holder.Path, relative) is not null)
+            {
+                return new FileOpenPathView(holder.Id, relative, folder, false);
+            }
+        }
+
+        if (!addRoot)
+        {
+            return new FileOpenPathView(null, null, folder, false);
+        }
+
+        var added = await AddRootAsync(folder, null, cancellationToken);
+        return new FileOpenPathView(added.Id, Path.GetFileName(full), folder, true);
     }
 
     public IReadOnlyList<FileTrashItem> GetTrash() => _trash.List(_currentUser.UserId);

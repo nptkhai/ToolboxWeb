@@ -74,6 +74,19 @@ public sealed class FileSaveRequest
 
 public sealed record FileSavedView(int RootId, string Path, string Hash, long Size, DateTime Modified, string Encoding, bool Bom, string LineEnding);
 
+/// <summary>One line found by "Search in files". <paramref name="Offset"/> is where the match starts in <paramref name="Text"/>.</summary>
+public sealed record FileSearchMatch(int RootId, string RootName, string Path, string Name, int Line, int Column, string Text, int Offset);
+
+/// <param name="Truncated">The search stopped early (300 lines or 6 seconds).</param>
+public sealed record FileSearchResult(IReadOnlyList<FileSearchMatch> Matches, int FilesSearched, bool Truncated);
+
+public sealed record FileMissingRequest(int Root, List<string>? Paths);
+
+public sealed record FileOpenPathRequest(string? Path, bool AddRoot);
+
+/// <param name="RootId">The root that holds the file, or null when none does yet (then <paramref name="Folder"/> could be added).</param>
+public sealed record FileOpenPathView(int? RootId, string? Path, string Folder, bool AddedRoot);
+
 /// <summary>A quick-open match: a file in one of the user's roots.</summary>
 public sealed record FileFindItem(int RootId, string RootName, string Path, string Name, string Kind);
 

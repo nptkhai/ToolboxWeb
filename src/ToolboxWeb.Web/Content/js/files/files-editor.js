@@ -876,6 +876,42 @@
     }
 
     NS.checkOpenTabs = checkOpenTabs;
+
+    /** Shows line <paramref name="line"/> (1-based): the editor's cursor when editing, else the closest block. */
+    NS.goToLine = (tab, line) => {
+        const index = Math.max(0, (Number(line) || 1) - 1);
+        if (tab.mode === 'edit' && editor && editor.getDoc() === tab.cmDoc) {
+            window.setTimeout(() => {
+                editor.setCursor({ line: index, ch: 0 });
+                editor.scrollIntoView({ line: index, ch: 0 }, editor.getScrollInfo().clientHeight / 2);
+                editor.addLineClass(index, 'background', 'fx-line-flash');
+                window.setTimeout(() => editor.removeLineClass(index, 'background', 'fx-line-flash'), 1600);
+            }, 30);
+            return;
+        }
+        const gutter = els.body.querySelector('.fx-gutter');
+        if (gutter) {
+            const height = parseFloat(getComputedStyle(gutter).lineHeight) || 20;
+            els.body.scrollTop = Math.max(0, index * height - els.body.clientHeight / 3);
+            return;
+        }
+        const blocks = Array.from(els.body.querySelectorAll('[data-line]')).filter((el) => Number(el.dataset.line) <= index);
+        const block = blocks[blocks.length - 1];
+        if (block) {
+            block.scrollIntoView({ block: 'center' });
+            block.classList.add('fx-block-flash');
+            window.setTimeout(() => block.classList.remove('fx-block-flash'), 1600);
+        }
+    };
+
+    /** Inserts text at the cursor of the active editor (paste image, …). */
+    NS.insertText = (value) => {
+        if (!editor) return;
+        editor.replaceSelection(value);
+        editor.focus();
+    };
+
+    NS.editorFor = (tab) => (editor && tab?.cmDoc && editor.getDoc() === tab.cmDoc ? editor : null);
     window.setInterval(checkOpenTabs, POLL_MS);
     window.addEventListener('focus', checkOpenTabs);
 

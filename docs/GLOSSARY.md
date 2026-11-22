@@ -60,6 +60,9 @@ Người dùng là lập trình viên, nên tên đối tượng của SQL Serve
 | Line ending (CRLF/LF) | Kiểu xuống dòng |
 | Open with the default program | Mở bằng chương trình mặc định |
 | Show in Explorer | Hiện trong Explorer |
+| Pin / Pinned | Ghim / Đã ghim |
+| Table of contents | Mục lục |
+| Trash (Toolkit's) | Thùng rác của Toolkit |
 
 ## Chung
 

@@ -567,6 +567,7 @@
                 node.group.insertAdjacentHTML('beforeend', `<li class="fx-tree-note" role="none" style="--fx-depth:${node.depth + 1}">${escapeHtml(fmt(text['Tree.More'], number(list.total - list.entries.length)))}</li>`);
             }
             node.loaded = true;
+            applyFilter();
             markActiveInTree();
         } catch (error) {
             node.group.innerHTML = `<li class="fx-tree-note is-error" role="none" style="--fx-depth:${node.depth + 1}">${escapeHtml(error.message)}</li>`;
@@ -637,6 +638,16 @@
             if (active) renderDocHead(active);
             saveState();
         }
+    }
+
+    /** Hides files of other kinds than state.filter (folders stay); "" shows everything. */
+    function applyFilter() {
+        const kind = state.filter || '';
+        els.tree.classList.toggle('is-filtered', Boolean(kind));
+        state.nodes.forEach((node) => {
+            if (!node.el || node.isFolder) return;
+            node.el.hidden = Boolean(kind) && node.kind !== kind;
+        });
     }
 
     function collapseAll() {
@@ -888,6 +899,7 @@
         markActiveInTree();
         saveState();
         if (!tab.doc || options?.reload) {
+            tab.pendingOptions = options;
             await loadDoc(tab);
         } else {
             showDoc(tab, options);
@@ -906,8 +918,11 @@
             tab.error = error;
         }
         tab.loading = false;
-        if (state.active === tab.key) showDoc(tab);
+        const options = tab.pendingOptions;
+        tab.pendingOptions = null;
+        if (state.active === tab.key) showDoc(tab, options);
         renderTabs();
+        NS.onOpened?.(tab);
     }
 
     NS.reloadTab = (tab) => loadDoc(tab);
@@ -973,6 +988,7 @@
     }
 
     function showDoc(tab, options) {
+        els.body.classList.remove('has-toc');
         renderDocHead(tab);
         tab.view?.destroy?.();
         tab.view = null;
@@ -983,16 +999,20 @@
             return;
         }
         if (NS.showDoc && NS.showDoc(tab, els, viewContext(tab), options)) {
+            NS.afterRender?.(tab, tab.view);
             setStatus(tab);
+            if (options?.line) NS.goToLine?.(tab, options.line);
             return;
         }
         tab.view = NS.viewers.render(els.body, tab.doc, viewContext(tab));
+        NS.afterRender?.(tab, tab.view);
         setStatus(tab);
         els.body.scrollTop = tab.scroll || 0;
         if (options?.anchor) {
             const target = els.body.querySelector(`[id="fx-h-${CSS.escape(String(options.anchor).toLowerCase())}"]`);
             target?.scrollIntoView({ block: 'start' });
         }
+        if (options?.line) NS.goToLine?.(tab, options.line);
         reveal(tab.rootId, tab.path);
     }
 
@@ -1013,6 +1033,7 @@
             const custom = NS.statusFor(tab);
             if (custom) {
                 els.status.innerHTML = custom;
+                NS.afterStatus?.(tab, els.status);
                 return;
             }
         }
@@ -1028,6 +1049,7 @@
         parts.push(`<span class="fx-status-mode${doc.editable ? '' : ' is-readonly'}" title="${escapeHtml(doc.readOnlyReason || '')}">${escapeHtml(mode)}</span>`);
         if (doc.plain) parts.push(escapeHtml(text['Doc.Plain']));
         els.status.innerHTML = parts.join('<span class="fx-meta-sep" aria-hidden="true">·</span>');
+        NS.afterStatus?.(tab, els.status);
     }
 
     NS.setStatus = setStatus;
@@ -1084,12 +1106,17 @@
     let findItems = [];
     let findIndex = -1;
 
-    function renderFind() {
+    function renderFind(suggest) {
         const list = els.findResults;
         if (!els.find.value.trim()) {
-            list.hidden = true;
-            els.find.setAttribute('aria-expanded', 'false');
-            return;
+            const suggestions = suggest && NS.findSuggestions ? NS.findSuggestions() : [];
+            if (!suggestions.length) {
+                list.hidden = true;
+                els.find.setAttribute('aria-expanded', 'false');
+                return;
+            }
+            findItems = suggestions;
+            if (findIndex < 0 || findIndex >= findItems.length) findIndex = 0;
         }
         list.hidden = false;
         els.find.setAttribute('aria-expanded', 'true');
@@ -1100,17 +1127,21 @@
         else els.find.removeAttribute('aria-activedescendant');
     }
 
+    let findPending = null;
+
     function runFind() {
+        window.clearTimeout(findTimer);
         const query = els.find.value.trim();
         const seq = ++findSeq;
         if (!query) {
             findItems = [];
-            renderFind();
-            return;
+            renderFind(true);
+            findPending = null;
+            return Promise.resolve();
         }
         els.findResults.hidden = false;
         els.findResults.innerHTML = `<li class="fx-find-note" role="presentation">${escapeHtml(text['Find.Searching'])}</li>`;
-        request(urls.find, null, { q: query, hidden: state.showHidden }).then((items) => {
+        findPending = request(urls.find, null, { q: query, hidden: state.showHidden }).then((items) => {
             if (seq !== findSeq) return;
             findItems = items;
             findIndex = items.length ? 0 : -1;
@@ -1119,7 +1150,10 @@
             if (seq !== findSeq) return;
             findItems = [];
             els.findResults.innerHTML = `<li class="fx-find-note is-error" role="presentation">${escapeHtml(error.message)}</li>`;
+        }).finally(() => {
+            if (seq === findSeq) findPending = null;
         });
+        return findPending;
     }
 
     function chooseFind(index) {
@@ -1131,19 +1165,37 @@
         openFile(item.rootId, item.path);
     }
 
+    els.find.addEventListener('focus', () => {
+        if (!els.find.value.trim()) renderFind(true);
+    });
     els.find.addEventListener('input', () => {
         window.clearTimeout(findTimer);
-        findTimer = window.setTimeout(runFind, 200);
+        // What was listed belongs to the old text: Enter must not open it.
+        findItems = [];
+        findIndex = -1;
+        if (els.find.value.trim()) {
+            findPending = new Promise((resolve) => {
+                findTimer = window.setTimeout(() => runFind().then(resolve, resolve), 200);
+            });
+        } else {
+            runFind();
+        }
     });
     els.find.addEventListener('keydown', (event) => {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             if (!findItems.length) return;
             event.preventDefault();
             findIndex = (findIndex + (event.key === 'ArrowDown' ? 1 : -1) + findItems.length) % findItems.length;
-            renderFind();
+            renderFind(true);
         } else if (event.key === 'Enter') {
             event.preventDefault();
-            chooseFind(findIndex);
+            if (findPending) {
+                // Still searching for what was just typed: open the first match when it comes.
+                const pending = els.find.value.trim() ? runFind() : findPending;
+                pending.then(() => chooseFind(findIndex));
+            } else {
+                chooseFind(findIndex);
+            }
         } else if (event.key === 'Escape') {
             els.find.value = '';
             findItems = [];
@@ -1212,6 +1264,8 @@
     if (keys) {
         keys.add({
             keys: 'mod+p', label: text['Keys.Find'], inInputs: true, button: els.find,
+            // Ctrl+Shift+P is the command palette (files-extras.js), not this.
+            when: (event) => !event.shiftKey,
             run: () => {
                 setSideOpen(true);
                 els.find.focus();
@@ -1239,7 +1293,8 @@
         state, els, config, text, urls, request, rawUrl, openFile, closeTab, activateTab, activeTab, findTab, renderTabs,
         refreshTabs, refreshTree, loadRoots, loadStats, reveal, keyOf, parentPath, baseName, notify, fmt, escapeHtml, icon,
         bytes, when, number, saveState, toggleFolder, showMenu, openOutside, setStatus, focusItem, rootName, moveToBody, modal,
-        loadDoc, openPicker, showDoc, renderDocHead, viewContext, markActiveInTree, reloadFolder, retargetTabs
+        loadDoc, openPicker, showDoc, renderDocHead, viewContext, markActiveInTree, reloadFolder, retargetTabs,
+        applyFilter: () => applyFilter(), setShowHidden: (on) => { state.showHidden = on; saveState(); refreshTree(); }
     };
 
     state.showHidden = Boolean(state.saved.showHidden);
