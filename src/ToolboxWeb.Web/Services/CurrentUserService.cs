@@ -12,6 +12,8 @@ public interface ICurrentUserService
     bool IsAuthenticated { get; }
     string AuthSource { get; }
     bool IsJiraUser { get; }
+    string? JiraBaseUrl { get; }
+    string? JiraUsername { get; }
 }
 
 public class CurrentUserService : ICurrentUserService
@@ -29,4 +31,6 @@ public class CurrentUserService : ICurrentUserService
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true;
     public string AuthSource => _httpContextAccessor.HttpContext?.User.FindFirstValue(ToolboxClaimTypes.AuthSource) ?? AuthSources.Local;
     public bool IsJiraUser => string.Equals(AuthSource, AuthSources.Jira, StringComparison.OrdinalIgnoreCase);
+    public string? JiraBaseUrl => _httpContextAccessor.HttpContext?.User.FindFirstValue(ToolboxClaimTypes.JiraBaseUrl);
+    public string? JiraUsername => _httpContextAccessor.HttpContext?.User.FindFirstValue(ToolboxClaimTypes.JiraUsername);
 }

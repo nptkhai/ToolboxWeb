@@ -32,12 +32,13 @@ A desktop with `License:PublicKey` set in `appsettings.Desktop.json` asks for a 
 Files & folders (`/files.html`) while debugging:
 
 - Visual Studio profile **Desktop (debug)** (`--desktop`): the screen is always on for the device owner, with the Windows folder dialog, Recycle Bin and Explorer. Data lives in `%LOCALAPPDATA%\Toolkit`, apart from the `app.db` of the other profiles.
-- Profiles `http`, `https`, `IIS Express` (Server mode): the screen shows only for local accounts listed in `Files:AllowedUsers`, on folders under `Files:AllowedFolders` (both empty in `appsettings.Development.json`, so the page answers 404). Put your values in User Secrets (right-click the project > Manage User Secrets) rather than in the repository:
+- Profiles `http`, `https`, `IIS Express` (Server mode): the screen shows only for local accounts listed in `Files:AllowedUsers` and Jira accounts listed in `Files:AllowedJiraUsers` (the Jira address typed on the sign-in page plus the Jira user name; both must match), on folders under `Files:AllowedFolders` (all empty in `appsettings.Development.json`, so the page answers 404). Put your values in User Secrets (right-click the project > Manage User Secrets) rather than in the repository:
 
 ```json
 {
   "Files": {
     "AllowedUsers": [ "you@example.com" ],
+    "AllowedJiraUsers": [ { "BaseUrl": "https://jira.example.com", "Username": "your.jira.name" } ],
     "AllowedFolders": [ "D:\\Docs" ]
   }
 }

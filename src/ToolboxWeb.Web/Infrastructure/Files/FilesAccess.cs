@@ -8,7 +8,8 @@ namespace ToolboxWeb.Web.Infrastructure.Files;
 
 /// <summary>
 /// Who may use "Files &amp; folders": the owner of a desktop; on the IIS site only the local
-/// accounts listed in <c>Files:AllowedUsers</c> (never a Jira account); nobody on the web copy.
+/// accounts listed in <c>Files:AllowedUsers</c> and the Jira accounts listed, with their Jira
+/// address, in <c>Files:AllowedJiraUsers</c>; nobody on the web copy.
 /// </summary>
 public sealed class FilesAccess
 {
@@ -37,11 +38,54 @@ public sealed class FilesAccess
                 return true;
             }
 
+            if (_currentUser.IsJiraUser)
+            {
+                return IsListedJiraUser(_currentUser.JiraBaseUrl, _currentUser.JiraUsername);
+            }
+
             var name = _currentUser.UserName;
-            return !_currentUser.IsJiraUser
-                && !string.IsNullOrWhiteSpace(name)
+            return !string.IsNullOrWhiteSpace(name)
                 && _options.CurrentValue.AllowedUsers.Any(x => string.Equals(x?.Trim(), name, StringComparison.OrdinalIgnoreCase));
         }
+    }
+
+    /// <summary>
+    /// A Jira account matches an entry only when both the Jira address and the user name match,
+    /// so someone signing in to another Jira with the same user name is not let in. Entries that
+    /// are incomplete or carry an invalid address are skipped.
+    /// </summary>
+    private bool IsListedJiraUser(string? baseUrl, string? username)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(username))
+        {
+            return false;
+        }
+
+        foreach (var entry in _options.CurrentValue.AllowedJiraUsers)
+        {
+            if (entry is null || string.IsNullOrWhiteSpace(entry.BaseUrl) || string.IsNullOrWhiteSpace(entry.Username))
+            {
+                continue;
+            }
+
+            string entryBaseUrl;
+            try
+            {
+                entryBaseUrl = JiraAuthService.NormalizeBaseUrl(entry.BaseUrl);
+            }
+            catch (InvalidOperationException)
+            {
+                continue;
+            }
+
+            if (string.Equals(entryBaseUrl, baseUrl, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(JiraAuthService.NormalizeJiraUsername(entry.Username), username, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>The desktop may open any folder; the IIS site only folders under <c>Files:AllowedFolders</c>.</summary>

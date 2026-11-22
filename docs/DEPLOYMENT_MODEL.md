@@ -221,18 +221,24 @@ Chủ dự án chọn cả 4 việc. So sánh DB và Bắt SQL **chỉ có ở D
 
 ### Bật "Tệp & Thư mục" trên site IIS (chế độ Server)
 Màn hình Tệp & Thư mục đọc và ghi tệp **trên ổ đĩa của máy chủ**, nên mặc định trên site IIS không ai dùng được. Bản máy tính luôn có màn hình này (chủ máy mở thư mục nào cũng được); bản Web không có.
-1. Ghi vào `appsettings.Production.json` của site (hoặc biến môi trường `Files__AllowedUsers__0`, `Files__AllowedFolders__0`…):
+1. Ghi vào `appsettings.Production.json` của site (hoặc biến môi trường `Files__AllowedUsers__0`, `Files__AllowedJiraUsers__0__BaseUrl`, `Files__AllowedJiraUsers__0__Username`, `Files__AllowedFolders__0`…):
    ```json
    "Files": {
      "AllowedUsers": [ "ten.dang.nhap@congty.vn" ],
+     "AllowedJiraUsers": [
+       { "BaseUrl": "https://task.ascvn.com.vn", "Username": "ten.jira" }
+     ],
      "AllowedFolders": [ "D:\\TaiLieuChung" ]
    }
    ```
-   - `AllowedUsers`: email của **tài khoản local** được dùng. Tài khoản đăng nhập bằng Jira không bao giờ có quyền.
-   - `AllowedFolders`: các thư mục nền; thư mục gốc chỉ được chọn bên trong các thư mục này. Link/junction trỏ ra ngoài bị chặn.
-   - Để trống một trong hai danh sách là tắt màn hình. Người không có tên trong danh sách không thấy menu và mở link trực tiếp gặp 404.
+   - `AllowedUsers`: email của **tài khoản local** được dùng.
+   - `AllowedJiraUsers`: **tài khoản Jira** được dùng, mỗi mục gồm địa chỉ Jira (đúng địa chỉ gõ ở trang đăng nhập) và tên đăng nhập Jira (không phân biệt hoa thường). Phải khớp cả hai: người đăng nhập vào một Jira khác mà trùng tên vẫn bị chặn, vì địa chỉ Jira do người dùng tự gõ. Mục thiếu hoặc sai địa chỉ bị bỏ qua.
+   - `AllowedFolders`: các thư mục nền; thư mục gốc chỉ được chọn bên trong các thư mục này. Link/junction trỏ ra ngoài bị chặn. Áp dụng chung cho tài khoản local và tài khoản Jira.
+   - Khi debug trên máy dev với `Jira:UseFakeData=true` (chỉ có hiệu lực ở Development), đăng nhập Jira không kiểm tra mật khẩu, nên một mục trong `AllowedJiraUsers` mở màn hình cho bất kỳ ai dùng máy đó. Trên IIS (Production) cờ này bị bỏ qua.
+   - Không có tài khoản nào được liệt kê, hoặc `AllowedFolders` trống, là tắt màn hình. Người không có tên trong danh sách không thấy menu và mở link trực tiếp gặp 404.
 2. Cấp quyền NTFS cho tài khoản app pool (`IIS AppPool\<tên pool>`) trên từng thư mục trong `AllowedFolders`: Read nếu chỉ xem, Modify nếu cần sửa và quản lý tệp.
-3. Trên IIS không có hộp thoại Windows: người dùng chọn thư mục bằng hộp chọn vẽ trong trang (chỉ duyệt bên trong `AllowedFolders`), và "Lưu bản sao" thành "Tải xuống".
+3. Tệp bị xóa vào thùng rác riêng của Toolkit, mặc định là thư mục `files-trash` **cạnh file cơ sở dữ liệu** (đặt `Storage:FilesTrashPath` để đổi). Thư mục này cần quyền Modify cho app pool. Khi `Storage:DatabasePath` đã trỏ ra ngoài thư mục site thì thùng rác cũng nằm ngoài, nên deploy không xóa nó.
+4. Trên IIS không có hộp thoại Windows: người dùng chọn thư mục bằng hộp chọn vẽ trong trang (chỉ duyệt bên trong `AllowedFolders`), và "Lưu bản sao" thành "Tải xuống".
 
 ### Dựng site Web trên IIS (máy chính)
 1. Tạo site IIS thứ hai (ví dụ `toolkit.<miền>`), publish cùng bản build với site Server.

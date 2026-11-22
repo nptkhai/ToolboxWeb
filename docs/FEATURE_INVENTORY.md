@@ -69,7 +69,7 @@ Lưu ý:
 | Liên kết nhanh | `/quick-links.html` | CÁ NHÂN | Mọi tài khoản | G L |
 | Không gian prompt | `/prompt-templates.html` | CÁ NHÂN | Mọi tài khoản | G P |
 | So sánh nội dung | `/text-compare.html` | CÔNG CỤ | Mọi tài khoản, cả bản Web | G X |
-| Tệp & Thư mục | `/files.html` | CÔNG CỤ | Bản máy tính; trên IIS chỉ tài khoản trong `Files:AllowedUsers`; không có ở bản Web | G E |
+| Tệp & Thư mục | `/files.html` | CÔNG CỤ | Bản máy tính; trên IIS chỉ tài khoản trong `Files:AllowedUsers` hoặc `Files:AllowedJiraUsers` (tài khoản Jira, kèm địa chỉ Jira); không có ở bản Web | G E |
 | Thử code web | `/code-playground.html` | CÔNG CỤ | Mọi tài khoản, cả bản Web | G H |
 | So sánh cấu trúc DB | `/schema-compare.html` | CÔNG CỤ | Mọi tài khoản | G S |
 | Bắt câu lệnh SQL | `/sql-profiler.html` | CÔNG CỤ | Mọi tài khoản | G Q |

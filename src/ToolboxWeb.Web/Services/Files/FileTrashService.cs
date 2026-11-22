@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using ToolboxWeb.Web.Infrastructure.Files;
 using ToolboxWeb.Web.Infrastructure.Hosting;
+using ToolboxWeb.Web.Infrastructure.Storage;
 
 namespace ToolboxWeb.Web.Services.Files;
 
@@ -13,7 +14,7 @@ public sealed record FileTrashItem(string Id, int RootId, string RootName, strin
 /// <summary>
 /// Toolkit's own trash for "Files &amp; folders" where the Windows Recycle Bin cannot be used (the
 /// IIS site, whose service account has no usable Recycle Bin, or a desktop that is not Windows):
-/// <c>{DataRoot}/files-trash/{user}/{id}/</c> holds the item and <c>item.json</c> says where it came
+/// <c>{Storage:FilesTrashPath}/{user}/{id}/</c> (default "files-trash" next to the database) holds the item and <c>item.json</c> says where it came
 /// from. Items older than <c>Files:TrashDays</c> are purged by <see cref="FileTrashCleanupService"/>.
 /// </summary>
 public sealed class FileTrashService
@@ -23,17 +24,19 @@ public sealed class FileTrashService
 
     private readonly AppModeInfo _mode;
     private readonly IOptionsMonitor<FilesOptions> _options;
+    private readonly RuntimeStoragePaths _storage;
 
-    public FileTrashService(AppModeInfo mode, IOptionsMonitor<FilesOptions> options)
+    public FileTrashService(AppModeInfo mode, IOptionsMonitor<FilesOptions> options, RuntimeStoragePaths storage)
     {
         _mode = mode;
         _options = options;
+        _storage = storage;
     }
 
     /// <summary>The Windows Recycle Bin is used on a Windows desktop; everywhere else this trash.</summary>
     public bool UsesRecycleBin => _mode.IsDesktop && WindowsShell.IsAvailable;
 
-    private string TrashRoot => Path.Combine(_mode.DataRoot, "files-trash");
+    private string TrashRoot => _storage.FilesTrashPath;
 
     private string UserFolder(string userId) =>
         Path.Combine(TrashRoot, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(userId)))[..16].ToLowerInvariant());
