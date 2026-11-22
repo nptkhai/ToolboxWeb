@@ -280,6 +280,7 @@
         editorPane.appendChild(editorHost);
         panes.appendChild(editorPane);
         if (markdown) {
+            panes.appendChild(splitHandle(panes));
             const preview = document.createElement('div');
             preview.className = 'fx-preview';
             preview.setAttribute('aria-label', text['Edit.Preview']);
@@ -302,6 +303,81 @@
             if (!P.els.tree.contains(document.activeElement)) editor.focus();
         }, 0);
     }
+
+    // The bar between the editor and the preview. The editor's share (20-80 %) is kept in the prefs.
+    const SPLIT_MIN = 20;
+    const SPLIT_MAX = 80;
+
+    function splitShare() {
+        const value = Number(prefs.splitShare);
+        return Number.isFinite(value) && value >= SPLIT_MIN && value <= SPLIT_MAX ? value : 50;
+    }
+
+    function applySplit(panes, handle, share) {
+        const value = Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, Math.round(share)));
+        panes.style.setProperty('--fx-split-left', `${value}fr`);
+        panes.style.setProperty('--fx-split-right', `${100 - value}fr`);
+        handle.setAttribute('aria-valuenow', String(value));
+        prefs.splitShare = value;
+    }
+
+    let splitRefresh = 0;
+    function refreshAfterSplit() {
+        window.cancelAnimationFrame(splitRefresh);
+        splitRefresh = window.requestAnimationFrame(() => editor?.refresh());
+    }
+
+    function splitHandle(panes) {
+        const handle = document.createElement('div');
+        handle.className = 'fx-split-handle';
+        handle.tabIndex = 0;
+        handle.setAttribute('role', 'separator');
+        handle.setAttribute('aria-orientation', 'vertical');
+        handle.setAttribute('aria-label', text['Edit.Resize']);
+        handle.setAttribute('aria-valuemin', String(SPLIT_MIN));
+        handle.setAttribute('aria-valuemax', String(SPLIT_MAX));
+        handle.title = text['Edit.Resize'];
+        applySplit(panes, handle, splitShare());
+
+        handle.addEventListener('pointerdown', (event) => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            handle.setPointerCapture(event.pointerId);
+            handle.classList.add('is-dragging');
+            const box = panes.getBoundingClientRect();
+            const move = (e) => {
+                applySplit(panes, handle, ((e.clientX - box.left) / box.width) * 100);
+                refreshAfterSplit();
+            };
+            const up = () => {
+                handle.classList.remove('is-dragging');
+                handle.removeEventListener('pointermove', move);
+                handle.removeEventListener('pointerup', up);
+                handle.removeEventListener('pointercancel', up);
+                savePrefs();
+                editor?.refresh();
+            };
+            handle.addEventListener('pointermove', move);
+            handle.addEventListener('pointerup', up);
+            handle.addEventListener('pointercancel', up);
+        });
+        handle.addEventListener('dblclick', () => {
+            applySplit(panes, handle, 50);
+            savePrefs();
+            editor?.refresh();
+        });
+        handle.addEventListener('keydown', (event) => {
+            const steps = { ArrowLeft: -5, ArrowRight: 5, Home: SPLIT_MIN - 100, End: 100 };
+            if (!(event.key in steps)) return;
+            event.preventDefault();
+            applySplit(panes, handle, splitShare() + steps[event.key]);
+            savePrefs();
+            editor?.refresh();
+        });
+        return handle;
+    }
+
+    NS.onLayout = () => refreshAfterSplit();
 
     function schedulePreview(tab) {
         window.clearTimeout(previewTimer);

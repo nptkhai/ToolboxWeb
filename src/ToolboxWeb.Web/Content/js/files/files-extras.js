@@ -536,6 +536,7 @@ ${article.outerHTML}
         add('new-folder', 'Palette.NewFolder', 'folder-plus', () => document.querySelector('[data-fx-new-folder]')?.click());
         add('add-root', 'Palette.AddRoot', 'folder-tree', () => document.querySelector('.fx-side [data-fx-add-root], [data-fx-welcome] [data-fx-add-root]')?.click());
         add('collapse', 'Palette.Collapse', 'chevrons-down-up', () => document.querySelector('[data-fx-collapse]')?.click());
+        add('toggle-tree', 'Palette.ToggleTree', 'panel-left', () => P.toggleSide());
         add('hidden', 'Palette.Hidden', 'eye', () => { if (hiddenBox) { hiddenBox.checked = !hiddenBox.checked; hiddenBox.dispatchEvent(new Event('change')); } });
         add('pin', 'Palette.Pin', 'star', () => { const tab = P.activeTab(); if (tab) togglePin(tab); });
         add('toc', 'Palette.Toc', 'list-tree', () => { const tab = P.activeTab(); if (tab?.doc?.kind === 'markdown') toggleToc(tab); });

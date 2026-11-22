@@ -87,6 +87,24 @@
     display: none;
 }
 
+/* Wide screens: the button at the start of the tab row hides and shows the tree column. */
+@media (min-width: 900px) {
+    .fx-shell .btn.fx-side-open {
+        align-self: center;
+        display: inline-flex;
+        margin: 0 var(--space-1);
+    }
+
+    .fx-shell.is-side-hidden {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+        .fx-shell.is-side-hidden .fx-side,
+        .fx-shell.is-side-hidden .fx-resizer {
+            display: none;
+        }
+}
+
 .fx-find {
     padding: var(--space-2);
     position: relative;
@@ -691,7 +709,6 @@
     color: var(--text);
     font-size: var(--text-md);
     line-height: 1.65;
-    max-width: 920px;
     overflow-wrap: anywhere;
 }
 
@@ -853,11 +870,16 @@
     text-align: center;
 }
 
+/* Cells keep whole words: "anywhere" would let a narrow column break a word into single letters.
+   A table wider than the view scrolls inside .fx-table-wrap instead. */
 .fx-md th,
 .fx-md td {
     border: 1px solid var(--line);
+    min-width: 6em;
+    overflow-wrap: normal;
     padding: var(--space-2) var(--space-3);
     vertical-align: top;
+    word-break: normal;
 }
 
 .fx-md .fx-callout {
@@ -1157,8 +1179,53 @@
 }
 
 .fx-edit.is-split .fx-edit-panes {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, var(--fx-split-left, 1fr)) 9px minmax(0, var(--fx-split-right, 1fr));
 }
+
+/* The bar between the editor and the preview: drag it, use the arrow keys, or double-click for half and half. */
+.fx-split-handle {
+    cursor: col-resize;
+    display: none;
+    position: relative;
+    touch-action: none;
+}
+
+.fx-edit.is-split .fx-split-handle {
+    display: block;
+}
+
+    .fx-split-handle::before {
+        background: var(--line);
+        content: "";
+        inset: 0 4px;
+        position: absolute;
+        transition: background-color var(--duration) var(--ease);
+    }
+
+    .fx-split-handle::after {
+        background: var(--line-strong);
+        border-radius: var(--radius-pill);
+        content: "";
+        height: 32px;
+        left: 2px;
+        position: absolute;
+        top: calc(50% - 16px);
+        transition: background-color var(--duration) var(--ease);
+        width: 5px;
+    }
+
+    .fx-split-handle:hover::before,
+    .fx-split-handle:hover::after,
+    .fx-split-handle.is-dragging::before,
+    .fx-split-handle.is-dragging::after,
+    .fx-split-handle:focus-visible::before,
+    .fx-split-handle:focus-visible::after {
+        background: var(--accent-brand);
+    }
+
+    .fx-split-handle:focus-visible {
+        outline: none;
+    }
 
 .fx-edit-pane {
     min-height: 0;
@@ -1182,7 +1249,6 @@
 }
 
 .fx-edit.is-split .fx-preview {
-    border-left: 1px solid var(--line);
     display: block;
 }
 
@@ -1683,7 +1749,8 @@
         position: static;
     }
 
-    .fx-edit.is-split .fx-preview {
+    .fx-edit.is-split .fx-preview,
+    .fx-edit.is-split .fx-split-handle {
         display: none;
     }
 
