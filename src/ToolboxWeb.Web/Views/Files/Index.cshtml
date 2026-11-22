@@ -24,11 +24,11 @@
         "Json.Error", "Json.ShowText", "Json.ShowTree", "Json.Items", "Json.Keys", "Csv.Rows", "Csv.Truncated", "Csv.Empty",
         "Image.Size", "Md.CopyCode", "Md.Copied", "Md.MissingLink", "Md.Callout.note", "Md.Callout.tip", "Md.Callout.important",
         "Md.Callout.warning", "Md.Callout.caution", "Keys.Find", "Keys.CloseTab", "Keys.Tree", "Keys.Print",
-        "Keys.NextTab", "Keys.PrevTab", "Root.NameRequired", "Tabs.Unsaved", "Md.TaskDone", "Md.TaskOpen"
+        "Keys.NextTab", "Keys.PrevTab", "Root.NameRequired", "Tabs.Unsaved", "Md.TaskDone", "Md.TaskOpen", "Tree.Show", "Tree.Hide"
     ];
     string[] editKeys =
     [
-        "Edit.Unsaved", "Edit.SavedAt", "Edit.Saving", "Edit.SaveFailed", "Edit.Mode", "Edit.Autosave", "Edit.Cursor", "Edit.Preview",
+        "Edit.Unsaved", "Edit.SavedAt", "Edit.Saving", "Edit.SaveFailed", "Edit.Mode", "Edit.Autosave", "Edit.Cursor", "Edit.Preview", "Edit.Resize",
         "Edit.Editor", "Edit.DiscardTitle", "Edit.DiscardMessage", "Edit.DiscardOk", "Edit.Discarded", "Edit.ReadOnlyHint",
         "Save.Conflict", "Save.Deleted", "Save.DeletedOk", "Save.EncodingTitle", "Save.EncodingOk", "Save.EncodingLoss",
         "External.Reloaded", "External.Deleted", "External.DeletedDirty", "Draft.Found", "Draft.FoundChanged", "Draft.Restore",
@@ -47,7 +47,7 @@
         "Paste.Failed", "Filter.Showing", "Filter.Hidden", "Search.TooShort", "Search.Summary", "Search.SummaryMore", "Search.None",
         "Palette.Keywords", "Palette.Find", "Palette.Search", "Palette.NewFile", "Palette.NewFolder", "Palette.AddRoot", "Palette.Collapse",
         "Palette.Hidden", "Palette.Pin", "Palette.Toc", "Palette.Export", "Palette.Print", "Palette.Trash", "Keys.Search", "Keys.Palette",
-        "OpenPath.Title", "OpenPath.Message", "OpenPath.Ok"
+        "OpenPath.Title", "OpenPath.Message", "OpenPath.Ok", "Palette.ToggleTree"
     ];
     var text = keys.Concat(editKeys).ToDictionary(k => k, k => Text("Files." + k));
     text["cancel"] = Text("Action.Cancel");
@@ -136,7 +136,7 @@
     </section>
 
     <div class="fx-shell" data-fx-shell hidden>
-        <aside class="tbx-panel fx-side" data-fx-side aria-label="@T["Files.Tree.Label"]">
+        <aside class="tbx-panel fx-side" id="fx-side" data-fx-side aria-label="@T["Files.Tree.Label"]">
             <div class="fx-side-head">
                 <h2 class="fx-side-title">@T["Files.Tree.Title"]</h2>
                 <div class="fx-side-actions">
@@ -200,7 +200,7 @@
 
         <section class="tbx-panel fx-main" data-fx-main aria-label="@T["Files.Doc.Label"]">
             <div class="fx-tabs-row">
-                <button type="button" class="btn btn-sm tbx-icon-button fx-side-open" data-fx-side-open title="@T["Files.Tree.Show"]" aria-label="@T["Files.Tree.Show"]"><tbx-icon name="panel-left" /></button>
+                <button type="button" class="btn btn-sm tbx-icon-button fx-side-open" data-fx-side-open title="@T["Files.Tree.Show"]" aria-label="@T["Files.Tree.Show"]" aria-controls="fx-side"><tbx-icon name="panel-left" /></button>
                 <div class="fx-tabs" role="tablist" aria-label="@T["Files.Tabs.Label"]" data-fx-tabs></div>
             </div>
 

@@ -188,6 +188,7 @@
             active: state.active,
             expanded,
             sideWidth: state.saved.sideWidth,
+            sideHidden: Boolean(state.saved.sideHidden),
             showHidden: state.showHidden
         };
         state.saved = value;
@@ -1246,12 +1247,53 @@
         saveState();
     });
 
+    const narrowQuery = window.matchMedia('(max-width: 899.98px)');
+    const sideOpenButton = $('[data-fx-side-open]');
+
+    /** Phones: the tree is a drawer over the file. */
     function setSideOpen(open) {
+        if (open && !narrowQuery.matches) {
+            setSideHidden(false);
+            return;
+        }
         els.shell.classList.toggle('is-side-open', open);
+        labelSideButton();
         if (open) els.tree.querySelector('[tabindex="0"]')?.focus();
     }
 
-    $('[data-fx-side-open]')?.addEventListener('click', () => setSideOpen(!els.shell.classList.contains('is-side-open')));
+    /** Wide screens: the tree column can be hidden so the file takes the whole width; remembered. */
+    function setSideHidden(hidden, options) {
+        const changed = Boolean(state.saved.sideHidden) !== hidden;
+        state.saved.sideHidden = hidden;
+        els.shell.classList.toggle('is-side-hidden', hidden);
+        labelSideButton();
+        if (changed && !options?.quiet) {
+            saveState();
+            NS.onLayout?.();
+            if (hidden) sideOpenButton?.focus();
+            else (els.tree.querySelector('[aria-selected="true"]') || els.tree.querySelector('[tabindex="0"]'))?.focus();
+        }
+    }
+
+    /** One button for both: "Show the folder tree" while it is hidden (or a closed drawer), "Hide" otherwise. */
+    function labelSideButton() {
+        if (!sideOpenButton) return;
+        const shown = narrowQuery.matches ? els.shell.classList.contains('is-side-open') : !state.saved.sideHidden;
+        const label = text[shown ? 'Tree.Hide' : 'Tree.Show'];
+        sideOpenButton.setAttribute('aria-expanded', String(shown));
+        sideOpenButton.setAttribute('aria-label', label);
+        sideOpenButton.title = label;
+    }
+
+    function toggleSide() {
+        if (narrowQuery.matches) setSideOpen(!els.shell.classList.contains('is-side-open'));
+        else setSideHidden(!state.saved.sideHidden);
+    }
+
+    setSideHidden(Boolean(state.saved.sideHidden), { quiet: true });
+    narrowQuery.addEventListener?.('change', labelSideButton);
+
+    sideOpenButton?.addEventListener('click', toggleSide);
     $('[data-fx-side-close]')?.addEventListener('click', () => setSideOpen(false));
 
     document.querySelectorAll('[data-fx-add-root]').forEach((b) => b.addEventListener('click', addRoot));
@@ -1293,7 +1335,7 @@
         state, els, config, text, urls, request, rawUrl, openFile, closeTab, activateTab, activeTab, findTab, renderTabs,
         refreshTabs, refreshTree, loadRoots, loadStats, reveal, keyOf, parentPath, baseName, notify, fmt, escapeHtml, icon,
         bytes, when, number, saveState, toggleFolder, showMenu, openOutside, setStatus, focusItem, rootName, moveToBody, modal,
-        loadDoc, openPicker, showDoc, renderDocHead, viewContext, markActiveInTree, reloadFolder, retargetTabs,
+        loadDoc, openPicker, showDoc, renderDocHead, viewContext, markActiveInTree, reloadFolder, retargetTabs, toggleSide,
         applyFilter: () => applyFilter(), setShowHidden: (on) => { state.showHidden = on; saveState(); refreshTree(); }
     };
 
