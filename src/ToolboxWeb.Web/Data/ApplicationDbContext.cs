@@ -20,6 +20,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<TabulatorTask> TabulatorTasks => Set<TabulatorTask>();
     public DbSet<JiraCatalog> JiraCatalogs => Set<JiraCatalog>();
+    public DbSet<FileRoot> FileRoots => Set<FileRoot>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -72,6 +73,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(x => x.Kind).HasMaxLength(40).IsRequired();
             entity.Property(x => x.Data).IsRequired();
             entity.HasIndex(x => new { x.UserId, x.BaseUrl, x.Kind }).IsUnique();
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<FileRoot>(entity =>
+        {
+            entity.Property(x => x.Name).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.Path).HasMaxLength(1024).IsRequired();
+            entity.HasIndex(x => new { x.UserId, x.SortOrder });
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -32,7 +32,8 @@ public static class AppNavigation
     /// the Jira screens, the focus timer, the text compare and the code playground (they work in
     /// the browser alone).
     /// </param>
-    public static IReadOnlyList<AppNavGroup> Build(IUrlHelper url, IStringLocalizer localizer, bool isJiraUser, bool showDevTools, AppMode mode = AppMode.Server)
+    /// <param name="showFiles">"Files &amp; folders": the desktop owner, or an account listed in Files:AllowedUsers on the IIS site (Infrastructure/Files/FilesAccess.cs).</param>
+    public static IReadOnlyList<AppNavGroup> Build(IUrlHelper url, IStringLocalizer localizer, bool isJiraUser, bool showDevTools, AppMode mode = AppMode.Server, bool showFiles = false)
     {
         string Href(string routeName, string fallback) => url.RouteUrl(routeName) ?? fallback;
         string L(string key) => localizer[key].Value;
@@ -83,10 +84,15 @@ public static class AppNavigation
             new("activity", Href(ToolboxRouteSlugs.RouteNames.ActivityHtml, "/activity.html"), "activity", L("Activity.Title"), "a", false, On("Activity"))
         ]));
 
+        var tools = new List<AppNavItem> { textCompare, codePlayground };
+        if (showFiles)
+        {
+            tools.Add(new("files", Href(ToolboxRouteSlugs.RouteNames.FilesHtml, "/files.html"), "folder-open", L("Nav.Files"), "e", true, On("Files")));
+        }
+
         groups.Add(new AppNavGroup("tools", L("Nav.Group.Tools"),
         [
-            textCompare,
-            codePlayground,
+            .. tools,
             new("schema-compare", Href(ToolboxRouteSlugs.RouteNames.SchemaCompareHtml, "/schema-compare.html"), "git-compare", L("Nav.SchemaCompare"), "s", true, On("SchemaCompare")),
             new("sql-profiler", Href(ToolboxRouteSlugs.RouteNames.SqlProfilerHtml, "/sql-profiler.html"), "activity", L("Nav.SqlProfiler"), "q", true, On("SqlProfiler"))
         ]));

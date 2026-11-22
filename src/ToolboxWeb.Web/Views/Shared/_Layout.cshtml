@@ -114,7 +114,8 @@
         var showDevGroup = ToolboxWeb.Web.Infrastructure.Security.DevToolsAccess.IsAllowed(HostEnvironment, User);
         // One list of pages (ViewModels/AppNavigation.cs) feeds the sidebar, the command palette
         // and the "G then letter" shortcuts.
-        var navGroups = AppNavigation.Build(Url, T, hasJira, showDevGroup, AppMode.Mode);
+        var showFiles = Context.RequestServices.GetRequiredService<ToolboxWeb.Web.Infrastructure.Files.FilesAccess>().IsAllowed;
+        var navGroups = AppNavigation.Build(Url, T, hasJira, showDevGroup, AppMode.Mode, showFiles);
 
         // Current sidebar item, by controller/action so it also holds after a POST round-trip
         // and on sub-routes such as /component/{tab}.html.

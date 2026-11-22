@@ -45,6 +45,7 @@ Lưu ý:
 12a. [Danh mục Jira](#12a-danh-mục-jira-jcat)
 13. [So sánh nội dung](#13-so-sánh-nội-dung-diff)
 14. [Thử code web](#14-thử-code-web-play)
+14a. [Tệp & Thư mục](#14a-tệp--thư-mục-files)
 15. [So sánh cấu trúc DB](#15-so-sánh-cấu-trúc-db-scmp)
 16. [Bắt câu lệnh SQL](#16-bắt-câu-lệnh-sql-sqlp)
 17. [Tài khoản](#17-tài-khoản-acc)
@@ -68,6 +69,7 @@ Lưu ý:
 | Liên kết nhanh | `/quick-links.html` | CÁ NHÂN | Mọi tài khoản | G L |
 | Không gian prompt | `/prompt-templates.html` | CÁ NHÂN | Mọi tài khoản | G P |
 | So sánh nội dung | `/text-compare.html` | CÔNG CỤ | Mọi tài khoản, cả bản Web | G X |
+| Tệp & Thư mục | `/files.html` | CÔNG CỤ | Bản máy tính; trên IIS chỉ tài khoản trong `Files:AllowedUsers`; không có ở bản Web | G E |
 | Thử code web | `/code-playground.html` | CÔNG CỤ | Mọi tài khoản, cả bản Web | G H |
 | So sánh cấu trúc DB | `/schema-compare.html` | CÔNG CỤ | Mọi tài khoản | G S |
 | Bắt câu lệnh SQL | `/sql-profiler.html` | CÔNG CỤ | Mọi tài khoản | G Q |
@@ -617,6 +619,32 @@ Lưu ý:
 | PLAY-P01 | Chặn vòng lặp không dừng (dừng code chạy quá lâu) | Không treo trang khi gõ nhầm | M | | | |
 | PLAY-P02 | Thêm thư viện có sẵn (Kendo UI Core, ECharts, Tabulator đã có trong app) | Thử nhanh control của app | S | | | |
 | PLAY-P03 | Lưu bài vào tài khoản (database) để dùng trên nhiều máy | Không phải Tải về / Chia sẻ | M | | | |
+
+### Đề xuất thêm của bạn
+
+-
+
+---
+
+## 14a. Tệp & Thư mục (FILES)
+
+### Chức năng đang có
+
+| Mã | Chức năng | Đánh giá | Ghi chú của bạn |
+|---|---|---|---|
+| FILES-01 | Thư mục gốc: chọn bằng hộp thoại Windows (máy tính) hoặc hộp chọn trong trang (IIS, chỉ trong `AllowedFolders`); nhiều gốc, đổi tên hiển thị, lên/xuống, gỡ khỏi danh sách (không xóa tệp); báo gốc không truy cập được và cho chọn lại đường dẫn | | |
+| FILES-02 | Cây thư mục: bung/thu, biểu tượng theo loại tệp, dung lượng, ẩn `.git`, `node_modules`, `bin`, `obj` và tệp ẩn; chân cây đếm tệp, thư mục, tổng dung lượng; thu gọn tất cả, làm mới; phím mũi tên, Enter; kéo đổi độ rộng; trên điện thoại là ngăn kéo | | |
+| FILES-03 | Tìm nhanh tên tệp (Ctrl+P) trong mọi gốc | | |
+| FILES-04 | Nhiều tab, breadcrumb, thanh thông tin (loại, dung lượng, ngày sửa, mã hóa, kiểu xuống dòng), thanh trạng thái (dòng, từ, ký tự, Xem/Chỉ đọc) | | |
+| FILES-05 | Xem Markdown đã dựng (front matter, ghi chú nổi bật `> [!NOTE]`, checklist, bảng, code tô màu có nút Sao chép, ảnh và link tới tệp khác trong gốc), JSON dạng cây kèm báo lỗi dòng/cột, CSV dạng bảng, ảnh, PDF, text/log/cấu hình tô màu; Word/Excel/nhị phân hiện thông tin và nút mở bằng chương trình mặc định (máy tính) hoặc tải xuống (IIS) | | |
+| FILES-06 | Sao chép nội dung, in (chỉ phần nội dung), lưu bản sao (hộp thoại Lưu của Windows) hoặc tải xuống | | |
+| FILES-07 | Nhớ lần mở trước: các gốc (trên máy chủ), tab đang mở, tab đang chọn, thư mục đang bung, độ rộng cây (trên trình duyệt) | | |
+| FILES-08 | Bảo mật: chỉ đường dẫn tương đối trong gốc; chặn `..`, đường dẫn tuyệt đối, link/junction ra ngoài, luồng NTFS, tên thiết bị; HTML/SVG trong tệp không bao giờ chạy như trang của Toolkit | | |
+
+### Đã biết / chưa kiểm tra
+
+- Hộp thoại chọn thư mục và "Lưu bản sao" của Windows, mở bằng chương trình mặc định: chưa thử trên Windows (môi trường kiểm tra là Linux, dùng hộp chọn trong trang).
+- Vị trí và kích thước cửa sổ app: do profile Edge/Chrome của app tự nhớ; chưa kiểm tra trên Windows.
 
 ### Đề xuất thêm của bạn
 

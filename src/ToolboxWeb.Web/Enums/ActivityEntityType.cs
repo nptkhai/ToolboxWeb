@@ -13,5 +13,7 @@ public enum ActivityEntityType
     SqlProfiler = 9,
     JiraIssue = 10,
     License = 11,
-    JiraCatalog = 12
+    JiraCatalog = 12,
+    FileRoot = 13,
+    File = 14
 }

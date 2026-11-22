@@ -50,6 +50,7 @@ public class AccountService : IAccountService
         await _db.ActivityLogs.Where(x => x.UserId == userId).ExecuteDeleteAsync();
         await _db.TabulatorTasks.Where(x => x.UserId == userId).ExecuteDeleteAsync();
         await _db.JiraCatalogs.Where(x => x.UserId == userId).ExecuteDeleteAsync();
+        await _db.FileRoots.Where(x => x.UserId == userId).ExecuteDeleteAsync();
 
         var result = await _userManager.DeleteAsync(user);
         if (!result.Succeeded)

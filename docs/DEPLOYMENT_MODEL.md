@@ -219,6 +219,21 @@ Chủ dự án chọn cả 4 việc. So sánh DB và Bắt SQL **chỉ có ở D
   - `site.js` hỏi `/app/version` mỗi 10 phút và khi quay lại tab; khác số build thì hiện thanh "Đã có phiên bản mới của Toolkit · Tải lại";
   - menu tài khoản hiện "Toolkit 1.0.0" (`<Version>` trong csproj). **Tăng `Version` mỗi lần phát hành.**
 
+### Bật "Tệp & Thư mục" trên site IIS (chế độ Server)
+Màn hình Tệp & Thư mục đọc và ghi tệp **trên ổ đĩa của máy chủ**, nên mặc định trên site IIS không ai dùng được. Bản máy tính luôn có màn hình này (chủ máy mở thư mục nào cũng được); bản Web không có.
+1. Ghi vào `appsettings.Production.json` của site (hoặc biến môi trường `Files__AllowedUsers__0`, `Files__AllowedFolders__0`…):
+   ```json
+   "Files": {
+     "AllowedUsers": [ "ten.dang.nhap@congty.vn" ],
+     "AllowedFolders": [ "D:\\TaiLieuChung" ]
+   }
+   ```
+   - `AllowedUsers`: email của **tài khoản local** được dùng. Tài khoản đăng nhập bằng Jira không bao giờ có quyền.
+   - `AllowedFolders`: các thư mục nền; thư mục gốc chỉ được chọn bên trong các thư mục này. Link/junction trỏ ra ngoài bị chặn.
+   - Để trống một trong hai danh sách là tắt màn hình. Người không có tên trong danh sách không thấy menu và mở link trực tiếp gặp 404.
+2. Cấp quyền NTFS cho tài khoản app pool (`IIS AppPool\<tên pool>`) trên từng thư mục trong `AllowedFolders`: Read nếu chỉ xem, Modify nếu cần sửa và quản lý tệp.
+3. Trên IIS không có hộp thoại Windows: người dùng chọn thư mục bằng hộp chọn vẽ trong trang (chỉ duyệt bên trong `AllowedFolders`), và "Lưu bản sao" thành "Tải xuống".
+
 ### Dựng site Web trên IIS (máy chính)
 1. Tạo site IIS thứ hai (ví dụ `toolkit.<miền>`), publish cùng bản build với site Server.
 2. Đặt chế độ Web theo một trong hai cách:

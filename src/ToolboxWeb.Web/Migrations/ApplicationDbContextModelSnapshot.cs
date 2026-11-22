@@ -306,6 +306,39 @@ namespace ToolboxWeb.Web.Data.Migrations
                     b.ToTable("ChecklistItems");
                 });
 
+            modelBuilder.Entity("ToolboxWeb.Web.Domain.FileRoot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "SortOrder");
+
+                    b.ToTable("FileRoots");
+                });
+
             modelBuilder.Entity("ToolboxWeb.Web.Domain.FocusSession", b =>
                 {
                     b.Property<int>("Id")
@@ -645,6 +678,17 @@ namespace ToolboxWeb.Web.Data.Migrations
                 });
 
             modelBuilder.Entity("ToolboxWeb.Web.Domain.ChecklistItem", b =>
+                {
+                    b.HasOne("ToolboxWeb.Web.Domain.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ToolboxWeb.Web.Domain.FileRoot", b =>
                 {
                     b.HasOne("ToolboxWeb.Web.Domain.ApplicationUser", "User")
                         .WithMany()

@@ -39,6 +39,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserClaimsPrincipalFactory<Domain.ApplicationUser>, ToolboxUserClaimsPrincipalFactory>();
 
         services.AddOptions<SqlSchemaOptions>().BindConfiguration("SchemaCompare");
+        services.AddOptions<ToolboxWeb.Web.Infrastructure.Files.FilesOptions>().BindConfiguration("Files");
+        services.AddScoped<ToolboxWeb.Web.Infrastructure.Files.FilesAccess>();
+        services.AddScoped<ToolboxWeb.Web.Services.Files.IFileWorkspaceService, ToolboxWeb.Web.Services.Files.FileWorkspaceService>();
         services.AddScoped<ISqlConnectionStringFactory, SqlConnectionStringFactory>();
         services.AddScoped<ISqlSchemaReader, SqlSchemaReader>();
         services.AddScoped<ISchemaComparer, SchemaComparer>();
