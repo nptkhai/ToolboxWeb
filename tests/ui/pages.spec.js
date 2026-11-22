@@ -50,7 +50,8 @@ const JIRA_PAGES = [
   { name: 'jira-dashboard', path: '/statistics.html' },
   { name: 'jira-worklist-search', path: '/tasks.html' },
   { name: 'jira-worklist-board', path: '/tasks.html', click: '#jira-tab-board' },
-  { name: 'jira-worklist-auto', path: '/tasks.html', click: '#jira-tab-auto' }
+  { name: 'jira-worklist-auto', path: '/tasks.html', click: '#jira-tab-auto' },
+  { name: 'jira-catalogs', path: '/catalogs.html' }
 ];
 
 // Elements whose content changes with the clock or the weather service.

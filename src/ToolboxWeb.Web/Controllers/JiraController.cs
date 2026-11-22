@@ -32,6 +32,7 @@ public class JiraController : Controller
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly AppModeInfo _mode;
     private readonly IDesktopJiraService _desktopJira;
+    private readonly IJiraCatalogService _catalogs;
 
     public JiraController(
         IJiraAuthService jiraAuth,
@@ -39,8 +40,10 @@ public class JiraController : Controller
         ICurrentUserService currentUser,
         IStringLocalizer<SharedResource> localizer,
         AppModeInfo mode,
-        IDesktopJiraService desktopJira)
+        IDesktopJiraService desktopJira,
+        IJiraCatalogService catalogs)
     {
+        _catalogs = catalogs;
         _jiraAuth = jiraAuth;
         _dueDates = dueDates;
         _currentUser = currentUser;
@@ -131,6 +134,7 @@ public class JiraController : Controller
             model.LogBarUnit,
             model.LogBars,
             model.Rows,
+            model.HoursByType,
             model.AppliedJql,
             model.ErrorMessage
         }));
@@ -164,8 +168,9 @@ public class JiraController : Controller
         try
         {
             var jql = JiraQueryBuilder.Build(request, _localizer["Jira.Search.AssigneeRequired"].Value);
+            var rules = await _catalogs.GetRulesAsync(session.BaseUrl);
             var issues = await session.Client.SearchIssuesAsync(jql);
-            return Json(JiraApiResponse<object>.Ok(JiraSearchResults.Build(issues, jql, AppClock.Today)));
+            return Json(JiraApiResponse<object>.Ok(JiraSearchResults.Build(issues, jql, AppClock.Today, rules)));
         }
         catch (Exception ex)
         {
@@ -266,8 +271,9 @@ public class JiraController : Controller
 
         try
         {
+            var rules = await _catalogs.GetRulesAsync(session.BaseUrl);
             var issues = await session.Client.SearchIssuesAsync(jql, includeWorklogs: true);
-            rows = MapSubtaskRows(issues);
+            rows = MapSubtaskRows(issues, rules);
         }
         catch (Exception ex)
         {
@@ -304,8 +310,9 @@ public class JiraController : Controller
 
         try
         {
+            var rules = await _catalogs.GetRulesAsync(session.BaseUrl);
             var issues = await session.Client.SearchIssuesAsync(jql, includeWorklogs: true);
-            rows = MapSubtaskRows(issues);
+            rows = MapSubtaskRows(issues, rules);
         }
         catch (Exception ex)
         {
@@ -341,13 +348,14 @@ public class JiraController : Controller
         var today = AppClock.Today;
         try
         {
+            var rules = await _catalogs.GetRulesAsync(session.BaseUrl);
             var issues = await session.Client.SearchIssuesAsync(
                 string.Create(CultureInfo.InvariantCulture, $"worklogAuthor = currentUser() AND worklogDate = \"{today:yyyy-MM-dd}\""),
                 includeWorklogs: true);
             return Json(JiraApiResponse<object>.Ok(new
             {
-                hours = JiraDashboardMetrics.LoggedHours(issues, today, today, session.Username),
-                target = JiraDashboardMetrics.IsWorkingDay(today) ? JiraDashboardMetrics.HoursPerWorkingDay : 0m
+                hours = JiraDashboardMetrics.LoggedHours(issues, today, today, session.Username, rules),
+                target = JiraDashboardMetrics.IsWorkingDay(today) ? rules.HoursPerDay : 0m
             }));
         }
         catch (Exception ex)
@@ -385,8 +393,9 @@ public class JiraController : Controller
 
         try
         {
+            var rules = await _catalogs.GetRulesAsync(session.BaseUrl);
             var issues = await session.Client.SearchIssuesAsync(jql, includeWorklogs: true);
-            return Json(JiraApiResponse<object>.Ok(new { rows = MapSubtaskRows(issues) }));
+            return Json(JiraApiResponse<object>.Ok(new { rows = MapSubtaskRows(issues, rules) }));
         }
         catch (Exception ex)
         {
@@ -437,15 +446,15 @@ public class JiraController : Controller
         return string.Join(" AND ", parts) + " ORDER BY duedate ASC";
     }
 
-    private static IReadOnlyList<JiraDashboardRowViewModel> MapSubtaskRows(IReadOnlyList<JiraIssue> issues)
+    private static IReadOnlyList<JiraDashboardRowViewModel> MapSubtaskRows(IReadOnlyList<JiraIssue> issues, JiraRules rules)
     {
         return issues.Select((issue, index) =>
         {
             var subTaskKey = issue.IssueKey ?? string.Empty;
             var status = issue.Status ?? string.Empty;
-            var estimateHours = ParseHours(issue.Estimate);
-            var loggedHours = issue.Worklogs.Sum(w => ParseHours(w.TimeSpent));
-            var isDone = IsDoneStatus(status);
+            var estimateHours = rules.EstimateHours(issue);
+            var loggedHours = issue.Worklogs.Sum(rules.Hours);
+            var daysOverdue = rules.DaysOverdue(issue, AppClock.Today);
 
             return new JiraDashboardRowViewModel
             {
@@ -456,7 +465,9 @@ public class JiraController : Controller
                 IssueKey = issue.Parent ?? string.Empty,
                 IssueSummary = issue.ParentSummary ?? string.Empty,
                 Status = status,
-                StatusTone = ResolveStatusTone(status),
+                StatusTone = rules.Tone(issue),
+                IsWaiting = rules.IsWaiting(status),
+                SubTaskType = issue.SubTaskType ?? string.Empty,
                 DueDate = issue.DueDate,
                 CreateDate = issue.CreateDate,
                 DueDateText = issue.DueDate.ToDisplayDate(),
@@ -465,8 +476,8 @@ public class JiraController : Controller
                 EstimateHours = estimateHours,
                 LoggedHours = loggedHours,
                 TotalLoggedHours = loggedHours,
-                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < AppClock.Today && !isDone,
-                DaysOverdue = JiraDashboardMetrics.DaysOverdue(issue.DueDate, isDone, AppClock.Today)
+                IsOverdue = daysOverdue > 0,
+                DaysOverdue = daysOverdue
             };
         }).ToArray();
     }
@@ -482,6 +493,7 @@ public class JiraController : Controller
         IReadOnlyList<JiraIssue> issues = [];
         IReadOnlyList<JiraDashboardRowViewModel>? previousRows = null;
         var today = AppClock.Today;
+        var rules = await _catalogs.GetRulesAsync(session.BaseUrl);
 
         var appliedJql = BuildDashboardJql(rangeStart, rangeEnd);
         var (previousStart, previousEnd) = JiraDashboardMetrics.PreviousRange(periodType, rangeStart);
@@ -507,14 +519,14 @@ public class JiraController : Controller
 
         try
         {
-            previousRows = MapDashboardRows(await previousTask, previousStart, previousEnd, session.Username);
+            previousRows = MapDashboardRows(await previousTask, previousStart, previousEnd, session.Username, rules);
         }
         catch (Exception)
         {
             previousRows = null;
         }
 
-        var mappedRows = MapDashboardRows(issues, rangeStart, rangeEnd, session.Username);
+        var mappedRows = MapDashboardRows(issues, rangeStart, rangeEnd, session.Username, rules);
         var sortedRows = SortDashboardRows(mappedRows, sort, direction)
             .Select((row, index) => CopyRowWithIndex(row, index + 1))
             .ToArray();
@@ -523,10 +535,11 @@ public class JiraController : Controller
         {
             Session = BuildSessionSummary(session),
             Filter = BuildDashboardFilter(periodType, periodValue, sort, direction, rangeStart, rangeEnd),
-            Summary = JiraDashboardMetrics.BuildSummary(mappedRows, rangeStart, rangeEnd, today, errorMessage is null ? previousRows : null),
+            Summary = JiraDashboardMetrics.BuildSummary(mappedRows, rangeStart, rangeEnd, today, errorMessage is null ? previousRows : null, rules.HoursPerDay),
             LogBarUnit = periodType == "year" ? "month" : "day",
-            LogBars = JiraDashboardMetrics.BuildLogBars(issues, periodType, rangeStart, rangeEnd, today, session.Username),
+            LogBars = JiraDashboardMetrics.BuildLogBars(issues, periodType, rangeStart, rangeEnd, today, session.Username, rules),
             Rows = sortedRows,
+            HoursByType = JiraDashboardMetrics.HoursByType(mappedRows),
             AppliedJql = appliedJql,
             ErrorMessage = errorMessage
         };
@@ -541,7 +554,7 @@ public class JiraController : Controller
             Session = BuildSessionSummary(session),
             Search = search,
             Filters = await SafeFiltersAsync(session),
-            Users = await SafeUsersAsync(session)
+            Users = await _catalogs.GetUsersAsync(session.BaseUrl) ?? await SafeUsersAsync(session)
         };
     }
 
@@ -592,18 +605,19 @@ public class JiraController : Controller
         IReadOnlyList<JiraIssue> issues,
         DateTime rangeStart,
         DateTime rangeEnd,
-        string currentUsername)
+        string currentUsername,
+        JiraRules rules)
     {
         return issues.Select(issue =>
         {
             var subTaskKey = issue.IssueKey ?? string.Empty;
             var status = issue.Status ?? string.Empty;
             var project = DeriveProject(subTaskKey);
-            var estimateHours = ParseHours(issue.Estimate);
+            var estimateHours = rules.EstimateHours(issue);
             var loggedHours = JiraDashboardMetrics.OwnWorklogs(issue.Worklogs, rangeStart, rangeEnd, currentUsername)
-                .Sum(x => ParseHours(x.TimeSpent));
-            var totalLoggedHours = issue.Worklogs.Sum(x => ParseHours(x.TimeSpent));
-            var isDone = IsDoneStatus(status);
+                .Sum(rules.Hours);
+            var totalLoggedHours = issue.Worklogs.Sum(rules.Hours);
+            var daysOverdue = rules.DaysOverdue(issue, AppClock.Today);
 
             return new JiraDashboardRowViewModel
             {
@@ -613,7 +627,9 @@ public class JiraController : Controller
                 IssueKey = issue.Parent ?? string.Empty,
                 IssueSummary = issue.ParentSummary ?? string.Empty,
                 Status = status,
-                StatusTone = ResolveStatusTone(status),
+                StatusTone = rules.Tone(issue),
+                IsWaiting = rules.IsWaiting(status),
+                SubTaskType = issue.SubTaskType ?? string.Empty,
                 DueDate = issue.DueDate,
                 CreateDate = issue.CreateDate,
                 DueDateText = issue.DueDate.ToDisplayDate(),
@@ -622,8 +638,8 @@ public class JiraController : Controller
                 EstimateHours = estimateHours,
                 LoggedHours = loggedHours,
                 TotalLoggedHours = totalLoggedHours,
-                IsOverdue = issue.DueDate.HasValue && issue.DueDate.Value.Date < AppClock.Today && !isDone,
-                DaysOverdue = JiraDashboardMetrics.DaysOverdue(issue.DueDate, isDone, AppClock.Today)
+                IsOverdue = daysOverdue > 0,
+                DaysOverdue = daysOverdue
             };
         }).ToArray();
     }
@@ -679,6 +695,8 @@ public class JiraController : Controller
             IssueSummary = row.IssueSummary,
             Status = row.Status,
             StatusTone = row.StatusTone,
+            IsWaiting = row.IsWaiting,
+            SubTaskType = row.SubTaskType,
             DueDate = row.DueDate,
             CreateDate = row.CreateDate,
             DueDateText = row.DueDateText,
@@ -798,8 +816,6 @@ public class JiraController : Controller
         return dashIndex > 0 ? subTaskKey[..dashIndex] : subTaskKey;
     }
 
-    private static decimal ParseHours(string? value) => JiraDashboardMetrics.ParseHours(value);
-
     private static string FormatHours(decimal hours, bool dashWhenZero = true)
     {
         if (hours <= 0)
@@ -810,15 +826,6 @@ public class JiraController : Controller
         // Follows the UI culture: 17,5 in vi-VN, 17.5 in en-US.
         return hours.ToDisplayNumber();
     }
-
-    private static bool IsDoneStatus(JiraDashboardRowViewModel row)
-    {
-        return IsDoneStatus(row.Status);
-    }
-
-    private static bool IsDoneStatus(string status) => JiraStatus.IsDone(status);
-
-    private static string ResolveStatusTone(string status) => JiraStatus.Tone(status);
 
     private async Task<JiraSession?> GetSessionOrRedirectAsync()
     {

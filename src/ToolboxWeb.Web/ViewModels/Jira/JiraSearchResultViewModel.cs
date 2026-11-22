@@ -6,7 +6,7 @@ public sealed class JiraSearchResultViewModel
     public IReadOnlyList<JiraSearchRowViewModel> Rows { get; init; } = [];
     public string Jql { get; init; } = string.Empty;
 
-    /// <summary>Jira returns at most this many issues per search; Truncated tells the page to say so.</summary>
+    /// <summary>The client reads at most this many issues (page after page); Truncated tells the page to say so.</summary>
     public int Limit { get; init; }
     public bool Truncated { get; init; }
 }
@@ -18,6 +18,13 @@ public sealed class JiraSearchRowViewModel
     public string Status { get; init; } = string.Empty;
     public string StatusTone { get; init; } = "todo";
     public string Type { get; init; } = string.Empty;
+
+    /// <summary>The "Sub-task Type" field (Developing, Meeting…); empty on other issues.</summary>
+    public string SubTaskType { get; init; } = string.Empty;
+
+    /// <summary>The status waits on someone else: in progress, but never late.</summary>
+    public bool IsWaiting { get; init; }
+
     public DateTime? DueDate { get; init; }
     public bool IsOverdue { get; init; }
     public int DaysOverdue { get; init; }

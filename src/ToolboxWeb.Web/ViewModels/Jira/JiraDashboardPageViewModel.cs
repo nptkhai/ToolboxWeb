@@ -10,6 +10,9 @@ public sealed class JiraDashboardPageViewModel
     public string LogBarUnit { get; init; } = "day";
     public IReadOnlyList<JiraDashboardLogBarViewModel> LogBars { get; init; } = [];
     public IReadOnlyList<JiraDashboardRowViewModel> Rows { get; init; } = [];
+
+    /// <summary>Hours the user logged in the period, per Sub-task Type, most first.</summary>
+    public IReadOnlyList<JiraHoursByTypeViewModel> HoursByType { get; init; } = [];
     public string AppliedJql { get; init; } = string.Empty;
     public string? ErrorMessage { get; init; }
 }

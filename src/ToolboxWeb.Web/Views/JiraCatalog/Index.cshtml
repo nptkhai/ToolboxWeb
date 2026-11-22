@@ -1,0 +1,147 @@
+@using System.Text.Json
+@using ToolboxWeb.Web.Constants
+@using ToolboxWeb.Web.Services
+@model string
+@*
+    Catalogs (Jira group): one row per catalog with its count and last sync, "Sync" per row and
+    for all, a dialog to look through the items, and the user's settings (waiting statuses,
+    projects for Versions). The rows are filled by Content/js/jira-catalog-page.js from
+    window.ToolboxJiraCatalog, so the web copy (catalogs in the browser) shares the page.
+*@
+@{
+    ViewData["Title"] = T["JiraCatalog.Title"];
+    string Text(string key) => T[key].Value;
+    var kinds = JiraCatalogKinds.All;
+    var icons = new Dictionary<string, string>
+    {
+        [JiraCatalogKinds.Projects] = "folder-open",
+        [JiraCatalogKinds.Statuses] = "circle-check",
+        [JiraCatalogKinds.IssueTypes] = "blocks",
+        [JiraCatalogKinds.SubTaskTypes] = "list-checks",
+        [JiraCatalogKinds.Priorities] = "arrow-up",
+        [JiraCatalogKinds.Resolutions] = "check",
+        [JiraCatalogKinds.Filters] = "search",
+        [JiraCatalogKinds.Users] = "user",
+        [JiraCatalogKinds.Versions] = "history",
+        [JiraCatalogKinds.Config] = "settings"
+    };
+    string[] keys =
+    [
+        "Summary", "SummaryEmpty", "NoteServer", "NoteBrowser", "Count", "SyncedAt", "NotSynced", "Syncing", "SyncDone", "SyncPartial",
+        "SyncFailed", "ViewTitle", "SearchEmpty", "ShowingFirst", "LoadFailed", "Settings.Saved", "Settings.SaveFailed",
+        "Settings.NeedProjects", "Col.Key", "Col.Name", "Col.Category", "Col.Lead", "Col.Group", "Col.Subtask", "Col.Jql",
+        "Col.Username", "Col.Project", "Col.Released", "Col.ReleaseDate", "Col.Item", "Col.Value", "Category.new",
+        "Category.indeterminate", "Category.done", "Category.undefined", "Config.hoursPerDay", "Config.daysPerWeek",
+        "Config.version", "Config.title", "Config.subTaskTypeField", "Config.timeFormat", "Config.defaultUnit", "Yes", "No"
+    ];
+    var text = keys.ToDictionary(k => k, k => Text("JiraCatalog." + k));
+    foreach (var kind in kinds)
+    {
+        text["Kind." + kind] = Text("JiraCatalog.Kind." + kind);
+    }
+
+    var pageConfig = new { kinds, defaultWaiting = JiraRules.DefaultWaitingStatuses, text };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/kendo/theme/default-main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/jira-catalog.css" asp-append-version="true" />
+}
+
+<div class="jc-page" data-jira-catalog-page>
+    <div class="tbx-toolbar tbx-list-toolbar" role="toolbar" aria-label="@T["JiraCatalog.Toolbar"]">
+        <p class="tbx-toolbar-summary" data-jc-summary aria-live="polite">@T["JiraCatalog.Loading"]</p>
+        <span class="tbx-toolbar-spacer"></span>
+        <button type="button" class="btn btn-primary" data-jc-sync-all disabled>
+            <tbx-icon name="refresh-cw" />@T["JiraCatalog.SyncAll"]
+        </button>
+    </div>
+
+    <p class="jc-note" data-jc-note></p>
+
+    <section class="tbx-panel jc-list-panel" aria-labelledby="jc-list-title">
+        <h2 class="visually-hidden" id="jc-list-title">@T["JiraCatalog.Title"]</h2>
+        <ul class="tbx-list jc-list">
+            @foreach (var kind in kinds)
+            {
+                <li class="tbx-row tbx-row--two-line jc-row" data-jc-kind="@kind">
+                    <span class="jc-icon" aria-hidden="true"><tbx-icon name="@icons[kind]" /></span>
+                    <span class="tbx-row-main">
+                        <span class="tbx-row-title">@T[$"JiraCatalog.Kind.{kind}"]</span>
+                        <span class="tbx-row-sub">@T[$"JiraCatalog.Hint.{kind}"]</span>
+                        <span class="jc-error" data-jc-error hidden></span>
+                    </span>
+                    <span class="jc-meta">
+                        <span class="jc-count" data-jc-count>–</span>
+                        <span class="jc-time" data-jc-time></span>
+                    </span>
+                    <span class="tbx-row-actions jc-actions">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-jc-view disabled
+                                aria-label="@T["JiraCatalog.ViewOne", T[$"JiraCatalog.Kind.{kind}"]]">
+                            <tbx-icon name="eye" /><span class="jc-btn-text">@T["JiraCatalog.View"]</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-jc-sync disabled
+                                aria-label="@T["JiraCatalog.SyncOne", T[$"JiraCatalog.Kind.{kind}"]]">
+                            <tbx-icon name="refresh-cw" /><span class="jc-btn-text">@T["JiraCatalog.Sync"]</span>
+                        </button>
+                    </span>
+                </li>
+            }
+        </ul>
+    </section>
+
+    <section class="tbx-panel jc-settings" aria-labelledby="jc-settings-title">
+        <div class="tbx-panel-header">
+            <h2 class="tbx-panel-title" id="jc-settings-title">@T["JiraCatalog.Settings.Title"]</h2>
+        </div>
+        <form class="tbx-panel-body tbx-form-grid" novalidate data-jc-settings>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="jc-waiting">@T["JiraCatalog.Settings.Waiting"]</label>
+                <select id="jc-waiting" multiple aria-describedby="jc-waiting-hint" data-jc-waiting></select>
+                <span class="tbx-field-hint" id="jc-waiting-hint">
+                    @T["JiraCatalog.Settings.WaitingHint"]
+                    <button type="button" class="btn btn-link btn-sm jc-reset" data-jc-reset-waiting>@T["JiraCatalog.Settings.ResetWaiting"]</button>
+                </span>
+            </div>
+            <div class="tbx-field">
+                <label class="tbx-field-label" for="jc-version-projects">@T["JiraCatalog.Settings.VersionProjects"]</label>
+                <select id="jc-version-projects" multiple aria-describedby="jc-version-projects-hint" data-jc-version-projects></select>
+                <span class="tbx-field-hint" id="jc-version-projects-hint" data-jc-version-hint>@T["JiraCatalog.Settings.VersionProjectsHint"]</span>
+            </div>
+            <div class="jc-settings-actions">
+                <button type="submit" class="btn btn-primary" data-jc-save-settings disabled>
+                    <tbx-icon name="save" />@T["JiraCatalog.Settings.Save"]
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <p class="tbx-shortcuts" data-shortcuts-line></p>
+</div>
+
+<div class="modal fade" id="jc-view-modal" tabindex="-1" aria-labelledby="jc-view-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="jc-view-title" data-jc-view-title></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <div class="tbx-field jc-view-search">
+                    <label class="tbx-field-label" for="jc-view-search">@T["JiraCatalog.Search"]</label>
+                    <input class="form-control" id="jc-view-search" type="search" autocomplete="off" data-jc-view-search />
+                </div>
+                <div class="jc-table-wrap" data-jc-view-body></div>
+                <p class="jc-view-note" data-jc-view-note></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="jira-catalog-page-config" type="application/json">@Html.Raw(JsonSerializer.Serialize(pageConfig))</script>
+
+@section Scripts {
+    <partial name="_KendoScripts" />
+    <partial name="_JiraCatalogScript" model="Model" />
+    <script src="~/js/jira-catalog-page.js" asp-append-version="true"></script>
+}

@@ -17,6 +17,7 @@ public static class ToolboxRouteSlugs
         // Jira "Statistics" and "Task management" (renamed 2026-11-19; the old jira-* addresses redirect, see JiraController).
         public const string JiraDashboard = "statistics";
         public const string JiraWorklist = "tasks";
+        public const string JiraCatalog = "catalogs";
         public const string TextCompare = "text-compare";
         public const string CodePlayground = "code-playground";
         public const string CodePlaygroundRun = "code-playground/run.html";
@@ -43,6 +44,7 @@ public static class ToolboxRouteSlugs
         public const string TabulatorDemo = "tabulator-demo.html";
         public const string JiraDashboard = "statistics.html";
         public const string JiraWorklist = "tasks.html";
+        public const string JiraCatalog = "catalogs.html";
         public const string TextCompare = "text-compare.html";
         public const string CodePlayground = "code-playground.html";
         public const string SchemaCompare = "schema-compare.html";
@@ -65,7 +67,7 @@ public static class ToolboxRouteSlugs
 
     private static readonly string[] JiraScreenPaths =
     [
-        Pages.JiraDashboard, HtmlPages.JiraDashboard, Pages.JiraWorklist, HtmlPages.JiraWorklist,
+        Pages.JiraDashboard, HtmlPages.JiraDashboard, Pages.JiraWorklist, HtmlPages.JiraWorklist, Pages.JiraCatalog, HtmlPages.JiraCatalog,
         LegacyPages.JiraDashboard, LegacyPages.JiraDashboardHtml, LegacyPages.JiraWorklist, LegacyPages.JiraWorklistHtml
     ];
 
@@ -97,6 +99,7 @@ public static class ToolboxRouteSlugs
         public const string TabulatorDemoHtml = "tabulator-demo-html";
         public const string JiraDashboardHtml = "jira-dashboard-html";
         public const string JiraWorklistHtml = "jira-worklist-html";
+        public const string JiraCatalogHtml = "jira-catalog-html";
         public const string TextCompareHtml = "text-compare-html";
         public const string CodePlaygroundHtml = "code-playground-html";
         public const string CodePlaygroundRun = "code-playground-run";

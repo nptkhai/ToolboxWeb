@@ -14,6 +14,8 @@ Chốt ngày 21/10/2026 ở bước 4.1. Chủ dự án đổi được; khi đ�
 | subtask | Việc con của một issue | "Danh sách subtask", "Mã subtask" |
 | JQL | Ngôn ngữ truy vấn của Jira | "Bật JQL nâng cao" |
 | log | Ghi giờ làm vào Jira (worklog) | "Số giờ đã log", "Ngày đã log" |
+| Sub-task Type | Trường tùy chỉnh: loại công việc của subtask (Developing, Meeting…) | "Cột Sub-task Type", "Giờ đã log theo loại công việc" |
+| Version | Phiên bản (đợt phát hành) của dự án | "Dự án lấy Version" |
 
 Tên trạng thái lấy từ Jira ("To Do", "In Progress", "Done"…) giữ nguyên và đặt trong ngoặc kép khi nằm trong câu.
 
@@ -35,6 +37,12 @@ Tên trạng thái lấy từ Jira ("To Do", "In Progress", "Done"…) giữ ngu
 | Current user / current Jira user | Bạn, tôi ("Issue giao cho tôi") |
 | Jira session | Phiên đăng nhập Jira |
 | Board | Bảng việc |
+| Catalog (reference data synced from Jira) | Danh mục |
+| Sync | Đồng bộ |
+| Priority | Độ ưu tiên |
+| Resolution | Kết quả xử lý |
+| Status category | Nhóm trạng thái (chưa làm / đang làm / xong) |
+| Waiting status | Trạng thái chờ |
 
 ## Công cụ DB (So sánh cấu trúc DB, Bắt câu lệnh SQL)
 

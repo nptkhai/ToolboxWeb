@@ -1,0 +1,41 @@
+@using System.Text.Json
+@using ToolboxWeb.Web.Constants
+@using ToolboxWeb.Web.Infrastructure.Web
+@using ToolboxWeb.Web.Services
+@model string
+@inject ICurrentUserService CurrentUser
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@*
+    Loads Content/js/jira-catalog.js (window.ToolboxJiraCatalog) with its settings. Model: the
+    Jira base URL of the session. On the web copy the catalogs live in this browser's storage
+    under a key per account; elsewhere the server keeps them. Rendered at most once per request.
+*@
+@{
+    const string RenderedKey = "tbx.jira-catalog-script";
+    var alreadyRendered = Context.Items.ContainsKey(RenderedKey);
+    Context.Items[RenderedKey] = true;
+    var config = new
+    {
+        baseUrl = JiraCatalogService.NormalizeBaseUrl(Model),
+        storedInBrowser = AppMode.IsWeb,
+        storageKey = AppMode.IsWeb ? BrowserStorageKey.ForUser("toolbox.jiraCatalog.v1", CurrentUser.UserId) : string.Empty,
+        stateUrl = Url.Action("State", "JiraCatalog"),
+        syncUrl = Url.Action("Sync", "JiraCatalog"),
+        settingsUrl = Url.Action("Settings", "JiraCatalog"),
+        catalogUrl = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraCatalogHtml),
+        token = Antiforgery.GetAndStoreTokens(Context).RequestToken,
+        firstSync = JiraCatalogKinds.FirstSync,
+        text = new
+        {
+            firstSyncStart = T["JiraCatalog.FirstSyncStart"].Value,
+            firstSyncDone = T["JiraCatalog.FirstSyncDone"].Value,
+            firstSyncFailed = T["JiraCatalog.FirstSyncFailed"].Value,
+            storageFull = T["JiraCatalog.StorageFull"].Value
+        }
+    };
+}
+@if (!alreadyRendered)
+{
+    <script id="jira-catalog-config" type="application/json">@Html.Raw(JsonSerializer.Serialize(config))</script>
+    <script src="~/js/jira-catalog.js" asp-append-version="true"></script>
+}

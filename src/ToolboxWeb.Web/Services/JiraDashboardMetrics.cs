@@ -11,11 +11,12 @@ namespace ToolboxWeb.Web.Services;
 /// </summary>
 public static partial class JiraDashboardMetrics
 {
-    public const decimal HoursPerWorkingDay = 8m;
+    /// <summary>Default working day; the real value comes from Jira (<see cref="JiraRules.HoursPerDay"/>).</summary>
+    public const decimal HoursPerWorkingDay = JiraRules.DefaultHoursPerDay;
 
     /// <summary>
-    /// The day a worklog counts for, in the app time zone. Jira sends a time with an offset, which
-    /// the client parses into server local time; fake data has no kind and is already app time.
+    /// The day a worklog counts for, in the app time zone. The client already converts Jira's UTC
+    /// times to the app time zone (no kind); a value with a kind is converted here.
     /// </summary>
     public static DateTime WorklogDay(WorklogEntry worklog)
     {
@@ -45,15 +46,19 @@ public static partial class JiraDashboardMetrics
     }
 
     /// <summary>Hours the signed-in user logged on these issues inside the range.</summary>
-    public static decimal LoggedHours(IEnumerable<JiraIssue> issues, DateTime rangeStart, DateTime rangeEnd, string currentUsername)
+    public static decimal LoggedHours(IEnumerable<JiraIssue> issues, DateTime rangeStart, DateTime rangeEnd, string currentUsername, JiraRules? rules = null)
     {
+        var r = rules ?? JiraRules.Default;
         return issues
             .SelectMany(issue => OwnWorklogs(issue.Worklogs, rangeStart, rangeEnd, currentUsername))
-            .Sum(x => ParseHours(x.TimeSpent));
+            .Sum(r.Hours);
     }
 
-    /// <summary>Jira time text ("1h 30m", "2d", "1,5h") in hours; a day is 8 h and a week 40 h.</summary>
-    public static decimal ParseHours(string? value)
+    /// <summary>
+    /// Jira time text ("1h 30m", "0.25d", "1,5h") in hours. Only a fallback: Jira also sends the
+    /// value in seconds, which <see cref="JiraRules"/> prefers. A week is five days.
+    /// </summary>
+    public static decimal ParseHours(string? value, decimal hoursPerDay = HoursPerWorkingDay)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -70,8 +75,8 @@ public static partial class JiraDashboardMetrics
 
             total += match.Groups["unit"].Value.ToLowerInvariant() switch
             {
-                "w" => amount * 5 * HoursPerWorkingDay,
-                "d" => amount * HoursPerWorkingDay,
+                "w" => amount * 5 * hoursPerDay,
+                "d" => amount * hoursPerDay,
                 "h" => amount,
                 "m" => amount / 60m,
                 _ => 0m
@@ -92,7 +97,7 @@ public static partial class JiraDashboardMetrics
     /// Working hours expected so far in the period: Monday to Friday, 8 h a day, from the start of
     /// the period to today (or the end, if the period is over). Public holidays are not known.
     /// </summary>
-    public static decimal ExpectedHours(DateTime rangeStart, DateTime rangeEnd, DateTime today)
+    public static decimal ExpectedHours(DateTime rangeStart, DateTime rangeEnd, DateTime today, decimal hoursPerDay = HoursPerWorkingDay)
     {
         var last = rangeEnd.Date < today ? rangeEnd.Date : today;
         var days = 0;
@@ -104,7 +109,7 @@ public static partial class JiraDashboardMetrics
             }
         }
 
-        return days * HoursPerWorkingDay;
+        return days * hoursPerDay;
     }
 
     public static JiraDashboardSummaryViewModel BuildSummary(
@@ -112,15 +117,17 @@ public static partial class JiraDashboardMetrics
         DateTime rangeStart,
         DateTime rangeEnd,
         DateTime today,
-        IReadOnlyList<JiraDashboardRowViewModel>? previousRows)
+        IReadOnlyList<JiraDashboardRowViewModel>? previousRows,
+        decimal hoursPerDay = HoursPerWorkingDay)
     {
-        var done = rows.Count(x => JiraStatus.IsDone(x.Status));
+        static bool IsDone(JiraDashboardRowViewModel row) => row.StatusTone == JiraStatus.Done;
+        var done = rows.Count(IsDone);
         var estimate = rows.Sum(x => x.EstimateHours);
         var logged = rows.Sum(x => x.LoggedHours);
 
         // The estimate is for the whole subtask, so it is compared with every hour logged on it,
         // and only once the subtask is finished. Subtasks without an estimate are support work.
-        var estimatedDone = rows.Where(x => x.EstimateHours > 0 && JiraStatus.IsDone(x.Status)).ToArray();
+        var estimatedDone = rows.Where(x => x.EstimateHours > 0 && IsDone(x)).ToArray();
         var doneEstimate = estimatedDone.Sum(x => x.EstimateHours);
         var doneLogged = estimatedDone.Sum(x => x.TotalLoggedHours);
         var support = rows.Where(x => x.EstimateHours <= 0 && x.LoggedHours > 0).ToArray();
@@ -135,10 +142,10 @@ public static partial class JiraDashboardMetrics
             DoneCount = done,
             OpenCount = rows.Count - done,
             OverdueCount = rows.Count(x => x.IsOverdue),
-            UnestimatedCount = rows.Count(x => x.EstimateHours <= 0 && !JiraStatus.IsDone(x.Status)),
+            UnestimatedCount = rows.Count(x => x.EstimateHours <= 0 && !IsDone(x)),
             EstimateHours = estimate,
             LoggedHours = logged,
-            ExpectedHours = ExpectedHours(rangeStart, rangeEnd, today),
+            ExpectedHours = ExpectedHours(rangeStart, rangeEnd, today, hoursPerDay),
             LogPercent = doneEstimate > 0 ? (int)Math.Round(doneLogged / doneEstimate * 100m, MidpointRounding.AwayFromZero) : null,
             EstimatedDoneCount = estimatedDone.Length,
             EstimatedDoneLoggedHours = doneLogged,
@@ -147,7 +154,7 @@ public static partial class JiraDashboardMetrics
             SupportCount = support.Length,
             ProgressPercent = rows.Count > 0 ? (int)Math.Round(done * 100m / rows.Count, MidpointRounding.AwayFromZero) : 0,
             PreviousLoggedHours = previousRows?.Sum(x => x.LoggedHours),
-            PreviousDoneCount = previousRows?.Count(x => JiraStatus.IsDone(x.Status)),
+            PreviousDoneCount = previousRows?.Count(IsDone),
             PreviousSubtaskCount = previousRows?.Count
         };
     }
@@ -162,12 +169,14 @@ public static partial class JiraDashboardMetrics
         DateTime rangeStart,
         DateTime rangeEnd,
         DateTime today,
-        string currentUsername)
+        string currentUsername,
+        JiraRules? rules = null)
     {
+        var r = rules ?? JiraRules.Default;
         var hoursByDay = issues
             .SelectMany(issue => OwnWorklogs(issue.Worklogs, rangeStart, rangeEnd, currentUsername))
             .GroupBy(WorklogDay)
-            .ToDictionary(g => g.Key, g => g.Sum(x => ParseHours(x.TimeSpent)));
+            .ToDictionary(g => g.Key, g => g.Sum(r.Hours));
 
         if (periodType == "year")
         {
@@ -179,7 +188,7 @@ public static partial class JiraDashboardMetrics
                 {
                     Key = month.ToString("yyyy-MM", CultureInfo.InvariantCulture),
                     Hours = hoursByDay.Where(x => x.Key >= month && x.Key <= monthEnd).Sum(x => x.Value),
-                    TargetHours = Enumerable.Range(0, monthEnd.Day).Count(d => IsWorkingDay(month.AddDays(d))) * HoursPerWorkingDay,
+                    TargetHours = Enumerable.Range(0, monthEnd.Day).Count(d => IsWorkingDay(month.AddDays(d))) * r.HoursPerDay,
                     IsToday = today >= month && today <= monthEnd,
                     IsFuture = month > today
                 };
@@ -193,13 +202,28 @@ public static partial class JiraDashboardMetrics
             {
                 Key = day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 Hours = hoursByDay.GetValueOrDefault(day),
-                TargetHours = IsWorkingDay(day) ? HoursPerWorkingDay : 0,
+                TargetHours = IsWorkingDay(day) ? r.HoursPerDay : 0,
                 IsToday = day == today,
                 IsFuture = day > today
             });
         }
 
         return bars;
+    }
+
+    /// <summary>
+    /// Hours the user logged in the period per Sub-task Type (Developing, Meeting, Annual Leave…),
+    /// most first; subtasks without a type come last.
+    /// </summary>
+    public static IReadOnlyList<JiraHoursByTypeViewModel> HoursByType(IReadOnlyList<JiraDashboardRowViewModel> rows)
+    {
+        return rows
+            .Where(x => x.LoggedHours > 0)
+            .GroupBy(x => x.SubTaskType?.Trim() ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new JiraHoursByTypeViewModel(g.Key, g.Sum(x => x.LoggedHours), g.Count()))
+            .OrderBy(x => x.Type.Length == 0)
+            .ThenByDescending(x => x.Hours)
+            .ToArray();
     }
 
     public static bool IsWorkingDay(DateTime day) => day.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday);

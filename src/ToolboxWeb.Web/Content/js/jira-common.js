@@ -291,6 +291,8 @@
     }
 
     const grid = {
+        /** Words for the waiting mark next to a status (pages set it from their config). */
+        waitingLabel: "",
         options(overrides) {
             const settings = overrides || {};
             return {
@@ -316,9 +318,16 @@
             issueKey(baseUrl) {
                 return (cell) => issueLink(cell.getValue(), baseUrl);
             },
-            /** Status pill; the tone is read from the row's statusTone. */
+            /**
+             * Status pill; the tone is read from the row's statusTone. A waiting status (row.isWaiting,
+             * set on the catalog page) gets a pause mark: it is never counted as late.
+             */
             status(cell) {
-                return statusPill(cell.getValue(), cell.getRow().getData().statusTone);
+                const row = cell.getRow().getData();
+                const pill = statusPill(cell.getValue(), row.statusTone);
+                return row.isWaiting && grid.waitingLabel
+                    ? `${pill}<span class="jira-waiting" title="${escapeHtml(grid.waitingLabel)}"><svg class="tbx-icon" width="14" height="14" aria-hidden="true" focusable="false"><use href="${spriteHref("pause")}"></use></svg><span class="visually-hidden">${escapeHtml(grid.waitingLabel)}</span></span>`
+                    : pill;
             },
             /** Due date in the UI culture, marked when the row is overdue. */
             dueDate(cell) {

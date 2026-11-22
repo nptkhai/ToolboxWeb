@@ -19,6 +19,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<PromptTemplate> PromptTemplates => Set<PromptTemplate>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<TabulatorTask> TabulatorTasks => Set<TabulatorTask>();
+    public DbSet<JiraCatalog> JiraCatalogs => Set<JiraCatalog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -63,6 +64,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(x => x.Description).HasMaxLength(1000);
             entity.Property(x => x.Priority).HasConversion<int>();
             entity.HasIndex(x => new { x.UserId, x.Status, x.DueDate });
+        });
+
+        builder.Entity<JiraCatalog>(entity =>
+        {
+            entity.Property(x => x.BaseUrl).HasMaxLength(300).IsRequired();
+            entity.Property(x => x.Kind).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.Data).IsRequired();
+            entity.HasIndex(x => new { x.UserId, x.BaseUrl, x.Kind }).IsUnique();
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<FocusSession>(entity =>

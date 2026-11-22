@@ -10,6 +10,12 @@ public sealed class JiraDashboardRowViewModel
     public string IssueSummary { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public string StatusTone { get; init; } = "todo";
+
+    /// <summary>The status waits on someone else: in progress, but never late.</summary>
+    public bool IsWaiting { get; init; }
+
+    /// <summary>The "Sub-task Type" field (Developing, Meeting…).</summary>
+    public string SubTaskType { get; init; } = string.Empty;
     public DateTime? DueDate { get; init; }
     public DateTime? CreateDate { get; init; }
     public string DueDateText { get; init; } = "-";
