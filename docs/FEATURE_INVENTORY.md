@@ -639,6 +639,10 @@ Lưu ý:
 | FILES-05 | Xem Markdown đã dựng (front matter, ghi chú nổi bật `> [!NOTE]`, checklist, bảng, code tô màu có nút Sao chép, ảnh và link tới tệp khác trong gốc), JSON dạng cây kèm báo lỗi dòng/cột, CSV dạng bảng, ảnh, PDF, text/log/cấu hình tô màu; Word/Excel/nhị phân hiện thông tin và nút mở bằng chương trình mặc định (máy tính) hoặc tải xuống (IIS) | | |
 | FILES-06 | Sao chép nội dung, in (chỉ phần nội dung), lưu bản sao (hộp thoại Lưu của Windows) hoặc tải xuống | | |
 | FILES-07 | Nhớ lần mở trước: các gốc (trên máy chủ), tab đang mở, tab đang chọn, thư mục đang bung, độ rộng cây (trên trình duyệt) | | |
+| FILES-09 | Sửa tệp: hai chế độ Xem / Sửa (phím E); khung soạn có số dòng, tô màu cú pháp, hoàn tác/làm lại, tìm và thay thế (Ctrl+F, Ctrl+H); Markdown có thanh công cụ (đậm, nghiêng, gạch ngang, H1–H3, trích dẫn, code, danh sách, checklist, liên kết, ảnh, đường kẻ) và xem trước bên cạnh cuộn cùng | | |
+| FILES-10 | Lưu (Ctrl+S), Hủy thay đổi, Lưu tự động (tắt mặc định, 2 giây sau khi ngừng gõ); "Có thay đổi chưa lưu" / "Đã lưu lúc …"; thanh trạng thái có dòng/cột, số từ, ký tự, chế độ | | |
+| FILES-11 | Không mất dữ liệu: hỏi Lưu / Không lưu / Hủy khi đóng tab, báo khi đóng cửa sổ; bản nháp giữ trên trình duyệt và hỏi khôi phục khi mở lại; tệp đổi bên ngoài: chưa sửa thì tự tải lại, đang sửa thì hỏi Tải lại / Ghi đè / So sánh; tệp bị xóa bên ngoài thì đóng tab (hoặc giữ nội dung nếu đang sửa) | | |
+| FILES-12 | Giữ nguyên mã hóa (UTF-8 có/không BOM, UTF-16, bảng mã cũ) và kiểu xuống dòng khi lưu; bảng mã cũ không chứa được ký tự mới thì hỏi lưu dạng UTF-8; ghi qua tệp tạm rồi thay, không để tệp dở | | |
 | FILES-08 | Bảo mật: chỉ đường dẫn tương đối trong gốc; chặn `..`, đường dẫn tuyệt đối, link/junction ra ngoài, luồng NTFS, tên thiết bị; HTML/SVG trong tệp không bao giờ chạy như trang của Toolkit | | |
 
 ### Đã biết / chưa kiểm tra

@@ -1,0 +1,157 @@
+/* CodeMirror 5 theme "toolkit" (class cm-s-toolkit), shared by the Code playground and Files &
+   folders. Colours come from the --syntax-* tokens; no CodeMirror theme file is loaded. */
+
+.cm-s-toolkit.CodeMirror {
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+}
+
+.cm-s-toolkit .CodeMirror-gutters {
+    background: var(--surface-2);
+    border-right: 1px solid var(--line);
+}
+
+.cm-s-toolkit .CodeMirror-linenumber {
+    color: var(--muted);
+}
+
+.cm-s-toolkit .CodeMirror-cursor {
+    border-left-color: var(--text);
+}
+
+.cm-s-toolkit .CodeMirror-selected,
+.cm-s-toolkit.CodeMirror-focused .CodeMirror-selected,
+.cm-s-toolkit .CodeMirror-line::selection,
+.cm-s-toolkit .CodeMirror-line > span::selection,
+.cm-s-toolkit .CodeMirror-line > span > span::selection {
+    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+
+.cm-s-toolkit .CodeMirror-activeline-background {
+    background: var(--hover);
+}
+
+.cm-s-toolkit .CodeMirror-activeline-gutter {
+    background: var(--hover);
+}
+
+.cm-s-toolkit .CodeMirror-matchingtag {
+    background: var(--accent-tint);
+}
+
+.cm-s-toolkit .CodeMirror-matchingbracket {
+    background: var(--accent-tint);
+    color: inherit;
+    font-weight: var(--weight-semibold);
+}
+
+.cm-s-toolkit .CodeMirror-nonmatchingbracket {
+    color: var(--danger);
+}
+
+.cm-s-toolkit .cm-keyword,
+.cm-s-toolkit .cm-tag {
+    color: var(--syntax-keyword);
+}
+
+.cm-s-toolkit .cm-string,
+.cm-s-toolkit .cm-string-2 {
+    color: var(--syntax-string);
+}
+
+.cm-s-toolkit .cm-comment,
+.cm-s-toolkit .cm-meta {
+    color: var(--syntax-comment);
+}
+
+.cm-s-toolkit .cm-number,
+.cm-s-toolkit .cm-atom {
+    color: var(--syntax-number);
+}
+
+.cm-s-toolkit .cm-type,
+.cm-s-toolkit .cm-variable-3,
+.cm-s-toolkit .cm-qualifier,
+.cm-s-toolkit .cm-builtin {
+    color: var(--syntax-type);
+}
+
+.cm-s-toolkit .cm-attribute,
+.cm-s-toolkit .cm-property {
+    color: var(--syntax-attr);
+}
+
+.cm-s-toolkit .cm-def,
+.cm-s-toolkit .cm-variable-2 {
+    color: var(--syntax-title);
+}
+
+.cm-s-toolkit .cm-bracket,
+.cm-s-toolkit .cm-operator {
+    color: var(--muted);
+}
+
+.cm-s-toolkit .cm-error {
+    color: var(--danger);
+}
+
+/* Markdown (modes markdown and gfm). */
+.cm-s-toolkit .cm-header {
+    color: var(--syntax-title);
+    font-weight: var(--weight-semibold);
+}
+
+.cm-s-toolkit .cm-strong {
+    font-weight: var(--weight-semibold);
+}
+
+.cm-s-toolkit .cm-em {
+    font-style: italic;
+}
+
+.cm-s-toolkit .cm-strikethrough {
+    text-decoration: line-through;
+}
+
+.cm-s-toolkit .cm-link {
+    color: var(--accent);
+}
+
+.cm-s-toolkit .cm-url {
+    color: var(--muted);
+}
+
+.cm-s-toolkit .cm-quote {
+    color: var(--syntax-comment);
+}
+
+.cm-s-toolkit .cm-hr {
+    color: var(--muted);
+}
+
+/* The search box of the search addon, in any page. */
+.cm-s-toolkit .CodeMirror-dialog {
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+}
+
+.cm-s-toolkit .CodeMirror-dialog-top {
+    border-bottom: 1px solid var(--line);
+}
+
+.cm-s-toolkit .CodeMirror-dialog input {
+    color: var(--text);
+}
+
+.cm-s-toolkit .CodeMirror-search-hint {
+    color: var(--muted);
+}
+
+.cm-s-toolkit .CodeMirror-placeholder {
+    color: var(--muted);
+}

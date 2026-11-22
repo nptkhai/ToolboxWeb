@@ -26,8 +26,34 @@
         "Md.Callout.warning", "Md.Callout.caution", "Keys.Find", "Keys.CloseTab", "Keys.Tree", "Keys.Print",
         "Keys.NextTab", "Keys.PrevTab", "Root.NameRequired", "Tabs.Unsaved", "Md.TaskDone", "Md.TaskOpen"
     ];
-    var text = keys.ToDictionary(k => k, k => Text("Files." + k));
+    string[] editKeys =
+    [
+        "Edit.Unsaved", "Edit.SavedAt", "Edit.Saving", "Edit.SaveFailed", "Edit.Mode", "Edit.Autosave", "Edit.Cursor", "Edit.Preview",
+        "Edit.Editor", "Edit.DiscardTitle", "Edit.DiscardMessage", "Edit.DiscardOk", "Edit.Discarded", "Edit.ReadOnlyHint",
+        "Save.Conflict", "Save.Deleted", "Save.DeletedOk", "Save.EncodingTitle", "Save.EncodingOk", "Save.EncodingLoss",
+        "External.Reloaded", "External.Deleted", "External.DeletedDirty", "Draft.Found", "Draft.FoundChanged", "Draft.Restore",
+        "Draft.Drop", "Draft.Restored", "Compare.Disk", "Compare.Mine", "Compare.Same", "Unsaved.Message", "Unsaved.Leave",
+        "Md.Bold", "Md.Italic", "Md.Strike", "Md.H1", "Md.H2", "Md.H3", "Md.Quote", "Md.Code", "Md.List", "Md.OrderedList",
+        "Md.Checklist", "Md.Link", "Md.Image", "Md.Rule", "Md.LinkText", "Md.ImageText", "Md.Toolbar", "Keys.Save", "Keys.Mode"
+    ];
+    var text = keys.Concat(editKeys).ToDictionary(k => k, k => Text("Files." + k));
     text["cancel"] = Text("Action.Cancel");
+
+    // CodeMirror's search box words (addon/search), shared with the Code playground.
+    var phrases = new Dictionary<string, string>
+    {
+        ["Search:"] = Text("CodePlayground.Search.Find"),
+        ["(Use /re/ syntax for regexp search)"] = Text("CodePlayground.Search.Regex"),
+        ["Replace:"] = Text("CodePlayground.Search.Replace"),
+        ["With:"] = Text("CodePlayground.Search.With"),
+        ["Replace all:"] = Text("CodePlayground.Search.ReplaceAll"),
+        ["Replace with:"] = Text("CodePlayground.Search.ReplaceWith"),
+        ["Replace?"] = Text("CodePlayground.Search.Confirm"),
+        ["Yes"] = Text("CodePlayground.Search.Yes"),
+        ["No"] = Text("CodePlayground.Search.No"),
+        ["All"] = Text("CodePlayground.Search.All"),
+        ["Stop"] = Text("CodePlayground.Search.Stop")
+    };
 
     var config = new
     {
@@ -52,14 +78,20 @@
             find = Url.Action("Find", "Files"),
             saveCopyAs = Url.Action("SaveCopyAs", "Files"),
             openDefault = Url.Action("OpenDefault", "Files"),
-            reveal = Url.Action("Reveal", "Files")
+            reveal = Url.Action("Reveal", "Files"),
+            save = Url.Action("Save", "Files"),
+            info = Url.Action("Info", "Files")
         },
-        text
+        text,
+        phrases
     };
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/vendor/tabulator/css/tabulator.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/codemirror/lib/codemirror.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/codemirror/addon/dialog/dialog.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/codemirror-toolkit.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/files.css" asp-append-version="true" />
 }
 
@@ -124,8 +156,18 @@
 
             <div class="fx-doc" data-fx-doc role="tabpanel" hidden>
                 <header class="fx-doc-head">
-                    <nav class="fx-crumbs" aria-label="@T["Files.Doc.Path"]" data-fx-crumbs></nav>
+                    <div class="fx-doc-title">
+                        <nav class="fx-crumbs" aria-label="@T["Files.Doc.Path"]" data-fx-crumbs></nav>
+                        <span class="fx-save-state" data-fx-save-state aria-live="polite"></span>
+                    </div>
                     <div class="fx-doc-actions" role="toolbar" aria-label="@T["Files.Doc.Actions"]">
+                        <div class="fx-mode" role="group" aria-label="@T["Files.Edit.Mode"]" data-fx-mode hidden>
+                            <button type="button" class="fx-mode-btn" data-fx-mode-btn="view" aria-pressed="true"><tbx-icon name="eye" /><span>@T["Files.Doc.View"]</span></button>
+                            <button type="button" class="fx-mode-btn" data-fx-mode-btn="edit" aria-pressed="false"><tbx-icon name="pencil" /><span>@T["Files.Edit.Edit"]</span></button>
+                        </div>
+                        <button type="button" class="btn btn-sm tbx-icon-button" data-fx-preview-toggle hidden title="@T["Files.Edit.PreviewToggle"]" aria-label="@T["Files.Edit.PreviewToggle"]" aria-pressed="true"><tbx-icon name="columns-2" /></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-fx-discard hidden><tbx-icon name="undo-2" /><span>@T["Files.Edit.Discard"]</span></button>
+                        <button type="button" class="btn btn-sm btn-primary" data-fx-save hidden><tbx-icon name="save" /><span>@T["Files.Edit.Save"]</span></button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-fx-copy><tbx-icon name="copy" /><span>@T["Files.Doc.Copy"]</span></button>
                         <button type="button" class="btn btn-sm tbx-icon-button" data-fx-print title="@T["Files.Doc.Print"]" aria-label="@T["Files.Doc.Print"]"><tbx-icon name="printer" /></button>
                         @if (Model.HasWindowsDialog)
@@ -204,6 +246,66 @@
     </div>
 </div>
 
+@* Closing a tab (or the app) with unsaved changes. *@
+<div class="modal fade" id="fx-unsaved" tabindex="-1" aria-labelledby="fx-unsaved-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-unsaved-title">@T["Files.Unsaved.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body"><p class="mb-0" data-fx-unsaved-message></p></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="button" class="btn btn-outline-danger" data-fx-unsaved="discard">@T["Files.Unsaved.DontSave"]</button>
+                <button type="button" class="btn btn-primary" data-fx-unsaved="save">@T["Files.Edit.Save"]</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* The file changed outside Toolkit while it was being edited. *@
+<div class="modal fade" id="fx-conflict" tabindex="-1" aria-labelledby="fx-conflict-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-conflict-title">@T["Files.Conflict.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <p data-fx-conflict-message></p>
+                <ul class="fx-conflict-choices">
+                    <li><strong>@T["Files.Conflict.Reload"]</strong>: @T["Files.Conflict.ReloadHint"]</li>
+                    <li><strong>@T["Files.Conflict.Overwrite"]</strong>: @T["Files.Conflict.OverwriteHint"]</li>
+                    <li><strong>@T["Files.Conflict.Compare"]</strong>: @T["Files.Conflict.CompareHint"]</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-fx-conflict="compare"><tbx-icon name="git-compare" /><span>@T["Files.Conflict.Compare"]</span></button>
+                <button type="button" class="btn btn-outline-secondary" data-fx-conflict="reload"><tbx-icon name="refresh-cw" /><span>@T["Files.Conflict.Reload"]</span></button>
+                <button type="button" class="btn btn-danger" data-fx-conflict="overwrite"><tbx-icon name="save" /><span>@T["Files.Conflict.Overwrite"]</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="fx-compare" tabindex="-1" aria-labelledby="fx-compare-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-compare-title" data-fx-compare-title>@T["Files.Conflict.Compare"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body fx-compare-body" data-fx-compare-body></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="button" class="btn btn-outline-secondary" data-fx-conflict="reload"><tbx-icon name="refresh-cw" /><span>@T["Files.Conflict.Reload"]</span></button>
+                <button type="button" class="btn btn-danger" data-fx-conflict="overwrite"><tbx-icon name="save" /><span>@T["Files.Conflict.Overwrite"]</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script id="files-config" type="application/json">@Html.Raw(JsonSerializer.Serialize(config))</script>
 
 @section Scripts {
@@ -212,7 +314,34 @@
     <script src="~/vendor/dompurify/purify.min.js" asp-append-version="true"></script>
     <script src="~/vendor/papaparse/papaparse.min.js" asp-append-version="true"></script>
     <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/jsdiff/js/diff.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/lib/codemirror.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/mode/overlay.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/xml/xml.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/javascript/javascript.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/css/css.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/htmlmixed/htmlmixed.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/markdown/markdown.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/gfm/gfm.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/yaml/yaml.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/yaml-frontmatter/yaml-frontmatter.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/sql/sql.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/shell/shell.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/powershell/powershell.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/python/python.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/clike/clike.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/properties/properties.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/toml/toml.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/diff/diff.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/dialog/dialog.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/search/searchcursor.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/search/search.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/edit/matchbrackets.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/edit/closebrackets.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/selection/active-line.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/display/placeholder.js" asp-append-version="true"></script>
     <script src="~/js/files/files-markdown.js" asp-append-version="true"></script>
     <script src="~/js/files/files-viewers.js" asp-append-version="true"></script>
     <script src="~/js/files/files.js" asp-append-version="true"></script>
+    <script src="~/js/files/files-editor.js" asp-append-version="true"></script>
 }

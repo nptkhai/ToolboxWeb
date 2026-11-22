@@ -277,109 +277,12 @@
         color: var(--danger);
     }
 
-/* ---------------------------------------------------------------- CodeMirror theme "toolkit" */
+/* ---------------------------------------------------------------- CodeMirror (theme "toolkit" in codemirror-toolkit.css) */
 
 .pg-code .CodeMirror {
     height: 100%;
     inset: 0;
     position: absolute;
-}
-
-.cm-s-toolkit.CodeMirror {
-    background: var(--surface);
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    line-height: 1.6;
-}
-
-.cm-s-toolkit .CodeMirror-gutters {
-    background: var(--surface-2);
-    border-right: 1px solid var(--line);
-}
-
-.cm-s-toolkit .CodeMirror-linenumber {
-    color: var(--muted);
-}
-
-.cm-s-toolkit .CodeMirror-cursor {
-    border-left-color: var(--text);
-}
-
-.cm-s-toolkit .CodeMirror-selected,
-.cm-s-toolkit.CodeMirror-focused .CodeMirror-selected,
-.cm-s-toolkit .CodeMirror-line::selection,
-.cm-s-toolkit .CodeMirror-line > span::selection,
-.cm-s-toolkit .CodeMirror-line > span > span::selection {
-    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
-}
-
-.cm-s-toolkit .CodeMirror-activeline-background {
-    background: var(--hover);
-}
-
-.cm-s-toolkit .CodeMirror-activeline-gutter {
-    background: var(--hover);
-}
-
-.cm-s-toolkit .CodeMirror-matchingtag {
-    background: var(--accent-tint);
-}
-
-.cm-s-toolkit .CodeMirror-matchingbracket {
-    background: var(--accent-tint);
-    color: inherit;
-    font-weight: var(--weight-semibold);
-}
-
-.cm-s-toolkit .CodeMirror-nonmatchingbracket {
-    color: var(--danger);
-}
-
-.cm-s-toolkit .cm-keyword,
-.cm-s-toolkit .cm-tag {
-    color: var(--syntax-keyword);
-}
-
-.cm-s-toolkit .cm-string,
-.cm-s-toolkit .cm-string-2 {
-    color: var(--syntax-string);
-}
-
-.cm-s-toolkit .cm-comment,
-.cm-s-toolkit .cm-meta {
-    color: var(--syntax-comment);
-}
-
-.cm-s-toolkit .cm-number,
-.cm-s-toolkit .cm-atom {
-    color: var(--syntax-number);
-}
-
-.cm-s-toolkit .cm-type,
-.cm-s-toolkit .cm-variable-3,
-.cm-s-toolkit .cm-qualifier,
-.cm-s-toolkit .cm-builtin {
-    color: var(--syntax-type);
-}
-
-.cm-s-toolkit .cm-attribute,
-.cm-s-toolkit .cm-property {
-    color: var(--syntax-attr);
-}
-
-.cm-s-toolkit .cm-def,
-.cm-s-toolkit .cm-variable-2 {
-    color: var(--syntax-title);
-}
-
-.cm-s-toolkit .cm-bracket,
-.cm-s-toolkit .cm-operator {
-    color: var(--muted);
-}
-
-.cm-s-toolkit .cm-error {
-    color: var(--danger);
 }
 
 /* The search box of the search addon. */

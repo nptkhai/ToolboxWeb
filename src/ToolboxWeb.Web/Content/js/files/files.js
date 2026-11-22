@@ -873,6 +873,7 @@
         const doc = tab.doc;
         if (!doc) {
             els.meta.textContent = '';
+            NS.afterHead?.(tab);
             return;
         }
         const pieces = [
@@ -887,6 +888,7 @@
         const hasText = typeof doc.text === 'string';
         if (els.copy) els.copy.disabled = !hasText;
         if (els.download) els.download.href = rawUrl(tab.rootId, tab.path, true);
+        NS.afterHead?.(tab);
     }
 
     els.crumbs.addEventListener('click', (event) => {
@@ -1181,7 +1183,7 @@
         state, els, config, text, urls, request, rawUrl, openFile, closeTab, activateTab, activeTab, findTab, renderTabs,
         refreshTabs, refreshTree, loadRoots, loadStats, reveal, keyOf, parentPath, baseName, notify, fmt, escapeHtml, icon,
         bytes, when, number, saveState, toggleFolder, showMenu, openOutside, setStatus, focusItem, rootName, moveToBody, modal,
-        loadDoc, openPicker
+        loadDoc, openPicker, showDoc, renderDocHead, viewContext, markActiveInTree
     };
 
     state.showHidden = Boolean(state.saved.showHidden);

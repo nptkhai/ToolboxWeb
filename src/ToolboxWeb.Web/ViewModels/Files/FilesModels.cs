@@ -54,6 +54,26 @@ public sealed class FileReadView
     public bool Plain { get; init; }
 }
 
+/// <summary>Size and last write time (UTC) of an open file, polled to notice outside changes.</summary>
+public sealed record FileInfoView(long Size, DateTime Modified, bool ReadOnly);
+
+/// <summary>Saving a text file: the text and how the file is stored (as read), plus the hash it was read with.</summary>
+public sealed class FileSaveRequest
+{
+    public int Root { get; set; }
+    public string? Path { get; set; }
+    public string? Text { get; set; }
+    public string? ExpectedHash { get; set; }
+    public string? Encoding { get; set; }
+    public bool Bom { get; set; }
+    public string? LineEnding { get; set; }
+
+    /// <summary>Overwrite even if the file changed (or was deleted) since it was read.</summary>
+    public bool Force { get; set; }
+}
+
+public sealed record FileSavedView(int RootId, string Path, string Hash, long Size, DateTime Modified, string Encoding, bool Bom, string LineEnding);
+
 /// <summary>A quick-open match: a file in one of the user's roots.</summary>
 public sealed record FileFindItem(int RootId, string RootName, string Path, string Name, string Kind);
 

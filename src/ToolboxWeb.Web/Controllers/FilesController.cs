@@ -139,6 +139,16 @@ public class FilesController : Controller
         }
     }
 
+    [HttpGet("/Files/Info")]
+    public Task<IActionResult> Info(int root, string? path) =>
+        Run(async () => (object?)await _files.GetInfoAsync(root, path, HttpContext.RequestAborted));
+
+    [HttpPost("/Files/Save")]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(64 * 1024 * 1024)]
+    public Task<IActionResult> Save([FromBody] FileSaveRequest? request) =>
+        Run(async () => await _files.SaveAsync(request ?? new FileSaveRequest(), HttpContext.RequestAborted));
+
     [HttpGet("/Files/Find")]
     public Task<IActionResult> Find(string? q, bool hidden = false) =>
         Run(async () => await _files.FindByNameAsync(q, hidden, HttpContext.RequestAborted));

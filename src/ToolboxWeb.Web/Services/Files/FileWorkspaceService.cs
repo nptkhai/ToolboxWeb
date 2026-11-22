@@ -57,6 +57,16 @@ public interface IFileWorkspaceService
     /// <summary>Full path and content type for showing (images, PDF) or downloading a file.</summary>
     Task<(string FullPath, string ContentType, string Name)> GetRawAsync(int rootId, string? path, CancellationToken cancellationToken = default);
 
+    /// <summary>Size and time of a file, to notice a change made outside Toolkit; null when it no longer exists.</summary>
+    Task<FileInfoView?> GetInfoAsync(int rootId, string? path, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Writes the text back in the file's own encoding and line ending. Refuses with "conflict" when the
+    /// file changed since <see cref="FileSaveRequest.ExpectedHash"/> (unless Force), and with "encoding" when
+    /// the text cannot be stored in the file's code page.
+    /// </summary>
+    Task<FileSavedView> SaveAsync(FileSaveRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Files whose name contains <paramref name="query"/> in every available root (quick open, Ctrl+P).</summary>
     Task<IReadOnlyList<FileFindItem>> FindByNameAsync(string? query, bool showHidden, CancellationToken cancellationToken = default);
 
@@ -352,6 +362,124 @@ public sealed class FileWorkspaceService : IFileWorkspaceService
 
         return new FileStatsView(files, folders, bytes, partial);
     }
+
+    public async Task<FileInfoView?> GetInfoAsync(int rootId, string? path, CancellationToken cancellationToken = default)
+    {
+        var (_, full) = await ResolveAsync(rootId, path, cancellationToken);
+        var info = new FileInfo(full);
+        return info.Exists ? new FileInfoView(info.Length, info.LastWriteTimeUtc, info.IsReadOnly) : null;
+    }
+
+    public async Task<FileSavedView> SaveAsync(FileSaveRequest request, CancellationToken cancellationToken = default)
+    {
+        var (root, full) = await ResolveAsync(request.Root, request.Path, cancellationToken);
+        var text = request.Text ?? string.Empty;
+        var info = new FileInfo(full);
+        if (info.Exists && info.IsReadOnly)
+        {
+            throw Error("denied", "Files.ReadOnly.Attribute");
+        }
+
+        if (Directory.Exists(full) || (info.Exists && KindOf(info.Name) is "image" or "pdf" or "office" or "binary"))
+        {
+            throw Error("invalid", "Files.ReadOnly.NotText");
+        }
+
+        var format = new TextFormat(
+            AllowedEncoding(request.Encoding),
+            request.Bom,
+            request.LineEnding is "CRLF" or "LF" or "CR" ? request.LineEnding : TextFileCodec.DetectLineEnding(text));
+        if (!TextFileCodec.CanEncode(text, format))
+        {
+            throw new FileOperationException("encoding", _localizer["Files.Save.EncodingLoss", format.Encoding].Value);
+        }
+
+        var bytes = TextFileCodec.Encode(text, format);
+        if (bytes.LongLength > Options.MaxEditBytes)
+        {
+            throw Error("invalid", "Files.ReadOnly.TooLarge");
+        }
+
+        if (info.Exists && !request.Force)
+        {
+            byte[] current;
+            try
+            {
+                current = await File.ReadAllBytesAsync(full, cancellationToken);
+            }
+            catch (IOException)
+            {
+                throw Error("unavailable", "Files.Error.FileBusy");
+            }
+
+            if (!string.Equals(TextFileCodec.Hash(current), request.ExpectedHash, StringComparison.Ordinal))
+            {
+                throw Error("conflict", "Files.Save.Conflict");
+            }
+        }
+        else if (!info.Exists && !request.Force)
+        {
+            throw Error("deleted", "Files.Save.Deleted");
+        }
+
+        await WriteAtomicallyAsync(full, bytes, cancellationToken);
+        var saved = new FileInfo(full);
+        return new FileSavedView(root.Id, FilePathGuard.Relative(root.Path, full), TextFileCodec.Hash(bytes), saved.Length, saved.LastWriteTimeUtc, format.Encoding, format.Bom, format.LineEnding);
+    }
+
+    /// <summary>
+    /// Writes next to the file first, then swaps it in, so a crash or a full disk never leaves half a
+    /// file. On Windows, File.Replace keeps the original's attributes and permissions.
+    /// </summary>
+    private static async Task WriteAtomicallyAsync(string full, byte[] bytes, CancellationToken cancellationToken)
+    {
+        var folder = Path.GetDirectoryName(full)!;
+        var temp = Path.Combine(folder, $".~{Path.GetFileName(full)}.{Guid.NewGuid():N}.toolkit-tmp");
+        try
+        {
+            await File.WriteAllBytesAsync(temp, bytes, cancellationToken);
+            if (File.Exists(full) && OperatingSystem.IsWindows())
+            {
+                File.Replace(temp, full, destinationBackupFileName: null, ignoreMetadataErrors: true);
+            }
+            else
+            {
+                File.Move(temp, full, overwrite: true);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // A folder that refuses new files (or a volume without replace): write in place instead.
+            TryDelete(temp);
+            await File.WriteAllBytesAsync(full, bytes, cancellationToken);
+        }
+        finally
+        {
+            TryDelete(temp);
+        }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Left behind; harmless and hidden (starts with ".~").
+        }
+    }
+
+    private static string AllowedEncoding(string? name) => name switch
+    {
+        "utf-8" or "utf-16" or "utf-16BE" => name,
+        not null when name.StartsWith("windows-", StringComparison.OrdinalIgnoreCase) || name.StartsWith("iso-8859-", StringComparison.OrdinalIgnoreCase) => name,
+        _ => "utf-8"
+    };
 
     public async Task<FileReadView> ReadAsync(int rootId, string? path, CancellationToken cancellationToken = default)
     {

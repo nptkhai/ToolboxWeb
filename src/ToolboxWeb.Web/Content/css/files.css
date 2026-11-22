@@ -1035,6 +1035,259 @@
     padding: var(--space-2) var(--space-3);
 }
 
+/* ------------------------------------------------------------------ editing (files-editor.js) */
+
+.fx-doc-title {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    min-width: 0;
+}
+
+.fx-save-state {
+    align-items: center;
+    color: var(--muted);
+    display: inline-flex;
+    font-size: var(--text-xs);
+    gap: var(--space-1);
+}
+
+    .fx-save-state.is-dirty {
+        color: var(--warning);
+        font-weight: var(--weight-medium);
+    }
+
+    .fx-save-state.is-saved {
+        color: var(--success);
+    }
+
+.fx-dot {
+    background: currentColor;
+    border-radius: 50%;
+    display: inline-block;
+    height: 8px;
+    width: 8px;
+}
+
+.fx-mode {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    display: inline-flex;
+    padding: 2px;
+}
+
+    .fx-mode[hidden] {
+        display: none;
+    }
+
+.fx-mode-btn {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-radius: calc(var(--radius-control) - 2px);
+    color: var(--muted);
+    display: inline-flex;
+    font-size: var(--text-sm);
+    gap: var(--space-1);
+    padding: 2px var(--space-2);
+}
+
+    .fx-mode-btn.is-active {
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        color: var(--text);
+        font-weight: var(--weight-medium);
+    }
+
+    .fx-mode-btn:focus-visible {
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
+
+.fx-edit {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.fx-md-toolbar {
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: var(--space-1) var(--space-2);
+}
+
+.fx-md-btn {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-radius: var(--radius-control);
+    color: var(--muted);
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
+    width: 28px;
+}
+
+    .fx-md-btn:hover,
+    .fx-md-btn:focus-visible {
+        background: var(--hover);
+        color: var(--text);
+        outline: none;
+    }
+
+.fx-md-sep {
+    background: var(--line);
+    height: 18px;
+    margin: 0 var(--space-1);
+    width: 1px;
+}
+
+.fx-edit-panes {
+    display: grid;
+    flex: 1 1 auto;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+}
+
+.fx-edit.is-split .fx-edit-panes {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.fx-edit-pane {
+    min-height: 0;
+    min-width: 0;
+    position: relative;
+}
+
+.fx-editor-host,
+.fx-editor-host .CodeMirror {
+    height: 100%;
+    inset: 0;
+    position: absolute;
+    width: 100%;
+}
+
+.fx-preview {
+    display: none;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--space-4) var(--space-5);
+}
+
+.fx-edit.is-split .fx-preview {
+    border-left: 1px solid var(--line);
+    display: block;
+}
+
+.fx-edit.is-preview .fx-preview {
+    display: block;
+}
+
+.fx-edit.is-preview .fx-edit-pane {
+    display: none;
+}
+
+.fx-autosave {
+    align-items: center;
+    cursor: pointer;
+    display: inline-flex;
+    gap: var(--space-1);
+    margin-left: auto;
+}
+
+    .fx-autosave .form-check-input {
+        margin: 0;
+    }
+
+.fx-draft {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    margin: var(--space-2) var(--space-3);
+}
+
+.fx-body:not(.is-fill) > .fx-draft {
+    margin: 0 0 var(--space-3);
+}
+
+.fx-draft-actions {
+    display: inline-flex;
+    gap: var(--space-2);
+    margin-left: auto;
+}
+
+.fx-conflict-choices {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    margin: 0;
+    padding-left: var(--space-4);
+}
+
+.fx-cmp-legend {
+    display: flex;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+}
+
+.fx-cmp-key {
+    border-radius: var(--radius-pill);
+    padding: 1px var(--space-2);
+}
+
+    .fx-cmp-key.is-removed,
+    .fx-cmp tr.is-removed {
+        background: var(--danger-tint);
+    }
+
+    .fx-cmp-key.is-added,
+    .fx-cmp tr.is-added {
+        background: var(--success-tint);
+    }
+
+.fx-cmp-wrap {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    overflow: auto;
+}
+
+.fx-cmp {
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    width: 100%;
+}
+
+    .fx-cmp td {
+        padding: 0 var(--space-2);
+        vertical-align: top;
+    }
+
+    .fx-cmp code {
+        color: var(--text);
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+.fx-cmp-n {
+    color: var(--muted);
+    text-align: right;
+    user-select: none;
+    width: 1%;
+}
+
+.fx-cmp-sign {
+    color: var(--muted);
+    text-align: center;
+    width: 1%;
+}
+
 /* ------------------------------------------------------------------ narrow screens */
 
 @media (max-width: 899.98px) {
@@ -1076,8 +1329,22 @@
         padding: var(--space-3);
     }
 
-    .fx-doc-actions .btn span {
+    .fx-doc-actions .btn span,
+    .fx-mode-btn span {
         display: none;
+    }
+
+    .fx-edit.is-split .fx-edit-panes {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fx-edit.is-split .fx-preview {
+        display: none;
+    }
+
+    .fx-edit.is-split.is-preview .fx-preview {
+        border-left: 0;
+        display: block;
     }
 }
 
