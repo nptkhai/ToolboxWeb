@@ -27,7 +27,8 @@ using ToolboxWeb.Web.ViewModels.Jira;
 // Installed desktop copies (Velopack, tools/release): install, update and uninstall steps run the
 // app with special arguments; this handles them and exits before anything else starts. A copy
 // that was not installed by the Toolkit installer (dotnet run, IIS) carries on as usual.
-Velopack.VelopackApp.Build().Run();
+// The hooks also put Toolkit in Windows' "Open with" list for .md files (FileAssociation).
+Velopack.VelopackApp.Build().WithMarkdownOpenWith().Run();
 
 if (await DacFxExtractWorker.TryRunAsync(args))
 {
@@ -38,6 +39,8 @@ if (await DacFxExtractWorker.TryRunAsync(args))
 // person's computer (--desktop, appsettings.Desktop.json), see Infrastructure/Hosting/DesktopHost.
 var desktopRequested = DesktopHost.IsRequested(ref args);
 var desktopNoWindow = DesktopHost.TakeSwitch(ref args, DesktopHost.NoWindowSwitch);
+// A .md file opened from Explorer ("Open with" > Toolkit): shown in Files & folders.
+var desktopOpenFile = DesktopHost.TakeOption(ref args, FileAssociation.OpenFileSwitch);
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
@@ -50,6 +53,11 @@ if (desktopRequested)
     if (desktopNoWindow)
     {
         builder.Configuration["Desktop:OpenBrowser"] = "false";
+    }
+
+    if (!string.IsNullOrWhiteSpace(desktopOpenFile))
+    {
+        builder.Configuration["Desktop:StartPath"] = "/files.html?open=" + Uri.EscapeDataString(desktopOpenFile);
     }
 }
 

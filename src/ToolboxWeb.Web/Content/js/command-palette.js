@@ -97,16 +97,22 @@
         });
     }
 
+    // Commands a page adds while it is open (Toolbox.palette.add), e.g. "Files: new file".
+    const pageCommands = [];
+
     function commandOptions() {
         const focus = window.ToolboxFocus;
-        return (config.commands || []).map(function (command) {
+        const own = pageCommands.map(function (command) {
+            return { type: 'command', id: 'page:' + command.id, label: command.label, icon: command.icon || 'chevron-right', href: null, action: 'page:' + command.id, keywords: command.keywords || '', page: true };
+        });
+        return own.concat((config.commands || []).map(function (command) {
             let label = command.label;
             if (command.action === 'focus' && focus) {
                 const status = focus.state().status;
                 label = status === 'running' ? text.focusPause : status === 'paused' ? text.focusResume : text.focusStart;
             }
             return { type: 'command', id: command.id, label: label, icon: command.icon, href: command.href || null, action: command.action || null, keywords: command.keywords || '' };
-        });
+        }));
     }
 
     function dataOptions() {
@@ -254,6 +260,11 @@
     }
 
     function runAction(action) {
+        if (action.indexOf('page:') === 0) {
+            const command = pageCommands.find(function (c) { return 'page:' + c.id === action; });
+            if (command) command.run();
+            return;
+        }
         if (action === 'focus' && window.ToolboxFocus) {
             const focus = window.ToolboxFocus;
             const state = focus.state();
@@ -278,15 +289,20 @@
         if (!option) {
             return;
         }
-        remember(option);
+        // Page commands exist only on their page, so they are not kept among the recent picks.
+        if (!option.page) {
+            remember(option);
+        }
         const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
-        modal.hide();
-
         if (option.action) {
             // After the palette has closed, so a dialog the action opens is not stacked on it.
+            // Listen before hiding: without the fade (reduced motion) Bootstrap reports "hidden" at once.
             modalElement.addEventListener('hidden.bs.modal', function () { runAction(option.action); }, { once: true });
+            modal.hide();
             return;
         }
+        modal.hide();
+
         if (option.kind === 'link' || option.external) {
             if (option.kind === 'link' && option.itemId) {
                 postLinkOpened(option.itemId);
@@ -316,6 +332,21 @@
         window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
     }
 
+    /**
+     * Toolbox.palette.add({ id, label, icon, keywords, run }) lists a command of the current page
+     * in Ctrl+K (returns a function that removes it); Toolbox.palette.open() opens the palette.
+     */
+    window.Toolbox.palette = {
+        open: open,
+        add: function (command) {
+            pageCommands.push(command);
+            return function () {
+                const at = pageCommands.indexOf(command);
+                if (at >= 0) pageCommands.splice(at, 1);
+            };
+        }
+    };
+
     // The palette lives outside the app shell so the backdrop does not cover it.
     document.body.appendChild(modalElement);
     modalElement.addEventListener('shown.bs.modal', function () { input.focus(); });
@@ -337,8 +368,8 @@
             choose(options[active], event.ctrlKey || event.metaKey);
         } else if (event.key === '?' && !input.value) {
             event.preventDefault();
-            window.bootstrap.Modal.getOrCreateInstance(modalElement).hide();
             modalElement.addEventListener('hidden.bs.modal', keys.showHelp, { once: true });
+            window.bootstrap.Modal.getOrCreateInstance(modalElement).hide();
         }
     });
 

@@ -45,6 +45,7 @@ Lưu ý:
 12a. [Danh mục Jira](#12a-danh-mục-jira-jcat)
 13. [So sánh nội dung](#13-so-sánh-nội-dung-diff)
 14. [Thử code web](#14-thử-code-web-play)
+14a. [Tệp & Thư mục](#14a-tệp--thư-mục-files)
 15. [So sánh cấu trúc DB](#15-so-sánh-cấu-trúc-db-scmp)
 16. [Bắt câu lệnh SQL](#16-bắt-câu-lệnh-sql-sqlp)
 17. [Tài khoản](#17-tài-khoản-acc)
@@ -68,6 +69,7 @@ Lưu ý:
 | Liên kết nhanh | `/quick-links.html` | CÁ NHÂN | Mọi tài khoản | G L |
 | Không gian prompt | `/prompt-templates.html` | CÁ NHÂN | Mọi tài khoản | G P |
 | So sánh nội dung | `/text-compare.html` | CÔNG CỤ | Mọi tài khoản, cả bản Web | G X |
+| Tệp & Thư mục | `/files.html` | CÔNG CỤ | Bản máy tính; trên IIS chỉ tài khoản trong `Files:AllowedUsers`; không có ở bản Web | G E |
 | Thử code web | `/code-playground.html` | CÔNG CỤ | Mọi tài khoản, cả bản Web | G H |
 | So sánh cấu trúc DB | `/schema-compare.html` | CÔNG CỤ | Mọi tài khoản | G S |
 | Bắt câu lệnh SQL | `/sql-profiler.html` | CÔNG CỤ | Mọi tài khoản | G Q |
@@ -617,6 +619,51 @@ Lưu ý:
 | PLAY-P01 | Chặn vòng lặp không dừng (dừng code chạy quá lâu) | Không treo trang khi gõ nhầm | M | | | |
 | PLAY-P02 | Thêm thư viện có sẵn (Kendo UI Core, ECharts, Tabulator đã có trong app) | Thử nhanh control của app | S | | | |
 | PLAY-P03 | Lưu bài vào tài khoản (database) để dùng trên nhiều máy | Không phải Tải về / Chia sẻ | M | | | |
+
+### Đề xuất thêm của bạn
+
+-
+
+---
+
+## 14a. Tệp & Thư mục (FILES)
+
+### Chức năng đang có
+
+| Mã | Chức năng | Đánh giá | Ghi chú của bạn |
+|---|---|---|---|
+| FILES-01 | Thư mục gốc: chọn bằng hộp thoại Windows (máy tính) hoặc hộp chọn trong trang (IIS, chỉ trong `AllowedFolders`); nhiều gốc, đổi tên hiển thị, lên/xuống, gỡ khỏi danh sách (không xóa tệp); báo gốc không truy cập được và cho chọn lại đường dẫn | | |
+| FILES-02 | Cây thư mục: bung/thu, biểu tượng theo loại tệp, dung lượng, ẩn `.git`, `node_modules`, `bin`, `obj` và tệp ẩn; chân cây đếm tệp, thư mục, tổng dung lượng; thu gọn tất cả, làm mới; phím mũi tên, Enter; kéo đổi độ rộng; trên điện thoại là ngăn kéo | | |
+| FILES-03 | Tìm nhanh tên tệp (Ctrl+P) trong mọi gốc | | |
+| FILES-04 | Nhiều tab, breadcrumb, thanh thông tin (loại, dung lượng, ngày sửa, mã hóa, kiểu xuống dòng), thanh trạng thái (dòng, từ, ký tự, Xem/Chỉ đọc) | | |
+| FILES-05 | Xem Markdown đã dựng (front matter, ghi chú nổi bật `> [!NOTE]`, checklist, bảng, code tô màu có nút Sao chép, ảnh và link tới tệp khác trong gốc), JSON dạng cây kèm báo lỗi dòng/cột, CSV dạng bảng, ảnh, PDF, text/log/cấu hình tô màu; Word/Excel/nhị phân hiện thông tin và nút mở bằng chương trình mặc định (máy tính) hoặc tải xuống (IIS) | | |
+| FILES-06 | Sao chép nội dung, in (chỉ phần nội dung), lưu bản sao (hộp thoại Lưu của Windows) hoặc tải xuống | | |
+| FILES-07 | Nhớ lần mở trước: các gốc (trên máy chủ), tab đang mở, tab đang chọn, thư mục đang bung, độ rộng cây (trên trình duyệt) | | |
+| FILES-09 | Sửa tệp: hai chế độ Xem / Sửa (phím E); khung soạn có số dòng, tô màu cú pháp, hoàn tác/làm lại, tìm và thay thế (Ctrl+F, Ctrl+H); Markdown có thanh công cụ (đậm, nghiêng, gạch ngang, H1–H3, trích dẫn, code, danh sách, checklist, liên kết, ảnh, đường kẻ) và xem trước bên cạnh cuộn cùng | | |
+| FILES-10 | Lưu (Ctrl+S), Hủy thay đổi, Lưu tự động (tắt mặc định, 2 giây sau khi ngừng gõ); "Có thay đổi chưa lưu" / "Đã lưu lúc …"; thanh trạng thái có dòng/cột, số từ, ký tự, chế độ | | |
+| FILES-11 | Không mất dữ liệu: hỏi Lưu / Không lưu / Hủy khi đóng tab, báo khi đóng cửa sổ; bản nháp giữ trên trình duyệt và hỏi khôi phục khi mở lại; tệp đổi bên ngoài: chưa sửa thì tự tải lại, đang sửa thì hỏi Tải lại / Ghi đè / So sánh; tệp bị xóa bên ngoài thì đóng tab (hoặc giữ nội dung nếu đang sửa) | | |
+| FILES-12 | Giữ nguyên mã hóa (UTF-8 có/không BOM, UTF-16, bảng mã cũ) và kiểu xuống dòng khi lưu; bảng mã cũ không chứa được ký tự mới thì hỏi lưu dạng UTF-8; ghi qua tệp tạm rồi thay, không để tệp dở | | |
+| FILES-13 | Quản lý tệp: tạo tệp (mở sẵn ở chế độ Sửa) và thư mục; menu chuột phải / Shift+F10 / nút "…": mở, mở bằng chương trình mặc định hoặc tải xuống, đổi tên (F2), nhân bản ("tên (bản sao)"), sao chép đường dẫn, hiện trong Explorer, xóa (Delete); tab đang mở đi theo khi đổi tên/di chuyển, đóng lại khi xóa | | |
+| FILES-14 | Kéo thả trong cây để di chuyển (Ctrl/Alt để sao chép, luôn hỏi lại), kéo tệp và thư mục từ Explorer vào (hỏi trước khi ghi đè) | | |
+| FILES-15 | Xóa: vào Thùng rác của Windows (máy tính Windows) hoặc thùng rác của Toolkit (IIS), giữ 30 ngày, khôi phục hoặc xóa hẳn | | |
+| FILES-16 | Cây tự cập nhật khi có tệp thêm, xóa, đổi tên từ bên ngoài (máy chủ theo dõi thư mục, trang hỏi thay đổi mỗi 3 giây) | | |
+| FILES-17 | Tìm trong nội dung mọi thư mục gốc (Ctrl+Shift+F), kết quả theo tệp, bấm để mở tệp đúng dòng | | |
+| FILES-18 | Tệp mở gần đây và tệp ghim (trên trình duyệt): ở màn hình bắt đầu và trong ô tìm nhanh khi chưa gõ | | |
+| FILES-19 | Mục lục theo tiêu đề cho Markdown; hiện tệp ẩn; lọc cây theo loại tệp (có nhãn "đang lọc" để bỏ nhanh) | | |
+| FILES-20 | Dán ảnh vào Markdown: ảnh lưu vào `assets/` cạnh tệp và chèn sẵn đường dẫn | | |
+| FILES-21 | Kiểm tra lỗi ở thanh trạng thái: JSON, YAML sai cú pháp (bấm để nhảy tới dòng), liên kết nội bộ hỏng trong Markdown (đánh dấu trên trang) | | |
+| FILES-22 | Xuất Markdown thành tệp HTML độc lập; In / Lưu thành PDF (hộp thoại in của trình duyệt) | | |
+| FILES-23 | Lệnh "Tệp: …" trong bảng lệnh Ctrl+K (Ctrl+Shift+P mở bảng lệnh) | | |
+| FILES-24 | Máy tính Windows: Toolkit có trong "Open with" của tệp .md (không tự đặt làm mặc định); mở tệp từ Explorer thì hiện trong Tệp & Thư mục, tệp ngoài mọi gốc thì hỏi thêm thư mục chứa nó; cửa sổ app nhớ vị trí và kích thước | | |
+| FILES-08 | Bảo mật: chỉ đường dẫn tương đối trong gốc; chặn `..`, đường dẫn tuyệt đối, link/junction ra ngoài, luồng NTFS, tên thiết bị; HTML/SVG trong tệp không bao giờ chạy như trang của Toolkit | | |
+
+### Đã biết / chưa kiểm tra
+
+- Hộp thoại chọn thư mục và "Lưu bản sao" của Windows, mở bằng chương trình mặc định: chưa thử trên Windows (môi trường kiểm tra là Linux, dùng hộp chọn trong trang).
+- Thùng rác của Windows, "Hiện trong Explorer": chưa thử trên Windows (bản kiểm tra trên Linux dùng thùng rác của Toolkit).
+- Thư mục gốc bị xóa rồi tạo lại khi app đang chạy: trên Windows trang tự nạp lại cả cây; trên Linux phải bấm Làm mới.
+- Vị trí và kích thước cửa sổ app: cửa sổ chỉ nhận kích thước cố định ở lần mở đầu tiên, sau đó profile Edge/Chrome của app tự nhớ; chưa kiểm tra trên Windows.
+- "Open with" cho tệp .md (đăng ký trong HKCU khi cài, gỡ khi gỡ cài đặt) và mở tệp từ Explorer khi app đang chạy: chưa thử trên Windows; phần mở trang `/files.html?open=` đã thử trên bản máy tính Linux.
 
 ### Đề xuất thêm của bạn
 

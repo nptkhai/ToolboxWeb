@@ -66,6 +66,7 @@ npx playwright install chromium
 | `TBX_UI_EMAIL`, `TBX_UI_PASSWORD` | `ui.check@example.local`, `UiCheck@12345` | Tài khoản thử; được đăng ký tự động ở lần chạy đầu |
 | `TBX_UI_JIRA` | (trống) | Đặt `1` để kiểm tra cả các trang Jira (cần `Jira__UseFakeData=true`) |
 | `TBX_UI_MODE` | (trống) | Đặt `web` khi app chạy `App__Mode=Web`: chỉ đăng nhập Jira, kiểm tra trang đăng nhập, các trang Jira và Hẹn giờ. Dùng một `TBX_UI_OUT` riêng để ảnh mốc không lẫn với bản Server |
+| `TBX_UI_FILES_ROOT` | (trống) | Đường dẫn một thư mục mẫu để kiểm tra trang **Tệp & Thư mục**. App phải cho tài khoản thử dùng màn hình này (`Files__AllowedUsers__0=ui.check@example.local`, `Files__AllowedFolders__0=<thư mục chứa nó>`); bộ kiểm tra tự thêm thư mục làm gốc và mở tệp `.md` đầu tiên. Để trống thì bỏ qua trang này |
 | `TBX_UI_TIMEZONE` | `Asia/Ho_Chi_Minh` | Múi giờ của trình duyệt khi kiểm tra |
 
 ## Ghi chú

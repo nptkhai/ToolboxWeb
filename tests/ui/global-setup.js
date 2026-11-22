@@ -3,7 +3,7 @@
 // - optionally a Jira session, which needs the app to run with Jira__UseFakeData=true.
 const fs = require('fs');
 const { chromium } = require('@playwright/test');
-const { OUT, LOCAL_STATE, JIRA_STATE, EMAIL, PASSWORD, INCLUDE_JIRA, WEB_MODE } = require('./settings');
+const { OUT, LOCAL_STATE, JIRA_STATE, EMAIL, PASSWORD, INCLUDE_JIRA, WEB_MODE, FILES_ROOT } = require('./settings');
 
 async function signInLocal(page, baseURL) {
   await page.goto(`${baseURL}/Identity/Account/Login`);
@@ -46,6 +46,33 @@ async function seedSampleData(page, baseURL) {
   }
 }
 
+// "Files & folders": adds FILES_ROOT as a root (once) and opens one file so the page has content.
+async function addFilesRoot(page, baseURL) {
+  await page.goto(`${baseURL}/files.html`, { waitUntil: 'networkidle' });
+  const added = await page.evaluate(async (folder) => {
+    const config = JSON.parse(document.getElementById('files-config')?.textContent || 'null');
+    if (!config) return 'no access';
+    const roots = await (await fetch(config.urls.roots)).json();
+    if (roots.data.some((r) => r.path === folder)) return 'present';
+    const answer = await (await fetch(config.urls.addRoot, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', RequestVerificationToken: config.token },
+      body: JSON.stringify({ path: folder })
+    })).json();
+    return answer.success ? 'added' : answer.message;
+  }, FILES_ROOT);
+  if (added !== 'added' && added !== 'present') {
+    throw new Error(`Could not add ${FILES_ROOT} as a root for the Files page: ${added}`);
+  }
+
+  // Open the first Markdown file: the page remembers its tabs in this browser, so every
+  // viewport (the phone one too, where the tree is folded away) shows it.
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('.fx-tree [role="treeitem"] .fx-node-name', { hasText: /\.md$/ }).first().click();
+  await page.waitForSelector('.fx-md');
+  await page.waitForTimeout(500);
+}
+
 async function signInJira(page, baseURL) {
   await page.goto(`${baseURL}/Identity/Account/Login`);
   // The web copy shows the Jira panel only, without the switch.
@@ -74,6 +101,9 @@ module.exports = async (config) => {
         throw new Error(`Could not sign in or register ${EMAIL} at ${baseURL}. Is the app running?`);
       }
       await seedSampleData(page, baseURL);
+      if (FILES_ROOT) {
+        await addFilesRoot(page, baseURL);
+      }
       await local.storageState({ path: LOCAL_STATE });
     }
 

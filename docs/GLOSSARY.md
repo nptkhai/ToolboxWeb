@@ -48,6 +48,22 @@ Tên trạng thái lấy từ Jira ("To Do", "In Progress", "Done"…) giữ ngu
 
 Người dùng là lập trình viên, nên tên đối tượng của SQL Server **giữ nguyên tiếng Anh**: Database, Schema, Table, View, Stored procedure, Function, Trigger, Index, Collation, Identity, Full-text, Script, User, Role. Phần còn lại của câu viết tiếng Việt.
 
+## Tệp & Thư mục
+
+| Tiếng Anh | Tiếng Việt |
+|---|---|
+| Root folder | Thư mục gốc |
+| Tree | Cây thư mục |
+| Read-only | Chỉ đọc |
+| Recycle Bin | Thùng rác |
+| Encoding | Mã hóa ký tự |
+| Line ending (CRLF/LF) | Kiểu xuống dòng |
+| Open with the default program | Mở bằng chương trình mặc định |
+| Show in Explorer | Hiện trong Explorer |
+| Pin / Pinned | Ghim / Đã ghim |
+| Table of contents | Mục lục |
+| Trash (Toolkit's) | Thùng rác của Toolkit |
+
 ## Chung
 
 | Không dùng | Dùng |

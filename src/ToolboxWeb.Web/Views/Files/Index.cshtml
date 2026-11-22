@@ -1,0 +1,480 @@
+@using System.Text.Json
+@model ToolboxWeb.Web.ViewModels.Files.FilesPageViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@*
+    Files & folders: roots and their tree on the left, open files in tabs on the right. Drawn by
+    Content/js/files/files.js (tree, tabs, roots, quick open) with files-viewers.js (Markdown,
+    JSON, CSV, images, PDF, text) and files-markdown.js (markdown-it + DOMPurify). Everything is
+    read through FilesController, which keeps every path inside its root.
+*@
+@{
+    ViewData["Title"] = T["Files.Title"];
+    string Text(string key) => T[key].Value;
+    string[] keys =
+    [
+        "Tree.Label", "Tree.Empty", "Tree.Loading", "Tree.LoadFailed", "Tree.More", "Tree.Stats", "Tree.StatsPartial", "Tree.Retry",
+        "Root.Menu", "Root.Rename", "Root.Relink", "Root.Up", "Root.Down", "Root.Remove", "Root.RemoveTitle", "Root.RemoveMessage",
+        "Root.RemoveOk", "Root.Unavailable", "Root.Added", "Root.Removed", "Root.Renamed", "Root.Relinked", "Root.Path",
+        "Picker.Title", "Picker.RelinkTitle", "Picker.Up", "Picker.Choose", "Picker.Start", "Picker.Empty", "Picker.Loading",
+        "Find.Empty", "Find.Searching", "Find.Hint", "Tabs.Close", "Tabs.CloseOthers", "Tabs.Label",
+        "Doc.Loading", "Doc.LoadFailed", "Doc.Retry", "Doc.ReadOnly", "Doc.View", "Doc.Copied", "Doc.CopyFailed", "Doc.SavedCopy",
+        "Doc.Lines", "Doc.Words", "Doc.Chars", "Doc.Modified", "Doc.Size", "Doc.Encoding", "Doc.Plain", "Doc.Bom",
+        "Kind.markdown", "Kind.json", "Kind.csv", "Kind.image", "Kind.pdf", "Kind.office", "Kind.text", "Kind.binary", "Kind.folder",
+        "Info.TooLarge", "Info.Binary", "Info.Office", "Info.OpenDefault", "Info.Download", "Info.Opened",
+        "Json.Error", "Json.ShowText", "Json.ShowTree", "Json.Items", "Json.Keys", "Csv.Rows", "Csv.Truncated", "Csv.Empty",
+        "Image.Size", "Md.CopyCode", "Md.Copied", "Md.MissingLink", "Md.Callout.note", "Md.Callout.tip", "Md.Callout.important",
+        "Md.Callout.warning", "Md.Callout.caution", "Keys.Find", "Keys.CloseTab", "Keys.Tree", "Keys.Print",
+        "Keys.NextTab", "Keys.PrevTab", "Root.NameRequired", "Tabs.Unsaved", "Md.TaskDone", "Md.TaskOpen"
+    ];
+    string[] editKeys =
+    [
+        "Edit.Unsaved", "Edit.SavedAt", "Edit.Saving", "Edit.SaveFailed", "Edit.Mode", "Edit.Autosave", "Edit.Cursor", "Edit.Preview",
+        "Edit.Editor", "Edit.DiscardTitle", "Edit.DiscardMessage", "Edit.DiscardOk", "Edit.Discarded", "Edit.ReadOnlyHint",
+        "Save.Conflict", "Save.Deleted", "Save.DeletedOk", "Save.EncodingTitle", "Save.EncodingOk", "Save.EncodingLoss",
+        "External.Reloaded", "External.Deleted", "External.DeletedDirty", "Draft.Found", "Draft.FoundChanged", "Draft.Restore",
+        "Draft.Drop", "Draft.Restored", "Compare.Disk", "Compare.Mine", "Compare.Same", "Unsaved.Message", "Unsaved.Leave",
+        "Md.Bold", "Md.Italic", "Md.Strike", "Md.H1", "Md.H2", "Md.H3", "Md.Quote", "Md.Code", "Md.List", "Md.OrderedList",
+        "Md.Checklist", "Md.Link", "Md.Image", "Md.Rule", "Md.LinkText", "Md.ImageText", "Md.Toolbar", "Keys.Save", "Keys.Mode",
+        "Name.Invalid", "New.File", "New.Folder", "New.FileTitle", "New.FolderTitle", "New.FileLabel", "New.FolderLabel", "New.FileDefault",
+        "New.FolderDefault", "New.FolderDone", "Rename.Title", "Rename.Label", "Rename.Done", "Duplicate.Done", "Delete.FileTitle",
+        "Delete.FolderTitle", "Delete.MessageRecycle", "Delete.MessageToolkit", "Delete.Unsaved", "Delete.Ok", "Delete.DoneRecycle",
+        "Delete.DoneToolkit", "Delete.TabsClosed", "CopyPath.Done", "Menu.Open", "Menu.Rename", "Menu.Duplicate", "Menu.CopyPath",
+        "Menu.Reveal", "Menu.Delete", "Trash.Restore", "Trash.Purge", "Trash.Empty", "Trash.Restored", "Trash.PurgeTitle", "Trash.PurgeMessage",
+        "Move.Title", "Move.CopyTitle", "Move.Message", "Move.CopyMessage", "Move.Ok", "Move.CopyOk", "Move.Done", "Move.CopyDone",
+        "Move.ReplaceTitle", "Move.ReplaceMessage", "Move.ReplaceOk", "Upload.Sending", "Upload.Done", "Upload.Failed", "Upload.ReplaceTitle",
+        "Pin.Pin", "Pin.Unpin", "Pin.Added", "Pin.Removed", "Pin.Title", "Recent.Title", "Toc.Toggle", "Toc.Title", "Toc.Empty",
+        "Export.Html", "Export.Pdf", "Export.Done", "Lint.Ok", "Lint.Json", "Lint.Yaml", "Lint.Links", "Lint.LinkItem", "Paste.Done",
+        "Paste.Failed", "Filter.Showing", "Filter.Hidden", "Search.TooShort", "Search.Summary", "Search.SummaryMore", "Search.None",
+        "Palette.Keywords", "Palette.Find", "Palette.Search", "Palette.NewFile", "Palette.NewFolder", "Palette.AddRoot", "Palette.Collapse",
+        "Palette.Hidden", "Palette.Pin", "Palette.Toc", "Palette.Export", "Palette.Print", "Palette.Trash", "Keys.Search", "Keys.Palette",
+        "OpenPath.Title", "OpenPath.Message", "OpenPath.Ok"
+    ];
+    var text = keys.Concat(editKeys).ToDictionary(k => k, k => Text("Files." + k));
+    text["cancel"] = Text("Action.Cancel");
+
+    // CodeMirror's search box words (addon/search), shared with the Code playground.
+    var phrases = new Dictionary<string, string>
+    {
+        ["Search:"] = Text("CodePlayground.Search.Find"),
+        ["(Use /re/ syntax for regexp search)"] = Text("CodePlayground.Search.Regex"),
+        ["Replace:"] = Text("CodePlayground.Search.Replace"),
+        ["With:"] = Text("CodePlayground.Search.With"),
+        ["Replace all:"] = Text("CodePlayground.Search.ReplaceAll"),
+        ["Replace with:"] = Text("CodePlayground.Search.ReplaceWith"),
+        ["Replace?"] = Text("CodePlayground.Search.Confirm"),
+        ["Yes"] = Text("CodePlayground.Search.Yes"),
+        ["No"] = Text("CodePlayground.Search.No"),
+        ["All"] = Text("CodePlayground.Search.All"),
+        ["Stop"] = Text("CodePlayground.Search.Stop")
+    };
+
+    var config = new
+    {
+        stateKey = Model.StateStorageKey,
+        isDesktop = Model.IsDesktop,
+        hasWindowsDialog = Model.HasWindowsDialog,
+        usesToolkitTrash = Model.UsesToolkitTrash,
+        token = Antiforgery.GetAndStoreTokens(Context).RequestToken,
+        urls = new
+        {
+            roots = Url.Action("Roots", "Files"),
+            pickFolder = Url.Action("PickFolder", "Files"),
+            browse = Url.Action("Browse", "Files"),
+            addRoot = Url.Action("AddRoot", "Files"),
+            renameRoot = Url.Action("RenameRoot", "Files"),
+            relinkRoot = Url.Action("RelinkRoot", "Files"),
+            moveRoot = Url.Action("MoveRoot", "Files"),
+            removeRoot = Url.Action("RemoveRoot", "Files"),
+            list = Url.Action("List", "Files"),
+            stats = Url.Action("Stats", "Files"),
+            read = Url.Action("Read", "Files"),
+            raw = Url.Action("Raw", "Files"),
+            find = Url.Action("Find", "Files"),
+            saveCopyAs = Url.Action("SaveCopyAs", "Files"),
+            openDefault = Url.Action("OpenDefault", "Files"),
+            reveal = Url.Action("Reveal", "Files"),
+            save = Url.Action("Save", "Files"),
+            info = Url.Action("Info", "Files"),
+            create = Url.Action("Create", "Files"),
+            rename = Url.Action("Rename", "Files"),
+            duplicate = Url.Action("Duplicate", "Files"),
+            delete = Url.Action("Delete", "Files"),
+            move = Url.Action("Move", "Files"),
+            upload = Url.Action("Upload", "Files"),
+            trash = Url.Action("Trash", "Files"),
+            restore = Url.Action("Restore", "Files"),
+            purge = Url.Action("Purge", "Files"),
+            changes = Url.Action("Changes", "Files"),
+            search = Url.Action("Search", "Files"),
+            missing = Url.Action("Missing", "Files"),
+            openPath = Url.Action("OpenPath", "Files")
+        },
+        text,
+        phrases
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/vendor/tabulator/css/tabulator.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/codemirror/lib/codemirror.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/codemirror/addon/dialog/dialog.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/codemirror-toolkit.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/files.css" asp-append-version="true" />
+}
+
+<div class="fx-page" data-files-page>
+    @* First visit: no root yet. *@
+    <section class="tbx-panel fx-welcome" data-fx-welcome hidden>
+        <div class="tbx-empty">
+            <span class="tbx-empty-icon" aria-hidden="true"><tbx-icon name="folder-tree" size="20" /></span>
+            <p class="tbx-empty-text fx-empty-title">@T["Files.Welcome.Title"]</p>
+            <p class="tbx-empty-text">@T["Files.Welcome.Text"]</p>
+            <button type="button" class="btn btn-primary" data-fx-add-root>
+                <tbx-icon name="folder-plus" /><span>@T["Files.Root.Add"]</span>
+            </button>
+        </div>
+    </section>
+
+    <div class="fx-shell" data-fx-shell hidden>
+        <aside class="tbx-panel fx-side" data-fx-side aria-label="@T["Files.Tree.Label"]">
+            <div class="fx-side-head">
+                <h2 class="fx-side-title">@T["Files.Tree.Title"]</h2>
+                <div class="fx-side-actions">
+                    <button type="button" class="btn btn-sm tbx-icon-button" data-fx-new-file title="@T["Files.New.File"]" aria-label="@T["Files.New.File"]"><tbx-icon name="file-plus" /></button>
+                    <button type="button" class="btn btn-sm tbx-icon-button" data-fx-new-folder title="@T["Files.New.Folder"]" aria-label="@T["Files.New.Folder"]"><tbx-icon name="folder-plus" /></button>
+                    <button type="button" class="btn btn-sm tbx-icon-button" data-fx-add-root title="@T["Files.Root.Add"]" aria-label="@T["Files.Root.Add"]"><tbx-icon name="folder-tree" /></button>
+                    @if (Model.UsesToolkitTrash)
+                    {
+                        <button type="button" class="btn btn-sm tbx-icon-button" data-fx-trash title="@T["Files.Trash.Title"]" aria-label="@T["Files.Trash.Title"]"><tbx-icon name="trash-2" /></button>
+                    }
+                    <button type="button" class="btn btn-sm tbx-icon-button" data-fx-collapse title="@T["Files.Tree.CollapseAll"]" aria-label="@T["Files.Tree.CollapseAll"]"><tbx-icon name="chevrons-down-up" /></button>
+                    <button type="button" class="btn btn-sm tbx-icon-button" data-fx-options-toggle aria-expanded="false" aria-controls="fx-options" title="@T["Files.Options.Title"]" aria-label="@T["Files.Options.Title"]"><tbx-icon name="eye" /></button>
+                    <button type="button" class="btn btn-sm tbx-icon-button" data-fx-refresh title="@T["Files.Tree.Refresh"]" aria-label="@T["Files.Tree.Refresh"]"><tbx-icon name="refresh-cw" /></button>
+                    <button type="button" class="btn btn-sm tbx-icon-button fx-side-close" data-fx-side-close title="@T["Action.Close"]" aria-label="@T["Action.Close"]"><tbx-icon name="x" /></button>
+                </div>
+            </div>
+
+            <div class="fx-options" id="fx-options" data-fx-options hidden>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="fx-show-hidden" data-fx-show-hidden />
+                    <label class="form-check-label" for="fx-show-hidden">@T["Files.Options.ShowHidden"]</label>
+                </div>
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="fx-filter">@T["Files.Options.Filter"]</label>
+                    <select class="form-select form-select-sm" id="fx-filter" data-fx-filter>
+                        <option value="">@T["Files.Options.All"]</option>
+                        <option value="markdown">@T["Files.Kind.markdown"]</option>
+                        <option value="json">@T["Files.Kind.json"]</option>
+                        <option value="csv">@T["Files.Kind.csv"]</option>
+                        <option value="image">@T["Files.Kind.image"]</option>
+                        <option value="pdf">@T["Files.Kind.pdf"]</option>
+                        <option value="text">@T["Files.Kind.text"]</option>
+                        <option value="office">@T["Files.Kind.office"]</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="fx-find" data-fx-find-host>
+                <div class="tbx-search">
+                    <tbx-icon name="search" />
+                    <input class="form-control" type="search" id="fx-find" autocomplete="off" spellcheck="false"
+                           placeholder="@T["Files.Find.Placeholder"]" aria-label="@T["Files.Find.Placeholder"]"
+                           role="combobox" aria-expanded="false" aria-controls="fx-find-results" aria-autocomplete="list" data-fx-find />
+                </div>
+                <ul class="fx-find-results" id="fx-find-results" role="listbox" aria-label="@T["Files.Find.Results"]" data-fx-find-results hidden></ul>
+                <div class="fx-find-row">
+                    <button type="button" class="btn btn-link btn-sm fx-search-open" data-fx-search-open><tbx-icon name="file-text" /><span>@T["Files.Search.Open"]</span></button>
+                    <span class="fx-filter-chip" data-fx-filter-chip hidden><span></span><button type="button" aria-label="@T["Files.Filter.Clear"]" title="@T["Files.Filter.Clear"]"><tbx-icon name="x" /></button></span>
+                </div>
+            </div>
+
+            <div class="fx-tree-wrap" data-fx-tree-wrap>
+                <ul class="fx-tree" role="tree" aria-label="@T["Files.Tree.Label"]" data-fx-tree></ul>
+            </div>
+
+            <p class="fx-side-foot" data-fx-stats aria-live="polite"></p>
+        </aside>
+
+        <div class="fx-resizer" role="separator" aria-orientation="vertical" tabindex="0"
+             aria-label="@T["Files.Tree.Resize"]" aria-valuemin="200" aria-valuemax="600" data-fx-resizer></div>
+
+        <section class="tbx-panel fx-main" data-fx-main aria-label="@T["Files.Doc.Label"]">
+            <div class="fx-tabs-row">
+                <button type="button" class="btn btn-sm tbx-icon-button fx-side-open" data-fx-side-open title="@T["Files.Tree.Show"]" aria-label="@T["Files.Tree.Show"]"><tbx-icon name="panel-left" /></button>
+                <div class="fx-tabs" role="tablist" aria-label="@T["Files.Tabs.Label"]" data-fx-tabs></div>
+            </div>
+
+            <div class="fx-start" data-fx-start>
+                <div class="tbx-empty">
+                    <span class="tbx-empty-icon" aria-hidden="true"><tbx-icon name="file-text" size="20" /></span>
+                    <p class="tbx-empty-text fx-empty-title">@T["Files.Start.Title"]</p>
+                    <p class="tbx-empty-text">@T["Files.Start.Text"]</p>
+                </div>
+                <div class="fx-start-lists" data-fx-start-lists></div>
+            </div>
+
+            <div class="fx-doc" data-fx-doc role="tabpanel" hidden>
+                <header class="fx-doc-head">
+                    <div class="fx-doc-title">
+                        <nav class="fx-crumbs" aria-label="@T["Files.Doc.Path"]" data-fx-crumbs></nav>
+                        <span class="fx-save-state" data-fx-save-state aria-live="polite"></span>
+                    </div>
+                    <div class="fx-doc-actions" role="toolbar" aria-label="@T["Files.Doc.Actions"]">
+                        <div class="fx-mode" role="group" aria-label="@T["Files.Edit.Mode"]" data-fx-mode hidden>
+                            <button type="button" class="fx-mode-btn" data-fx-mode-btn="view" aria-pressed="true"><tbx-icon name="eye" /><span>@T["Files.Doc.View"]</span></button>
+                            <button type="button" class="fx-mode-btn" data-fx-mode-btn="edit" aria-pressed="false"><tbx-icon name="pencil" /><span>@T["Files.Edit.Edit"]</span></button>
+                        </div>
+                        <button type="button" class="btn btn-sm tbx-icon-button" data-fx-preview-toggle hidden title="@T["Files.Edit.PreviewToggle"]" aria-label="@T["Files.Edit.PreviewToggle"]" aria-pressed="true"><tbx-icon name="columns-2" /></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-fx-discard hidden><tbx-icon name="undo-2" /><span>@T["Files.Edit.Discard"]</span></button>
+                        <button type="button" class="btn btn-sm btn-primary" data-fx-save hidden><tbx-icon name="save" /><span>@T["Files.Edit.Save"]</span></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-fx-copy><tbx-icon name="copy" /><span>@T["Files.Doc.Copy"]</span></button>
+                        <button type="button" class="btn btn-sm tbx-icon-button" data-fx-print title="@T["Files.Doc.Print"]" aria-label="@T["Files.Doc.Print"]"><tbx-icon name="printer" /></button>
+                        <button type="button" class="btn btn-sm tbx-icon-button" data-fx-more title="@T["Files.Doc.More"]" aria-label="@T["Files.Doc.More"]"><tbx-icon name="ellipsis" /></button>
+                        @if (Model.HasWindowsDialog)
+                        {
+                            <button type="button" class="btn btn-sm tbx-icon-button" data-fx-save-copy title="@T["Files.Doc.SaveCopy"]" aria-label="@T["Files.Doc.SaveCopy"]"><tbx-icon name="save" /></button>
+                        }
+                        else
+                        {
+                            <a class="btn btn-sm tbx-icon-button" data-fx-download title="@T["Files.Doc.Download"]" aria-label="@T["Files.Doc.Download"]"><tbx-icon name="download" /></a>
+                        }
+                    </div>
+                </header>
+                <p class="fx-meta" data-fx-meta></p>
+                <div class="fx-body" data-fx-body tabindex="-1"></div>
+                <footer class="fx-status" data-fx-status aria-live="polite"></footer>
+            </div>
+        </section>
+    </div>
+
+    <p class="tbx-shortcuts" data-shortcuts-line></p>
+</div>
+
+@* Folder picker drawn in the page: the IIS site (inside Files:AllowedFolders) and a desktop without the Windows dialog. *@
+<div class="modal fade" id="fx-picker" tabindex="-1" aria-labelledby="fx-picker-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-picker-title" data-fx-picker-title>@T["Files.Picker.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <form class="fx-picker-path" data-fx-picker-form novalidate>
+                    <div class="tbx-field">
+                        <label class="tbx-field-label" for="fx-picker-input">@T["Files.Picker.PathLabel"]</label>
+                        <div class="fx-picker-row">
+                            <input class="form-control" id="fx-picker-input" autocomplete="off" spellcheck="false" placeholder="@T["Files.Picker.PathExample"]" data-fx-picker-input />
+                            <button type="submit" class="btn btn-outline-secondary">@T["Files.Picker.Go"]</button>
+                        </div>
+                        <span class="tbx-field-error" data-fx-picker-error role="alert"></span>
+                    </div>
+                </form>
+                <div class="fx-picker-bar">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-fx-picker-up><tbx-icon name="arrow-up" /><span>@T["Files.Picker.Up"]</span></button>
+                    <span class="fx-picker-current" data-fx-picker-current></span>
+                </div>
+                <ul class="tbx-list fx-picker-list" data-fx-picker-list aria-label="@T["Files.Picker.Folders"]"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="button" class="btn btn-primary" data-fx-picker-choose disabled>@T["Files.Picker.Choose"]</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="fx-rename-root" tabindex="-1" aria-labelledby="fx-rename-root-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" data-fx-rename-root-form novalidate>
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-rename-root-title">@T["Files.Root.Rename"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="fx-root-name">@T["Files.Root.NameLabel"]</label>
+                    <input class="form-control" id="fx-root-name" maxlength="120" autocomplete="off" required data-fx-root-name />
+                    <span class="tbx-field-hint" data-fx-root-path></span>
+                    <span class="tbx-field-error" data-fx-root-name-error role="alert"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary">@T["Files.Root.RenameSave"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Search in the content of every root. *@
+<div class="modal fade" id="fx-search" tabindex="-1" aria-labelledby="fx-search-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-search-title">@T["Files.Search.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <form class="fx-search-form" data-fx-search-form novalidate>
+                    <div class="tbx-field">
+                        <label class="tbx-field-label" for="fx-search-input">@T["Files.Search.Label"]</label>
+                        <div class="fx-picker-row">
+                            <input class="form-control" id="fx-search-input" type="search" autocomplete="off" spellcheck="false" data-fx-search-input />
+                            <button type="submit" class="btn btn-primary"><tbx-icon name="search" /><span>@T["Files.Search.Go"]</span></button>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="fx-search-case" data-fx-search-case />
+                        <label class="form-check-label" for="fx-search-case">@T["Files.Search.MatchCase"]</label>
+                    </div>
+                </form>
+                <p class="fx-search-summary" data-fx-search-summary aria-live="polite"></p>
+                <ul class="fx-search-results" data-fx-search-results></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Name of a new file or folder, or a new name. *@
+<div class="modal fade" id="fx-name" tabindex="-1" aria-labelledby="fx-name-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" data-fx-name-form novalidate>
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-name-title" data-fx-name-title></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="fx-name-input" data-fx-name-label></label>
+                    <input class="form-control" id="fx-name-input" maxlength="255" autocomplete="off" spellcheck="false" required data-fx-name-input />
+                    <span class="tbx-field-error" data-fx-name-error role="alert"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary">@T["Files.Name.Ok"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.UsesToolkitTrash)
+{
+    <div class="modal fade" id="fx-trash" tabindex="-1" aria-labelledby="fx-trash-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="fx-trash-title">@T["Files.Trash.Title"]</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="fx-trash-note">@T["Files.Trash.Note"]</p>
+                    <ul class="tbx-list fx-trash-list" data-fx-trash-list aria-label="@T["Files.Trash.Title"]"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Closing a tab (or the app) with unsaved changes. *@
+<div class="modal fade" id="fx-unsaved" tabindex="-1" aria-labelledby="fx-unsaved-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-unsaved-title">@T["Files.Unsaved.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body"><p class="mb-0" data-fx-unsaved-message></p></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="button" class="btn btn-outline-danger" data-fx-unsaved="discard">@T["Files.Unsaved.DontSave"]</button>
+                <button type="button" class="btn btn-primary" data-fx-unsaved="save">@T["Files.Edit.Save"]</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* The file changed outside Toolkit while it was being edited. *@
+<div class="modal fade" id="fx-conflict" tabindex="-1" aria-labelledby="fx-conflict-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-conflict-title">@T["Files.Conflict.Title"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <p data-fx-conflict-message></p>
+                <ul class="fx-conflict-choices">
+                    <li><strong>@T["Files.Conflict.Reload"]</strong>: @T["Files.Conflict.ReloadHint"]</li>
+                    <li><strong>@T["Files.Conflict.Overwrite"]</strong>: @T["Files.Conflict.OverwriteHint"]</li>
+                    <li><strong>@T["Files.Conflict.Compare"]</strong>: @T["Files.Conflict.CompareHint"]</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-fx-conflict="compare"><tbx-icon name="git-compare" /><span>@T["Files.Conflict.Compare"]</span></button>
+                <button type="button" class="btn btn-outline-secondary" data-fx-conflict="reload"><tbx-icon name="refresh-cw" /><span>@T["Files.Conflict.Reload"]</span></button>
+                <button type="button" class="btn btn-danger" data-fx-conflict="overwrite"><tbx-icon name="save" /><span>@T["Files.Conflict.Overwrite"]</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="fx-compare" tabindex="-1" aria-labelledby="fx-compare-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-compare-title" data-fx-compare-title>@T["Files.Conflict.Compare"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body fx-compare-body" data-fx-compare-body></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="button" class="btn btn-outline-secondary" data-fx-conflict="reload"><tbx-icon name="refresh-cw" /><span>@T["Files.Conflict.Reload"]</span></button>
+                <button type="button" class="btn btn-danger" data-fx-conflict="overwrite"><tbx-icon name="save" /><span>@T["Files.Conflict.Overwrite"]</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="files-config" type="application/json">@Html.Raw(JsonSerializer.Serialize(config))</script>
+
+@section Scripts {
+    <script src="~/vendor/highlightjs/js/highlight.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/markdown-it/markdown-it.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/dompurify/purify.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/papaparse/papaparse.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/js-yaml/js-yaml.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/tabulator/js/tabulator.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/jsdiff/js/diff.min.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/lib/codemirror.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/mode/overlay.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/xml/xml.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/javascript/javascript.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/css/css.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/htmlmixed/htmlmixed.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/markdown/markdown.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/gfm/gfm.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/yaml/yaml.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/yaml-frontmatter/yaml-frontmatter.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/sql/sql.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/shell/shell.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/powershell/powershell.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/python/python.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/clike/clike.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/properties/properties.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/toml/toml.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/mode/diff/diff.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/dialog/dialog.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/search/searchcursor.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/search/search.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/edit/matchbrackets.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/edit/closebrackets.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/selection/active-line.js" asp-append-version="true"></script>
+    <script src="~/vendor/codemirror/addon/display/placeholder.js" asp-append-version="true"></script>
+    <script src="~/js/files/files-markdown.js" asp-append-version="true"></script>
+    <script src="~/js/files/files-viewers.js" asp-append-version="true"></script>
+    <script src="~/js/files/files.js" asp-append-version="true"></script>
+    <script src="~/js/files/files-editor.js" asp-append-version="true"></script>
+    <script src="~/js/files/files-manage.js" asp-append-version="true"></script>
+    <script src="~/js/files/files-extras.js" asp-append-version="true"></script>
+}

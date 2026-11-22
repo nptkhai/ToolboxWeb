@@ -2,7 +2,7 @@
 
 ToolboxWeb uses the third-party components listed below. Their copyright and license notices remain with the original files. The policy for adding or upgrading components is in `AGENTS.md` under "Third-Party License Policy".
 
-Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expression. jsdiff and highlight.js were added on 2026-11-19, CodeMirror 5 and js-beautify on 2026-11-20, after reading their `LICENSE` files.
+Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expression. jsdiff and highlight.js were added on 2026-11-19, CodeMirror 5 and js-beautify on 2026-11-20, markdown-it, DOMPurify, Papa Parse and js-yaml on 2026-11-22, after reading their `LICENSE` files.
 
 ## Client-side assets (shipped under `src/ToolboxWeb.Web/Content/`)
 
@@ -24,8 +24,12 @@ Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expr
 | Quill | 2.0.2 | BSD-3-Clause | `vendor/quill/` | Asset only, not wired |
 | jsdiff (npm `diff`, `dist/diff.min.js`; a one-line license comment was added at the top because the build has none) | 9.0.0 | BSD-3-Clause (LICENSE read in the npm package; © 2009-2015 Kevin Decker). No runtime dependencies | `vendor/jsdiff/` (with `LICENSE`) | In use (Compare text, `js/text-compare.js`) |
 | highlight.js (`@highlightjs/cdn-assets`: `highlight.min.js` common-language build plus `languages/powershell.min.js`; no theme stylesheet, colours come from `tokens.css`) | 11.12.0 | BSD-3-Clause (LICENSE read in the npm package; © 2006 Ivan Sagalaev, Josh Goebel and contributors). No runtime dependencies | `vendor/highlightjs/` (with `LICENSE`) | In use (Compare text code colours) |
-| CodeMirror 5 (`codemirror`: `lib/codemirror.js` and `.css`; modes xml, javascript, css, htmlmixed; addons closetag, closebrackets, matchbrackets, matchtags, xml-fold, comment, search, searchcursor, dialog, active-line; no theme, colours come from `tokens.css`) | 5.65.21 | MIT (LICENSE read in the npm package; © Marijn Haverbeke and others). No dependencies | `vendor/codemirror/` (with `LICENSE`) | In use (Code playground editor) |
+| CodeMirror 5 (`codemirror`: `lib/codemirror.js` and `.css`; modes xml, javascript, css, htmlmixed, markdown, gfm, yaml, yaml-frontmatter, sql, shell, powershell, python, clike, properties, toml, diff and `mode/meta.js`; addons closetag, closebrackets, matchbrackets, matchtags, xml-fold, comment, search, searchcursor, dialog, active-line, mode/overlay, display/placeholder; no theme, colours come from `tokens.css` through `css/codemirror-toolkit.css`) | 5.65.21 | MIT (LICENSE read in the npm package; © Marijn Haverbeke and others). No dependencies | `vendor/codemirror/` (with `LICENSE`) | In use (Code playground editor, Files & folders editor; the extra modes were added on 2026-11-22 from the same package version) |
 | js-beautify (`js/lib/beautifier.min.js`, the browser build; a one-line license comment was added at the top and the source map line removed. The npm package's dependencies serve only its command-line tool and are not shipped) | 1.15.4 | MIT (LICENSE read in the npm package; © 2007-2018 Einar Lielmanis, Liam Newman and contributors) | `vendor/js-beautify/` (with `LICENSE`) | In use (Code playground "Format"; loaded only when pressed) |
+| markdown-it (`dist/markdown-it.min.js`). The browser build bundles entities 4.5.0 (BSD-2-Clause), linkify-it 5.0.0, mdurl 2.0.0, punycode.js 2.3.1 and uc.micro 2.1.0 (all MIT); their notices are in `LICENSE-bundled`. The `argparse` dependency serves only the command-line tool and is not in the build | 14.1.0 | MIT (LICENSE read in the npm package; © 2014 Vitaly Puzrin, Alex Kocharin) | `vendor/markdown-it/` (with `LICENSE`, `LICENSE-bundled`) | In use (Files & folders Markdown view) |
+| DOMPurify (`dist/purify.min.js`) | 3.2.6 | Dual-licensed "Apache-2.0 OR MPL-2.0" (LICENSE read in the npm package; © Cure53). **Used under Apache-2.0**, the allowed choice. No runtime dependencies | `vendor/dompurify/` (with `LICENSE`) | In use (cleans the Markdown HTML in Files & folders) |
+| Papa Parse (`papaparse.min.js`) | 5.5.3 | MIT (LICENSE read in the npm package; © 2015 Matthew Holt). No dependencies | `vendor/papaparse/` (with `LICENSE`) | In use (CSV view in Files & folders) |
+| js-yaml (`dist/js-yaml.min.js`). The `argparse` dependency serves only the command-line tool and is not in the build | 4.1.0 | MIT (LICENSE read in the npm package; © 2011-2015 Vitaly Puzrin) | `vendor/js-yaml/` (with `LICENSE`) | In use (YAML check in Files & folders) |
 | SheetJS Community Edition (`xlsx.full.min.js`, includes the SheetJS codepage tables, Apache-2.0) | 0.20.2 | Apache-2.0 | `vendor/sheetjs/` (with `LICENSE`) | In use (Jira Search "Export to Excel"; loaded only when the button is pressed). The `LICENSE` text was taken from the npm package `xlsx@0.18.5`, the same Apache-2.0 text, because cdn.sheetjs.com could not be reached when it was added |
 
 ## NuGet packages (direct references in `ToolboxWeb.Web.csproj`)
@@ -41,6 +45,8 @@ Last verified: 2026-10-21, by reading each package's `LICENSE` file or SPDX expr
 | Velopack | 1.2.161 | MIT (LICENSE read on github.com/velopack/velopack; © Caelan Sayler, Velopack Ltd.) | In use: installer hooks and in-app updates of the desktop copy (`Program.cs`, `Services/DesktopUpdateService.cs`). No dependencies on net9.0. The installer (Setup.exe, Update.exe) that `vpk` adds to the package is part of the same MIT project |
 | Microsoft.Data.SqlClient | 6.1.5 | MIT | In use (Schema Compare, SQL Profiler) |
 | Microsoft.SqlServer.DacFx | 170.4.83 | **Microsoft Software License Terms** (free, proprietary, redistributable with conditions) | In use (Schema Compare). **Approved by the owner on 2026-10-21**, see below |
+
+Files & folders uses no NuGet package of its own: the Recycle Bin goes through `Microsoft.VisualBasic.FileIO`, the Windows dialogs through the shell's COM interfaces and the "Open with" entry through `Microsoft.Win32.Registry`, all part of .NET and Windows (MIT for the .NET part).
 
 ## License server (`src/ToolkitLicense.Web`)
 

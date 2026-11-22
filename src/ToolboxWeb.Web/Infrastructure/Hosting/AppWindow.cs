@@ -20,8 +20,16 @@ public static class AppWindow
             {
                 var start = new ProcessStartInfo(browser) { UseShellExecute = false };
                 start.ArgumentList.Add("--app=" + url);
-                start.ArgumentList.Add("--user-data-dir=" + Path.Combine(dataRoot, "window"));
-                start.ArgumentList.Add("--window-size=1320,880");
+                var profile = Path.Combine(dataRoot, "window");
+                var firstWindow = !Directory.Exists(profile);
+                start.ArgumentList.Add("--user-data-dir=" + profile);
+                if (firstWindow)
+                {
+                    // Only the first time: afterwards the browser profile remembers where the
+                    // window was and how large, and a fixed size would override that.
+                    start.ArgumentList.Add("--window-size=1320,880");
+                }
+
                 start.ArgumentList.Add("--no-first-run");
                 start.ArgumentList.Add("--no-default-browser-check");
                 Process.Start(start);

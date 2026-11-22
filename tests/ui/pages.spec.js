@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const { test, expect } = require('@playwright/test');
-const { OUT, LOCAL_STATE, JIRA_STATE, INCLUDE_JIRA, WEB_MODE } = require('./settings');
+const { OUT, LOCAL_STATE, JIRA_STATE, INCLUDE_JIRA, WEB_MODE, FILES_ROOT } = require('./settings');
 
 const ANONYMOUS_PAGES = [
   { name: 'login', path: '/Identity/Account/Login' },
@@ -36,6 +36,12 @@ const LOCAL_PAGES = [
   { name: 'account-email', path: '/Identity/Account/Manage/Email' },
   { name: 'account-password', path: '/Identity/Account/Manage/ChangePassword' },
   { name: 'access-denied', path: '/statistics.html' }
+];
+
+// "Files & folders" needs an allowed account and a root (TBX_UI_FILES_ROOT); global-setup.js
+// adds the root and opens its first Markdown file, which the page then shows again.
+const FILES_PAGES = [
+  { name: 'files', path: '/files.html' }
 ];
 
 // The web copy (TBX_UI_MODE=web): Jira screens plus the focus timer, which only counts there,
@@ -179,7 +185,7 @@ test.describe('anonymous', () => {
 test.describe('local account', () => {
   test.skip(WEB_MODE, 'The web copy has no local accounts.');
   test.use({ storageState: WEB_MODE ? { cookies: [], origins: [] } : LOCAL_STATE });
-  definePages(LOCAL_PAGES);
+  definePages(FILES_ROOT ? [...LOCAL_PAGES, ...FILES_PAGES] : LOCAL_PAGES);
 });
 
 test.describe('jira account (fake data)', () => {

@@ -70,6 +70,20 @@ public static class DesktopHost
         return found;
     }
 
+    /// <summary>Removes "--name value" from <paramref name="args"/> and returns the value (null when absent).</summary>
+    public static string? TakeOption(ref string[] args, string name)
+    {
+        var at = Array.FindIndex(args, arg => string.Equals(arg, name, StringComparison.OrdinalIgnoreCase));
+        if (at < 0)
+        {
+            return null;
+        }
+
+        var value = at + 1 < args.Length ? args[at + 1] : null;
+        args = args.Where((_, i) => i != at && i != at + 1).ToArray();
+        return value;
+    }
+
     public static bool IsRequested(ref string[] args)
     {
         var requested = args.Any(IsSwitch) || File.Exists(Path.Combine(AppContext.BaseDirectory, FlagFileName));
@@ -133,7 +147,7 @@ public static class DesktopHost
             return false;
         }
 
-        AppWindow.Open(instance.Url, mode.DataRoot, configuration, logger: null);
+        AppWindow.Open(instance.Url.TrimEnd('/') + StartPath(configuration), mode.DataRoot, configuration, logger: null);
         return true;
     }
 
@@ -199,10 +213,17 @@ public static class DesktopHost
             app.Logger.LogInformation("Toolkit desktop is running at {Url}; data folder {DataRoot}.", url, mode.DataRoot);
             if (app.Configuration.GetValue("Desktop:OpenBrowser", false))
             {
-                AppWindow.Open(url, mode.DataRoot, app.Configuration, app.Logger);
+                AppWindow.Open(url.TrimEnd('/') + StartPath(app.Configuration), mode.DataRoot, app.Configuration, app.Logger);
             }
         });
         lifetime.ApplicationStopping.Register(() => DeleteInstance(mode));
+    }
+
+    /// <summary>The page the window opens on (Desktop:StartPath, set for a file opened from Explorer); "" for the home page.</summary>
+    private static string StartPath(IConfiguration configuration)
+    {
+        var path = configuration["Desktop:StartPath"];
+        return !string.IsNullOrEmpty(path) && path.StartsWith('/') && !path.StartsWith("//", StringComparison.Ordinal) ? path : string.Empty;
     }
 
     private static bool PortIsFree(int port)
