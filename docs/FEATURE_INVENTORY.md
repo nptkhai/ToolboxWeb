@@ -643,11 +643,17 @@ Lưu ý:
 | FILES-10 | Lưu (Ctrl+S), Hủy thay đổi, Lưu tự động (tắt mặc định, 2 giây sau khi ngừng gõ); "Có thay đổi chưa lưu" / "Đã lưu lúc …"; thanh trạng thái có dòng/cột, số từ, ký tự, chế độ | | |
 | FILES-11 | Không mất dữ liệu: hỏi Lưu / Không lưu / Hủy khi đóng tab, báo khi đóng cửa sổ; bản nháp giữ trên trình duyệt và hỏi khôi phục khi mở lại; tệp đổi bên ngoài: chưa sửa thì tự tải lại, đang sửa thì hỏi Tải lại / Ghi đè / So sánh; tệp bị xóa bên ngoài thì đóng tab (hoặc giữ nội dung nếu đang sửa) | | |
 | FILES-12 | Giữ nguyên mã hóa (UTF-8 có/không BOM, UTF-16, bảng mã cũ) và kiểu xuống dòng khi lưu; bảng mã cũ không chứa được ký tự mới thì hỏi lưu dạng UTF-8; ghi qua tệp tạm rồi thay, không để tệp dở | | |
+| FILES-13 | Quản lý tệp: tạo tệp (mở sẵn ở chế độ Sửa) và thư mục; menu chuột phải / Shift+F10 / nút "…": mở, mở bằng chương trình mặc định hoặc tải xuống, đổi tên (F2), nhân bản ("tên (bản sao)"), sao chép đường dẫn, hiện trong Explorer, xóa (Delete); tab đang mở đi theo khi đổi tên/di chuyển, đóng lại khi xóa | | |
+| FILES-14 | Kéo thả trong cây để di chuyển (Ctrl/Alt để sao chép, luôn hỏi lại), kéo tệp và thư mục từ Explorer vào (hỏi trước khi ghi đè) | | |
+| FILES-15 | Xóa: vào Thùng rác của Windows (máy tính Windows) hoặc thùng rác của Toolkit (IIS), giữ 30 ngày, khôi phục hoặc xóa hẳn | | |
+| FILES-16 | Cây tự cập nhật khi có tệp thêm, xóa, đổi tên từ bên ngoài (máy chủ theo dõi thư mục, trang hỏi thay đổi mỗi 3 giây) | | |
 | FILES-08 | Bảo mật: chỉ đường dẫn tương đối trong gốc; chặn `..`, đường dẫn tuyệt đối, link/junction ra ngoài, luồng NTFS, tên thiết bị; HTML/SVG trong tệp không bao giờ chạy như trang của Toolkit | | |
 
 ### Đã biết / chưa kiểm tra
 
 - Hộp thoại chọn thư mục và "Lưu bản sao" của Windows, mở bằng chương trình mặc định: chưa thử trên Windows (môi trường kiểm tra là Linux, dùng hộp chọn trong trang).
+- Thùng rác của Windows, "Hiện trong Explorer": chưa thử trên Windows (bản kiểm tra trên Linux dùng thùng rác của Toolkit).
+- Thư mục gốc bị xóa rồi tạo lại khi app đang chạy: trên Windows trang tự nạp lại cả cây; trên Linux phải bấm Làm mới.
 - Vị trí và kích thước cửa sổ app: do profile Edge/Chrome của app tự nhớ; chưa kiểm tra trên Windows.
 
 ### Đề xuất thêm của bạn

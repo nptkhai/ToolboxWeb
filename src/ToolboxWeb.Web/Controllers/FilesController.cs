@@ -26,9 +26,13 @@ public class FilesController : Controller
     private readonly ICurrentUserService _currentUser;
     private readonly AppModeInfo _mode;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly FileChangeFeed _changes;
+    private readonly FileTrashService _trash;
 
-    public FilesController(IFileWorkspaceService files, ICurrentUserService currentUser, AppModeInfo mode, IStringLocalizer<SharedResource> localizer)
+    public FilesController(IFileWorkspaceService files, ICurrentUserService currentUser, AppModeInfo mode, IStringLocalizer<SharedResource> localizer, FileChangeFeed changes, FileTrashService trash)
     {
+        _changes = changes;
+        _trash = trash;
         _files = files;
         _currentUser = currentUser;
         _mode = mode;
@@ -43,7 +47,8 @@ public class FilesController : Controller
         {
             StateStorageKey = BrowserStorageKey.ForUser("toolbox.files.state.v1", _currentUser.UserId),
             IsDesktop = _mode.IsDesktop,
-            HasWindowsDialog = _mode.IsDesktop && WindowsShell.IsAvailable
+            HasWindowsDialog = _mode.IsDesktop && WindowsShell.IsAvailable,
+            UsesToolkitTrash = !_trash.UsesRecycleBin
         });
     }
 
@@ -178,6 +183,78 @@ public class FilesController : Controller
         {
             await _files.OpenOutsideAsync(request?.Root ?? 0, request?.Path, reveal: true, HttpContext.RequestAborted);
             return new { };
+        });
+
+    // ------------------------------------------------------------------ managing files
+
+    [HttpPost("/Files/Create")]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> Create([FromBody] FileCreateRequest? request) =>
+        Run(async () => await _files.CreateAsync(request?.Root ?? 0, request?.Folder, request?.Name, request?.IsFolder ?? false, HttpContext.RequestAborted));
+
+    [HttpPost("/Files/Rename")]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> Rename([FromBody] FileRenameRequest? request) =>
+        Run(async () => await _files.RenameAsync(request?.Root ?? 0, request?.Path, request?.Name, HttpContext.RequestAborted));
+
+    [HttpPost("/Files/Duplicate")]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> Duplicate([FromBody] FileRefRequest? request) =>
+        Run(async () => await _files.DuplicateAsync(request?.Root ?? 0, request?.Path, HttpContext.RequestAborted));
+
+    [HttpPost("/Files/Delete")]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> Delete([FromBody] FileRefRequest? request) =>
+        Run(async () => new { toolkitTrash = await _files.DeleteAsync(request?.Root ?? 0, request?.Path, HttpContext.RequestAborted) });
+
+    [HttpPost("/Files/Move")]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> Move([FromBody] FileMoveRequest? request) =>
+        Run(async () => await _files.MoveAsync(request?.Root ?? 0, request?.Path, request?.TargetRoot ?? 0, request?.TargetFolder, request?.Copy ?? false, request?.Overwrite ?? false, HttpContext.RequestAborted));
+
+    /// <summary>Files dropped from Explorer: form fields root, folder, overwrite, and per file "files" plus its relative path in "paths".</summary>
+    [HttpPost("/Files/Upload")]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(512L * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 512L * 1024 * 1024, ValueCountLimit = 4096)]
+    public Task<IActionResult> Upload([FromForm] int root, [FromForm] string? folder, [FromForm] bool overwrite, [FromForm] List<string>? paths) =>
+        Run(async () =>
+        {
+            var files = Request.Form.Files;
+            var list = new List<(string, IFormFile)>();
+            for (var i = 0; i < files.Count; i++)
+            {
+                var relative = paths is not null && i < paths.Count && !string.IsNullOrWhiteSpace(paths[i]) ? paths[i] : files[i].FileName;
+                list.Add((relative, files[i]));
+            }
+
+            return new { count = await _files.UploadAsync(root, folder, list, overwrite, HttpContext.RequestAborted) };
+        });
+
+    [HttpGet("/Files/Trash")]
+    public Task<IActionResult> Trash() => Run(() => Task.FromResult<object>(_files.GetTrash()));
+
+    [HttpPost("/Files/Restore")]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> Restore([FromBody] FileTrashRequest? request) =>
+        Run(async () => await _files.RestoreAsync(request?.Id, HttpContext.RequestAborted));
+
+    [HttpPost("/Files/Purge")]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> Purge([FromBody] FileTrashRequest? request) =>
+        Run(() => Task.FromResult<object>(new { removed = _files.PurgeTrash(request?.Id) }));
+
+    /// <summary>
+    /// Folders changed outside Toolkit since <paramref name="since"/> (the cursor of the previous
+    /// answer; 0 the first time), for the page's tree. See <see cref="FileChangeFeed"/>.
+    /// </summary>
+    [HttpGet("/Files/Changes")]
+    public Task<IActionResult> Changes(long since = 0) =>
+        Run(async () =>
+        {
+            var roots = await _files.GetWatchableRootsAsync(HttpContext.RequestAborted);
+            var (cursor, changes) = _changes.Read(roots, since);
+            return new { cursor, changes };
         });
 
     // ------------------------------------------------------------------ plumbing

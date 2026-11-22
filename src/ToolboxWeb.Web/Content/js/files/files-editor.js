@@ -298,7 +298,8 @@
         window.setTimeout(() => {
             editor.refresh();
             if (tab.cursor) editor.getDoc().setCursor(tab.cursor);
-            editor.focus();
+            // Opened from the tree: keep the keyboard there (arrows, F2, Delete).
+            if (!P.els.tree.contains(document.activeElement)) editor.focus();
         }, 0);
     }
 
@@ -874,6 +875,7 @@
         P.state.tabs.filter((t) => t.doc).forEach(checkTab);
     }
 
+    NS.checkOpenTabs = checkOpenTabs;
     window.setInterval(checkOpenTabs, POLL_MS);
     window.addEventListener('focus', checkOpenTabs);
 

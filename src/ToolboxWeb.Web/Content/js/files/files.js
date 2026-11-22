@@ -281,6 +281,7 @@
         els.shell.hidden = !hasRoots;
         renderTree();
         loadStats();
+        NS.onRoots?.(state.roots);
     }
 
     async function addRoot() {
@@ -312,14 +313,16 @@
 
     function rootMenu(root, anchor, point) {
         const index = state.roots.findIndex((r) => r.id === root.id);
-        showMenu(anchor, [
+        const node = state.nodes.get(keyOf(root.id, ''));
+        const extra = root.available && node && NS.folderItems ? NS.folderItems(node).concat(['separator']) : [];
+        showMenu(anchor, extra.concat([
             { label: text['Root.Rename'], icon: 'pencil', run: () => renameRoot(root) },
             { label: text['Root.Relink'], icon: 'folder-sync', run: () => relinkRoot(root) },
             { label: text['Root.Up'], icon: 'arrow-up', disabled: index <= 0, run: () => moveRoot(root, -1) },
             { label: text['Root.Down'], icon: 'arrow-down', disabled: index >= state.roots.length - 1, run: () => moveRoot(root, 1) },
             'separator',
             { label: text['Root.Remove'], icon: 'x', danger: true, run: () => removeRoot(root) }
-        ], point);
+        ]), point);
     }
 
     function renameRoot(root) {
@@ -483,7 +486,7 @@
         const meta = node.isRoot
             ? (node.available ? '' : `<span class="fx-node-warn">${escapeHtml(text['Root.Unavailable'])}</span>`)
             : (node.isFolder ? '' : `<span class="fx-node-size">${escapeHtml(bytes(node.size))}</span>`);
-        const menu = node.isRoot
+        const menu = node.isRoot || NS.fileMenu
             ? `<button type="button" class="fx-node-menu" tabindex="-1" aria-label="${escapeHtml(fmt(text['Root.Menu'], node.name))}" data-fx-root-menu>${icon('ellipsis')}</button>`
             : '';
         return `<div class="fx-node${node.hidden ? ' is-hidden' : ''}" style="--fx-depth:${node.depth}">${chevron}<span class="fx-node-icon fx-kind-${node.isFolder ? 'folder' : node.kind}" aria-hidden="true">${icon(nodeIcon(node))}</span><span class="fx-node-name">${escapeHtml(node.name)}</span>${meta}${menu}</div>`;
@@ -500,6 +503,8 @@
         if (node.isRoot) {
             li.classList.add('fx-root');
             li.title = node.path;
+        } else if (NS.fileMenu) {
+            li.draggable = true;
         }
         li.innerHTML = nodeRow(node);
         node.el = li;
@@ -588,6 +593,52 @@
         saveState();
     }
 
+    /** Reads a folder of the tree again (after a change), keeping what was expanded under it. */
+    async function reloadFolder(rootId, folder) {
+        const node = state.nodes.get(keyOf(rootId, folder || ''));
+        if (!node || !node.isFolder) return;
+        if (!node.loaded || !node.expanded) {
+            node.loaded = false;
+            return;
+        }
+        const expanded = new Set();
+        state.nodes.forEach((n, key) => {
+            if (n.rootId === rootId && n.isFolder && n.expanded && key !== node.key) expanded.add(key);
+        });
+        const prefix = node.path ? `${node.path}/` : '';
+        Array.from(state.nodes.keys()).forEach((key) => {
+            const n = state.nodes.get(key);
+            if (n.rootId === rootId && n !== node && (prefix === '' || n.path.startsWith(prefix))) state.nodes.delete(key);
+        });
+        await loadChildren(node, expanded);
+    }
+
+    /** After a rename or move: open tabs follow the file (or everything under a folder). */
+    function retargetTabs(rootId, oldPath, newRootId, newPath) {
+        let changed = false;
+        state.tabs.forEach((tab) => {
+            if (tab.rootId !== rootId) return;
+            let path = null;
+            if (tab.path === oldPath) path = newPath;
+            else if (tab.path.startsWith(`${oldPath}/`)) path = newPath + tab.path.slice(oldPath.length);
+            if (path === null) return;
+            const wasActive = state.active === tab.key;
+            tab.rootId = newRootId;
+            tab.path = path;
+            tab.name = baseName(path);
+            tab.key = keyOf(newRootId, path);
+            if (tab.doc) tab.doc = Object.assign({}, tab.doc, { path, name: tab.name, rootId: newRootId });
+            if (wasActive) state.active = tab.key;
+            changed = true;
+        });
+        if (changed) {
+            renderTabs();
+            const active = findTab(state.active);
+            if (active) renderDocHead(active);
+            saveState();
+        }
+    }
+
     function collapseAll() {
         state.nodes.forEach((node) => {
             if (node.isFolder && node.expanded && !node.isRoot) {
@@ -630,8 +681,13 @@
         const node = state.nodes.get(li.dataset.key);
         if (!node) return;
         if (event.target.closest('[data-fx-root-menu]')) {
-            const root = state.roots.find((r) => r.id === node.rootId);
-            if (root) rootMenu(root, event.target.closest('[data-fx-root-menu]'));
+            const button = event.target.closest('[data-fx-root-menu]');
+            if (node.isRoot) {
+                const root = state.roots.find((r) => r.id === node.rootId);
+                if (root) rootMenu(root, button);
+            } else if (NS.fileMenu) {
+                NS.fileMenu(node, button);
+            }
             return;
         }
         event.stopPropagation();
@@ -1183,7 +1239,7 @@
         state, els, config, text, urls, request, rawUrl, openFile, closeTab, activateTab, activeTab, findTab, renderTabs,
         refreshTabs, refreshTree, loadRoots, loadStats, reveal, keyOf, parentPath, baseName, notify, fmt, escapeHtml, icon,
         bytes, when, number, saveState, toggleFolder, showMenu, openOutside, setStatus, focusItem, rootName, moveToBody, modal,
-        loadDoc, openPicker, showDoc, renderDocHead, viewContext, markActiveInTree
+        loadDoc, openPicker, showDoc, renderDocHead, viewContext, markActiveInTree, reloadFolder, retargetTabs
     };
 
     state.showHidden = Boolean(state.saved.showHidden);

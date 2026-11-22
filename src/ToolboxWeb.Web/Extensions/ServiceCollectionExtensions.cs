@@ -42,6 +42,10 @@ public static class ServiceCollectionExtensions
         services.AddOptions<ToolboxWeb.Web.Infrastructure.Files.FilesOptions>().BindConfiguration("Files");
         services.AddScoped<ToolboxWeb.Web.Infrastructure.Files.FilesAccess>();
         services.AddScoped<ToolboxWeb.Web.Services.Files.IFileWorkspaceService, ToolboxWeb.Web.Services.Files.FileWorkspaceService>();
+        services.AddSingleton<ToolboxWeb.Web.Services.Files.FileTrashService>();
+        services.AddSingleton<ToolboxWeb.Web.Services.Files.FileWatchService>();
+        services.AddSingleton<ToolboxWeb.Web.Services.Files.FileChangeFeed>();
+        services.AddHostedService<ToolboxWeb.Web.Services.Files.FileTrashCleanupService>();
         services.AddScoped<ISqlConnectionStringFactory, SqlConnectionStringFactory>();
         services.AddScoped<ISqlSchemaReader, SqlSchemaReader>();
         services.AddScoped<ISchemaComparer, SchemaComparer>();

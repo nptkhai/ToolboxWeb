@@ -80,6 +80,11 @@ public sealed record FileFindItem(int RootId, string RootName, string Path, stri
 /// <summary>A file in a root, for actions that name one.</summary>
 public sealed record FileRefRequest(int Root, string? Path);
 
+public sealed record FileCreateRequest(int Root, string? Folder, string? Name, bool IsFolder);
+public sealed record FileRenameRequest(int Root, string? Path, string? Name);
+public sealed record FileMoveRequest(int Root, string? Path, int TargetRoot, string? TargetFolder, bool Copy, bool Overwrite);
+public sealed record FileTrashRequest(string? Id);
+
 public sealed record AddFileRootRequest(string? Path, string? Name);
 public sealed record RenameFileRootRequest(int Id, string? Name);
 public sealed record FileRootIdRequest(int Id);
@@ -96,4 +101,7 @@ public sealed class FilesPageViewModel
 
     /// <summary>The Windows folder and "Save as" dialogs are available (desktop on Windows).</summary>
     public bool HasWindowsDialog { get; init; }
+
+    /// <summary>Deleted files go to Toolkit's trash (IIS site, non-Windows desktop) instead of the Windows Recycle Bin.</summary>
+    public bool UsesToolkitTrash { get; init; }
 }

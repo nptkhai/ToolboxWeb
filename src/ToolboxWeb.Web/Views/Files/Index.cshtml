@@ -34,7 +34,14 @@
         "External.Reloaded", "External.Deleted", "External.DeletedDirty", "Draft.Found", "Draft.FoundChanged", "Draft.Restore",
         "Draft.Drop", "Draft.Restored", "Compare.Disk", "Compare.Mine", "Compare.Same", "Unsaved.Message", "Unsaved.Leave",
         "Md.Bold", "Md.Italic", "Md.Strike", "Md.H1", "Md.H2", "Md.H3", "Md.Quote", "Md.Code", "Md.List", "Md.OrderedList",
-        "Md.Checklist", "Md.Link", "Md.Image", "Md.Rule", "Md.LinkText", "Md.ImageText", "Md.Toolbar", "Keys.Save", "Keys.Mode"
+        "Md.Checklist", "Md.Link", "Md.Image", "Md.Rule", "Md.LinkText", "Md.ImageText", "Md.Toolbar", "Keys.Save", "Keys.Mode",
+        "Name.Invalid", "New.File", "New.Folder", "New.FileTitle", "New.FolderTitle", "New.FileLabel", "New.FolderLabel", "New.FileDefault",
+        "New.FolderDefault", "New.FolderDone", "Rename.Title", "Rename.Label", "Rename.Done", "Duplicate.Done", "Delete.FileTitle",
+        "Delete.FolderTitle", "Delete.MessageRecycle", "Delete.MessageToolkit", "Delete.Unsaved", "Delete.Ok", "Delete.DoneRecycle",
+        "Delete.DoneToolkit", "Delete.TabsClosed", "CopyPath.Done", "Menu.Open", "Menu.Rename", "Menu.Duplicate", "Menu.CopyPath",
+        "Menu.Reveal", "Menu.Delete", "Trash.Restore", "Trash.Purge", "Trash.Empty", "Trash.Restored", "Trash.PurgeTitle", "Trash.PurgeMessage",
+        "Move.Title", "Move.CopyTitle", "Move.Message", "Move.CopyMessage", "Move.Ok", "Move.CopyOk", "Move.Done", "Move.CopyDone",
+        "Move.ReplaceTitle", "Move.ReplaceMessage", "Move.ReplaceOk", "Upload.Sending", "Upload.Done", "Upload.Failed", "Upload.ReplaceTitle"
     ];
     var text = keys.Concat(editKeys).ToDictionary(k => k, k => Text("Files." + k));
     text["cancel"] = Text("Action.Cancel");
@@ -60,6 +67,7 @@
         stateKey = Model.StateStorageKey,
         isDesktop = Model.IsDesktop,
         hasWindowsDialog = Model.HasWindowsDialog,
+        usesToolkitTrash = Model.UsesToolkitTrash,
         token = Antiforgery.GetAndStoreTokens(Context).RequestToken,
         urls = new
         {
@@ -80,7 +88,17 @@
             openDefault = Url.Action("OpenDefault", "Files"),
             reveal = Url.Action("Reveal", "Files"),
             save = Url.Action("Save", "Files"),
-            info = Url.Action("Info", "Files")
+            info = Url.Action("Info", "Files"),
+            create = Url.Action("Create", "Files"),
+            rename = Url.Action("Rename", "Files"),
+            duplicate = Url.Action("Duplicate", "Files"),
+            delete = Url.Action("Delete", "Files"),
+            move = Url.Action("Move", "Files"),
+            upload = Url.Action("Upload", "Files"),
+            trash = Url.Action("Trash", "Files"),
+            restore = Url.Action("Restore", "Files"),
+            purge = Url.Action("Purge", "Files"),
+            changes = Url.Action("Changes", "Files")
         },
         text,
         phrases
@@ -113,7 +131,13 @@
             <div class="fx-side-head">
                 <h2 class="fx-side-title">@T["Files.Tree.Title"]</h2>
                 <div class="fx-side-actions">
-                    <button type="button" class="btn btn-sm tbx-icon-button" data-fx-add-root title="@T["Files.Root.Add"]" aria-label="@T["Files.Root.Add"]"><tbx-icon name="folder-plus" /></button>
+                    <button type="button" class="btn btn-sm tbx-icon-button" data-fx-new-file title="@T["Files.New.File"]" aria-label="@T["Files.New.File"]"><tbx-icon name="file-plus" /></button>
+                    <button type="button" class="btn btn-sm tbx-icon-button" data-fx-new-folder title="@T["Files.New.Folder"]" aria-label="@T["Files.New.Folder"]"><tbx-icon name="folder-plus" /></button>
+                    <button type="button" class="btn btn-sm tbx-icon-button" data-fx-add-root title="@T["Files.Root.Add"]" aria-label="@T["Files.Root.Add"]"><tbx-icon name="folder-tree" /></button>
+                    @if (Model.UsesToolkitTrash)
+                    {
+                        <button type="button" class="btn btn-sm tbx-icon-button" data-fx-trash title="@T["Files.Trash.Title"]" aria-label="@T["Files.Trash.Title"]"><tbx-icon name="trash-2" /></button>
+                    }
                     <button type="button" class="btn btn-sm tbx-icon-button" data-fx-collapse title="@T["Files.Tree.CollapseAll"]" aria-label="@T["Files.Tree.CollapseAll"]"><tbx-icon name="chevrons-down-up" /></button>
                     <button type="button" class="btn btn-sm tbx-icon-button" data-fx-refresh title="@T["Files.Tree.Refresh"]" aria-label="@T["Files.Tree.Refresh"]"><tbx-icon name="refresh-cw" /></button>
                     <button type="button" class="btn btn-sm tbx-icon-button fx-side-close" data-fx-side-close title="@T["Action.Close"]" aria-label="@T["Action.Close"]"><tbx-icon name="x" /></button>
@@ -246,6 +270,47 @@
     </div>
 </div>
 
+@* Name of a new file or folder, or a new name. *@
+<div class="modal fade" id="fx-name" tabindex="-1" aria-labelledby="fx-name-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" data-fx-name-form novalidate>
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="fx-name-title" data-fx-name-title></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <div class="tbx-field">
+                    <label class="tbx-field-label" for="fx-name-input" data-fx-name-label></label>
+                    <input class="form-control" id="fx-name-input" maxlength="255" autocomplete="off" spellcheck="false" required data-fx-name-input />
+                    <span class="tbx-field-error" data-fx-name-error role="alert"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button type="submit" class="btn btn-primary">@T["Files.Name.Ok"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.UsesToolkitTrash)
+{
+    <div class="modal fade" id="fx-trash" tabindex="-1" aria-labelledby="fx-trash-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="fx-trash-title">@T["Files.Trash.Title"]</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@T["Action.Close"]"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="fx-trash-note">@T["Files.Trash.Note"]</p>
+                    <ul class="tbx-list fx-trash-list" data-fx-trash-list aria-label="@T["Files.Trash.Title"]"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @* Closing a tab (or the app) with unsaved changes. *@
 <div class="modal fade" id="fx-unsaved" tabindex="-1" aria-labelledby="fx-unsaved-title" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -344,4 +409,5 @@
     <script src="~/js/files/files-viewers.js" asp-append-version="true"></script>
     <script src="~/js/files/files.js" asp-append-version="true"></script>
     <script src="~/js/files/files-editor.js" asp-append-version="true"></script>
+    <script src="~/js/files/files-manage.js" asp-append-version="true"></script>
 }

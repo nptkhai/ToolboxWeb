@@ -75,6 +75,34 @@ public interface IFileWorkspaceService
 
     /// <summary>Desktop: opens the file with its Windows program, or shows it selected in Explorer.</summary>
     Task OpenOutsideAsync(int rootId, string? path, bool reveal, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates an empty file or a folder inside <paramref name="folder"/>; returns its entry.</summary>
+    Task<FileEntryView> CreateAsync(int rootId, string? folder, string? name, bool isFolder, CancellationToken cancellationToken = default);
+
+    /// <summary>Renames in place; returns the new entry.</summary>
+    Task<FileEntryView> RenameAsync(int rootId, string? path, string? newName, CancellationToken cancellationToken = default);
+
+    /// <summary>Copies next to the original as "name (copy)"; returns the new entry.</summary>
+    Task<FileEntryView> DuplicateAsync(int rootId, string? path, CancellationToken cancellationToken = default);
+
+    /// <summary>To the Windows Recycle Bin (Windows desktop) or Toolkit's trash (elsewhere). Returns true for Toolkit's trash.</summary>
+    Task<bool> DeleteAsync(int rootId, string? path, CancellationToken cancellationToken = default);
+
+    /// <summary>Moves or copies into a folder of the same or another root. "exists" unless <paramref name="overwrite"/> (files only).</summary>
+    Task<FileEntryView> MoveAsync(int rootId, string? path, int targetRootId, string? targetFolder, bool copy, bool overwrite, CancellationToken cancellationToken = default);
+
+    /// <summary>Files dropped from Explorer: stored under <paramref name="folder"/> with their relative paths. Throws "exists" listing the names unless <paramref name="overwrite"/>.</summary>
+    Task<int> UploadAsync(int rootId, string? folder, IReadOnlyList<(string RelativePath, IFormFile File)> files, bool overwrite, CancellationToken cancellationToken = default);
+
+    IReadOnlyList<FileTrashItem> GetTrash();
+
+    /// <summary>Puts a trashed item back where it was (with "(restored)" when the name is taken); returns where.</summary>
+    Task<FileEntryView> RestoreAsync(string? trashId, CancellationToken cancellationToken = default);
+
+    bool PurgeTrash(string? trashId);
+
+    /// <summary>The user's available roots and their full paths, for watching changes.</summary>
+    Task<IReadOnlyList<(int Id, string Path)>> GetWatchableRootsAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class FileWorkspaceService : IFileWorkspaceService
@@ -102,8 +130,10 @@ public sealed class FileWorkspaceService : IFileWorkspaceService
         AppModeInfo mode,
         IOptionsMonitor<FilesOptions> options,
         IActivityLogService activityLog,
-        IStringLocalizer<SharedResource> localizer)
+        IStringLocalizer<SharedResource> localizer,
+        FileTrashService trash)
     {
+        _trash = trash;
         _db = db;
         _currentUser = currentUser;
         _access = access;
@@ -113,7 +143,319 @@ public sealed class FileWorkspaceService : IFileWorkspaceService
         _localizer = localizer;
     }
 
+    private readonly FileTrashService _trash;
+
     private FilesOptions Options => _options.CurrentValue;
+
+    // ------------------------------------------------------------------ managing files
+
+    public async Task<FileEntryView> CreateAsync(int rootId, string? folder, string? name, bool isFolder, CancellationToken cancellationToken = default)
+    {
+        var (root, parent) = await ResolveAsync(rootId, folder, cancellationToken);
+        if (!Directory.Exists(parent))
+        {
+            throw Error("notFound", "Files.Error.FolderMissing");
+        }
+
+        var clean = CheckName(name);
+        var full = Path.Combine(parent, clean);
+        if (File.Exists(full) || Directory.Exists(full))
+        {
+            throw new FileOperationException("exists", _localizer["Files.Error.NameTaken", clean].Value);
+        }
+
+        if (isFolder)
+        {
+            Directory.CreateDirectory(full);
+        }
+        else
+        {
+            await using (new FileStream(full, FileMode.CreateNew, FileAccess.Write))
+            {
+            }
+        }
+
+        await LogFileAsync(ActivityActionType.Create, root, full, isFolder ? "ActivityLog.FolderCreated" : "ActivityLog.FileCreated");
+        return Entry(root.Path, full);
+    }
+
+    public async Task<FileEntryView> RenameAsync(int rootId, string? path, string? newName, CancellationToken cancellationToken = default)
+    {
+        var (root, full) = await ResolveExistingAsync(rootId, path, cancellationToken);
+        RefuseRoot(root, full);
+        var clean = CheckName(newName);
+        var target = Path.Combine(Path.GetDirectoryName(full)!, clean);
+        if (string.Equals(target, full, StringComparison.Ordinal))
+        {
+            return Entry(root.Path, full);
+        }
+
+        var onlyCase = FilePathGuard.PathComparer.Equals(target, full);
+        if (!onlyCase && (File.Exists(target) || Directory.Exists(target)))
+        {
+            throw new FileOperationException("exists", _localizer["Files.Error.NameTaken", clean].Value);
+        }
+
+        var isFolder = Directory.Exists(full);
+        if (onlyCase)
+        {
+            // Windows sees "a.md" and "A.md" as one name: go through a temporary name.
+            var step = full + ".~rename";
+            Move(full, step, isFolder);
+            Move(step, target, isFolder);
+        }
+        else
+        {
+            Move(full, target, isFolder);
+        }
+
+        await LogFileAsync(ActivityActionType.Update, root, target, "ActivityLog.FileRenamed", Path.GetFileName(full));
+        return Entry(root.Path, target);
+    }
+
+    public async Task<FileEntryView> DuplicateAsync(int rootId, string? path, CancellationToken cancellationToken = default)
+    {
+        var (root, full) = await ResolveExistingAsync(rootId, path, cancellationToken);
+        RefuseRoot(root, full);
+        var isFolder = Directory.Exists(full);
+        var target = FreeName(Path.GetDirectoryName(full)!, Path.GetFileName(full), _localizer["Files.Name.CopySuffix"].Value, isFolder);
+        if (isFolder)
+        {
+            FileTrashService.CopyFolder(full, target, overwrite: false);
+        }
+        else
+        {
+            File.Copy(full, target);
+        }
+
+        await LogFileAsync(ActivityActionType.Create, root, target, "ActivityLog.FileDuplicated", Path.GetFileName(full));
+        return Entry(root.Path, target);
+    }
+
+    public async Task<bool> DeleteAsync(int rootId, string? path, CancellationToken cancellationToken = default)
+    {
+        var (root, full) = await ResolveExistingAsync(rootId, path, cancellationToken);
+        RefuseRoot(root, full);
+        var toolkitTrash = !_trash.UsesRecycleBin;
+        if (!toolkitTrash && OperatingSystem.IsWindows())
+        {
+            WindowsShell.MoveToRecycleBin(full);
+        }
+        else
+        {
+            await _trash.MoveToTrashAsync(_currentUser.UserId, root.Id, root.Name, FilePathGuard.Relative(root.Path, full), full, cancellationToken);
+        }
+
+        await LogFileAsync(ActivityActionType.Delete, root, full, "ActivityLog.FileDeleted");
+        return toolkitTrash;
+    }
+
+    public async Task<FileEntryView> MoveAsync(int rootId, string? path, int targetRootId, string? targetFolder, bool copy, bool overwrite, CancellationToken cancellationToken = default)
+    {
+        var (root, full) = await ResolveExistingAsync(rootId, path, cancellationToken);
+        if (!copy)
+        {
+            RefuseRoot(root, full);
+        }
+
+        var (targetRoot, folder) = await ResolveAsync(targetRootId, targetFolder, cancellationToken);
+        if (!Directory.Exists(folder))
+        {
+            throw Error("notFound", "Files.Error.FolderMissing");
+        }
+
+        var isFolder = Directory.Exists(full);
+        var target = Path.Combine(folder, Path.GetFileName(full));
+        if (isFolder && FilePathGuard.IsInside(full, folder))
+        {
+            throw Error("invalid", "Files.Error.MoveIntoItself");
+        }
+
+        if (FilePathGuard.PathComparer.Equals(target, full))
+        {
+            if (!copy)
+            {
+                return Entry(targetRoot.Path, full);
+            }
+
+            target = FreeName(folder, Path.GetFileName(full), _localizer["Files.Name.CopySuffix"].Value, isFolder);
+        }
+        else if (File.Exists(target) || Directory.Exists(target))
+        {
+            if (!overwrite || isFolder || Directory.Exists(target))
+            {
+                throw new FileOperationException("exists", _localizer["Files.Error.NameTaken", Path.GetFileName(target)].Value);
+            }
+        }
+
+        if (copy)
+        {
+            if (isFolder)
+            {
+                FileTrashService.CopyFolder(full, target, overwrite: false);
+            }
+            else
+            {
+                File.Copy(full, target, overwrite);
+            }
+        }
+        else if (isFolder)
+        {
+            FileTrashService.MoveAcrossVolumes(full, target, isFolder: true);
+        }
+        else
+        {
+            if (overwrite && File.Exists(target))
+            {
+                File.Delete(target);
+            }
+
+            FileTrashService.MoveAcrossVolumes(full, target, isFolder: false);
+        }
+
+        await LogFileAsync(copy ? ActivityActionType.Create : ActivityActionType.Update, targetRoot, target, copy ? "ActivityLog.FileCopied" : "ActivityLog.FileMoved", FilePathGuard.Relative(root.Path, full));
+        return Entry(targetRoot.Path, target);
+    }
+
+    public async Task<int> UploadAsync(int rootId, string? folder, IReadOnlyList<(string RelativePath, IFormFile File)> files, bool overwrite, CancellationToken cancellationToken = default)
+    {
+        var (root, parent) = await ResolveAsync(rootId, folder, cancellationToken);
+        if (!Directory.Exists(parent))
+        {
+            throw Error("notFound", "Files.Error.FolderMissing");
+        }
+
+        var parentRelative = FilePathGuard.Relative(root.Path, parent);
+        var targets = new List<(string Full, IFormFile File)>();
+        var taken = new List<string>();
+        foreach (var (relative, file) in files)
+        {
+            var combined = string.IsNullOrEmpty(parentRelative) ? relative : $"{parentRelative}/{relative}";
+            var target = FilePathGuard.Resolve(root.Path, combined) ?? throw Error("invalid", "Files.Error.PathInvalid");
+            if (Directory.Exists(target))
+            {
+                throw new FileOperationException("exists", _localizer["Files.Error.NameTaken", relative].Value);
+            }
+
+            if (File.Exists(target))
+            {
+                taken.Add(relative);
+            }
+
+            targets.Add((target, file));
+        }
+
+        if (taken.Count > 0 && !overwrite)
+        {
+            throw new FileOperationException("exists", _localizer["Files.Upload.Exists", string.Join(", ", taken.Take(10)), taken.Count].Value);
+        }
+
+        foreach (var (target, file) in targets)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            await using var stream = new FileStream(target, FileMode.Create, FileAccess.Write);
+            await file.CopyToAsync(stream, cancellationToken);
+        }
+
+        await _activityLog.LogAsync(_currentUser.UserId, ActivityActionType.Create, ActivityEntityType.File, null,
+            _localizer["ActivityLog.FilesAdded", targets.Count, string.IsNullOrEmpty(parentRelative) ? root.Name : $"{root.Name}/{parentRelative}"].Value);
+        return targets.Count;
+    }
+
+    public IReadOnlyList<FileTrashItem> GetTrash() => _trash.List(_currentUser.UserId);
+
+    public async Task<FileEntryView> RestoreAsync(string? trashId, CancellationToken cancellationToken = default)
+    {
+        var found = _trash.Find(_currentUser.UserId, trashId) ?? throw Error("notFound", "Files.Trash.Missing");
+        var item = found.Item;
+        var (root, original) = await ResolveAsync(item.RootId, item.Path, cancellationToken);
+        var parent = Path.GetDirectoryName(original)!;
+        Directory.CreateDirectory(parent);
+        var target = File.Exists(original) || Directory.Exists(original)
+            ? FreeName(parent, item.Name, _localizer["Files.Name.RestoredSuffix"].Value, item.IsFolder)
+            : original;
+        _trash.RestoreTo(_currentUser.UserId, item.Id, target);
+        await LogFileAsync(ActivityActionType.Update, root, target, "ActivityLog.FileRestored");
+        return Entry(root.Path, target);
+    }
+
+    public bool PurgeTrash(string? trashId) => trashId is not null && _trash.Purge(_currentUser.UserId, trashId);
+
+    public async Task<IReadOnlyList<(int Id, string Path)>> GetWatchableRootsAsync(CancellationToken cancellationToken = default)
+    {
+        var roots = await UserRoots().AsNoTracking().ToListAsync(cancellationToken);
+        return roots.Where(r => RootProblem(r.Path) is null).Select(r => (r.Id, FilePathGuard.NormalizeRoot(r.Path))).ToList();
+    }
+
+    private async Task<(FileRoot Root, string Full)> ResolveExistingAsync(int rootId, string? path, CancellationToken cancellationToken)
+    {
+        var (root, full) = await ResolveAsync(rootId, path, cancellationToken);
+        if (!File.Exists(full) && !Directory.Exists(full))
+        {
+            throw Error("notFound", "Files.Error.FileMissing");
+        }
+
+        return (root, full);
+    }
+
+    /// <summary>The root folder itself is renamed, moved or deleted only from outside Toolkit.</summary>
+    private void RefuseRoot(FileRoot root, string full)
+    {
+        if (FilePathGuard.PathComparer.Equals(FilePathGuard.NormalizeRoot(root.Path), Path.TrimEndingDirectorySeparator(full)))
+        {
+            throw Error("invalid", "Files.Error.RootItself");
+        }
+    }
+
+    private string CheckName(string? name)
+    {
+        var clean = (name ?? string.Empty).Trim();
+        if (!FilePathGuard.IsValidName(clean))
+        {
+            throw Error("invalid", "Files.Error.NameInvalid");
+        }
+
+        return clean;
+    }
+
+    /// <summary>"Report.md" -> "Report (copy).md", "Report (copy 2).md"…</summary>
+    private static string FreeName(string folder, string name, string suffix, bool isFolder)
+    {
+        var stem = isFolder ? name : Path.GetFileNameWithoutExtension(name);
+        var extension = isFolder ? string.Empty : Path.GetExtension(name);
+        for (var n = 1; n < 1000; n++)
+        {
+            var candidate = Path.Combine(folder, n == 1 ? $"{stem} ({suffix}){extension}" : $"{stem} ({suffix} {n}){extension}");
+            if (!File.Exists(candidate) && !Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return Path.Combine(folder, $"{stem} ({suffix} {Guid.NewGuid():N}){extension}");
+    }
+
+    private static void Move(string source, string target, bool isFolder)
+    {
+        if (isFolder)
+        {
+            Directory.Move(source, target);
+        }
+        else
+        {
+            File.Move(source, target);
+        }
+    }
+
+    private static FileEntryView Entry(string rootPath, string full)
+    {
+        FileSystemInfo info = Directory.Exists(full) ? new DirectoryInfo(full) : new FileInfo(full);
+        return ToEntry(rootPath, info, IsHidden(info));
+    }
+
+    private Task LogFileAsync(ActivityActionType action, FileRoot root, string full, string key, string? extra = null) =>
+        _activityLog.LogAsync(_currentUser.UserId, action, ActivityEntityType.File, null,
+            _localizer[key, $"{root.Name}/{FilePathGuard.Relative(root.Path, full)}", extra ?? string.Empty].Value);
 
     // ------------------------------------------------------------------ roots
 
