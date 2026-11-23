@@ -563,11 +563,8 @@
                     toggleFolder(child, true, expanded);
                 }
             });
-            if (!list.entries.length) {
-                node.group.innerHTML = `<li class="fx-tree-note" role="none" style="--fx-depth:${node.depth + 1}">${escapeHtml(text['Tree.Empty'])}</li>`;
-            } else if (list.truncated) {
-                node.group.insertAdjacentHTML('beforeend', `<li class="fx-tree-note" role="none" style="--fx-depth:${node.depth + 1}">${escapeHtml(fmt(text['Tree.More'], number(list.total - list.entries.length)))}</li>`);
-            }
+            addFolderNotes(node, list);
+            node.signature = listSignature(list);
             node.loaded = true;
             applyFilter();
             markActiveInTree();
@@ -596,7 +593,36 @@
         saveState();
     }
 
-    /** Reads a folder of the tree again (after a change), keeping what was expanded under it. */
+    function addFolderNotes(node, list) {
+        if (!list.entries.length) {
+            node.group.insertAdjacentHTML('beforeend', `<li class="fx-tree-note" role="none" style="--fx-depth:${node.depth + 1}">${escapeHtml(text['Tree.Empty'])}</li>`);
+        } else if (list.truncated) {
+            node.group.insertAdjacentHTML('beforeend', `<li class="fx-tree-note" role="none" style="--fx-depth:${node.depth + 1}">${escapeHtml(fmt(text['Tree.More'], number(list.total - list.entries.length)))}</li>`);
+        }
+    }
+
+    /** What a folder listing shows; the same signature means nothing visible changed. */
+    function listSignature(list) {
+        return list.entries.map((e) => `${e.path}\u0001${e.isFolder ? 1 : 0}\u0001${e.size}\u0001${e.modified}\u0001${e.hidden ? 1 : 0}`).join('\n')
+            + `\n${list.total}\u0001${list.truncated ? 1 : 0}`;
+    }
+
+    /** Forgets a node and everything under it. */
+    function forgetNode(key) {
+        const gone = state.nodes.get(key);
+        if (!gone) return;
+        const prefix = `${gone.path}/`;
+        Array.from(state.nodes.values()).forEach((n) => {
+            if (n.rootId === gone.rootId && (n === gone || (gone.path && n.path.startsWith(prefix)))) state.nodes.delete(n.key);
+        });
+    }
+
+    /**
+     * Reads a folder of the tree again after a change outside Toolkit, without blanking it: the
+     * rows that stay keep their element (so folders open under them, the scroll position, the
+     * hover and the keyboard focus stay put), gone rows are removed, new ones are added in place,
+     * and a listing that shows the same thing as before changes nothing at all.
+     */
     async function reloadFolder(rootId, folder) {
         const node = state.nodes.get(keyOf(rootId, folder || ''));
         if (!node || !node.isFolder) return;
@@ -604,16 +630,83 @@
             node.loaded = false;
             return;
         }
-        const expanded = new Set();
-        state.nodes.forEach((n, key) => {
-            if (n.rootId === rootId && n.isFolder && n.expanded && key !== node.key) expanded.add(key);
+        if (node.reloading) {
+            node.reloadAgain = true;
+            return;
+        }
+        node.reloading = true;
+        try {
+            let list;
+            try {
+                list = await request(urls.list, null, { root: node.rootId, path: node.path, hidden: state.showHidden });
+            } catch (error) {
+                // A root that went away shows its problem; anything else keeps what is on screen until the next change.
+                if (node.isRoot && error.code === 'unavailable') await loadChildren(node);
+                return;
+            }
+            if (state.nodes.get(node.key) !== node || !node.expanded) return;
+            syncChildren(node, list);
+        } finally {
+            node.reloading = false;
+            if (node.reloadAgain) {
+                node.reloadAgain = false;
+                reloadFolder(rootId, folder);
+            }
+        }
+    }
+
+    function syncChildren(node, list) {
+        const signature = listSignature(list);
+        if (node.signature === signature) return;
+        node.signature = signature;
+        const wanted = new Set(list.entries.map((e) => keyOf(node.rootId, e.path)));
+        Array.from(node.group.children).forEach((li) => {
+            if (!li.dataset.key) {
+                li.remove(); // "empty" or "N more" note, added again below when still true
+            } else if (!wanted.has(li.dataset.key)) {
+                forgetNode(li.dataset.key);
+                li.remove();
+            }
         });
-        const prefix = node.path ? `${node.path}/` : '';
-        Array.from(state.nodes.keys()).forEach((key) => {
-            const n = state.nodes.get(key);
-            if (n.rootId === rootId && n !== node && (prefix === '' || n.path.startsWith(prefix))) state.nodes.delete(key);
+        let next = node.group.firstElementChild;
+        list.entries.forEach((entry) => {
+            const key = keyOf(node.rootId, entry.path);
+            let child = state.nodes.get(key);
+            if (child && child.isFolder !== entry.isFolder) {
+                forgetNode(key);
+                if (child.el === next) next = next.nextElementSibling;
+                child.el.remove();
+                child = null;
+            }
+            if (child) {
+                const changed = child.name !== entry.name || child.kind !== entry.kind || child.size !== entry.size
+                    || child.modified !== entry.modified || child.hidden !== entry.hidden;
+                Object.assign(child, { name: entry.name, kind: entry.kind, size: entry.size, modified: entry.modified, hidden: entry.hidden });
+                if (changed) updateRow(child);
+            } else {
+                child = {
+                    key, rootId: node.rootId, path: entry.path, name: entry.name,
+                    isFolder: entry.isFolder, kind: entry.kind, size: entry.size, modified: entry.modified, hidden: entry.hidden,
+                    depth: node.depth + 1, expanded: false, loaded: false
+                };
+                state.nodes.set(key, child);
+                makeItem(child);
+            }
+            // Only move what is out of place: moving an element would drop the keyboard focus on it.
+            if (child.el === next) next = next.nextElementSibling;
+            else node.group.insertBefore(child.el, next);
         });
-        await loadChildren(node, expanded);
+        addFolderNotes(node, list);
+        applyFilter();
+        markActiveInTree();
+    }
+
+    /** The watcher lost track of a root: read again, quietly, every folder that is open in it. */
+    function reloadOpenFolders(rootId) {
+        Array.from(state.nodes.values())
+            .filter((n) => n.rootId === rootId && n.isFolder && n.expanded && n.loaded)
+            .sort((a, b) => a.depth - b.depth)
+            .forEach((n) => reloadFolder(rootId, n.path));
     }
 
     /** After a rename or move: open tabs follow the file (or everything under a folder). */
@@ -1261,7 +1354,19 @@
         els.find.value = '';
         findItems = [];
         renderFind();
-        openFile(item.rootId, item.path);
+        if (item.kind === 'folder') showFolderInTree(item.rootId, item.path);
+        else openFile(item.rootId, item.path);
+    }
+
+    /** A folder found by name: open the folders down to it, expand it and move the keyboard there. */
+    async function showFolderInTree(rootId, path) {
+        setSideOpen(true);
+        await reveal(rootId, `${path}/x`);
+        const node = state.nodes.get(keyOf(rootId, path));
+        if (!node) return;
+        if (!node.expanded) await toggleFolder(node, true);
+        node.el?.scrollIntoView({ block: 'center' });
+        focusItem(node.el);
     }
 
     els.find.addEventListener('focus', () => {
@@ -1434,7 +1539,7 @@
         refreshTabs, refreshTree, loadRoots, loadStats, reveal, keyOf, parentPath, baseName, notify, fmt, escapeHtml, icon,
         bytes, when, number, saveState, toggleFolder, showMenu, openOutside, setStatus, focusItem, rootName, moveToBody, modal,
         loadDoc, openPicker, showDoc, renderDocHead, viewContext, markActiveInTree, reloadFolder, retargetTabs, toggleSide,
-        fullPath, copyText, showInTree,
+        fullPath, copyText, showInTree, reloadOpenFolders,
         applyFilter: () => applyFilter(), setShowHidden: (on) => { state.showHidden = on; saveState(); refreshTree(); }
     };
 

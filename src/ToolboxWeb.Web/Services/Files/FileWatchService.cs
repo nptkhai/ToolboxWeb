@@ -6,8 +6,8 @@ namespace ToolboxWeb.Web.Services.Files;
 /// <summary>
 /// Notices files added, removed, renamed or changed outside Toolkit, for "Files &amp; folders":
 /// one FileSystemWatcher per root folder, shared by every open page that shows it, created on the
-/// first subscription and disposed with the last. Pages hear about it through GET /Files/Events
-/// (Server-Sent Events); open files are also polled, since network shares may stay silent.
+/// first subscription and disposed with the last. Pages hear about it through GET /Files/Changes
+/// (<see cref="FileChangeFeed"/>); open files are also polled, since network shares may stay silent.
 /// </summary>
 public sealed class FileWatchService : IDisposable
 {
@@ -80,7 +80,16 @@ public sealed class FileWatchService : IDisposable
                 };
                 _watcher.Created += (_, e) => Raise(e.FullPath);
                 _watcher.Deleted += (_, e) => Raise(e.FullPath);
-                _watcher.Changed += (_, e) => Raise(e.FullPath);
+                // Windows also reports a folder as "changed" whenever something inside it is written;
+                // the item itself is reported too, so the folder's own event would only make the page
+                // read its parent again (the whole root, for a top-level folder) on every save elsewhere.
+                _watcher.Changed += (_, e) =>
+                {
+                    if (!Directory.Exists(e.FullPath))
+                    {
+                        Raise(e.FullPath);
+                    }
+                };
                 _watcher.Renamed += (_, e) =>
                 {
                     Raise(e.OldFullPath);

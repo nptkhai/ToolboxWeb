@@ -67,7 +67,7 @@ public interface IFileWorkspaceService
     /// </summary>
     Task<FileSavedView> SaveAsync(FileSaveRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Files whose name contains <paramref name="query"/> in every available root (quick open, Ctrl+P).</summary>
+    /// <summary>Folders and files whose name matches <paramref name="query"/> in every available root (quick open, Ctrl+P); folders first.</summary>
     Task<IReadOnlyList<FileFindItem>> FindByNameAsync(string? query, bool showHidden, CancellationToken cancellationToken = default);
 
     /// <summary>Desktop: "Save a copy" through the Windows "Save as" dialog; returns the new path, or null when cancelled.</summary>
@@ -1132,16 +1132,16 @@ public sealed class FileWorkspaceService : IFileWorkspaceService
                             continue;
                         }
 
+                        var isFolder = info is DirectoryInfo;
                         if (info is DirectoryInfo sub)
                         {
                             pending.Push(sub);
-                            continue;
                         }
 
                         var rank = Rank(info.Name, text);
                         if (rank >= 0)
                         {
-                            found.Add((new FileFindItem(root.Id, root.Name, FilePathGuard.Relative(rootPath, info.FullName), info.Name, KindOf(info.Name)), rank));
+                            found.Add((new FileFindItem(root.Id, root.Name, FilePathGuard.Relative(rootPath, info.FullName), info.Name, isFolder ? "folder" : KindOf(info.Name)), rank));
                         }
                     }
                 }
@@ -1152,8 +1152,10 @@ public sealed class FileWorkspaceService : IFileWorkspaceService
             }
         }
 
+        // Folders first (owner decision 2026-11-23), then how well the name matches.
         return found
-            .OrderBy(x => x.Rank)
+            .OrderByDescending(x => x.Item.Kind == "folder")
+            .ThenBy(x => x.Rank)
             .ThenBy(x => x.Item.Path.Length)
             .ThenBy(x => x.Item.Name, NaturalComparer.Instance)
             .Take(50)
