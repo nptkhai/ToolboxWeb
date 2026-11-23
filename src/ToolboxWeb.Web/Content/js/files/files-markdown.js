@@ -216,10 +216,12 @@
             button.type = 'button';
             button.className = 'btn btn-sm fx-pre-copy';
             button.innerHTML = (window.Toolbox?.icon ? window.Toolbox.icon('copy', 14) : '') + `<span>${escapeHtml(text['Md.CopyCode'])}</span>`;
-            button.addEventListener('click', () => {
-                navigator.clipboard?.writeText(pre.querySelector('code')?.textContent || '').then(() => {
-                    window.Toolbox?.notify(text['Md.Copied'], 'success');
-                }).catch(() => window.Toolbox?.notify(text['Doc.CopyFailed'], 'error'));
+            button.addEventListener('click', async () => {
+                // NS.copyPlain (files.js) also works on plain http, where navigator.clipboard is missing.
+                const value = pre.querySelector('code')?.textContent || '';
+                const done = NS.copyPlain ? await NS.copyPlain(value)
+                    : await (navigator.clipboard?.writeText(value).then(() => true, () => false) ?? false);
+                window.Toolbox?.notify(text[done ? 'Md.Copied' : 'Doc.CopyFailed'], done ? 'success' : 'error');
             });
             pre.appendChild(button);
         });
