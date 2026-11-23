@@ -992,14 +992,15 @@
     }
 
     /**
-     * The path to show or copy: the full path on the machine when the page runs on it (desktop,
-     * or the site opened through localhost), otherwise "root name/relative path" so the server's
-     * folders are not spelled out to a visitor on another computer.
+     * The path to copy: always the full path on the machine that runs Toolkit (D:\Docs\a.md), so it
+     * can be pasted into Explorer there (owner decision 2026-11-23; the people who see this screen
+     * are the ones listed in Files:AllowedUsers / AllowedJiraUsers). "root name/relative path" only
+     * when the root's path is unknown.
      */
     function fullPath(rootId, path) {
         const root = state.roots.find((r) => r.id === rootId);
         if (!root) return path || '';
-        if (!config.canOpenLocal || !root.path) return path ? `${root.name}/${path}` : root.name;
+        if (!root.path) return path ? `${root.name}/${path}` : root.name;
         const separator = root.path.includes('\\') ? '\\' : '/';
         return path ? root.path.replace(/[\\/]+$/, '') + separator + path.split('/').join(separator) : root.path;
     }
