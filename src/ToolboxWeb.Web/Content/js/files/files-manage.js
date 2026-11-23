@@ -32,11 +32,7 @@
     }
 
     function fullPathText(node) {
-        const root = rootOf(node);
-        if (!root) return node.path;
-        if (!config.isDesktop) return node.path ? `${root.name}/${node.path}` : root.name;
-        const separator = root.path.includes('\\') ? '\\' : '/';
-        return node.path ? root.path.replace(/[\\/]+$/, '') + separator + node.path.split('/').join(separator) : root.path;
+        return P.fullPath(node.rootId, node.path);
     }
 
     async function post(url, body) {
@@ -158,21 +154,12 @@
         }
     }
 
-    async function copyPath(node) {
-        try {
-            await navigator.clipboard.writeText(fullPathText(node));
-            P.notify(text['CopyPath.Done'], 'success');
-        } catch (error) {
-            P.notify(text['Doc.CopyFailed'], 'error');
-        }
+    function copyPath(node) {
+        return P.copyText(fullPathText(node));
     }
 
-    async function outside(node, reveal) {
-        try {
-            await post(reveal ? urls.reveal : urls.openDefault, { root: node.rootId, path: node.path });
-        } catch (error) {
-            P.notify(error.message, 'error');
-        }
+    function outside(node, reveal) {
+        return P.openOutside({ rootId: node.rootId, path: node.path, name: node.name }, reveal);
     }
 
     NS.folderItems = (node) => [
@@ -186,9 +173,10 @@
             items.push(...NS.folderItems(node), 'separator');
         } else {
             items.push({ label: text['Menu.Open'], icon: 'file-text', run: () => P.openFile(node.rootId, node.path) });
-            if (config.isDesktop) {
+            if (config.canOpenLocal) {
                 items.push({ label: text['Info.OpenDefault'], icon: 'external-link', run: () => outside(node, false) });
-            } else {
+            }
+            if (!config.isDesktop) {
                 items.push({ label: text['Info.Download'], icon: 'download', run: () => { window.location.href = P.rawUrl(node.rootId, node.path, true); } });
             }
             items.push('separator');
@@ -196,7 +184,7 @@
         items.push({ label: text['Menu.Rename'], icon: 'pencil', run: () => rename(node) });
         items.push({ label: text['Menu.Duplicate'], icon: 'copy-plus', run: () => duplicate(node) });
         items.push({ label: text['Menu.CopyPath'], icon: 'clipboard-paste', run: () => copyPath(node) });
-        if (config.isDesktop) items.push({ label: text['Menu.Reveal'], icon: 'folder-open', run: () => outside(node, true) });
+        if (config.canOpenLocal) items.push({ label: text['Menu.Reveal'], icon: 'folder-open', run: () => outside(node, true) });
         items.push('separator');
         items.push({ label: text['Menu.Delete'], icon: 'trash-2', danger: true, run: () => remove(node) });
         P.showMenu(anchor, items, point);

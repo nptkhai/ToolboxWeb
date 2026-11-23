@@ -238,7 +238,8 @@ Màn hình Tệp & Thư mục đọc và ghi tệp **trên ổ đĩa của máy 
    - Không có tài khoản nào được liệt kê, hoặc `AllowedFolders` trống, là tắt màn hình. Người không có tên trong danh sách không thấy menu và mở link trực tiếp gặp 404.
 2. Cấp quyền NTFS cho tài khoản app pool (`IIS AppPool\<tên pool>`) trên từng thư mục trong `AllowedFolders`: Read nếu chỉ xem, Modify nếu cần sửa và quản lý tệp.
 3. Tệp bị xóa vào thùng rác riêng của Toolkit, mặc định là thư mục `files-trash` **cạnh file cơ sở dữ liệu** (đặt `Storage:FilesTrashPath` để đổi). Thư mục này cần quyền Modify cho app pool. Khi `Storage:DatabasePath` đã trỏ ra ngoài thư mục site thì thùng rác cũng nằm ngoài, nên deploy không xóa nó.
-4. Trên IIS không có hộp thoại Windows: người dùng chọn thư mục bằng hộp chọn vẽ trong trang (chỉ duyệt bên trong `AllowedFolders`), và "Lưu bản sao" thành "Tải xuống".
+4. "Mở bằng Excel/Word…" (chương trình mặc định) và "Mở thư mục chứa" chỉ hiện khi trang được mở từ **chính máy chạy Toolkit** qua địa chỉ localhost **và** Toolkit chạy trong phiên Windows đang đăng nhập (debug Visual Studio, IIS Express). Site IIS thật chạy bằng app pool (dịch vụ, không có màn hình), nên người dùng chỉ thấy "Tải xuống" kèm một dòng giải thích. Máy chưa cài chương trình cho loại tệp đó (ví dụ chưa có Excel) thì trang báo cảnh báo thay vì mở.
+5. Trên IIS không có hộp thoại Windows: người dùng chọn thư mục bằng hộp chọn vẽ trong trang (chỉ duyệt bên trong `AllowedFolders`), và "Lưu bản sao" thành "Tải xuống".
 
 ### Dựng site Web trên IIS (máy chính)
 1. Tạo site IIS thứ hai (ví dụ `toolkit.<miền>`), publish cùng bản build với site Server.

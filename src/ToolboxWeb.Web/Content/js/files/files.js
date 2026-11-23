@@ -35,7 +35,8 @@
         copy: $('[data-fx-copy]'),
         print: $('[data-fx-print]'),
         saveCopy: $('[data-fx-save-copy]'),
-        download: $('[data-fx-download]')
+        download: $('[data-fx-download]'),
+        reveal: $('[data-fx-reveal]')
     };
     const KIND_ICONS = {
         folder: 'folder', markdown: 'file-text', json: 'file-json', csv: 'file-spreadsheet', image: 'file-image',
@@ -982,10 +983,74 @@
         return {
             text,
             isDesktop: config.isDesktop,
+            canOpenLocal: Boolean(config.canOpenLocal),
             rawUrl: (path, download) => rawUrl(tab.rootId, path, download),
             openPath: (path, anchor) => openFile(tab.rootId, path, { anchor }),
-            openDefault: (doc) => openOutside(tab, false)
+            openDefault: () => openOutside(tab, false),
+            reveal: () => openOutside(tab, true)
         };
+    }
+
+    /**
+     * The path to show or copy: the full path on the machine when the page runs on it (desktop,
+     * or the site opened through localhost), otherwise "root name/relative path" so the server's
+     * folders are not spelled out to a visitor on another computer.
+     */
+    function fullPath(rootId, path) {
+        const root = state.roots.find((r) => r.id === rootId);
+        if (!root) return path || '';
+        if (!config.canOpenLocal || !root.path) return path ? `${root.name}/${path}` : root.name;
+        const separator = root.path.includes('\\') ? '\\' : '/';
+        return path ? root.path.replace(/[\\/]+$/, '') + separator + path.split('/').join(separator) : root.path;
+    }
+
+    /**
+     * Copies a path. navigator.clipboard exists only on https and localhost, so a site opened by
+     * http://server-name falls back to a hidden text box and the browser's copy command.
+     */
+    async function copyText(value) {
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(value);
+            } else if (!copyWithTextBox(value)) {
+                throw new Error('copy');
+            }
+            notify(text['CopyPath.Done'], 'success');
+        } catch (error) {
+            if (copyWithTextBox(value)) notify(text['CopyPath.Done'], 'success');
+            else notify(text['Doc.CopyFailed'], 'error');
+        }
+    }
+
+    function copyWithTextBox(value) {
+        const box = document.createElement('textarea');
+        box.value = value;
+        box.setAttribute('readonly', '');
+        box.className = 'visually-hidden';
+        const focused = document.activeElement;
+        document.body.appendChild(box);
+        box.select();
+        let done = false;
+        try {
+            done = document.execCommand('copy');
+        } catch (error) {
+            done = false;
+        }
+        box.remove();
+        focused?.focus?.();
+        return done;
+    }
+
+    /** Opens the folders down to the file, selects it and moves the keyboard there. */
+    async function showInTree(tab) {
+        if (!tab) return;
+        setSideOpen(true);
+        await reveal(tab.rootId, tab.path);
+        const node = state.nodes.get(keyOf(tab.rootId, tab.path));
+        if (node?.el) {
+            node.el.scrollIntoView({ block: 'center' });
+            focusItem(node.el);
+        }
     }
 
     function showDoc(tab, options) {
@@ -1065,7 +1130,10 @@
         const tab = activeTab();
         const value = NS.currentText ? NS.currentText(tab) : tab?.doc?.text;
         if (typeof value !== 'string') return;
-        navigator.clipboard?.writeText(value).then(() => notify(text['Doc.Copied'], 'success')).catch(() => notify(text['Doc.CopyFailed'], 'error'));
+        const copied = navigator.clipboard?.writeText ? navigator.clipboard.writeText(value) : Promise.reject(new Error('copy'));
+        copied.catch(() => {
+            if (!copyWithTextBox(value)) throw new Error('copy');
+        }).then(() => notify(text['Doc.Copied'], 'success')).catch(() => notify(text['Doc.CopyFailed'], 'error'));
     });
 
     function printDoc() {
@@ -1091,14 +1159,23 @@
         }
     });
 
-    async function openOutside(tab, revealIt) {
+    /** Opens a file (or folder) in its program, or its folder in Explorer, on this machine. */
+    async function openOutside(target, revealIt) {
         try {
-            await request(revealIt ? urls.reveal : urls.openDefault, { root: tab.rootId, path: tab.path });
-            if (!revealIt) notify(fmt(text['Info.Opened'], tab.name), 'info');
+            await request(revealIt ? urls.reveal : urls.openDefault, { root: target.rootId, path: target.path });
+            if (!revealIt) notify(fmt(text['Info.Opened'], target.name || baseName(target.path)), 'info');
+            return true;
         } catch (error) {
-            notify(error.message, 'error');
+            // No program for this kind of file, or not this machine: a warning the user can act on.
+            notify(error.message, error.code === 'noProgram' || error.code === 'unsupported' ? 'warning' : 'error');
+            return false;
         }
     }
+
+    els.reveal?.addEventListener('click', () => {
+        const tab = activeTab();
+        if (tab) openOutside(tab, true);
+    });
 
     // ------------------------------------------------------------------ quick open (Ctrl+P)
 
@@ -1336,6 +1413,7 @@
         refreshTabs, refreshTree, loadRoots, loadStats, reveal, keyOf, parentPath, baseName, notify, fmt, escapeHtml, icon,
         bytes, when, number, saveState, toggleFolder, showMenu, openOutside, setStatus, focusItem, rootName, moveToBody, modal,
         loadDoc, openPicker, showDoc, renderDocHead, viewContext, markActiveInTree, reloadFolder, retargetTabs, toggleSide,
+        fullPath, copyText, showInTree,
         applyFilter: () => applyFilter(), setShowHidden: (on) => { state.showHidden = on; saveState(); refreshTree(); }
     };
 

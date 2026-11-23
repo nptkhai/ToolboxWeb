@@ -56,6 +56,34 @@ public static class WindowsShell
         Process.Start(new ProcessStartInfo(fullPath) { UseShellExecute = true })?.Dispose();
     }
 
+    /// <summary>
+    /// Whether Windows has a program for this kind of file (an "open" command for its extension),
+    /// so a missing Excel or Word is reported instead of Windows asking "How do you want to open
+    /// this file?" on a screen nobody may be looking at.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static bool HasProgramFor(string fullPath)
+    {
+        var extension = Path.GetExtension(fullPath);
+        if (string.IsNullOrEmpty(extension))
+        {
+            return false;
+        }
+
+        uint length = 0;
+        var result = AssocQueryString(AssocIgnoreUnknown, AssocStrCommand, extension, null, null, ref length);
+        return (result == 0 || result == 1) && length > 1;
+    }
+
+    /// <summary>Windows' "no program is associated" error, raised by ShellExecute.</summary>
+    public const int ErrorNoAssociation = 1155;
+
+    private const uint AssocIgnoreUnknown = 0x400;
+    private const uint AssocStrCommand = 1;
+
+    [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true, EntryPoint = "AssocQueryStringW")]
+    private static extern uint AssocQueryString(uint flags, uint str, string assoc, string? extra, char[]? output, ref uint length);
+
     private static Task<string?> RunSta(Func<string?> work)
     {
         var done = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -109,11 +109,14 @@
             items.push({ label: text['Export.Html'], icon: 'download', run: () => exportHtml(tab) });
         }
         items.push({ label: text['Export.Pdf'], icon: 'printer', run: () => printDoc(tab) });
-        if (config.isDesktop) {
-            items.push('separator');
+        items.push('separator');
+        if (config.canOpenLocal) {
             items.push({ label: text['Info.OpenDefault'], icon: 'external-link', run: () => P.openOutside(tab, false) });
             items.push({ label: text['Menu.Reveal'], icon: 'folder-open', run: () => P.openOutside(tab, true) });
         }
+        items.push({ label: text['Menu.ShowInTree'], icon: 'folder-tree', run: () => P.showInTree(tab) });
+        items.push({ label: text['Menu.CopyPath'], icon: 'clipboard-paste', run: () => P.copyText(P.fullPath(tab.rootId, tab.path)) });
+        items.push({ label: text['Menu.CopyFolderPath'], icon: 'clipboard-paste', run: () => P.copyText(P.fullPath(tab.rootId, P.parentPath(tab.path))) });
         P.showMenu(moreButton, items);
     });
 
@@ -537,6 +540,11 @@ ${article.outerHTML}
         add('add-root', 'Palette.AddRoot', 'folder-tree', () => document.querySelector('.fx-side [data-fx-add-root], [data-fx-welcome] [data-fx-add-root]')?.click());
         add('collapse', 'Palette.Collapse', 'chevrons-down-up', () => document.querySelector('[data-fx-collapse]')?.click());
         add('toggle-tree', 'Palette.ToggleTree', 'panel-left', () => P.toggleSide());
+        add('show-in-tree', 'Palette.ShowInTree', 'folder-tree', () => P.showInTree(P.activeTab()));
+        if (config.canOpenLocal) {
+            add('open-default', 'Palette.OpenDefault', 'external-link', () => { const tab = P.activeTab(); if (tab) P.openOutside(tab, false); });
+            add('reveal', 'Palette.Reveal', 'folder-open', () => { const tab = P.activeTab(); if (tab) P.openOutside(tab, true); });
+        }
         add('hidden', 'Palette.Hidden', 'eye', () => { if (hiddenBox) { hiddenBox.checked = !hiddenBox.checked; hiddenBox.dispatchEvent(new Event('change')); } });
         add('pin', 'Palette.Pin', 'star', () => { const tab = P.activeTab(); if (tab) togglePin(tab); });
         add('toc', 'Palette.Toc', 'list-tree', () => { const tab = P.activeTab(); if (tab?.doc?.kind === 'markdown') toggleToc(tab); });

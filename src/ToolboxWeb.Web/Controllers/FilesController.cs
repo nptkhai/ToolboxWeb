@@ -28,9 +28,11 @@ public class FilesController : Controller
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly FileChangeFeed _changes;
     private readonly FileTrashService _trash;
+    private readonly FilesAccess _access;
 
-    public FilesController(IFileWorkspaceService files, ICurrentUserService currentUser, AppModeInfo mode, IStringLocalizer<SharedResource> localizer, FileChangeFeed changes, FileTrashService trash)
+    public FilesController(IFileWorkspaceService files, ICurrentUserService currentUser, AppModeInfo mode, IStringLocalizer<SharedResource> localizer, FileChangeFeed changes, FileTrashService trash, FilesAccess access)
     {
+        _access = access;
         _changes = changes;
         _trash = trash;
         _files = files;
@@ -48,7 +50,8 @@ public class FilesController : Controller
             StateStorageKey = BrowserStorageKey.ForUser("toolbox.files.state.v1", _currentUser.UserId),
             IsDesktop = _mode.IsDesktop,
             HasWindowsDialog = _mode.IsDesktop && WindowsShell.IsAvailable,
-            UsesToolkitTrash = !_trash.UsesRecycleBin
+            UsesToolkitTrash = !_trash.UsesRecycleBin,
+            CanOpenOnThisMachine = _access.CanOpenOnThisMachine
         });
     }
 

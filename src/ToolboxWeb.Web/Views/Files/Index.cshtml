@@ -20,7 +20,7 @@
         "Doc.Loading", "Doc.LoadFailed", "Doc.Retry", "Doc.ReadOnly", "Doc.View", "Doc.Copied", "Doc.CopyFailed", "Doc.SavedCopy",
         "Doc.Lines", "Doc.Words", "Doc.Chars", "Doc.Modified", "Doc.Size", "Doc.Encoding", "Doc.Plain", "Doc.Bom",
         "Kind.markdown", "Kind.json", "Kind.csv", "Kind.image", "Kind.pdf", "Kind.office", "Kind.text", "Kind.binary", "Kind.folder",
-        "Info.TooLarge", "Info.Binary", "Info.Office", "Info.OpenDefault", "Info.Download", "Info.Opened",
+        "Info.TooLarge", "Info.Binary", "Info.Office", "Info.OpenDefault", "Info.Download", "Info.Opened", "Info.OfficeRemote", "Info.LocalOnly", "Info.OpenWith",
         "Json.Error", "Json.ShowText", "Json.ShowTree", "Json.Items", "Json.Keys", "Csv.Rows", "Csv.Truncated", "Csv.Empty",
         "Image.Size", "Md.CopyCode", "Md.Copied", "Md.MissingLink", "Md.Callout.note", "Md.Callout.tip", "Md.Callout.important",
         "Md.Callout.warning", "Md.Callout.caution", "Keys.Find", "Keys.CloseTab", "Keys.Tree", "Keys.Print",
@@ -39,7 +39,7 @@
         "New.FolderDefault", "New.FolderDone", "Rename.Title", "Rename.Label", "Rename.Done", "Duplicate.Done", "Delete.FileTitle",
         "Delete.FolderTitle", "Delete.MessageRecycle", "Delete.MessageToolkit", "Delete.Unsaved", "Delete.Ok", "Delete.DoneRecycle",
         "Delete.DoneToolkit", "Delete.TabsClosed", "CopyPath.Done", "Menu.Open", "Menu.Rename", "Menu.Duplicate", "Menu.CopyPath",
-        "Menu.Reveal", "Menu.Delete", "Trash.Restore", "Trash.Purge", "Trash.Empty", "Trash.Restored", "Trash.PurgeTitle", "Trash.PurgeMessage",
+        "Menu.Reveal", "Menu.ShowInTree", "Menu.CopyFolderPath", "Menu.Delete", "Trash.Restore", "Trash.Purge", "Trash.Empty", "Trash.Restored", "Trash.PurgeTitle", "Trash.PurgeMessage",
         "Move.Title", "Move.CopyTitle", "Move.Message", "Move.CopyMessage", "Move.Ok", "Move.CopyOk", "Move.Done", "Move.CopyDone",
         "Move.ReplaceTitle", "Move.ReplaceMessage", "Move.ReplaceOk", "Upload.Sending", "Upload.Done", "Upload.Failed", "Upload.ReplaceTitle",
         "Pin.Pin", "Pin.Unpin", "Pin.Added", "Pin.Removed", "Pin.Title", "Recent.Title", "Toc.Toggle", "Toc.Title", "Toc.Empty",
@@ -47,7 +47,7 @@
         "Paste.Failed", "Filter.Showing", "Filter.Hidden", "Search.TooShort", "Search.Summary", "Search.SummaryMore", "Search.None",
         "Palette.Keywords", "Palette.Find", "Palette.Search", "Palette.NewFile", "Palette.NewFolder", "Palette.AddRoot", "Palette.Collapse",
         "Palette.Hidden", "Palette.Pin", "Palette.Toc", "Palette.Export", "Palette.Print", "Palette.Trash", "Keys.Search", "Keys.Palette",
-        "OpenPath.Title", "OpenPath.Message", "OpenPath.Ok", "Palette.ToggleTree"
+        "OpenPath.Title", "OpenPath.Message", "OpenPath.Ok", "Palette.ToggleTree", "Palette.Reveal", "Palette.ShowInTree", "Palette.OpenDefault"
     ];
     var text = keys.Concat(editKeys).ToDictionary(k => k, k => Text("Files." + k));
     text["cancel"] = Text("Action.Cancel");
@@ -74,6 +74,7 @@
         isDesktop = Model.IsDesktop,
         hasWindowsDialog = Model.HasWindowsDialog,
         usesToolkitTrash = Model.UsesToolkitTrash,
+        canOpenLocal = Model.CanOpenOnThisMachine,
         token = Antiforgery.GetAndStoreTokens(Context).RequestToken,
         urls = new
         {
@@ -228,6 +229,10 @@
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-fx-discard hidden><tbx-icon name="undo-2" /><span>@T["Files.Edit.Discard"]</span></button>
                         <button type="button" class="btn btn-sm btn-primary" data-fx-save hidden><tbx-icon name="save" /><span>@T["Files.Edit.Save"]</span></button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-fx-copy><tbx-icon name="copy" /><span>@T["Files.Doc.Copy"]</span></button>
+                        @if (Model.CanOpenOnThisMachine)
+                        {
+                            <button type="button" class="btn btn-sm tbx-icon-button" data-fx-reveal title="@T["Files.Menu.Reveal"]" aria-label="@T["Files.Menu.Reveal"]"><tbx-icon name="folder-open" /></button>
+                        }
                         <button type="button" class="btn btn-sm tbx-icon-button" data-fx-print title="@T["Files.Doc.Print"]" aria-label="@T["Files.Doc.Print"]"><tbx-icon name="printer" /></button>
                         <button type="button" class="btn btn-sm tbx-icon-button" data-fx-more title="@T["Files.Doc.More"]" aria-label="@T["Files.Doc.More"]"><tbx-icon name="ellipsis" /></button>
                         @if (Model.HasWindowsDialog)

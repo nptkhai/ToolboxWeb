@@ -242,15 +242,40 @@
         return { copyText: null, stats: null, print: () => frame.contentWindow?.print() };
     }
 
+    // The program a kind of Office file usually opens in, named on the button ("Open in Excel").
+    // Windows still decides which program really opens it (LibreOffice, WPS…).
+    const OFFICE_PROGRAMS = {
+        xls: 'Excel', xlsx: 'Excel', xlsm: 'Excel', xlsb: 'Excel', ods: 'Excel',
+        doc: 'Word', docx: 'Word', docm: 'Word', odt: 'Word', rtf: 'Word',
+        ppt: 'PowerPoint', pptx: 'PowerPoint', pptm: 'PowerPoint', odp: 'PowerPoint',
+        vsdx: 'Visio', mpp: 'Project', msg: 'Outlook'
+    };
+    const OFFICE_ICONS = { Excel: 'file-spreadsheet', Word: 'file-text' };
+
     function renderInfo(body, doc, ctx) {
         const text = ctx.text;
-        const reason = doc.tooLarge ? text['Info.TooLarge'] : doc.kind === 'office' ? text['Info.Office'] : text['Info.Binary'];
-        const icons = { office: 'file-text', binary: 'file-archive' };
-        const action = ctx.isDesktop
-            ? `<button type="button" class="btn btn-primary" data-fx-open-default>${icon('external-link')}<span>${escapeHtml(text['Info.OpenDefault'])}</span></button>`
-            : `<a class="btn btn-primary" href="${escapeHtml(ctx.rawUrl(doc.path, true))}">${icon('download')}<span>${escapeHtml(text['Info.Download'])}</span></a>`;
-        body.innerHTML = `<div class="tbx-empty fx-info" role="status"><span class="tbx-empty-icon">${icon(icons[doc.kind] || 'file', 20)}</span><p class="tbx-empty-text fx-empty-title">${escapeHtml(doc.name)}</p><p class="tbx-empty-text">${escapeHtml(reason)}</p>${action}</div>`;
-        body.querySelector('[data-fx-open-default]')?.addEventListener('click', () => ctx.openDefault(doc));
+        const extension = (doc.name.split('.').pop() || '').toLowerCase();
+        const program = doc.kind === 'office' ? OFFICE_PROGRAMS[extension] : null;
+        const local = ctx.canOpenLocal;
+        const reason = doc.tooLarge ? text['Info.TooLarge']
+            : doc.kind === 'office' ? text[local ? 'Info.Office' : 'Info.OfficeRemote']
+            : text['Info.Binary'];
+        const download = (primary) => `<a class="btn ${primary ? 'btn-primary' : 'btn-outline-secondary'}" href="${escapeHtml(ctx.rawUrl(doc.path, true))}">${icon('download')}<span>${escapeHtml(text['Info.Download'])}</span></a>`;
+        let actions;
+        if (local) {
+            const openLabel = program ? text['Info.OpenWith'].replace('{0}', program) : text['Info.OpenDefault'];
+            actions = `<button type="button" class="btn btn-primary" data-fx-open-default>${icon('external-link')}<span>${escapeHtml(openLabel)}</span></button>`
+                + `<button type="button" class="btn btn-outline-secondary" data-fx-open-folder>${icon('folder-open')}<span>${escapeHtml(text['Menu.Reveal'])}</span></button>`
+                + (ctx.isDesktop ? '' : download(false));
+        } else {
+            actions = download(true);
+        }
+        // On a visitor's own computer the buttons above open the file; elsewhere say why there is only a download.
+        const note = !local && doc.kind === 'office' ? `<p class="tbx-empty-text fx-info-note">${icon('info', 14)}<span>${escapeHtml(text['Info.LocalOnly'])}</span></p>` : '';
+        const kindIcon = (program && OFFICE_ICONS[program]) || (doc.kind === 'binary' ? 'file-archive' : doc.kind === 'office' ? 'file-text' : 'file');
+        body.innerHTML = `<div class="tbx-empty fx-info" role="status"><span class="tbx-empty-icon">${icon(kindIcon, 20)}</span><p class="tbx-empty-text fx-empty-title">${escapeHtml(doc.name)}</p><p class="tbx-empty-text">${escapeHtml(reason)}</p><div class="fx-info-actions">${actions}</div>${note}</div>`;
+        body.querySelector('[data-fx-open-default]')?.addEventListener('click', () => ctx.openDefault());
+        body.querySelector('[data-fx-open-folder]')?.addEventListener('click', () => ctx.reveal());
         return { copyText: null, stats: null };
     }
 
