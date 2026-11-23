@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Options;
@@ -16,12 +17,40 @@ public sealed class FilesAccess
     private readonly AppModeInfo _mode;
     private readonly IOptionsMonitor<FilesOptions> _options;
     private readonly ICurrentUserService _currentUser;
+    private readonly IHttpContextAccessor _http;
 
-    public FilesAccess(AppModeInfo mode, IOptionsMonitor<FilesOptions> options, ICurrentUserService currentUser)
+    public FilesAccess(AppModeInfo mode, IOptionsMonitor<FilesOptions> options, ICurrentUserService currentUser, IHttpContextAccessor http)
     {
         _mode = mode;
         _options = options;
         _currentUser = currentUser;
+        _http = http;
+    }
+
+    /// <summary>
+    /// "Open with the default program" and "Open the containing folder" start a program on the
+    /// machine that runs Toolkit, so they are offered only when that machine is the visitor's own:
+    /// the desktop copy, or the IIS / Visual Studio copy reached from the same Windows machine
+    /// (a loopback address) while it runs in a signed-in Windows session. An IIS application pool
+    /// runs as a service (no session), and a visitor from another computer would see nothing open.
+    /// </summary>
+    public bool CanOpenOnThisMachine
+    {
+        get
+        {
+            if (!IsAllowed || !WindowsShell.IsAvailable)
+            {
+                return false;
+            }
+
+            if (_mode.IsDesktop)
+            {
+                return true;
+            }
+
+            var remote = _http.HttpContext?.Connection.RemoteIpAddress;
+            return Environment.UserInteractive && remote is not null && IPAddress.IsLoopback(remote);
+        }
     }
 
     public bool IsAllowed

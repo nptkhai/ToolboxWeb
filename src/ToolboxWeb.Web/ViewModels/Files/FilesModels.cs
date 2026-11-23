@@ -117,4 +117,7 @@ public sealed class FilesPageViewModel
 
     /// <summary>Deleted files go to Toolkit's trash (IIS site, non-Windows desktop) instead of the Windows Recycle Bin.</summary>
     public bool UsesToolkitTrash { get; init; }
+
+    /// <summary>"Open with the default program" and "Open the containing folder" work here (<see cref="Infrastructure.Files.FilesAccess.CanOpenOnThisMachine"/>).</summary>
+    public bool CanOpenOnThisMachine { get; init; }
 }

@@ -989,7 +989,28 @@
 
 .fx-info {
     padding-top: var(--space-6);
+    text-align: center;
 }
+
+.fx-info-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+}
+
+.fx-info .tbx-empty-text.fx-info-note {
+    align-items: flex-start;
+    display: inline-flex;
+    font-size: var(--text-sm);
+    gap: var(--space-1);
+    text-align: left;
+}
+
+    .fx-info-note svg {
+        flex: none;
+        margin-top: 3px;
+    }
 
 /* ------------------------------------------------------------------ folder picker */
 

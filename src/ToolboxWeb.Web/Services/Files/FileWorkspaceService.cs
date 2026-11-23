@@ -1202,24 +1202,38 @@ public sealed class FileWorkspaceService : IFileWorkspaceService
             throw Error("notFound", "Files.Error.FileMissing");
         }
 
-        if (!_mode.IsDesktop)
+        if (!_access.CanOpenOnThisMachine || !OperatingSystem.IsWindows())
         {
-            throw Error("unsupported", "Files.Error.DesktopOnly");
-        }
-
-        if (!OperatingSystem.IsWindows())
-        {
-            throw Error("unsupported", "Files.Error.DesktopOnly");
+            throw Error("unsupported", "Files.Error.NotThisMachine");
         }
 
         if (reveal)
         {
             WindowsShell.RevealInExplorer(full);
+            return;
         }
-        else
+
+        var isFile = File.Exists(full);
+        if (isFile && !WindowsShell.HasProgramFor(full))
+        {
+            throw NoProgram(full);
+        }
+
+        try
         {
             WindowsShell.OpenWithDefaultProgram(full);
         }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == WindowsShell.ErrorNoAssociation)
+        {
+            throw NoProgram(full);
+        }
+    }
+
+    private FileOperationException NoProgram(string full)
+    {
+        var extension = Path.GetExtension(full);
+        return new FileOperationException("noProgram",
+            _localizer["Files.Error.NoProgram", string.IsNullOrEmpty(extension) ? Path.GetFileName(full) : extension].Value);
     }
 
     /// <summary>0 = same name, 1 = starts with, 2 = contains, 3 = letters in order; -1 = no match.</summary>
