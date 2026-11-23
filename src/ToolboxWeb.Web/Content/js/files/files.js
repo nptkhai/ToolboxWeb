@@ -844,12 +844,28 @@
         }
     });
 
-    els.tabs.addEventListener('auxclick', (event) => {
+    // Middle click closes a tab. The press is cancelled first: on Windows, Edge and Chrome start
+    // auto-scrolling on a middle press over a scrollable page and then send no auxclick.
+    let middlePressed = null;
+    els.tabs.addEventListener('mousedown', (event) => {
+        if (event.button !== 1) return;
         const holder = event.target.closest('.fx-tab');
-        if (holder && event.button === 1) {
+        middlePressed = holder ? holder.dataset.key : null;
+        if (holder) event.preventDefault();
+    });
+    els.tabs.addEventListener('mouseup', (event) => {
+        if (event.button !== 1) return;
+        const holder = event.target.closest('.fx-tab');
+        const key = middlePressed;
+        middlePressed = null;
+        if (holder && holder.dataset.key === key) {
             event.preventDefault();
-            closeTab(holder.dataset.key);
+            closeTab(key);
         }
+    });
+    // Linux browsers paste the selection on a middle click; nothing to open here either.
+    els.tabs.addEventListener('auxclick', (event) => {
+        if (event.button === 1 && event.target.closest('.fx-tab')) event.preventDefault();
     });
 
     els.tabs.addEventListener('keydown', (event) => {
@@ -992,34 +1008,42 @@
     }
 
     /**
-     * The path to show or copy: the full path on the machine when the page runs on it (desktop,
-     * or the site opened through localhost), otherwise "root name/relative path" so the server's
-     * folders are not spelled out to a visitor on another computer.
+     * The path to copy: always the full path on the machine that runs Toolkit (D:\Docs\a.md), so it
+     * can be pasted into Explorer there (owner decision 2026-11-23; the people who see this screen
+     * are the ones listed in Files:AllowedUsers / AllowedJiraUsers). "root name/relative path" only
+     * when the root's path is unknown.
      */
     function fullPath(rootId, path) {
         const root = state.roots.find((r) => r.id === rootId);
         if (!root) return path || '';
-        if (!config.canOpenLocal || !root.path) return path ? `${root.name}/${path}` : root.name;
+        if (!root.path) return path ? `${root.name}/${path}` : root.name;
         const separator = root.path.includes('\\') ? '\\' : '/';
         return path ? root.path.replace(/[\\/]+$/, '') + separator + path.split('/').join(separator) : root.path;
     }
 
     /**
-     * Copies a path. navigator.clipboard exists only on https and localhost, so a site opened by
-     * http://server-name falls back to a hidden text box and the browser's copy command.
+     * Puts text on the clipboard; resolves true when it worked. navigator.clipboard exists only on
+     * https and localhost, so a site opened by http://server-name falls back to a hidden text box
+     * and the browser's copy command. Shared by every copy button of the page (NS.copyPlain).
      */
-    async function copyText(value) {
+    async function copyPlain(value) {
         try {
             if (navigator.clipboard?.writeText) {
                 await navigator.clipboard.writeText(value);
-            } else if (!copyWithTextBox(value)) {
-                throw new Error('copy');
+                return true;
             }
-            notify(text['CopyPath.Done'], 'success');
         } catch (error) {
-            if (copyWithTextBox(value)) notify(text['CopyPath.Done'], 'success');
-            else notify(text['Doc.CopyFailed'], 'error');
+            // Refused (no permission, page not focused): try the text box below.
         }
+        return copyWithTextBox(value);
+    }
+
+    NS.copyPlain = copyPlain;
+
+    /** Copies a path and says so. */
+    async function copyText(value) {
+        if (await copyPlain(value)) notify(text['CopyPath.Done'], 'success');
+        else notify(text['Doc.CopyFailed'], 'error');
     }
 
     function copyWithTextBox(value) {
@@ -1130,10 +1154,7 @@
         const tab = activeTab();
         const value = NS.currentText ? NS.currentText(tab) : tab?.doc?.text;
         if (typeof value !== 'string') return;
-        const copied = navigator.clipboard?.writeText ? navigator.clipboard.writeText(value) : Promise.reject(new Error('copy'));
-        copied.catch(() => {
-            if (!copyWithTextBox(value)) throw new Error('copy');
-        }).then(() => notify(text['Doc.Copied'], 'success')).catch(() => notify(text['Doc.CopyFailed'], 'error'));
+        copyPlain(value).then((done) => notify(text[done ? 'Doc.Copied' : 'Doc.CopyFailed'], done ? 'success' : 'error'));
     });
 
     function printDoc() {
