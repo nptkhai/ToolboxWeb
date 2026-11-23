@@ -436,7 +436,7 @@
 
     function applyChange(change) {
         if (change.all) {
-            P.refreshTree();
+            P.reloadOpenFolders(change.root);
             return;
         }
         const key = P.keyOf(change.root, change.folder || '');
