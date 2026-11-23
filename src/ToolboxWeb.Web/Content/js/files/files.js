@@ -1261,7 +1261,19 @@
         els.find.value = '';
         findItems = [];
         renderFind();
-        openFile(item.rootId, item.path);
+        if (item.kind === 'folder') showFolderInTree(item.rootId, item.path);
+        else openFile(item.rootId, item.path);
+    }
+
+    /** A folder found by name: open the folders down to it, expand it and move the keyboard there. */
+    async function showFolderInTree(rootId, path) {
+        setSideOpen(true);
+        await reveal(rootId, `${path}/x`);
+        const node = state.nodes.get(keyOf(rootId, path));
+        if (!node) return;
+        if (!node.expanded) await toggleFolder(node, true);
+        node.el?.scrollIntoView({ block: 'center' });
+        focusItem(node.el);
     }
 
     els.find.addEventListener('focus', () => {
