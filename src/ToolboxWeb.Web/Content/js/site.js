@@ -1092,6 +1092,16 @@
         Toolbox.go = function (href) { window.location.href = href; };
     }
 
+    // A page that must be the whole window (sign-in after the session ended): from a kept
+    // screen it replaces the shell, not just the screen.
+    Toolbox.goTop = function (href) {
+        try {
+            window.top.location.href = href;
+        } catch (error) {
+            window.location.href = href;
+        }
+    };
+
     // Timers that poll the server ask this first: false while the tab is in the background, and
     // while this page is a kept screen hidden behind another one (screen-frame.js replaces it).
     if (!Toolbox.isScreenVisible) {

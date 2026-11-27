@@ -622,8 +622,82 @@
         active: () => active,
         list: () => screens.slice(),
         close: (target) => close(typeof target === 'string' ? screens.find((s) => s.id === target) : target),
-        screenOfWindow
+        screenOfWindow,
+        text,
+        /** Next (+1) or previous (-1) screen of the strip, round. */
+        step(delta) {
+            if (!screens.length) return;
+            const at = active ? screens.indexOf(active) : -1;
+            show(screens[(at + delta + screens.length) % screens.length], { history: 'push', focus: true });
+        },
+        /** The Nth screen of the strip (1-based); 9 is the last one, like browsers. */
+        nth(n) {
+            const screen = n >= 9 ? screens[screens.length - 1] : screens[n - 1];
+            if (screen) show(screen, { history: 'push', focus: true });
+        },
+        closeActive: () => close(active),
+        /** A screen opened or closed a dialog: the shell around it dims too. */
+        setDialog(win, open) {
+            const screen = screenOfWindow(win);
+            if (!screen) return;
+            screen.dialog = open;
+            syncDim();
+        }
     };
+
+    // ------------------------------------------------------------------ dialogs of a screen
+
+    // While the screen on show has a dialog open, the sidebar, the header and the strip are
+    // dimmed and locked like the screen itself, so the dialog reads as the window's. A click on
+    // the dimmed part closes the dialog when the dialog itself allows that.
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop fade tbx-screen-backdrop';
+    backdrop.hidden = true;
+    (document.querySelector('[data-shell]') || document.body).appendChild(backdrop);
+
+    function syncDim() {
+        const on = Boolean(active && active.dialog);
+        document.documentElement.classList.toggle('tbx-screen-dimmed', on);
+        backdrop.hidden = !on;
+        window.requestAnimationFrame(() => backdrop.classList.toggle('show', on));
+    }
+
+    backdrop.addEventListener('click', () => {
+        const win = active && frameWindow(active);
+        try {
+            const modal = win?.document.querySelector('.modal.show');
+            if (modal && modal.dataset.bsBackdrop !== 'static') win.bootstrap?.Modal.getInstance(modal)?.hide();
+        } catch (error) { /* gone */ }
+    });
+
+    // ------------------------------------------------------------------ keys
+
+    // The help (?) lists the shortcuts of the screen on show (it shows it inside the screen).
+    Toolbox.helpFor = () => {
+        const tb = frameToolbox(active);
+        if (!tb || !tb.keys) return false;
+        try {
+            tb.keys.showHelp();
+            active.frame.contentWindow.focus();
+            return true;
+        } catch (error) {
+            return false;
+        }
+    };
+
+    if (Toolbox.keys) {
+        Toolbox.keys.add({ keys: 'alt+pagedown', group: 'app', label: text.KeyNext, inInputs: true, run: () => Toolbox.screens.step(1) });
+        Toolbox.keys.add({ keys: 'alt+pageup', group: 'app', label: text.KeyPrevious, inInputs: true, run: () => Toolbox.screens.step(-1) });
+        Toolbox.keys.add({
+            keys: ['alt+1', 'alt+2', 'alt+3', 'alt+4', 'alt+5', 'alt+6', 'alt+7', 'alt+8', 'alt+9'],
+            display: [Toolbox.keys.display('alt+1') + '…9'],
+            group: 'app',
+            label: text.KeyNth,
+            inInputs: true,
+            run: (event) => Toolbox.screens.nth(Number(event.key))
+        });
+        Toolbox.keys.add({ keys: 'alt+shift+w', group: 'app', label: text.KeyClose, inInputs: true, run: () => Toolbox.screens.closeActive() });
+    }
 
     // The shell's own commands.
     if (Toolbox.palette && Toolbox.palette.add) {

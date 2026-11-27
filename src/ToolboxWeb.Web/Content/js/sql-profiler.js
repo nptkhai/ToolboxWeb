@@ -36,6 +36,8 @@
         paused: false,
         panelOpen: false
     };
+    // A kept screen that is capturing asks before it is closed (screens.js).
+    window.Toolbox?.pendingChanges?.add(() => (state.running ? 1 : 0));
 
     // ------------------------------------------------------------ utilities
 

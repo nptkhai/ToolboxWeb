@@ -52,6 +52,65 @@
         run: function () { shell.Toolbox.palette?.open(); }
     });
 
+    // Moving between screens works with the keyboard inside a screen too (and shows in its "?").
+    const screenText = screens.text || {};
+    if (Toolbox.keys) {
+        Toolbox.keys.add({ keys: 'alt+pagedown', group: 'app', label: screenText.KeyNext, inInputs: true, run: function () { screens.step(1); } });
+        Toolbox.keys.add({ keys: 'alt+pageup', group: 'app', label: screenText.KeyPrevious, inInputs: true, run: function () { screens.step(-1); } });
+        Toolbox.keys.add({
+            keys: ['alt+1', 'alt+2', 'alt+3', 'alt+4', 'alt+5', 'alt+6', 'alt+7', 'alt+8', 'alt+9'],
+            display: [Toolbox.keys.display('alt+1') + '…9'],
+            group: 'app',
+            label: screenText.KeyNth,
+            inInputs: true,
+            run: function (event) { screens.nth(Number(event.key)); }
+        });
+        Toolbox.keys.add({ keys: 'alt+shift+w', group: 'app', label: screenText.KeyClose, inInputs: true, run: function () { screens.closeActive(); } });
+    }
+
+    // A dialog of this screen: the shell dims around it (screens.js).
+    function syncDialog() {
+        try { screens.setDialog(window, Boolean(document.querySelector('.modal.show'))); } catch (error) { /* shell gone */ }
+    }
+    document.addEventListener('shown.bs.modal', syncDialog);
+    document.addEventListener('hidden.bs.modal', syncDialog);
+    disposers.push(function () {
+        try { screens.setDialog(window, false); } catch (error) { /* shell gone */ }
+    });
+
+    // A form someone started filling in counts as unsaved work until it is sent, reset, or its
+    // dialog is closed (closing the dialog throws the typing away, as it always did). Search and
+    // filter forms (GET) and forms marked data-no-unsaved do not count.
+    const typedForms = new Set();
+    function formOf(target) {
+        const form = target && (target.form || (target.closest && target.closest('form')));
+        if (!form || form.hasAttribute('data-no-unsaved') || (form.method || 'get').toLowerCase() !== 'post') return null;
+        if (target.type === 'search' || target.type === 'hidden') return null;
+        return form;
+    }
+    function typed(event) {
+        if (!event.isTrusted) return;
+        const form = formOf(event.target);
+        if (form) typedForms.add(form);
+    }
+    document.addEventListener('input', typed, true);
+    document.addEventListener('change', typed, true);
+    document.addEventListener('submit', function (event) { typedForms.delete(event.target); }, true);
+    document.addEventListener('reset', function (event) { typedForms.delete(event.target); }, true);
+    document.addEventListener('hidden.bs.modal', function (event) {
+        typedForms.forEach(function (form) {
+            if (event.target.contains(form)) typedForms.delete(form);
+        });
+    });
+    Toolbox.pendingChanges?.add(function () {
+        let count = 0;
+        typedForms.forEach(function (form) {
+            if (form.isConnected) count++;
+            else typedForms.delete(form);
+        });
+        return count;
+    });
+
     // One focus timer for the whole app: the shell's. A page that follows it (the timer page)
     // stops following when this screen closes or moves on.
     if (shell.ToolboxFocus) {
