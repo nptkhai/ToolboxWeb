@@ -556,6 +556,8 @@
     // ------------------------------------------------------------------ hooks into files.js
 
     NS.isDirty = isDirty;
+    // A kept screen with unsaved files asks before it is closed (screens.js).
+    window.Toolbox?.pendingChanges?.add(() => P.state.tabs.filter((tab) => isDirty(tab)).length);
     NS.currentText = currentText;
 
     NS.onDeactivate = (tab) => {
@@ -940,7 +942,7 @@
     }
 
     function checkOpenTabs() {
-        if (document.visibilityState !== 'visible') return;
+        if (!window.Toolbox.isScreenVisible()) return;
         const active = P.activeTab();
         if (active?.pendingConflict) {
             active.pendingConflict = false;

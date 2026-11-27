@@ -21,7 +21,9 @@
 
     const chip = document.querySelector('[data-focus-chip]');
     const listeners = new Set();
-    const baseTitle = document.title;
+    // The time is put in front of the window title; the rest is read each time, since the screen
+    // shell (screens.js) changes the title when another screen shows.
+    const TITLE_PREFIX = /^\d{2,}:\d{2} · /;
     let tickTimer = null;
 
     function read(key) {
@@ -432,7 +434,9 @@
             chip.querySelector('[data-focus-chip-phase]').textContent =
                 s.phase === 'focus' ? chip.dataset.textFocus : s.phase === 'long' ? chip.dataset.textLong : chip.dataset.textShort;
         }
-        document.title = s.status === 'running' ? clock(left) + ' · ' + baseTitle : baseTitle;
+        const baseTitle = document.title.replace(TITLE_PREFIX, '');
+        const title = s.status === 'running' ? clock(left) + ' · ' + baseTitle : baseTitle;
+        if (document.title !== title) document.title = title;
     }
 
     function tick() {

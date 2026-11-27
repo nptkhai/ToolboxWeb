@@ -1,0 +1,69 @@
+@using System.Text.Json
+@using ToolboxWeb.Web.Infrastructure.Web
+@using ToolboxWeb.Web.Services
+@inject ICurrentUserService CurrentUser
+@*
+    The screen shell (Infrastructure/Web/ScreenFrames.cs): the layout draws the sidebar and the
+    header around it; this is the strip of open screens and the frames that hold them.
+    Behavior: Content/js/screens.js. Each screen runs Content/js/screen-frame.js inside its frame.
+*@
+@{
+    ViewData["ContentAreaClass"] = "content-area--screens";
+    string[] keys =
+    [
+        "TabsLabel", "Close", "CloseOthers", "CloseAll", "Reload", "Menu", "Loading", "LimitTitle", "LimitMessage", "LimitOk",
+        "LimitNeed", "Unsaved", "UnsavedTitle", "UnsavedMessage", "UnsavedOk", "PaletteCloseOthers", "PaletteCloseAll", "PaletteReload"
+    ];
+    var config = new
+    {
+        stateKey = BrowserStorageKey.ForUser("toolbox.screens.v1", CurrentUser.UserId),
+        keepAliveCookie = ScreenFrames.KeepAliveCookie,
+        appName = T["App.Name"].Value,
+        text = keys.ToDictionary(k => k, k => T["Screens." + k].Value)
+    };
+}
+<div class="tbx-screens" data-screens>
+    <div class="tbx-screen-strip">
+        <div class="tbx-screen-tabs" role="tablist" aria-label="@T["Screens.TabsLabel"]" data-screen-tabs></div>
+    </div>
+    <div class="tbx-screen-host" data-screen-host>
+        <div class="tbx-empty tbx-screen-empty" data-screen-empty hidden>
+            <span class="tbx-empty-icon"><tbx-icon name="panel-left" /></span>
+            <p class="tbx-empty-text">@T["Screens.Empty"]</p>
+        </div>
+    </div>
+</div>
+
+@* Opening one more screen than the chosen maximum: the person picks which ones to close. *@
+<div class="modal fade" id="tbx-screen-limit" tabindex="-1" aria-labelledby="tbx-screen-limit-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="tbx-screen-limit-title" data-screen-limit-title></h2>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="@T["Action.Cancel"]"></button>
+            </div>
+            <div class="modal-body">
+                <p data-screen-limit-message></p>
+                <fieldset>
+                    <legend class="visually-hidden">@T["Screens.TabsLabel"]</legend>
+                    <ul class="tbx-screen-limit-list" data-screen-limit-list></ul>
+                </fieldset>
+                <p class="tbx-field-hint mb-0" data-screen-limit-need aria-live="polite"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">@T["Action.Cancel"]</button>
+                <button class="btn btn-primary" type="button" data-screen-limit-ok disabled>@T["Screens.LimitOk"]</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="tbx-screens-config" type="application/json">@Html.Raw(JsonSerializer.Serialize(config))</script>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/screens.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/screens.js" asp-append-version="true"></script>
+}

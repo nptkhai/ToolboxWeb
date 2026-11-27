@@ -96,6 +96,8 @@ module.exports = async (config) => {
     // The web copy has no local accounts (App__Mode=Web): only the Jira sign-in is prepared.
     if (!WEB_MODE) {
       const local = await browser.newContext({ locale: 'vi-VN' });
+      // Sample data is entered on plain pages, not inside the kept-screens shell.
+      await local.addCookies([{ name: 'toolbox.keepAlive', value: 'off', url: baseURL }]);
       const page = await local.newPage();
       if (!(await signInLocal(page, baseURL)) && !(await register(page, baseURL))) {
         throw new Error(`Could not sign in or register ${EMAIL} at ${baseURL}. Is the app running?`);
@@ -109,6 +111,7 @@ module.exports = async (config) => {
 
     if (INCLUDE_JIRA) {
       const jira = await browser.newContext({ locale: 'vi-VN' });
+      await jira.addCookies([{ name: 'toolbox.keepAlive', value: 'off', url: baseURL }]);
       await signInJira(await jira.newPage(), baseURL);
       await jira.storageState({ path: JIRA_STATE });
     }

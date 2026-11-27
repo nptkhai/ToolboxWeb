@@ -3679,3 +3679,23 @@ body:has(.jira-unsaved-bar:not([hidden])) .jira-shell {
     margin: 0;
     padding: var(--space-1) var(--space-3) var(--space-2);
 }
+
+/* ------------------------------------------------------------------ kept screens
+   A screen inside the shell's frame (Infrastructure/Web/ScreenFrames.cs): no sidebar or header,
+   so pages that subtract the header height from the window fill the frame; the frame lets the
+   shell's background show through, like the content area does on a plain page. */
+html[data-embedded] {
+    --header-height: 0px;
+}
+
+    html[data-embedded] body {
+        background: transparent;
+    }
+
+    html[data-embedded] .app-shell {
+        min-height: 100vh;
+    }
+
+.account-max-screens .form-control {
+    max-width: 160px;
+}

@@ -448,7 +448,7 @@
     }
 
     async function poll() {
-        if (polling || document.visibilityState !== 'visible' || !state.roots.some((r) => r.available)) return;
+        if (polling || !window.Toolbox.isScreenVisible() || !state.roots.some((r) => r.available)) return;
         polling = true;
         try {
             const answer = await P.request(urls.changes, null, { since: cursor });

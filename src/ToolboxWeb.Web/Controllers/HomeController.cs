@@ -36,6 +36,7 @@ public class HomeController : Controller
     [HttpGet("/" + ToolboxRouteSlugs.Pages.Error)]
     [HttpGet("/" + ToolboxRouteSlugs.HtmlPages.Error, Name = ToolboxRouteSlugs.RouteNames.ErrorHtml)]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    [ToolboxWeb.Web.Infrastructure.Web.NoScreenShell]
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });

@@ -48,6 +48,7 @@ public class CodePlaygroundController : Controller
 
     /// <summary>"Open in a new tab": an empty sandboxed frame that receives the page from the playground tab.</summary>
     [HttpGet("/" + ToolboxRouteSlugs.Pages.CodePlaygroundRun, Name = ToolboxRouteSlugs.RouteNames.CodePlaygroundRun)]
+    [ToolboxWeb.Web.Infrastructure.Web.NoScreenShell]
     public IActionResult Run()
     {
         return View();

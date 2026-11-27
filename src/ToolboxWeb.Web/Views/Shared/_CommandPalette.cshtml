@@ -40,6 +40,12 @@
         commands.Add(new { Id = "lang-en", Label = T["Palette.Cmd.LanguageEn"].Value, Icon = "languages", Action = "culture:en-US", Keywords = T["Palette.Kw.Language"].Value });
     }
     commands.Add(new { Id = "shortcuts", Label = T["Palette.Cmd.Shortcuts"].Value, Icon = "keyboard", Action = "shortcuts", Keywords = T["Palette.Kw.Shortcuts"].Value });
+    // Kept screens (Infrastructure/Web/ScreenFrames.cs) on or off for this browser; the page reloads to apply it.
+    if (ToolboxWeb.Web.Infrastructure.Web.ScreenFrames.IsOffered(Context))
+    {
+        var keepScreens = ToolboxWeb.Web.Infrastructure.Web.ScreenFrames.IsEnabled(Context);
+        commands.Add(new { Id = "screens-toggle", Label = T[keepScreens ? "Screens.PaletteOff" : "Screens.PaletteOn"].Value, Icon = "rows-2", Action = keepScreens ? "screens:off" : "screens:on", Keywords = T["Screens.TabsLabel"].Value });
+    }
     if (AppMode.IsDesktop)
     {
         var settingsHref = Url.RouteUrl(ToolboxWeb.Web.Constants.ToolboxRouteSlugs.RouteNames.SettingsHtml) ?? "/settings.html";

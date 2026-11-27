@@ -71,6 +71,8 @@ npx playwright install chromium
 
 ## Ghi chú
 
+- Mỗi trang được kiểm tra ở dạng **trang thường**: bộ kiểm tra đặt cookie `toolbox.keepAlive=off` (tắt giữ màn hình). Riêng mục `screens` bật nó lên và chụp khung giữ màn hình (menu, thanh trên, thanh tab) quanh trang Ghi chú; app phải chạy với `App__KeepScreens` để mặc định (bật).
+
 - Giờ của trình duyệt được cố định lúc 10:00 của ngày chạy, để hình nền thay đổi theo giờ không làm lệch ảnh chụp. Đồng hồ và thời tiết trên topbar được che khi chụp.
 - Dữ liệu Jira giả và dữ liệu mẫu tính theo ngày hiện tại, nên ảnh mốc tạo hôm trước có thể lệch phần ngày tháng khi chạy hôm sau. Nếu chỉ lệch ngày, chạy lại `npm run baseline`.
 - Trang `access-denied` là trang Jira mở bằng tài khoản thường, dùng để kiểm tra trang báo không có quyền.

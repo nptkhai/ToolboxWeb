@@ -989,7 +989,8 @@
     'use strict';
 
     const meta = document.querySelector('meta[name="toolkit-build"]');
-    if (!meta) {
+    // A screen inside the shell's frame: the shell registers the service worker and checks for a new version.
+    if (!meta || window.top !== window) {
         return;
     }
     const build = meta.content;
@@ -1071,6 +1072,84 @@
         later.addEventListener('click', function () {
             try { localStorage.setItem(key, version); } catch (e) { }
             notice.hidden = true;
+        });
+    }
+})();
+
+// Moving to another page, and kept screens (Infrastructure/Web/ScreenFrames.cs).
+// Toolbox.go(href) is how the sidebar, the palette and "G then letter" move to a page: a plain
+// navigation here, a switch of screens in the shell (screens.js) or from a screen inside it
+// (screen-frame.js), which replace it. Toolbox.setKeepScreens(on) turns kept screens on or off for
+// this browser (a cookie the server reads) and reloads the window to apply it.
+(function () {
+    'use strict';
+
+    const Toolbox = window.Toolbox = window.Toolbox || {};
+    const COOKIE = 'toolbox.keepAlive';
+    const MAX_KEY = 'toolbox.screens.max';
+
+    if (!Toolbox.go) {
+        Toolbox.go = function (href) { window.location.href = href; };
+    }
+
+    // Timers that poll the server ask this first: false while the tab is in the background, and
+    // while this page is a kept screen hidden behind another one (screen-frame.js replaces it).
+    if (!Toolbox.isScreenVisible) {
+        Toolbox.isScreenVisible = function () { return document.visibilityState === 'visible'; };
+    }
+
+    // Unsaved work a page reports (count of things that would be lost): a kept screen asks before
+    // it is closed (screens.js). Toolbox.pendingChanges.add(fn) returns a function that removes it.
+    if (!Toolbox.pendingChanges) {
+        const sources = [];
+        Toolbox.pendingChanges = {
+            add: function (fn) {
+                sources.push(fn);
+                return function () { const at = sources.indexOf(fn); if (at >= 0) sources.splice(at, 1); };
+            },
+            count: function () {
+                return sources.reduce(function (sum, fn) {
+                    try { return sum + (Number(fn()) || 0); } catch (e) { return sum; }
+                }, 0);
+            }
+        };
+    }
+
+    Toolbox.keepScreens = function () {
+        return !/(?:^|;\s*)toolbox\.keepAlive=off(?:;|$)/.test(document.cookie);
+    };
+
+    Toolbox.setKeepScreens = function (on) {
+        document.cookie = COOKIE + '=' + (on ? 'on' : 'off') + '; path=/; max-age=31536000; samesite=lax';
+        window.top.location.reload();
+    };
+
+    /** The most screens kept at once, or 0 for no limit. */
+    Toolbox.maxScreens = function () {
+        let value = 0;
+        try { value = parseInt(localStorage.getItem(MAX_KEY) || '0', 10); } catch (e) { }
+        return Number.isFinite(value) && value > 0 ? value : 0;
+    };
+
+    // Account page > Display: the switch and the maximum (both per browser).
+    const keep = document.querySelector('[data-keep-screens]');
+    if (keep) {
+        keep.checked = Toolbox.keepScreens();
+        keep.addEventListener('change', function () {
+            document.cookie = COOKIE + '=' + (keep.checked ? 'on' : 'off') + '; path=/; max-age=31536000; samesite=lax';
+        });
+    }
+    const max = document.querySelector('[data-max-screens]');
+    if (max) {
+        const current = Toolbox.maxScreens();
+        max.value = current ? String(current) : '';
+        max.addEventListener('change', function () {
+            const value = parseInt(max.value, 10);
+            try {
+                if (Number.isFinite(value) && value > 0) localStorage.setItem(MAX_KEY, String(Math.min(50, value)));
+                else localStorage.removeItem(MAX_KEY);
+            } catch (e) { }
+            max.value = Toolbox.maxScreens() ? String(Toolbox.maxScreens()) : '';
         });
     }
 })();

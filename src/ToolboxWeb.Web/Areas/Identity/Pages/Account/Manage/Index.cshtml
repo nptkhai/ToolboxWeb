@@ -44,6 +44,20 @@
         <label class="form-check-label" for="display-background">@T["Profile.Display.Background"]</label>
         <div class="tbx-field-hint" id="display-background-hint">@T["Profile.Display.BackgroundHint"]</div>
     </div>
+    @* Kept screens (Infrastructure/Web/ScreenFrames.cs, Content/js/screens.js), per browser: site.js wires both. *@
+    @if (ToolboxWeb.Web.Infrastructure.Web.ScreenFrames.IsOffered(HttpContext))
+    {
+    <div class="form-check form-switch mt-3">
+        <input class="form-check-input" type="checkbox" role="switch" id="display-keep-screens" data-keep-screens aria-describedby="display-keep-screens-hint" />
+        <label class="form-check-label" for="display-keep-screens">@T["Profile.Display.KeepScreens"]</label>
+        <div class="tbx-field-hint" id="display-keep-screens-hint">@T["Profile.Display.KeepScreensHint"]</div>
+    </div>
+    <div class="tbx-field mt-3 account-max-screens">
+        <label class="form-label" for="display-max-screens">@T["Profile.Display.MaxScreens"]</label>
+        <input class="form-control" type="number" id="display-max-screens" min="1" max="50" step="1" inputmode="numeric" data-max-screens aria-describedby="display-max-screens-hint" />
+        <div class="tbx-field-hint" id="display-max-screens-hint">@T["Profile.Display.MaxScreensHint"]</div>
+    </div>
+    }
 </section>
 
 @section Scripts {

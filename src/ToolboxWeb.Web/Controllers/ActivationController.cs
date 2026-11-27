@@ -17,6 +17,7 @@ namespace ToolboxWeb.Web.Controllers;
 [NotInWebMode]
 [Authorize]
 [AllowWhenUnlicensed]
+[ToolboxWeb.Web.Infrastructure.Web.NoScreenShell]
 public class ActivationController : Controller
 {
     private readonly AppModeInfo _mode;

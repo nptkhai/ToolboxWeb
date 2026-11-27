@@ -31,6 +31,12 @@ self.addEventListener('activate', function (event) {
         const names = await caches.keys();
         await Promise.all(names.filter(function (name) { return name.startsWith(PREFIX) && name !== CACHE; })
             .map(function (name) { return caches.delete(name); }));
+        // The browser fetches pages itself (navigation preload), so the server still sees whether a
+        // page is the window's own document or a frame of the screen shell (Sec-Fetch-Dest);
+        // a page fetched again from here would lose that (Infrastructure/Web/ScreenFrames.cs).
+        if (self.registration.navigationPreload) {
+            await self.registration.navigationPreload.enable();
+        }
         await self.clients.claim();
     })());
 });
@@ -56,9 +62,14 @@ self.addEventListener('fetch', function (event) {
 
     if (request.mode === 'navigate') {
         // Pages always come from the network; the offline page only when there is none.
-        event.respondWith(fetch(request).catch(function () {
-            return caches.match(OFFLINE);
-        }));
+        event.respondWith((async function () {
+            try {
+                const preloaded = await event.preloadResponse;
+                return preloaded || await fetch(request);
+            } catch (error) {
+                return (await caches.match(OFFLINE)) || Response.error();
+            }
+        })());
         return;
     }
 

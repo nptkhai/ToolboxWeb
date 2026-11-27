@@ -252,7 +252,7 @@
                 keys: 'g ' + pageItem.go,
                 group: 'go',
                 label: pageItem.label,
-                run: function () { window.location.href = pageItem.href; }
+                run: function () { Toolbox.go(pageItem.href); }
             });
         }
     });
