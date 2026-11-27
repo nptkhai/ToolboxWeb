@@ -35,9 +35,17 @@
     var updateBlocked = license?.UpdateRequired == true && DesktopUpdates.IsInstalled;
     var showShell = isAuthenticated && license?.IsBlocked != true && !updateBlocked;
     var storesFocus = !AppMode.IsWeb && license?.IsReadOnly != true;
+    // Kept screens (Infrastructure/Web/ScreenFrames.cs): the shell draws the sidebar, the header and
+    // the strip of open screens; a screen inside one of its frames draws only its own content.
+    var isScreenShell = showShell && ToolboxWeb.Web.Infrastructure.Web.ScreenFrames.IsShell(Context);
+    var isFrame = showShell && !isScreenShell && ToolboxWeb.Web.Infrastructure.Web.ScreenFrames.IsFrameRequest(Context.Request);
+    if (IsSectionDefined("PageActions") && isFrame)
+    {
+        IgnoreSection("PageActions");
+    }
 }
 <!DOCTYPE html>
-<html lang="@CultureInfo.CurrentUICulture.Name" data-background-mode="@(isAuthenticated ? "app" : "auth")" data-time-zone="@ToolboxWeb.Web.Infrastructure.Time.AppClock.TimeZoneId">
+<html lang="@CultureInfo.CurrentUICulture.Name" data-background-mode="@(isAuthenticated ? "app" : "auth")" data-time-zone="@ToolboxWeb.Web.Infrastructure.Time.AppClock.TimeZoneId"@(isFrame ? Html.Raw(" data-embedded=\"true\"") : null)@(isScreenShell ? Html.Raw(" data-screen-shell=\"true\"") : null)>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -93,18 +101,57 @@
             let sidebar = null;
             try { sidebar = localStorage.getItem('toolbox.sidebar'); } catch (e) { }
             if (sidebar === 'collapsed') document.documentElement.dataset.sidebar = 'collapsed';
+            // Kept screens are for wide windows: a phone-narrow window gets plain pages
+            // (Infrastructure/Web/ScreenFrames.cs reads this cookie).
+            if (window.top === window) {
+                const narrow = window.matchMedia && window.matchMedia('(max-width: 899.98px)').matches;
+                document.cookie = 'toolbox.narrow=' + (narrow ? '1' : '0') + '; path=/; max-age=31536000; samesite=lax';
+            }
         })();
     </script>
     <script src="~/js/format.js" asp-append-version="true"></script>
 </head>
 <body>
+@if (isFrame)
+{
+    @* A screen inside the shell's frame: only its content; the shell around it has the sidebar,
+       the header, the palette, the focus timer and the background. *@
+    @if (hasFlashNotification)
+    {
+        <div id="tbx-notification-host" class="tbx-notification-host" aria-hidden="true"></div>
+        <script id="tbx-flash-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(flashNotifications))</script>
+    }
+    var frameNavGroups = AppNavigation.Build(Url, T, CurrentUser.IsJiraUser || (AppMode.IsDesktop && DesktopJira.IsConfigured),
+        ToolboxWeb.Web.Infrastructure.Security.DevToolsAccess.IsAllowed(HostEnvironment, User), AppMode.Mode,
+        Context.RequestServices.GetRequiredService<ToolboxWeb.Web.Infrastructure.Files.FilesAccess>().IsAllowed);
+    <div class="app-shell app-shell--frame" data-shell>
+        <div class="app-main">
+            <main class="content-area @(ViewData["ContentAreaClass"] as string)" role="main" data-screen-title="@(ViewData["Title"] ?? T["Dashboard.Title"].Value)">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+    <partial name="_ConfirmModal" />
+    <partial name="_CommandPalette" model="frameNavGroups" />
+    <script src="~/lib/jquery/dist/jquery.min.js" asp-append-version="true"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
+    @if (hasFlashNotification)
+    {
+        <partial name="_KendoScripts" />
+    }
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/shortcuts.js" asp-append-version="true"></script>
+    <script src="~/js/screen-frame.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+}
+else
+{
     <partial name="_AdaptiveBackground" />
     @if (hasFlashNotification)
     {
         <div id="tbx-notification-host" class="tbx-notification-host" aria-hidden="true"></div>
         <script id="tbx-flash-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(flashNotifications))</script>
     }
-    @{
         var dashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.DashboardHtml) ?? "/dashboard.html";
         var jiraDashboardHref = Url.RouteUrl(ToolboxRouteSlugs.RouteNames.JiraDashboardHtml) ?? "/statistics.html";
         // Jira screens apply to a Jira account on the server, and to a desktop with a saved Jira connection.
@@ -129,21 +176,9 @@
         {
             breadcrumbGroup = T["Nav.Group.Account"].Value;
         }
-        var pageTitle = ViewData["Title"]?.ToString() ?? T["Dashboard.Title"].Value;
-    }
-    @functions {
-        // One sidebar link: icon + text. The text stays in the accessibility tree when the
-        // sidebar is collapsed to icons; site.js adds a title tooltip in that state.
-        private async Task NavItem(string href, string icon, string label, bool active)
-        {
-            <li>
-                <a href="@href" class="side-nav-link@(active ? " active" : null)" aria-current="@(active ? "page" : null)">
-                    <tbx-icon name="@icon" />
-                    <span class="nav-text">@label</span>
-                </a>
-            </li>
-        }
-    }
+        // The shell has no view of its own: its first title is the screen's menu entry (screens.js keeps it current).
+        var activeNavItem = navGroups.SelectMany(g => g.Items).FirstOrDefault(i => i.IsActive(navController, navAction));
+        var pageTitle = ViewData["Title"]?.ToString() ?? activeNavItem?.Label ?? T["Dashboard.Title"].Value;
     <div class="app-shell@(showShell ? null : " app-shell--guest")" data-shell>
         @if (showShell)
         {
@@ -272,5 +307,19 @@
         <script src="~/js/focus-clock.js" asp-append-version="true"></script>
     }
     @await RenderSectionAsync("Scripts", required: false)
+}
 </body>
 </html>
+@functions {
+    // One sidebar link: icon + text. The text stays in the accessibility tree when the
+    // sidebar is collapsed to icons; site.js adds a title tooltip in that state.
+    private async Task NavItem(string href, string icon, string label, bool active)
+    {
+        <li>
+            <a href="@href" class="side-nav-link@(active ? " active" : null)" aria-current="@(active ? "page" : null)">
+                <tbx-icon name="@icon" />
+                <span class="nav-text">@label</span>
+            </a>
+        </li>
+    }
+}

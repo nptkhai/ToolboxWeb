@@ -104,6 +104,8 @@
     };
 
     window.ToolboxJiraUnsaved = tracker;
+    // A kept screen with due dates not yet written to Jira asks before it is closed (screens.js).
+    window.Toolbox?.pendingChanges?.add(() => total());
 
     window.addEventListener("beforeunload", function (event) {
         if (!leaving && total() > 0) {

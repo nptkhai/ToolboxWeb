@@ -14,6 +14,7 @@ namespace ToolboxWeb.Web.Controllers;
 /// can still be installed.
 /// </summary>
 [NotInWebMode]
+[ToolboxWeb.Web.Infrastructure.Web.NoScreenShell]
 [Route("desktop")]
 [AllowWhenUnlicensed]
 public class DesktopController : Controller

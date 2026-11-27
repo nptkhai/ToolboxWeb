@@ -26,6 +26,7 @@ public class AppController : Controller
     /// carries the text in both languages and picks one in the browser.
     /// </summary>
     [HttpGet("/offline.html")]
+    [ToolboxWeb.Web.Infrastructure.Web.NoScreenShell]
     public IActionResult Offline([FromServices] IStringLocalizer<SharedResource> localizer)
     {
         OfflineText Read(string culture)

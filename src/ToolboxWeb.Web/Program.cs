@@ -190,7 +190,11 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(runtimeStorage.DataProtectionKeysPath));
-var mvcBuilder = builder.Services.AddControllersWithViews(options => options.Filters.Add<WebModeFilter>())
+var mvcBuilder = builder.Services.AddControllersWithViews(options =>
+    {
+        options.Filters.Add<WebModeFilter>();
+        options.Filters.Add<ToolboxWeb.Web.Infrastructure.Web.ScreenShellFilter>();
+    })
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();
 if (builder.Environment.IsDevelopment())

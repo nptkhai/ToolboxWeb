@@ -102,7 +102,8 @@
 
     function commandOptions() {
         const focus = window.ToolboxFocus;
-        const own = pageCommands.map(function (command) {
+        // A command may belong to one kept screen (screens.js passes "when"): listed only while it shows.
+        const own = pageCommands.filter(function (command) { return !command.when || command.when(); }).map(function (command) {
             return { type: 'command', id: 'page:' + command.id, label: command.label, icon: command.icon || 'chevron-right', href: null, action: 'page:' + command.id, keywords: command.keywords || '', page: true };
         });
         return own.concat((config.commands || []).map(function (command) {
@@ -280,6 +281,9 @@
             keys.showHelp();
         } else if (action === 'sign-out') {
             document.querySelector('form[action*="Logout"] button[type="submit"]')?.click();
+        } else if (action === 'screens:on' || action === 'screens:off') {
+            // Kept screens for this browser (Infrastructure/Web/ScreenFrames.cs); a reload applies it.
+            window.Toolbox.setKeepScreens(action === 'screens:on');
         } else if (action === 'desktop-exit') {
             document.querySelector('form[action$="/desktop/exit"] button[type="submit"]')?.click();
         }
@@ -314,7 +318,7 @@
             if (newTab) {
                 window.open(option.href, '_blank', 'noopener');
             } else {
-                window.location.href = option.href;
+                window.Toolbox.go(option.href);
             }
         }
     }

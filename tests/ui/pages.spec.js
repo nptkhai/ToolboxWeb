@@ -35,7 +35,9 @@ const LOCAL_PAGES = [
   { name: 'account-profile', path: '/Identity/Account/Manage' },
   { name: 'account-email', path: '/Identity/Account/Manage/Email' },
   { name: 'account-password', path: '/Identity/Account/Manage/ChangePassword' },
-  { name: 'access-denied', path: '/statistics.html' }
+  { name: 'access-denied', path: '/statistics.html' },
+  // The kept-screens shell (sidebar, header, strip of open screens) around Notes.
+  { name: 'screens', path: '/notes.html', screens: true }
 ];
 
 // "Files & folders" needs an allowed account and a root (TBX_UI_FILES_ROOT); global-setup.js
@@ -140,6 +142,9 @@ function definePages(pages, storageState) {
         } catch { /* storage can be blocked; the page must still render */ }
       }, theme);
 
+      // Each page is checked as a plain page; the "screens" entry checks the kept-screens shell
+      // around one (Infrastructure/Web/ScreenFrames.cs), whose screens run in frames.
+      await page.context().addCookies([{ name: 'toolbox.keepAlive', value: target.screens ? 'on' : 'off', url: baseURL }]);
       await page.goto(target.path, { waitUntil: 'networkidle' });
       if (target.click) {
         await page.click(target.click);
