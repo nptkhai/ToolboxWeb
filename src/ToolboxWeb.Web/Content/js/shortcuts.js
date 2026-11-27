@@ -56,7 +56,7 @@
 
     const KEY_NAMES = {
         arrowup: '↑', arrowdown: '↓', arrowleft: '←', arrowright: '→', enter: 'Enter', escape: 'Esc',
-        delete: 'Delete', backspace: 'Backspace', ' ': 'Space', '/': '/', '?': '?'
+        delete: 'Delete', backspace: 'Backspace', ' ': 'Space', '/': '/', '?': '?', pagedown: 'PgDn', pageup: 'PgUp'
     };
 
     /** How a combo is written for people: "Ctrl K" or "⌘ K", "G D", "↑". */
@@ -200,6 +200,10 @@
     }
 
     function showHelp() {
+        // In the kept-screens shell the help of the screen on show lists its own shortcuts too.
+        if (Toolbox.helpFor && Toolbox.helpFor()) {
+            return;
+        }
         if (!helpElement || !window.bootstrap) {
             return;
         }

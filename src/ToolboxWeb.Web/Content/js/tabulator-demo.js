@@ -170,7 +170,7 @@
     async function requestJson(url, options) {
         const response = await fetch(url, Object.assign({ credentials: 'same-origin' }, options));
         if (response.status === 401 || response.status === 403) {
-            window.location.href = data.loginUrl;
+            window.Toolbox.goTop(data.loginUrl);
             return null;
         }
         const isJson = (response.headers.get('content-type') || '').includes('application/json');

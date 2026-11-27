@@ -606,7 +606,7 @@
 
                 if (payload?.requiresLogin) {
                     const returnUrl = `${window.location.pathname}${window.location.search}`;
-                    window.location.href = `${config.loginUrl || "/Identity/Account/Login"}?returnUrl=${encodeURIComponent(returnUrl)}`;
+                    window.Toolbox.goTop(`${config.loginUrl || "/Identity/Account/Login"}?returnUrl=${encodeURIComponent(returnUrl)}`);
                     return;
                 }
 

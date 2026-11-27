@@ -178,7 +178,7 @@
                 const payload = await response.json().catch(() => null);
                 if (payload?.requiresLogin) {
                     leaving = true;
-                    window.location.href = `${config.loginUrl || "/Identity/Account/Login"}?returnUrl=${encodeURIComponent(window.location.pathname)}`;
+                    window.Toolbox.goTop(`${config.loginUrl || "/Identity/Account/Login"}?returnUrl=${encodeURIComponent(window.location.pathname)}`);
                     return;
                 }
 

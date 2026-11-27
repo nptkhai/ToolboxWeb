@@ -219,3 +219,14 @@ html[data-screen-shell] .app-main {
     color: var(--warning);
     font-size: var(--text-sm);
 }
+
+/* A dialog of the screen on show: the shell around it is dimmed and locked (screens.js); the
+   frames stay above the backdrop, so the screen's own backdrop dims its part. */
+.tbx-screen-backdrop[hidden] {
+    display: none;
+}
+
+html.tbx-screen-dimmed .tbx-screen-host {
+    position: relative;
+    z-index: 1051;
+}
