@@ -509,10 +509,21 @@
         return { rows: rows, stats: stats, blockCount: blockCount };
     }
 
+    // Text typed or pasted since the last comparison is lost when a kept screen closes: it asks first.
+    let comparedKey = '';
+    function sidesKey() {
+        return normalize(sides.left.textarea.value) + '\u0000' + normalize(sides.right.textarea.value);
+    }
+    window.Toolbox?.pendingChanges?.add(function () {
+        const key = sidesKey();
+        return key !== '\u0000' && key !== comparedKey ? 1 : 0;
+    });
+
     function compare(options) {
         const settings = options || {};
         const leftValue = normalize(sides.left.textarea.value);
         const rightValue = normalize(sides.right.textarea.value);
+        comparedKey = leftValue + '\u0000' + rightValue;
         if (!leftValue && !rightValue) {
             notify(text.needBoth, 'warning');
             sides.left.textarea.focus();

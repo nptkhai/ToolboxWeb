@@ -299,6 +299,11 @@
             if (on) link.setAttribute('aria-current', 'page');
             else link.removeAttribute('aria-current');
         });
+        // Forms of the shell that come back to the page (the language switch) come back to the
+        // screen on show, not to the address the shell was first opened with.
+        if (screen) {
+            document.querySelectorAll('form input[type="hidden"][name="returnUrl"]').forEach((input) => { input.value = screen.url; });
+        }
     }
 
     function historyState() {
@@ -728,7 +733,8 @@
             const path = pathOf(item.url);
             if (seen.has(path)) return;
             seen.add(path);
-            const screen = makeScreen(item.url, item.title);
+            // A page of the app takes its name from the menu, in the language now chosen.
+            const screen = makeScreen(item.url, pageFor(item.url)?.label || item.title);
             screens.push(screen);
             els.tabs.appendChild(screen.el);
         });

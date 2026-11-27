@@ -80,11 +80,13 @@
 
     // A form someone started filling in counts as unsaved work until it is sent, reset, or its
     // dialog is closed (closing the dialog throws the typing away, as it always did). Search and
-    // filter forms (GET) and forms marked data-no-unsaved do not count.
+    // filter forms (GET) and forms marked data-no-unsaved do not count; a form a script sends
+    // (no method) counts when it is marked data-unsaved.
     const typedForms = new Set();
     function formOf(target) {
         const form = target && (target.form || (target.closest && target.closest('form')));
-        if (!form || form.hasAttribute('data-no-unsaved') || (form.method || 'get').toLowerCase() !== 'post') return null;
+        if (!form || form.hasAttribute('data-no-unsaved')) return null;
+        if ((form.method || 'get').toLowerCase() !== 'post' && !form.hasAttribute('data-unsaved')) return null;
         if (target.type === 'search' || target.type === 'hidden') return null;
         return form;
     }
